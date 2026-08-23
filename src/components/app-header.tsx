@@ -8,17 +8,19 @@ interface AppHeaderProps {
   title?: string;
   backHref?: string;
   rightAction?: React.ReactNode;
+  variant?: "dark" | "light";
 }
 
-export function AppHeader({ title, backHref, rightAction }: AppHeaderProps) {
+export function AppHeader({ title, backHref, rightAction, variant = "dark" }: AppHeaderProps) {
   const isTopLevel = !backHref;
+  const logoSrc = variant === "light" ? "/assets/mark-pin-whitebg.png" : "/assets/mark-pin.jpg";
 
   return (
     <header className="sticky top-0 z-50 flex h-14 items-center gap-3 px-5 bg-background/80 backdrop-blur-sm border-b border-border">
       {isTopLevel ? (
         <Link href="/" className="flex-shrink-0" aria-label="Zurück zum Start">
           <Image
-            src="/assets/mark-pin.jpg"
+            src={logoSrc}
             alt="Geo Quest"
             width={32}
             height={32}

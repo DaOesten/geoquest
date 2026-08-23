@@ -89,4 +89,18 @@
     box-shadow: 0 0 0 1px rgba(198, 255, 0, 0.35),
       0 0 18px rgba(198, 255, 0, 0.32);
   }
+
+  .card-glow-teal {
+    border-color: #00E0D1;
+    box-shadow: 0 0 0 1px rgba(0, 224, 209, 0.33),
+      0 0 24px rgba(0, 224, 209, 0.27),
+      0 14px 32px rgba(0, 0, 0, 0.55);
+  }
+
+  .card-glow-lime {
+    border-color: #C6FF00;
+    box-shadow: 0 0 0 1px rgba(198, 255, 0, 0.33),
+      0 0 24px rgba(198, 255, 0, 0.27),
+      0 14px 32px rgba(0, 0, 0, 0.55);
+  }
 }

@@ -42,7 +42,8 @@
 ## Layout
 
 - Mobile-First: 390px Design-Breite, Single Column
-- Screen-Gutters: 20px
+- Content-Container: `max-w-[430px] mx-auto w-full` auf jeder Seite (begrenzt Desktop-Breite auf Handy-Maß)
+- Screen-Gutters: 20px (`px-5`)
 - Card-Abstand: 12px
 - Section-Abstand: 28px
 - Feste Elemente: Header oben, Primary Action unten (12px Gutter, 14px Safe-Area)

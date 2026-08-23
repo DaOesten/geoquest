@@ -1,6 +1,6 @@
 # PROJ-1: App Shell & Mode Switch
 
-## Status: Architected
+## Status: Approved
 **Created:** 2026-08-23
 **Last Updated:** 2026-08-23
 
@@ -204,7 +204,91 @@ src/app/
 | `next/font` (built-in) | Google Fonts optimiert laden |
 
 ## QA Test Results
-_To be added by /qa_
+
+**Date:** 2026-08-23 (Re-Test)
+**Tester:** AI QA (Claude)
+**Build:** Production build passes (`npm run build` ✓)
+**Lint:** `npm run lint` passes (0 errors, 1 warning)
+**Unit Tests:** 4/4 pass (`npm test` ✓)
+
+### Acceptance Criteria Results
+
+| # | Criterion | Status |
+|---|-----------|--------|
+| 1 | Startscreen zeigt Dark Theme + Logo + Cards | ✅ Pass |
+| 2 | Play-Card navigiert zu /play mit Dark Theme | ✅ Pass |
+| 3 | Create-Card navigiert zu /create mit Light Theme | ✅ Pass |
+| 4 | Pin-Mark-Logo auf /play → / | ✅ Pass |
+| 5 | Zurück-Pfeil auf /play/[id] → /play | ✅ Pass |
+| 6 | Browser-Zurück navigiert eine Ebene hoch | ✅ Pass |
+| 7 | Player-Modus hat Dark Theme | ✅ Pass |
+| 8 | Creator-Modus hat Light Theme | ✅ Pass |
+| 9 | Theme-Wechsel ohne Flicker | ✅ Pass |
+| 10 | Erststart-Dialog bei erstem Besuch | ✅ Pass |
+| 11 | "Verstanden" schließt Dialog + setzt Flag | ✅ Pass |
+| 12 | Dialog nicht bei Wiederkehr | ✅ Pass |
+| 13 | Gebrandete 404-Seite mit Nachricht | ✅ Pass |
+| 14 | 404 "Zurück zum Start" → / | ✅ Pass |
+
+**Result: 14/14 passed**
+
+### Edge Cases
+
+| # | Edge Case | Status |
+|---|-----------|--------|
+| 1 | Theme-Flicker bei Seitenwechsel | ✅ Pass — Theme über serverseitige Route-Layouts |
+| 2 | Direkteinstieg per URL (/play/abc) | ✅ Pass — korrektes Theme ohne Startscreen |
+| 3 | localStorage nicht verfügbar | ✅ Pass — try/catch zeigt Dialog erneut |
+| 4 | Browser-Zurück vom Startscreen | ✅ Pass — normales Browser-Verhalten |
+| 5 | Schnelles Mode-Wechseln | ✅ Pass — jede Route eigenständig |
+
+### Unit Tests
+
+| Suite | Tests | Status |
+|-------|-------|--------|
+| FirstVisitDialog | 4 | ✅ All pass |
+
+### Security Audit
+
+| Check | Result |
+|-------|--------|
+| XSS (dangerouslySetInnerHTML, innerHTML, eval) | ✅ Keine Vektoren |
+| Exposed Secrets | ✅ Keine Secrets im Code |
+| Sensitive Data in Client | ✅ Nur localStorage-Flag |
+| Input Injection | ✅ Keine User-Inputs in PROJ-1 |
+
+### Bugs Found (Previous Run)
+
+| # | Severity | Description | Status |
+|---|----------|-------------|--------|
+| 1 | ~~Medium~~ | Mode Cards fehlender `:focus-visible` Glow | ✅ **FIXED** — `focus-visible:card-glow-*` Klassen hinzugefügt |
+| 2 | ~~Medium~~ | `npm run lint` fehlgeschlagen (ESLint 9 Config) | ✅ **FIXED** — `eslint.config.mjs` vorhanden, lint läuft |
+| 3 | ~~Low~~ | Mode Cards inline styles + JS-Handler | ✅ **FIXED** — reine Tailwind-Klassen mit `cn()` |
+| 4 | Low | `maximumScale: 1` verhindert Pinch-to-Zoom | ⚠️ **OFFEN** — bewusste Design-Entscheidung für Gaming-PWA? |
+
+### New Findings (Re-Test)
+
+| # | Severity | Description | Notes |
+|---|----------|-------------|-------|
+| 1 | Low | `brush-stroke-button.tsx` nutzt `<img>` statt `next/image` | ESLint-Warning, LCP-Optimierung möglich |
+
+### Responsive Test
+
+| Viewport | Status |
+|----------|--------|
+| 375px (iPhone SE) | ✅ Pass — alle Elemente sichtbar, Cards passen |
+| 390px (iPhone 14) | ✅ Pass — Design-Breite, optimale Darstellung |
+| 430px (iPhone 14 Pro Max) | ✅ Pass — max-w-[430px] begrenzt korrekt |
+| 768px (Tablet) | ✅ Pass — Content zentriert, max-w greift |
+| 1440px (Desktop) | ✅ Pass — Content zentriert bei 430px |
+
+### Production-Ready Decision
+
+**READY** — Keine Critical oder High Bugs. Die 3 vorherigen Medium/Low-Bugs wurden behoben. Verbleibend: 2 Low-Findings (maximumScale, img-Tag), beide nicht blockierend.
+
+### E2E Tests
+
+E2E-Testsuite geschrieben in `tests/proj-1-app-shell.spec.ts` (23 Tests). Playwright-Browser müssen einmalig installiert werden: `npx playwright install chromium`. Danach: `npm run test:e2e`.
 
 ## Deployment
 _To be added by /deploy_

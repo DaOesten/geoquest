@@ -15,7 +15,7 @@
 
 | ID | Feature | Priority | Dependencies | Status | Spec | Created |
 |----|---------|----------|--------------|--------|------|---------|
-| PROJ-1 | App Shell & Mode Switch | P0 | None | In Progress | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
+| PROJ-1 | App Shell & Mode Switch | P0 | None | Approved | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Roadmap | — | 2026-08-23 |
 | PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Roadmap | — | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Roadmap | — | 2026-08-23 |

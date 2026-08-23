@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import {
   Dialog,
   DialogContent,
@@ -13,18 +13,25 @@ import { Button } from "@/components/ui/button";
 
 const STORAGE_KEY = "gq_first_visit_done";
 
-export function FirstVisitDialog() {
-  const [open, setOpen] = useState(false);
+function getIsFirstVisit() {
+  try {
+    return !localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return true;
+  }
+}
 
-  useEffect(() => {
-    try {
-      if (!localStorage.getItem(STORAGE_KEY)) {
-        setOpen(true);
-      }
-    } catch {
-      setOpen(true);
-    }
-  }, []);
+const subscribe = () => () => {};
+
+export function FirstVisitDialog() {
+  const isFirstVisit = useSyncExternalStore(
+    subscribe,
+    getIsFirstVisit,
+    () => false
+  );
+  const [dismissed, setDismissed] = useState(false);
+
+  const open = isFirstVisit && !dismissed;
 
   function handleDismiss() {
     try {
@@ -32,7 +39,7 @@ export function FirstVisitDialog() {
     } catch {
       // localStorage unavailable — dialog will show again next visit
     }
-    setOpen(false);
+    setDismissed(true);
   }
 
   return (
