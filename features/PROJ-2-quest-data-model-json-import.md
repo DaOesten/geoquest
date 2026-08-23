@@ -1,6 +1,6 @@
 # PROJ-2: Quest Data Model & JSON Import
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-08-23
 **Last Updated:** 2026-08-23
 
@@ -401,4 +401,8 @@ Nicht ausgeführt — Playwright-Browser-Installation steht aus. Kann nach `npm 
 **READY** — Keine Critical oder High Bugs. 2 Low-Findings, beide nicht blockierend.
 
 ## Deployment
-_To be added by /deploy_
+
+**Production URL:** https://geoquesty.vercel.app
+**Deployed:** 2026-08-23
+**Platform:** Vercel (auto-deploy on push to main)
+**Git Tag:** v1.1.0-PROJ-2
