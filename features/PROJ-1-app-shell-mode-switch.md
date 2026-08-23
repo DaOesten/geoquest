@@ -1,6 +1,6 @@
 # PROJ-1: App Shell & Mode Switch
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-08-23
 **Last Updated:** 2026-08-23
 
@@ -291,4 +291,8 @@ src/app/
 E2E-Testsuite geschrieben in `tests/proj-1-app-shell.spec.ts` (23 Tests). Playwright-Browser müssen einmalig installiert werden: `npx playwright install chromium`. Danach: `npm run test:e2e`.
 
 ## Deployment
-_To be added by /deploy_
+
+**Production URL:** https://geoquesty.vercel.app
+**Deployed:** 2026-08-23
+**Platform:** Vercel (auto-deploy on push to main)
+**Git Tag:** v1.0.0-PROJ-1
