@@ -1,6 +1,6 @@
 # PROJ-1: App Shell & Mode Switch
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-08-23
 **Last Updated:** 2026-08-23
 
@@ -92,12 +92,116 @@ Der Rahmen der gesamten App: Startscreen mit Modus-Auswahl, Header mit kontextab
 <!-- Added by /architecture -->
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Theme über Route-Layouts statt Client-State | Kein Flicker — Theme ist beim ersten Paint korrekt, kein JS nötig | 2026-08-23 |
+| CSS Custom Properties aus Design System | Direkte Übernahme der Tokens, konsistent mit Claude Design Export | 2026-08-23 |
+| Google Fonts via next/font | Optimiertes Laden, kein Layout Shift, Self-Hosting durch Next.js | 2026-08-23 |
+| localStorage für Erststart-Flag | Einfachster persistenter Speicher, kein Backend nötig | 2026-08-23 |
+| Shared AppHeader-Komponente mit Props | Wiederverwendbar über alle Routes, Props steuern Verhalten | 2026-08-23 |
+| Brush-Stroke-Button als eigene Komponente | Nicht durch shadcn abbildbar — Brand-spezifisches Element mit SVG | 2026-08-23 |
+| shadcn Dialog für Erststart-Hinweis | Bereits installiert, accessible, responsive | 2026-08-23 |
+| Lucide Icons via lucide-react | Im Design-System definiert, Tree-Shakeable | 2026-08-23 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+### Komponenten-Struktur
+
+```
+Root Layout (src/app/layout.tsx)
+├── Google Fonts laden (Anton, Orbitron, Rubik)
+├── CSS-Variablen (Design-System-Tokens)
+├── Theme-Klasse auf <html> setzen (route-basiert)
+│
+├── "/" — Startscreen
+│   ├── Logo (Pin-Mark + "GEO QUEST")
+│   ├── Mode-Card "Play" (Brush-Stroke-Button → /play)
+│   └── Mode-Card "Create" (Brush-Stroke-Button → /create)
+│   └── [Erststart-Dialog] (nur beim allerersten Besuch)
+│
+├── "/play" — Player Layout
+│   ├── AppHeader
+│   │   ├── Links: Pin-Mark-Logo (→ Home)
+│   │   ├── Mitte: Kontext-Titel
+│   │   └── Rechts: (Platz für zukünftige Actions)
+│   └── Scrollbarer Content-Bereich (Kinder-Routes)
+│
+├── "/play/[id]" — Aktive Quest (Sub-Layout)
+│   ├── AppHeader
+│   │   ├── Links: Zurück-Pfeil (→ /play)
+│   │   ├── Mitte: Quest-Name
+│   │   └── Rechts: (kontextabhängig)
+│   └── Content
+│
+├── "/create" — Creator Layout
+│   ├── AppHeader (identische Struktur, Light Theme)
+│   └── Scrollbarer Content-Bereich
+│
+├── "/create/[id]" — Quest bearbeiten (Sub-Layout)
+│   └── (analog zu /play/[id])
+│
+└── not-found — 404-Seite
+    ├── "Ziel nicht gefunden." (Display-Font)
+    └── Button "Zurück zum Start" (→ /)
+```
+
+### Datenmodell
+
+Für PROJ-1 minimal — nur ein einziger Wert:
+
+- Schlüssel: `gq_first_visit_done`
+- Wert: `"true"` (String)
+- Gespeichert in: localStorage
+- Zweck: Erststart-Dialog nur einmal zeigen
+
+Kein weiterer State — das Theme wird rein aus der URL/Route abgeleitet.
+
+### Theme-Strategie (Kein Flicker)
+
+Das Theme wird serverseitig bestimmt:
+- Next.js Layout-Dateien wissen anhand ihrer Route, welches Theme aktiv ist
+- `/play`-Layout setzt `data-theme="dark"` auf seinen Container
+- `/create`-Layout setzt `data-theme="light"` auf seinen Container
+- Root-Layout setzt Fallback (Dark) auf `<html>`
+- Theme ist sofort beim ersten HTML-Paint korrekt — kein JS nötig, kein Flicker
+
+### Route-Struktur (Next.js App Router)
+
+```
+src/app/
+├── layout.tsx          ← Root: Fonts, globale CSS-Vars, <html data-theme="dark">
+├── page.tsx            ← Startscreen (/)
+├── not-found.tsx       ← 404-Seite
+├── play/
+│   ├── layout.tsx      ← Player-Layout: Header mit Home-Button, Dark Theme
+│   ├── page.tsx        ← Quest-Liste (/play) — Platzhalter für PROJ-2
+│   └── [id]/
+│       ├── layout.tsx  ← Sub-Layout: Header mit Zurück-Pfeil
+│       └── page.tsx    ← Aktive Quest — Platzhalter für PROJ-3
+└── create/
+    ├── layout.tsx      ← Creator-Layout: Header, Light Theme
+    ├── page.tsx        ← Quest-Liste (/create) — Platzhalter für PROJ-6
+    └── [id]/
+        ├── layout.tsx  ← Sub-Layout: Header mit Zurück-Pfeil
+        └── page.tsx    ← Quest bearbeiten — Platzhalter für PROJ-8
+```
+
+### Shared Components
+
+| Komponente | Zweck |
+|------------|-------|
+| `AppHeader` | Kontextabhängiger Header: Logo/Zurück links, Titel mitte, Actions rechts |
+| `ModeCard` | Große Karte auf Startscreen mit Brush-Stroke-Button |
+| `FirstVisitDialog` | Einmaliger Erststart-Dialog (nutzt shadcn Dialog) |
+| `BrushStrokeButton` | Button mit SVG-Brush-Stroke-Hintergrund (Brand-Element) |
+
+### Dependencies (zu installieren)
+
+| Package | Zweck |
+|---------|-------|
+| `lucide-react` | Icon-Set (Zurück-Pfeil, Home etc.) |
+| `next/font` (built-in) | Google Fonts optimiert laden |
 
 ## QA Test Results
 _To be added by /qa_
