@@ -19,7 +19,7 @@ export default function StartScreen() {
       </div>
 
       {/* Headline + Subtitle */}
-      <div className="text-center mt-1">
+      <div className="text-center mt-6">
         <h1 className="text-display text-[clamp(24px,8vw,32px)] leading-[0.96] text-gq-white">
           Bist du bereit
         </h1>
