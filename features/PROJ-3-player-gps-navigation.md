@@ -1,6 +1,6 @@
 # PROJ-3: Player — GPS-Navigation
 
-## Status: In Review
+## Status: Deployed
 **Created:** 2026-08-23
 **Last Updated:** 2026-08-24
 
@@ -408,4 +408,8 @@ Keine neuen Packages erforderlich. Alle genutzten APIs:
 **READY** — No Critical or High bugs. All unit tests passing. E2E tests written and structurally sound (browser install is an environment issue, not a code issue). Security audit clean.
 
 ## Deployment
-_To be added by /deploy_
+
+**Deployed:** 2026-08-24
+**Production URL:** https://geoquest-eight.vercel.app
+**Commit:** d104943
+**Tag:** v1.3.0-PROJ-3
