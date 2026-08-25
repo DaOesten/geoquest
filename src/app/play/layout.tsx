@@ -5,7 +5,9 @@ export default function PlayLayout({
 }) {
   return (
     <div data-theme="dark" className="min-h-dvh bg-gq-black text-gq-white">
-      {children}
+      <div className="max-w-[430px] mx-auto w-full min-h-dvh">
+        {children}
+      </div>
     </div>
   );
 }

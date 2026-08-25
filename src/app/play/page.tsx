@@ -1,6 +1,7 @@
 "use client";
 
-import { Compass } from "lucide-react";
+import Link from "next/link";
+import { Compass, ChevronRight } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { QuestImportButton } from "@/components/quest-import-button";
 import { useQuests } from "@/hooks/use-quests";
@@ -29,16 +30,19 @@ export default function PlayPage() {
           <div className="flex flex-col gap-3 px-5 py-4">
             <ul className="flex flex-col gap-3">
               {quests.map((quest) => (
-                <li
-                  key={quest.id}
-                  className="flex items-center justify-between p-4 rounded-2xl border border-border bg-card"
-                >
-                  <div className="flex flex-col gap-1 min-w-0">
-                    <span className="text-tech text-xs truncate">{quest.name}</span>
-                    <span className="font-body text-xs text-gq-grey">
-                      {quest.stations.length} {quest.stations.length === 1 ? "Station" : "Stationen"}
-                    </span>
-                  </div>
+                <li key={quest.id}>
+                  <Link
+                    href={`/play/${quest.id}`}
+                    className="flex items-center justify-between p-4 rounded-card border border-border bg-card shadow-card transition-all duration-base ease-gq hover:border-gq-grey-dark hover:shadow-card-hover active:scale-[0.98]"
+                  >
+                    <div className="flex flex-col gap-1 min-w-0">
+                      <span className="text-tech text-xs truncate">{quest.name}</span>
+                      <span className="font-body text-xs text-gq-grey">
+                        {quest.stations.length} {quest.stations.length === 1 ? "Ziel" : "Ziele"}
+                      </span>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-gq-grey flex-shrink-0" />
+                  </Link>
                 </li>
               ))}
             </ul>

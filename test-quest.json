@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "name": "Piratenschatz am See",
+  "description": "Eine spannende Schnitzeljagd rund um den See.",
+  "author": "Captain Hook",
+  "lastModified": "2026-08-23T10:00:00.000Z",
+  "estimatedDuration": "45 min",
+  "difficulty": "medium",
+  "intro": {
+    "text": "Ahoi, Abenteurer!\nDer alte Captain hat einen Schatz am See versteckt. Folge den Hinweisen und finde ihn!",
+    "mediaUrl": "https://example.com/pirate.jpg",
+    "mediaType": "image"
+  },
+  "outro": {
+    "text": "Glückwunsch! Du hast den Schatz gefunden!\n- 3 Stationen gemeistert\n- Alle Rätsel gelöst\n- Du bist ein echter Pirat!"
+  },
+  "stations": [
+    {
+      "id": "b1b2c3d4-e5f6-7890-abcd-ef1234567891",
+      "name": "Der alte Steg",
+      "lat": 53.610304,
+      "lng": 10.041533,
+      "radiusMeters": 50,
+      "modules": [
+        {
+          "type": "text",
+          "content": "Suche den alten Holzsteg am Nordufer.\n- Er hat ein rotes Geländer\n- Daneben steht eine Bank"
+        },
+        {
+          "type": "task",
+          "taskType": "code",
+          "question": "Was steht auf dem Schild am Steg?",
+          "answer": "Betreten verboten"
+        }
+      ]
+    },
+    {
+      "id": "c1b2c3d4-e5f6-7890-abcd-ef1234567892",
+      "name": "Die Eiche",
+      "lat": 52.5210,
+      "lng": 13.4060,
+      "radiusMeters": 10,
+      "modules": [
+        {
+          "type": "image",
+          "url": "https://example.com/oak-tree.jpg",
+          "caption": "Findest du diesen Baum?"
+        },
+        {
+          "type": "task",
+          "taskType": "multiple-choice",
+          "question": "Wie viele Äste hat der untere Teil der Eiche?",
+          "options": ["3", "5", "7", "9"],
+          "correctIndex": 1
+        }
+      ]
+    },
+    {
+      "id": "d1b2c3d4-e5f6-7890-abcd-ef1234567893",
+      "name": "Das Versteck",
+      "lat": 52.5215,
+      "lng": 13.4070,
+      "radiusMeters": 10,
+      "modules": [
+        {
+          "type": "text",
+          "content": "Fast geschafft! Bringe die Hinweise in die richtige Reihenfolge."
+        },
+        {
+          "type": "task",
+          "taskType": "sorting",
+          "question": "In welcher Reihenfolge hast du die Hinweise gefunden?",
+          "items": ["Steg", "Schild", "Eiche", "Versteck"]
+        }
+      ]
+    }
+  ]
+}

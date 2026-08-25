@@ -6,6 +6,9 @@
 
 @layer base {
   :root {
+    --gq-teal: #00E0D1;
+    --gq-lime: #C6FF00;
+
     /* GeoQuest Dark Theme (default) */
     --background: 200 20% 5%;
     --foreground: 0 0% 100%;
@@ -103,4 +106,10 @@
       0 0 24px rgba(198, 255, 0, 0.27),
       0 14px 32px rgba(0, 0, 0, 0.55);
   }
+}
+
+@keyframes gq-pulse {
+  0% { transform: scale(1); opacity: 1; }
+  70% { transform: scale(1.06); opacity: 0.55; }
+  100% { transform: scale(1); opacity: 1; }
 }

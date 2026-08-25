@@ -1,16 +1,21 @@
-import { AppHeader } from "@/components/app-header";
-import { MapPinOff } from "lucide-react";
+"use client";
 
-export default function PlayQuestPage() {
-  return (
-    <>
-      <AppHeader title="Quest" backHref="/play" />
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-5 text-center">
-        <MapPinOff className="w-12 h-12 text-gq-grey" />
-        <p className="font-body text-sm text-gq-grey">
-          Quest-Player wird in PROJ-3 implementiert.
-        </p>
-      </div>
-    </>
-  );
+import { use } from "react";
+import { notFound } from "next/navigation";
+import { QuestPlayer } from "@/components/quest-player";
+import { getQuestById } from "@/lib/quest-storage";
+
+interface PlayQuestPageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default function PlayQuestPage({ params }: PlayQuestPageProps) {
+  const { id } = use(params);
+  const quest = getQuestById(id);
+
+  if (!quest) {
+    notFound();
+  }
+
+  return <QuestPlayer quest={quest} />;
 }
