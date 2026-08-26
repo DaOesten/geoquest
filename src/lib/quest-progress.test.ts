@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { getProgress, saveProgress, markStationVisited, isStationVisited } from "./quest-progress";
+import { getProgress, saveProgress, markStationVisited, markStationCompleted, markTaskSolved, isStationVisited, isStationCompleted, isTaskSolved } from "./quest-progress";
 
 const store = new Map<string, string>();
 const mockLocalStorage = {
@@ -26,6 +26,8 @@ describe("quest-progress", () => {
     it("saves and retrieves progress", () => {
       const progress = {
         visitedStations: ["s1", "s2"],
+        completedStations: ["s1"],
+        solvedTasks: { s1: [0, 1] },
         currentScreen: "stations" as const,
         lastStationIndex: 1,
       };
@@ -34,8 +36,8 @@ describe("quest-progress", () => {
     });
 
     it("uses quest-specific keys", () => {
-      saveProgress("q1", { visitedStations: ["a"], currentScreen: "intro", lastStationIndex: 0 });
-      saveProgress("q2", { visitedStations: ["b"], currentScreen: "stations", lastStationIndex: 0 });
+      saveProgress("q1", { visitedStations: ["a"], completedStations: [], solvedTasks: {}, currentScreen: "intro", lastStationIndex: 0 });
+      saveProgress("q2", { visitedStations: ["b"], completedStations: [], solvedTasks: {}, currentScreen: "stations", lastStationIndex: 0 });
       expect(getProgress("q1")?.visitedStations).toEqual(["a"]);
       expect(getProgress("q2")?.visitedStations).toEqual(["b"]);
     });
@@ -43,6 +45,13 @@ describe("quest-progress", () => {
     it("returns null for corrupt JSON", () => {
       store.set("gq_progress_bad", "not-json{{{");
       expect(getProgress("bad")).toBeNull();
+    });
+
+    it("fills missing fields with defaults for old format", () => {
+      store.set("gq_progress_old", JSON.stringify({ visitedStations: ["s1"], currentScreen: "stations", lastStationIndex: 0 }));
+      const p = getProgress("old");
+      expect(p?.completedStations).toEqual([]);
+      expect(p?.solvedTasks).toEqual({});
     });
   });
 
@@ -66,9 +75,45 @@ describe("quest-progress", () => {
     });
   });
 
-  describe("isStationVisited", () => {
+  describe("markStationCompleted", () => {
+    it("creates progress if none exists", () => {
+      markStationCompleted("quest-new", "station-1");
+      const p = getProgress("quest-new");
+      expect(p?.completedStations).toEqual(["station-1"]);
+    });
+
+    it("does not duplicate station IDs", () => {
+      markStationCompleted("q", "s1");
+      markStationCompleted("q", "s1");
+      expect(getProgress("q")?.completedStations).toEqual(["s1"]);
+    });
+  });
+
+  describe("markTaskSolved", () => {
+    it("creates progress and marks task", () => {
+      markTaskSolved("q", "s1", 0);
+      const p = getProgress("q");
+      expect(p?.solvedTasks["s1"]).toEqual([0]);
+    });
+
+    it("appends multiple tasks for same station", () => {
+      markTaskSolved("q", "s1", 0);
+      markTaskSolved("q", "s1", 2);
+      expect(getProgress("q")?.solvedTasks["s1"]).toEqual([0, 2]);
+    });
+
+    it("does not duplicate module indices", () => {
+      markTaskSolved("q", "s1", 0);
+      markTaskSolved("q", "s1", 0);
+      expect(getProgress("q")?.solvedTasks["s1"]).toEqual([0]);
+    });
+  });
+
+  describe("isStationVisited / isStationCompleted / isTaskSolved", () => {
     it("returns false when no progress exists", () => {
       expect(isStationVisited("q", "s1")).toBe(false);
+      expect(isStationCompleted("q", "s1")).toBe(false);
+      expect(isTaskSolved("q", "s1", 0)).toBe(false);
     });
 
     it("returns true for visited station", () => {
@@ -76,9 +121,15 @@ describe("quest-progress", () => {
       expect(isStationVisited("q", "s1")).toBe(true);
     });
 
-    it("returns false for unvisited station", () => {
-      markStationVisited("q", "s1");
-      expect(isStationVisited("q", "s2")).toBe(false);
+    it("returns true for completed station", () => {
+      markStationCompleted("q", "s1");
+      expect(isStationCompleted("q", "s1")).toBe(true);
+    });
+
+    it("returns true for solved task", () => {
+      markTaskSolved("q", "s1", 2);
+      expect(isTaskSolved("q", "s1", 2)).toBe(true);
+      expect(isTaskSolved("q", "s1", 0)).toBe(false);
     });
   });
 });

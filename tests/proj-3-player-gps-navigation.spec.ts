@@ -126,13 +126,32 @@ test.describe("PROJ-3: Player — GPS-Navigation", () => {
       await expect(lockedStation).toBeDisabled();
     });
 
-    test("after visiting station 1, station 2 is unlocked", async ({ page }) => {
+    test("after visiting (but not completing) station 1, station 2 stays locked", async ({ page }) => {
+      // PROJ-4: unlocking is based on completedStations, not visitedStations —
+      // arriving at a station only opens its modules, it does not unlock the next one.
       await seedQuest(page);
       await page.evaluate(
         ({ id }) => {
           localStorage.setItem(
             `gq_progress_${id}`,
-            JSON.stringify({ visitedStations: ["station-1"], currentScreen: "stations", lastStationIndex: 1 })
+            JSON.stringify({ visitedStations: ["station-1"], completedStations: [], currentScreen: "stations", lastStationIndex: 1 })
+          );
+        },
+        { id: TEST_QUEST.id }
+      );
+      await page.goto(`/play/${TEST_QUEST.id}`);
+
+      const secondStation = page.getByRole("button", { name: /Zweite Station.*gesperrt/ });
+      await expect(secondStation).toBeDisabled();
+    });
+
+    test("after completing station 1, station 2 is unlocked", async ({ page }) => {
+      await seedQuest(page);
+      await page.evaluate(
+        ({ id }) => {
+          localStorage.setItem(
+            `gq_progress_${id}`,
+            JSON.stringify({ visitedStations: ["station-1"], completedStations: ["station-1"], currentScreen: "stations", lastStationIndex: 1 })
           );
         },
         { id: TEST_QUEST.id }
@@ -143,18 +162,25 @@ test.describe("PROJ-3: Player — GPS-Navigation", () => {
       await expect(secondStation).toBeEnabled();
     });
 
-    test("progress bar reflects visited stations", async ({ page }) => {
+    test("navigation screen shows the correct station progress counter", async ({ page }) => {
+      // PROJ-4 removed the "Ziel X von Y" subtitle from the station list itself
+      // (see the redesigned StationList) — it now only appears once navigating
+      // to / discovering a station, so we assert it there instead.
       await seedQuest(page);
       await page.evaluate(
         ({ id }) => {
           localStorage.setItem(
             `gq_progress_${id}`,
-            JSON.stringify({ visitedStations: ["station-1"], currentScreen: "stations", lastStationIndex: 1 })
+            JSON.stringify({ visitedStations: ["station-1"], completedStations: ["station-1"], currentScreen: "stations", lastStationIndex: 1 })
           );
         },
         { id: TEST_QUEST.id }
       );
+      await page.context().grantPermissions(["geolocation"]);
+      await page.context().setGeolocation({ latitude: 53.62, longitude: 10.05 });
       await page.goto(`/play/${TEST_QUEST.id}`);
+
+      await page.getByRole("button", { name: /Navigation zu Zweite Station starten/ }).click();
 
       await expect(page.getByText("Ziel 2 von 3")).toBeVisible();
     });
@@ -224,10 +250,11 @@ test.describe("PROJ-3: Player — GPS-Navigation", () => {
 
       await expect(page.getByText("Ziel erreicht!")).toBeVisible({ timeout: 10_000 });
       await expect(page.getByText("Erste Station")).toBeVisible();
-      await expect(page.getByText("Weiter geht's!")).toBeVisible();
+      await expect(page.getByText("Station entdecken")).toBeVisible();
     });
 
-    test("tapping 'Weiter geht's' marks station visited and returns to list", async ({ page }) => {
+    test("tapping 'Station entdecken' marks the station visited and opens its modules", async ({ page }) => {
+      // PROJ-4: arrival now leads into the station's module screen, not back to the list.
       await seedQuest(page);
       await page.evaluate(
         ({ id }) => {
@@ -243,9 +270,10 @@ test.describe("PROJ-3: Player — GPS-Navigation", () => {
       await page.goto(`/play/${TEST_QUEST.id}`);
 
       await page.getByRole("button", { name: /Navigation zu Erste Station starten/ }).click();
-      await page.getByText("Weiter geht's!").click({ timeout: 10_000 });
+      await page.getByText("Station entdecken").click({ timeout: 10_000 });
 
-      await expect(page.getByRole("button", { name: /Navigation zu Zweite Station starten/ })).toBeVisible();
+      await expect(page.getByText("Station 1 Text")).toBeVisible();
+      await expect(page.getByRole("button", { name: "Station abschließen" })).toBeEnabled();
     });
   });
 

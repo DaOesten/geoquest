@@ -1,8 +1,8 @@
 # PROJ-4: Player — Modul-Rendering
 
-## Status: Planned
+## Status: Approved
 **Created:** 2026-08-24
-**Last Updated:** 2026-08-24
+**Last Updated:** 2026-08-26
 
 ## Dependencies
 - Requires: PROJ-2 (Quest Data Model & JSON Import) — für Modul-Datenstruktur
@@ -269,3 +269,122 @@ src/
 
 Keine neuen Packages zwingend erforderlich. Optional:
 - `@dnd-kit/core` + `@dnd-kit/sortable` (nur falls HTML5 DnD auf Mobile nicht reicht)
+
+---
+
+## QA Test Results
+
+**Tested:** 2026-08-26
+**App URL:** http://localhost:3000
+**Tester:** QA Engineer (AI)
+
+**Methodik-Hinweis:** Die Playwright-Browser-Installation (Chromium Headless Shell und teils WebKit) ist sowohl in der Sandbox als auch im lokalen Terminal des Nutzers wiederholt beim Entpacken hängengeblieben (mehrfach über mehrere Minuten ohne Fortschritt versucht, auch nach Neuinstallation der einzelnen Browser-Pakete). Nach mehreren erfolglosen Anläufen hat der Nutzer bewusst entschieden, die Live-E2E-Ausführung nicht weiter zu verfolgen. Die QA-Freigabe basiert daher **ausschließlich auf Code-Review + Unit-Tests**: vollständiger Code-Review gegen jedes Acceptance Criterion, die grüne Vitest-Suite (62/62, inkl. 12 neu geschriebener Tests für Stationsfreischaltung und `correctIndex`-Migration) sowie eine fertige, aber nicht ausgeführte E2E-Spec (`tests/proj-4-player-modul-rendering.spec.ts`, 24 Tests) als Dokumentation des erwarteten Verhaltens und als Grundlage für einen späteren Lauf, sobald die lokale Playwright-Installation funktioniert.
+
+### Acceptance Criteria Status
+
+#### AC-1: Stations-Screen (nach Ankunft)
+- [x] Alle Module einer Station erscheinen als scrollbare Liste in Quest-Reihenfolge (`station-modules.tsx` rendert `station.modules` linear per `.map`)
+- [x] "Station abschließen"-Button ist Teil des normalen Scroll-Flows am Ende der Liste
+- [x] Bei offenen Aufgaben: Button deaktiviert mit "Noch X Aufgabe(n) offen"
+- [x] Bei allen Aufgaben gelöst: Button aktiv im Teal-Pill-Style
+- [x] Tippen auf aktiven Button markiert Station als abgeschlossen und schaltet die nächste frei (`completeStation` → `getStationStatus`-Logik in `use-quest-progress.ts`, jetzt durch Unit-Tests abgesichert)
+
+#### AC-2: Text-Modul
+- [x] Zeilenumbrüche und Listen (`- `-Präfix) werden korrekt als Absätze/Bullet-Liste dargestellt
+
+#### AC-3: Bild-Modul
+- [x] Bild wird in voller Breite innerhalb des 430px-Containers angezeigt
+- [x] Caption wird unter dem Bild angezeigt
+- [x] Placeholder "Bild konnte nicht geladen werden" bei fehlerhafter URL (`onError`-Handler), blockiert den Fortschritt nicht
+
+#### AC-4: Audio-Modul
+- [x] Kompakter Player mit Play/Pause-Button und Fortschrittsleiste
+- [x] Caption wird angezeigt
+- [x] Placeholder "Audio konnte nicht geladen werden" bei fehlerhafter URL
+
+#### AC-5: Video-Modul
+- [x] Inline-Player in voller Breite mit nativen Controls, kein Autoplay (kein `autoplay`-Attribut, `preload="metadata"`)
+- [x] Caption wird angezeigt
+- [x] Placeholder "Video konnte nicht geladen werden" bei fehlerhafter URL
+
+#### AC-6: Task — Code-Eingabe
+- [x] Frage, Textfeld und "Prüfen"-Button vorhanden
+- [x] Richtige Antwort (case-insensitive, trimmed) → Erfolgs-Feedback mit Häkchen, als gelöst markiert
+- [x] Falsche Antwort → rotes Feedback mit Shake-Animation, Text "Leider falsch, versuch's nochmal!"
+- [x] Gelöster Task: Eingabefeld deaktiviert/ausgeblendet, Häkchen sichtbar
+
+#### AC-7: Task — Multiple Choice (Single)
+- [x] Radio-Buttons pro Option — **während dieser QA auf `RadioGroup`/`RadioGroupItem` (shadcn) umgestellt**, vorher handgebaute Divs (Regel-Verstoß, siehe Bugs)
+- [x] Richtige Auswahl → Erfolgs-Feedback
+- [x] Falsche Auswahl → rotes Feedback, ohne die richtige Option zu verraten
+
+#### AC-8: Task — Multiple Choice (Multi)
+- [x] Checkboxen pro Option — **auf `Checkbox` (shadcn) umgestellt**, vorher handgebaute Divs
+- [x] Alle korrekten (und keine falschen) Optionen gewählt → Erfolgs-Feedback (`selected.length === correctIndices.length && selected.every(...)`)
+- [x] Unvollständige/falsche Auswahl → rotes Feedback, ohne zu verraten welche Optionen richtig/falsch sind
+
+#### AC-9: Task — Sortierung
+- [x] Items erscheinen in zufälliger, garantiert nicht bereits korrekter Reihenfolge mit Drag-Handle (`shuffle()` + Wiederholungs-Schleife bis Reihenfolge ≠ korrekt)
+- [x] Korrekte Reihenfolge nach Drag & Drop → Erfolgs-Feedback
+- [x] Falsche Reihenfolge → rotes Feedback mit Shake-Animation
+- [x] Touch-Drag-Schrittweite korrigiert: `itemHeight` in `sorting-task.tsx` von hartkodiert `56` auf `58` (52px Zeile + 6px Gap) angepasst
+
+#### AC-10: Fortschritt & Wiedereinstieg
+- [x] Gelöste Tasks bleiben nach Verlassen/Wiederkehr markiert (`solvedTasks` in `localStorage`, persistiert pro Station)
+- [x] Tippen auf bereits erreichte (nicht abgeschlossene) Station öffnet direkt den Modul-Screen ohne erneute GPS-Navigation
+- [x] Abgeschlossene Station zeigt Häkchen, nächste Station wird freigeschaltet
+
+### Edge Cases Status
+
+#### EC-1: Station ohne Tasks (nur Content-Module)
+- [x] "Station abschließen"-Button ist sofort aktiv (`taskIndices` leer → `unsolvedCount === 0`)
+
+#### EC-2: Station mit nur Tasks
+- [x] Funktioniert normal, keine Content-Module erforderlich
+
+#### EC-3: Medien-URL nicht erreichbar
+- [x] Placeholder-Anzeige, blockiert den Fortschritt nicht (nur Tasks sind Pflicht für den Abschluss-Button)
+
+#### EC-6: Leerer String als Code-Antwort
+- [x] "Prüfen"-Button deaktiviert bei leerem Eingabefeld
+
+#### EC-9: Datenmodell-Migration `correctIndex` → `correctIndices`
+- [x] Migration korrekt (neuer Test `quest-schema.test.ts`): legacy `correctIndex` → `[correctIndex]`, `correctIndices` hat Vorrang wenn beide vorhanden, Default `[0]` wenn keines gesetzt, out-of-bounds-Indices werden abgelehnt
+
+### Regression Testing (PROJ-1/PROJ-3, bereits deployed)
+- [x] Code-Review bestätigt: PROJ-4 ändert `station-list.tsx`, `navigation-screen.tsx`, `quest-player.tsx` gezielt gemäß den im Decision Log dokumentierten, gewollten Entscheidungen (Freischaltung über `completedStations` statt `visitedStations`; Button "Station entdecken" statt "Weiter geht's!"; Arrival führt jetzt zum Modul-Screen statt zurück zur Liste)
+- [x] 3 dadurch veraltete PROJ-3-E2E-Tests (`tests/proj-3-player-gps-navigation.spec.ts`) identifiziert und aktualisiert, damit sie das neue, korrekte Verhalten prüfen statt das alte
+- [ ] Nicht verifiziert: tatsächliche Ausführung von `npm run test:e2e` — Playwright-Browser-Install blockiert lokal wie in der Sandbox, Nutzer hat bewusst entschieden nicht weiter zu verfolgen (siehe Methodik-Hinweis oben). Sollte nachgeholt werden, sobald die lokale Playwright-Installation funktioniert.
+
+### Security Audit Results
+- [x] Authentifizierung/Autorisierung: N/A — kein Backend, kein Account-System (siehe PRD Non-Goals)
+- [x] XSS: Alle Modul-Typen aus PROJ-4 (Code-Task Frage/Antwort, Multiple-Choice Frage/Optionen, Sortierung Frage/Items) laufen durch `sanitizeQuest()` in `quest-import.ts` (HTML-Tag-Stripping) — bereits vorhandene Tests in `quest-import.test.ts` decken das ab
+- [x] Kein `dangerouslySetInnerHTML`, `eval()` oder `new Function()` irgendwo im Code (Repo-weiter Grep)
+- [x] Medien-URLs sind auf `https://` beschränkt (`httpsUrl`-Schema in `quest-schema.ts`), `javascript:`-URLs werden von bestehenden Tests explizit abgelehnt
+- [x] Task-Antworten (`correctIndices`, Code-`answer`) werden nie ins DOM gerendert, nur clientseitig verglichen — kein Leak der richtigen Antwort über HTML/DOM oder Netzwerk-Tab
+- [x] `aria-labelledby` ergänzt: Frage-`<p>` erhält eine eindeutige `useId()`-ID, `RadioGroup` und die Checkbox-Gruppe (`role="group"`) referenzieren sie; Options-IDs sind jetzt ebenfalls pro Instanz eindeutig (verhindert doppelte DOM-IDs bei mehreren MC-Modulen auf einer Station)
+
+### Bugs Found
+
+#### BUG-1 (bereits behoben während dieser Session): Multiple-Choice nutzte keine shadcn-Primitives
+- **Severity:** Medium (Regel-Verstoß + fehlende native Radio/Checkbox-Semantik)
+- **Status:** Fixed — `multiple-choice-task.tsx` nutzt jetzt `RadioGroup`/`RadioGroupItem`/`Checkbox`
+
+#### BUG-2 (bereits behoben während dieser Session): Erfolgs-Feedback nutzte Teal statt der spezifizierten "grünen" Farbe
+- **Severity:** Low (visuelle Abweichung vom AC-Wortlaut)
+- **Status:** Fixed — auf `gq-lime` umgestellt in `code-task.tsx`, `multiple-choice-task.tsx`, `sorting-task.tsx`
+
+#### BUG-3 (behoben): Touch-Drag-Schrittweite in der Sortierung ungenau
+- **Severity:** Low
+- **Status:** Fixed — `itemHeight` in `sorting-task.tsx` auf `58` (52px Zeile + 6px Gap) korrigiert
+
+#### BUG-4 (behoben): Fehlende `aria-labelledby`-Verknüpfung bei Multiple-Choice-Optionsgruppen
+- **Severity:** Low
+- **Status:** Fixed — `multiple-choice-task.tsx` verknüpft Frage und Optionsgruppe jetzt über `useId()` + `aria-labelledby`/`role="group"`
+
+### Summary
+- **Acceptance Criteria:** 28/28 geprüft und erfüllt (per Code-Review; Live-E2E-Bestätigung bewusst zurückgestellt, siehe Methodik-Hinweis)
+- **Bugs Found:** 4 total (0 Critical, 0 High, 1 Medium, 3 Low) — alle 4 behoben
+- **Security:** Pass, keine offenen Befunde
+- **Production Ready:** YES
+- **Recommendation:** Kann deployed werden (keine offenen Bugs, keine Critical/High-Findings). Bekannte Einschränkung: Die 24 neuen E2E-Tests (`tests/proj-4-player-modul-rendering.spec.ts`) sowie die 3 aktualisierten PROJ-3-Tests wurden noch nie live ausgeführt, weil die Playwright-Browser-Installation auf diesem Rechner (Sandbox und lokales Terminal) wiederholt hängen blieb. Sobald das Environment-Problem gelöst ist, `npm run test:e2e` nachholen.
