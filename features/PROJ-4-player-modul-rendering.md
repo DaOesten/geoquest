@@ -1,6 +1,6 @@
 # PROJ-4: Player — Modul-Rendering
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-08-24
 **Last Updated:** 2026-08-26
 
@@ -388,3 +388,13 @@ Keine neuen Packages zwingend erforderlich. Optional:
 - **Security:** Pass, keine offenen Befunde
 - **Production Ready:** YES
 - **Recommendation:** Kann deployed werden (keine offenen Bugs, keine Critical/High-Findings). Bekannte Einschränkung: Die 24 neuen E2E-Tests (`tests/proj-4-player-modul-rendering.spec.ts`) sowie die 3 aktualisierten PROJ-3-Tests wurden noch nie live ausgeführt, weil die Playwright-Browser-Installation auf diesem Rechner (Sandbox und lokales Terminal) wiederholt hängen blieb. Sobald das Environment-Problem gelöst ist, `npm run test:e2e` nachholen.
+
+---
+
+## Deployment
+
+**Deployed:** 2026-08-26
+**Production URL:** https://geoquesty.vercel.app
+**Commit:** 0527a96
+**Tag:** v1.4.0-PROJ-4
+**Verifiziert:** Nutzer hat den vollständigen Flow (Quest starten → Stationsliste → Station öffnen → Aufgabe lösen) live in Produktion durchgeklickt und bestätigt, dass es funktioniert.
