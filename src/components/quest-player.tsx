@@ -9,8 +9,9 @@ import { PermissionScreen } from "./permission-screen";
 import { IntroScreen } from "./intro-screen";
 import { StationList } from "./station-list";
 import { NavigationScreen } from "./navigation-screen";
+import { StationModules } from "./station-modules";
 
-type Screen = "permission" | "intro" | "stations" | "navigation";
+type Screen = "permission" | "intro" | "stations" | "navigation" | "modules";
 
 interface QuestPlayerProps {
   quest: Quest;
@@ -21,6 +22,9 @@ export function QuestPlayer({ quest }: QuestPlayerProps) {
     getStationStatus,
     getCurrentStationIndex,
     visitStation,
+    completeStation,
+    solveTask,
+    isTaskSolved,
     setScreen: persistScreen,
     hasExistingProgress,
     progress,
@@ -31,12 +35,13 @@ export function QuestPlayer({ quest }: QuestPlayerProps) {
     return "permission";
   });
   const [navigatingIndex, setNavigatingIndex] = useState<number | null>(null);
+  const [viewingModulesIndex, setViewingModulesIndex] = useState<number | null>(null);
 
   const setScreen = useCallback(
     (s: Screen) => {
       setScreenState(s);
-      if (s === "intro" || s === "stations" || s === "navigation") {
-        persistScreen(s === "navigation" ? "stations" : s);
+      if (s === "intro" || s === "stations" || s === "modules") {
+        persistScreen(s === "modules" ? "stations" : s);
       }
     },
     [persistScreen]
@@ -66,18 +71,43 @@ export function QuestPlayer({ quest }: QuestPlayerProps) {
     setScreenState("navigation");
   }, []);
 
+  const handleOpenModules = useCallback((index: number) => {
+    setViewingModulesIndex(index);
+    setScreen("modules");
+  }, [setScreen]);
+
   const handleArrived = useCallback(() => {
     if (navigatingIndex === null) return;
     const station = quest.stations[navigatingIndex];
     visitStation(station.id);
+    setViewingModulesIndex(navigatingIndex);
     setNavigatingIndex(null);
-    setScreen("stations");
+    setScreen("modules");
   }, [navigatingIndex, quest.stations, visitStation, setScreen]);
 
   const handleBackFromNavigation = useCallback(() => {
     setNavigatingIndex(null);
     setScreen("stations");
   }, [setScreen]);
+
+  const handleBackFromModules = useCallback(() => {
+    setViewingModulesIndex(null);
+    setScreen("stations");
+  }, [setScreen]);
+
+  const handleCompleteStation = useCallback(() => {
+    if (viewingModulesIndex === null) return;
+    const station = quest.stations[viewingModulesIndex];
+    completeStation(station.id);
+    setViewingModulesIndex(null);
+    setScreen("stations");
+  }, [viewingModulesIndex, quest.stations, completeStation, setScreen]);
+
+  const handleSolveTask = useCallback((moduleIndex: number) => {
+    if (viewingModulesIndex === null) return;
+    const station = quest.stations[viewingModulesIndex];
+    solveTask(station.id, moduleIndex);
+  }, [viewingModulesIndex, quest.stations, solveTask]);
 
   switch (screen) {
     case "permission":
@@ -97,8 +127,9 @@ export function QuestPlayer({ quest }: QuestPlayerProps) {
           questName={quest.name}
           stations={quest.stations}
           getStatus={getStationStatus}
-          visitedCount={progress.visitedStations.length}
+          completedCount={progress.completedStations.length}
           onNavigate={handleNavigate}
+          onOpenModules={handleOpenModules}
           onBack={() => {
             window.history.back();
           }}
@@ -112,15 +143,37 @@ export function QuestPlayer({ quest }: QuestPlayerProps) {
       }
       const station = quest.stations[navigatingIndex];
       const nextStation = quest.stations[navigatingIndex + 1];
+      const alreadyVisited = progress.visitedStations.includes(station.id);
       return (
         <NavigationScreen
           station={station}
           stationIndex={navigatingIndex}
           totalStations={quest.stations.length}
           nextStationName={nextStation?.name}
+          alreadyVisited={alreadyVisited}
           onArrived={handleArrived}
           onBack={handleBackFromNavigation}
           geoState={geo}
+        />
+      );
+    }
+
+    case "modules": {
+      if (viewingModulesIndex === null) {
+        setScreenState("stations");
+        return null;
+      }
+      const station = quest.stations[viewingModulesIndex];
+      const solvedTaskIndices = progress.solvedTasks[station.id] ?? [];
+      return (
+        <StationModules
+          station={station}
+          stationIndex={viewingModulesIndex}
+          totalStations={quest.stations.length}
+          solvedTasks={solvedTaskIndices}
+          onSolveTask={handleSolveTask}
+          onComplete={handleCompleteStation}
+          onBack={handleBackFromModules}
         />
       );
     }

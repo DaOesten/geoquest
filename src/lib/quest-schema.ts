@@ -48,11 +48,22 @@ const multipleChoiceTask = z.object({
   taskType: z.literal("multiple-choice"),
   question: z.string().min(1, "Frage darf nicht leer sein."),
   options: z.array(z.string().min(1)).min(2).max(5),
-  correctIndex: z.number().int().min(0),
+  correctIndex: z.number().int().min(0).optional(),
+  correctIndices: z.array(z.number().int().min(0)).min(1).optional(),
+}).transform((data) => {
+  const indices = data.correctIndices ?? (data.correctIndex !== undefined ? [data.correctIndex] : [0]);
+  return { ...data, correctIndices: indices };
+}).pipe(z.object({
+  type: z.literal("task"),
+  taskType: z.literal("multiple-choice"),
+  question: z.string(),
+  options: z.array(z.string()),
+  correctIndex: z.number().optional(),
+  correctIndices: z.array(z.number()),
 }).refine(
-  (data) => data.correctIndex < data.options.length,
-  { message: "correctIndex muss auf eine gültige Option zeigen." }
-);
+  (data) => data.correctIndices.every(i => i < data.options.length),
+  { message: "correctIndices müssen auf gültige Optionen zeigen." }
+));
 
 const sortingTask = z.object({
   type: z.literal("task"),

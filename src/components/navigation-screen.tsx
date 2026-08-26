@@ -14,6 +14,7 @@ interface NavigationScreenProps {
   stationIndex: number;
   totalStations: number;
   nextStationName?: string;
+  alreadyVisited?: boolean;
   onArrived: () => void;
   onBack: () => void;
   geoState: UseGeolocationReturn;
@@ -30,6 +31,7 @@ export function NavigationScreen({
   stationIndex,
   totalStations,
   nextStationName,
+  alreadyVisited,
   onArrived,
   onBack,
   geoState,
@@ -78,12 +80,18 @@ export function NavigationScreen({
     setArrived(true);
   }
 
-  // Vibration side effect on arrival
+  // Vibration side effect on arrival (only on first visit)
   useEffect(() => {
-    if (arrived && navigator.vibrate) {
+    if (arrived && !alreadyVisited && navigator.vibrate) {
       navigator.vibrate(200);
     }
-  }, [arrived]);
+  }, [arrived, alreadyVisited]);
+
+  // Skip arrival overlay for already-visited stations
+  if (arrived && alreadyVisited) {
+    onArrived();
+    return null;
+  }
 
   const distanceColor = distance !== null ? getDistanceColor(distance) : "red";
 
@@ -289,7 +297,7 @@ function ArrivalOverlay({
           onClick={onContinue}
           className="w-full h-14 rounded-pill bg-gq-teal text-gq-black font-tech text-sm uppercase tracking-[0.1em] font-bold shadow-glow-strong hover:bg-gq-teal-hover active:scale-[0.96] transition-all duration-fast ease-gq"
         >
-          Weiter geht&apos;s!
+          Station entdecken
         </button>
       </div>
     </div>

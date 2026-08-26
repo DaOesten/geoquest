@@ -38,7 +38,7 @@ export function AppHeader({ title, backHref, rightAction, variant = "dark" }: Ap
       )}
 
       {title && (
-        <h1 className="text-tech text-sm flex-1 truncate">{title}</h1>
+        <h1 className="text-tech text-lg flex-1 truncate">{title}</h1>
       )}
 
       {rightAction && (

@@ -110,8 +110,17 @@ export function useGeolocation(options?: UseGeolocationOptions): UseGeolocationR
   }, [clearWatch, startWatching]);
 
   useEffect(() => {
+    if (navigator.permissions) {
+      navigator.permissions.query({ name: "geolocation" }).then((result) => {
+        if (result.state === "granted") {
+          startWatching();
+        } else if (result.state === "denied") {
+          setPermission("denied");
+        }
+      }).catch(() => {});
+    }
     return () => clearWatch();
-  }, [clearWatch]);
+  }, [clearWatch, startWatching]);
 
   return { permission, signal, position, requestPermission, retry };
 }
