@@ -1,6 +1,6 @@
 # PROJ-5: Player — Fortschritt & Abschluss
 
-## Status: In Progress
+## Status: Deployed
 **Created:** 2026-08-26
 **Last Updated:** 2026-08-27
 
@@ -361,4 +361,9 @@ Vollständige E2E-Suite (`npx playwright test --project="Mobile Safari"`, via We
 - **Recommendation:** Kann deployed werden. BUG-1 (Outro-Medien-Placeholder) sollte zeitnah nachgezogen werden, um die Spec vollständig zu erfüllen — dafür zurück an `/frontend`, falls gewünscht.
 
 ## Deployment
-_To be added by /deploy_
+
+**Deployed:** 2026-08-27
+**Production URL:** https://geoquesty.vercel.app
+**Commit:** 49e58c8
+**Tag:** v1.5.0-PROJ-5
+**Verifiziert:** Alle Kern-Routen (`/`, `/play`, `/create`) antworten mit HTTP 200. Der `/play`-HTML-Response enthält die neue PROJ-5-Headline (`clamp(1.8rem,8vw,2.4rem)`), bestätigt dass der neue Build live ist. Bekannte, dokumentierte Bugs (BUG-1 Outro-Medien-Placeholder, BUG-2 Filter-Tab-Tastaturnavigation) werden bewusst mit deployed und später nachgezogen — auf ausdrücklichen Wunsch des Nutzers.
