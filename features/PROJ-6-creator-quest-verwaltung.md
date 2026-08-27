@@ -1,6 +1,6 @@
 # PROJ-6: Creator — Quest-Verwaltung
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-08-27
 **Last Updated:** 2026-08-27
 
@@ -96,7 +96,7 @@ Die zentrale Verwaltungsansicht im Creator-Modus (`/create`): Nutzer sehen alle 
 ## Open Questions
 - [x] Ab welcher Kombination von Feldern gilt eine Quest exakt als "vollständig" vs. "Entwurf"? → Gelöst in `/architecture`: Eine separate Vollständigkeits-Prüfung wendet dieselben Regeln wie das Import-Schema aus PROJ-2 an (mind. 1 Station mit mind. 1 Modul, Intro-/Outro-Text vorhanden), ohne beim Speichern zu blockieren. Siehe Tech Design.
 - [ ] Soll es eine maximale Zeichenlänge für den Quest-Namen geben (UI-Konsistenz), oder reicht das bestehende 5-MB-Gesamtlimit aus PROJ-2?
-- [ ] Wie werden bereits gespeicherte Quests ohne `published`-Feld beim ersten Laden nach diesem Update behandelt? Empfehlung für `/architecture`: fehlendes Feld → als `true` interpretieren (Bestandsschutz, kein plötzliches Verschwinden aus der Play-Liste) — sollte in der Architektur-Phase bestätigt werden.
+- [x] Wie werden bereits gespeicherte Quests ohne `published`-Feld beim ersten Laden nach diesem Update behandelt? → Gelöst in `/architecture`: Eine `isPublished()`-Prüfung liest das Feld mit Fallback `true`, wenn es fehlt — bestehende Quests bleiben ohne Zutun weiterhin in der Play-Liste sichtbar. Siehe Tech Design.
 - [ ] Wie erzwingt PROJ-9 (JSON-Export, noch nicht spezifiziert) die Regel "Export setzt Veröffentlicht voraus" technisch (z.B. Export-Button deaktiviert bei unveröffentlichten Quests)? Wird bei `/write-spec PROJ-9` aufgegriffen.
 
 ## Decision Log
@@ -133,6 +133,13 @@ Die zentrale Verwaltungsansicht im Creator-Modus (`/create`): Nutzer sehen alle 
 | Löschen kombiniert zwei bestehende Funktionen (Quest löschen + Fortschritt löschen) | Kein neuer Storage-Mechanismus nötig — nutzt `deleteQuest` (PROJ-2) und `deleteProgress` (PROJ-3) direkt hintereinander | 2026-08-27 |
 | Neue `QuestManagementCard`-Komponente statt Wiederverwendung von `QuestCard` | `QuestCard` ist auf den Player-Kontext zugeschnitten (Live/Done-Status, Play-Link) — der Creator braucht ein Aktionen-Menü (Umbenennen/Löschen) statt einer Fortschrittsanzeige | 2026-08-27 |
 | Sortierung rein über vorhandenes `lastModified`-Feld | Kein zusätzlicher Speicherbedarf, Feld existiert bereits im Quest-Schema (PROJ-2) | 2026-08-27 |
+| `published` wird NICHT Teil des strikten `questSchema` (Import/Export-Vertrag) | Der Veröffentlicht-Status ist lokal/geräte-spezifisch, keine Eigenschaft der teilbaren Quest-Datei — Import-Dateien kennen das Feld nicht und sollen es auch nicht kennen müssen. Hält Vollständigkeits-Prüfung (`isQuestComplete`) und Veröffentlicht-Status sauber getrennt, wie von der Spec gefordert (Menüpunkt ist bei unvollständigen Quests deaktiviert, nicht abhängig vom Publish-Status) | 2026-08-27 |
+| Neue `isPublished()`-Prüfung (Fallback `true` bei fehlendem Feld) statt eines Pflichtfelds | Gleiches Muster wie `isQuestComplete()` — eine abgeleitete Prüfung statt eines rohen Feldzugriffs. Der Fallback löst die Altbestand-Frage ohne Migrationsschritt: Quests, die vor diesem Feature gespeichert wurden, haben kein `published`-Feld und gelten automatisch als veröffentlicht | 2026-08-27 |
+| Zwei explizite Schreibpfade statt eines globalen Defaults: `createDraftQuest()` setzt `published: false`, die Import-Pipeline setzt `published: true` | Neuer Code setzt das Feld immer explizit — der `isPublished()`-Fallback greift ausschließlich für alten, vor diesem Feature gespeicherten Bestand, nie für neu geschriebene Quests | 2026-08-27 |
+| Neue Funktion `publishQuest(id)`, symmetrisch zu `renameQuest(id, name)` | Konsistent mit dem bestehenden Storage-Layer-Muster — setzt `published: true` und aktualisiert `lastModified` über denselben `saveQuest`-Mechanismus | 2026-08-27 |
+| `/play/page.tsx` filtert die Quest-Liste einmalig ganz am Anfang nach `isPublished()`, vor der bestehenden Live/Neu/Fertig-Statusberechnung | Minimaler, chirurgischer Eingriff in bereits deployten Code — alles danach (Filter-Tabs, Sortierung, Fortschrittsanzeige) bleibt unverändert und arbeitet einfach auf einer kleineren, vorgefilterten Menge | 2026-08-27 |
+| `QuestManagementCard` bekommt zwei separate Booleans (`isComplete`, `isPublished`) statt eines einzigen `isDraft`-Flags | Das "Entwurf"-Badge braucht die ODER-Verknüpfung beider Zustände, aber der "Veröffentlichen"-Menüpunkt braucht sie einzeln (deaktiviert nur bei `!isComplete`, komplett ausgeblendet bei `isPublished`) — eine Komponente kann beide Anzeigen aus den zwei Rohwerten ableiten, ein einzelnes gemischtes Flag könnte das nicht mehr eindeutig | 2026-08-27 |
+| Kein Bestätigungsdialog beim Veröffentlichen | Anders als Löschen ist Veröffentlichen zwar einmalig, aber nicht destruktiv (kein Datenverlust) — passt nicht in die PRD-Vorgabe "Bestätigungsdialog bei kritischen Aktionen", die bislang ausschließlich für Löschen gilt | 2026-08-27 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
@@ -207,6 +214,67 @@ Keine neuen Pakete nötig. Alles Benötigte ist bereits installiert oder Teil de
 - shadcn Dialog + AlertDialog — bereits im Projekt verwendet
 - Sonner/Toast — Erfolgs-/Fehlermeldungen, bereits verwendet
 - Eingebaute Browser-Funktion zur eindeutigen ID-Erzeugung — kein Paket nötig
+
+---
+
+## Tech Design — Refinement: Veröffentlichen (2026-08-27)
+
+Ergänzt das ursprüngliche Tech Design um das "Veröffentlichen"-Konzept aus dem `/refine`-Durchlauf. Betrifft drei bereits bestehende Bausteine (Datenmodell, Creator-Karte, Play-Liste), keine neue Seite und keine neue Kernkomponente.
+
+### Komponenten-Struktur (Ergänzung)
+
+```
+QuestManagementCard (bestehend, erweitert)
+├── "Entwurf"-Badge — jetzt sichtbar bei: unvollständig ODER vollständig-aber-unveröffentlicht
+└── Aktionen-Menü — neuer dritter Eintrag "Veröffentlichen", oberhalb von Umbenennen/Löschen
+    ├── Zustand "ausgeblendet" — Quest ist bereits veröffentlicht
+    ├── Zustand "deaktiviert" — Quest ist unvollständig
+    └── Zustand "aktiv" — Quest ist vollständig und unveröffentlicht
+
+/play (Page, PROJ-3, bereits deployed) — ein Filterschritt ergänzt
+└── Quest-Liste — zeigt nur noch Quests mit Status "veröffentlicht"
+    └── Alles danach (Live/Neu/Fertig-Tabs, Sortierung, Fortschrittsanzeige) unverändert
+```
+
+### Daten-Architektur (Ergänzung)
+
+**Zentrale Entscheidung:** `published` wird ein neues Feld auf der gespeicherten Quest, aber bewusst **kein Teil des strikten `questSchema`** (der Regel für Import-/Export-Dateien aus PROJ-2). Begründung: Der Veröffentlicht-Status ist eine lokale, geräte-spezifische Eigenschaft — er beschreibt, ob *dieser Ersteller auf diesem Gerät* die Quest freigegeben hat, nicht eine Eigenschaft der Quest-Datei selbst. Eine importierte Datei kennt dieses Feld nicht und muss es auch nicht kennen.
+
+Das hält zwei bisher getrennte Konzepte sauber getrennt:
+- **Vollständigkeit** (`isQuestComplete`) — hat die Quest alle Pflichtfelder? Rein strukturell, ändert sich nicht durch Veröffentlichen.
+- **Veröffentlicht** (`isPublished`, neu) — hat der Ersteller die fertige Quest freigegeben? Rein manuell, unabhängig von weiteren Bearbeitungen.
+
+Beide zusammen ergeben das "Entwurf"-Badge (`!vollständig ODER !veröffentlicht`), aber der "Veröffentlichen"-Menüpunkt braucht sie einzeln: deaktiviert nur bei Unvollständigkeit, ausgeblendet nur bei bereits erfolgtem Veröffentlichen.
+
+**Umgang mit Bestandsdaten:** Eine neue `isPublished()`-Prüfung liest das Feld mit einem Fallback auf `true`, wenn es fehlt. Das löst die Frage nach bereits gespeicherten Quests aus der Zeit vor diesem Feature ohne Migrationsschritt — sie bleiben automatisch sichtbar in der Play-Liste, genau wie bisher.
+
+Zwei Schreibpfade setzen das Feld ab sofort explizit:
+- Neu angelegte Quests (`createDraftQuest`) → `published: false`
+- Per Datei importierte Quests (PROJ-2-Import-Pipeline) → `published: true` (bewahrt "Import und sofort spielen")
+
+Eine neue Storage-Funktion `publishQuest(id)` — symmetrisch zum bestehenden `renameQuest(id, name)` — setzt `published: true` und aktualisiert `lastModified` über denselben `saveQuest`-Mechanismus wie jede andere Änderung.
+
+Die Play-Liste (PROJ-3) bekommt einen einzigen zusätzlichen Filterschritt ganz am Anfang der Datenverarbeitung: nur Quests mit `isPublished(quest) === true` werden überhaupt betrachtet. Alles, was danach passiert (Live/Neu/Fertig-Filter-Tabs, Sortierung, Fortschritts-Badges), bleibt technisch unverändert — es arbeitet einfach auf einer kleineren, vorgefilterten Menge.
+
+### UI/Interaktions-Entscheidungen (Ergänzung)
+
+- Kein Bestätigungsdialog beim Veröffentlichen (anders als beim Löschen) — die Aktion ist zwar einmalig, aber nicht destruktiv, es geht keine Daten verloren
+- Erfolgsmeldung als Toast, konsistent mit "Quest umbenannt"
+- Menüpunkt-Reihenfolge: Veröffentlichen, Umbenennen, Löschen — die vorwärtsgerichtete Aktion zuerst, die destruktive zuletzt
+
+### Wiederverwendete vs. neue Bausteine (Ergänzung)
+
+| Baustein | Status |
+|----------|--------|
+| `publishQuest()` (Storage-Funktion) | 🆕 Neu, aber strukturell identisch zu `renameQuest()` |
+| `isPublished()`-Prüfung | 🆕 Neu, gleiches Muster wie `isQuestComplete()` |
+| `saveQuest`, Toast-Erfolgsmeldung | ♻️ Wiederverwendet, unverändert |
+| `QuestManagementCard`-Aktionen-Menü (shadcn DropdownMenu) | ♻️ Erweitert um einen dritten Eintrag |
+| `/play/page.tsx`-Datenverarbeitung (Filter-Tabs, Sortierung) | ♻️ Unverändert, bekommt nur einen vorgeschalteten Filterschritt |
+
+### Dependencies (Ergänzung)
+
+Keine neuen Pakete — alles läuft über bereits vorhandene Bausteine (Zod bleibt unverändert, da `published` bewusst nicht Teil des Zod-Schemas wird).
 
 ## Implementation Notes (Frontend)
 
