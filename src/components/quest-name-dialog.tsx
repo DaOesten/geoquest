@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { stripHtmlTags } from "@/lib/sanitize";
 
 interface QuestNameDialogProps {
   open: boolean;
@@ -45,12 +46,15 @@ export function QuestNameDialog({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const trimmed = value.trim();
-    if (!trimmed) {
+    // Validate against the sanitized value — a name made only of HTML tags (e.g.
+    // "<b></b>") passes a raw trim() check but collapses to "" once stripHtmlTags()
+    // runs on save, so checking the raw value alone would let an empty name through.
+    const sanitized = stripHtmlTags(value).trim();
+    if (!sanitized) {
       setError("Der Name darf nicht leer sein.");
       return;
     }
-    onConfirm(trimmed);
+    onConfirm(sanitized);
   }
 
   return (

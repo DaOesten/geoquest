@@ -26,8 +26,8 @@ export function QuestManagementFilterTabs({ active, onChange }: QuestManagementF
             onClick={() => onChange(tab.value)}
             className={
               isActive
-                ? "px-4 py-2 rounded-pill bg-primary text-primary-foreground text-tech text-[10px] tracking-[0.12em] font-bold shadow-[0_0_0_1px_hsl(var(--primary)/0.35),0_0_18px_hsl(var(--primary)/0.35)] transition-all duration-fast ease-gq"
-                : "px-4 py-2 rounded-pill border border-border text-muted-foreground text-tech text-[10px] tracking-[0.12em] font-bold transition-all duration-fast ease-gq hover:text-primary hover:border-primary"
+                ? "min-h-11 inline-flex items-center px-4 rounded-pill bg-primary text-primary-foreground text-tech text-[10px] tracking-[0.12em] font-bold shadow-[0_0_0_1px_hsl(var(--primary)/0.35),0_0_18px_hsl(var(--primary)/0.35)] transition-all duration-fast ease-gq"
+                : "min-h-11 inline-flex items-center px-4 rounded-pill border border-border text-muted-foreground text-tech text-[10px] tracking-[0.12em] font-bold transition-all duration-fast ease-gq hover:text-primary hover:border-primary"
             }
           >
             {tab.label}

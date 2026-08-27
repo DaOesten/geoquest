@@ -235,6 +235,16 @@ Header und Headline analog zum Player-Vorbild (`/play`) angepasst:
 - Verifiziert per Playwright/WebKit-Screenshot in beiden Zuständen (leer/gefüllt), keine Konsolenfehler.
 - Kurz ergänzt um ein Lime-Stift-Icon (`Pencil`) vor der Headline, direkt danach wieder entfernt — in Lime auf dem hellen Creator-Hintergrund schlecht lesbar/zu dünn. Headline bleibt ohne Icon.
 
+### Bugfix-Pass (2026-08-27, nach /qa)
+
+Alle drei in der QA gefundenen Bugs behoben:
+
+- **BUG-1 (Medium, HTML-only-Name):** `quest-name-dialog.tsx` validiert jetzt den bereits mit `stripHtmlTags()` bereinigten Wert statt des rohen Eingabewerts — ein Name wie `<b></b>` löst denselben "Der Name darf nicht leer sein"-Fehler aus wie ein leeres Feld, statt eine Quest mit leerem Namen zu speichern. `onConfirm` erhält jetzt direkt den sanitisierten Namen.
+- **BUG-2 (Low, Touch-Targets):** Filter-Tabs (`quest-management-filter-tabs.tsx` UND, für Konsistenz zwischen den Modi, `quest-filter-tabs.tsx` im Player) nutzen jetzt `min-h-11` statt reinem vertikalem Padding — garantiert 44px unabhängig von Font-Metriken, statt sich auf geschätzte `py-*`-Werte zu verlassen.
+- **BUG-3 (Low, Crash bei kaputten Daten):** `quest-storage.ts` bekommt eine `normalizeQuest()`-Funktion, die jeden aus `localStorage` gelesenen Eintrag defensiv absichert (fehlende `stations`/`intro`/`outro`/Modul-Arrays werden mit leeren Defaults aufgefüllt, Einträge ganz ohne `id` werden verworfen) — greift in `getAllQuests()`. Wichtiger Fund dabei: `use-quests.ts`s `getSnapshot()` (der Pfad für den *ersten* Render) parste `localStorage` bisher direkt selbst und umging damit `getAllQuests()` komplett — behoben, indem `getSnapshot()` jetzt ebenfalls `getAllQuests()` verwendet. Ohne diese zweite Änderung hätte der Fix nur beim manuellen `refreshQuests()` gegriffen, nicht beim ersten Laden der Seite — genau der Pfad, der in der QA gecrasht ist.
+
+**Tests:** 4 neue Unit-Tests in `quest-storage.test.ts` (fehlende ID wird verworfen, fehlende `stations`/`intro`/`outro` normalisiert, fehlende `modules` normalisiert, weiterhin `[]` bei kaputtem JSON) + 3 neue E2E-Regressionstests in `tests/proj-6-creator-quest-verwaltung.spec.ts` (je einer pro Bug). `npm run build`/`lint`/`test` grün (88/88 Unit-Tests), alle 15 E2E-Tests grün auf "Mobile Safari". Alle drei Fixes zusätzlich manuell per Playwright/WebKit-Screenshot gegengeprüft, inkl. Bestätigung, dass BUG-3 auch auf `/play` behoben ist (derselbe `getAllQuests()`-Fix schützt beide Seiten).
+
 ## QA Test Results
 
 **Tested:** 2026-08-27

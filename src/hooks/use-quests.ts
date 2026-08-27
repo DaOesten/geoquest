@@ -15,7 +15,10 @@ function getSnapshot(): Quest[] {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (raw !== cachedRaw) {
     cachedRaw = raw;
-    cachedQuests = raw ? JSON.parse(raw) : EMPTY_QUESTS;
+    // Routes through getAllQuests() rather than JSON.parse-ing raw here, so a
+    // malformed/corrupted entry gets normalized (or dropped) instead of crashing
+    // the page on first render.
+    cachedQuests = raw ? getAllQuests() : EMPTY_QUESTS;
   }
   return cachedQuests;
 }

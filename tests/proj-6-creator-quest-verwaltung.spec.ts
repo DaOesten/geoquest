@@ -123,6 +123,19 @@ test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
       await expect(page.locator("#quest-name")).not.toBeVisible();
       await expect(page.getByText("Noch keine Quests erstellt")).toBeVisible();
     });
+
+    test("BUG-1 regression: a name made only of HTML tags is rejected instead of saving as empty", async ({ page }) => {
+      await gotoEmptyCreate(page);
+      await page.getByRole("button", { name: "Neue Quest erstellen" }).click();
+      await page.locator("#quest-name").fill("<b></b>");
+      await page.getByRole("button", { name: "Erstellen" }).click();
+
+      await expect(page.getByText("Der Name darf nicht leer sein.")).toBeVisible();
+      await expect(page).toHaveURL("/create");
+      await expect(page.getByText("Noch keine Quests erstellt")).toBeVisible();
+      const stored = await page.evaluate(() => localStorage.getItem("gq_quests"));
+      expect(stored).toBeNull();
+    });
   });
 
   test.describe("Entwurf-Kennzeichnung", () => {
@@ -210,6 +223,31 @@ test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
 
       await page.getByRole("tab", { name: "Alle" }).click();
       await expect(page.locator("li")).toHaveCount(2);
+    });
+
+    test("BUG-2 regression: filter tabs meet the 44px touch-target minimum", async ({ page }) => {
+      await seedQuests(page, [draftQuest(DRAFT_ID, "Irgendeine Quest", "2026-01-01T00:00:00.000Z")]);
+
+      const box = await page.getByRole("tab", { name: "Alle" }).boundingBox();
+      expect(box?.height).toBeGreaterThanOrEqual(44);
+    });
+  });
+
+  test.describe("Robustheit", () => {
+    test("BUG-3 regression: a stored quest missing 'stations' is dropped/normalized instead of crashing the page", async ({ page }) => {
+      await page.goto("/create");
+      await page.evaluate(() => {
+        localStorage.setItem("gq_first_visit_done", "true");
+        // Simulates corrupted/very old data — no "stations" field at all.
+        localStorage.setItem("gq_quests", JSON.stringify([
+          { version: 1, id: "legacy-broken", name: "Kaputte Quest", lastModified: new Date().toISOString(), intro: { text: "" }, outro: { text: "" } },
+        ]));
+      });
+      await page.reload();
+
+      await expect(page.getByText("Application error", { exact: false })).not.toBeVisible();
+      await expect(page.getByText("Kaputte Quest")).toBeVisible();
+      await expect(page.getByText("0 Stationen")).toBeVisible();
     });
   });
 

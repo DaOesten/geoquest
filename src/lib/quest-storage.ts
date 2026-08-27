@@ -3,11 +3,46 @@ import { stripHtmlTags } from "./sanitize";
 
 const STORAGE_KEY = "gq_quests";
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+/**
+ * Coerces a raw parsed localStorage entry into a renderable Quest shape, or
+ * drops it (returns null) if it's missing what's needed to even identify it.
+ * Storage is never re-validated against the strict questSchema here — a draft
+ * quest is intentionally incomplete (see createDraftQuest) — this only guards
+ * the array/object accesses (`quest.stations.length`, `station.modules`, …)
+ * that would otherwise crash the whole page on a corrupted or very old entry.
+ */
+function normalizeQuest(raw: unknown): Quest | null {
+  if (!isRecord(raw) || typeof raw.id !== "string") return null;
+
+  const intro = isRecord(raw.intro) && typeof raw.intro.text === "string" ? raw.intro : { text: "" };
+  const outro = isRecord(raw.outro) && typeof raw.outro.text === "string" ? raw.outro : { text: "" };
+  const stations = Array.isArray(raw.stations)
+    ? raw.stations.filter(isRecord).map((station) => ({
+        ...station,
+        modules: Array.isArray(station.modules) ? station.modules : [],
+      }))
+    : [];
+
+  return {
+    ...raw,
+    name: typeof raw.name === "string" ? raw.name : "",
+    intro,
+    outro,
+    stations,
+  } as Quest;
+}
+
 export function getAllQuests(): Quest[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
-    return JSON.parse(raw) as Quest[];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map(normalizeQuest).filter((q): q is Quest => q !== null);
   } catch {
     return [];
   }

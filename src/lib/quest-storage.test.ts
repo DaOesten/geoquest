@@ -84,6 +84,35 @@ describe("quest-storage", () => {
       expect(() => saveQuest(completeQuest)).toThrow("Speicher voll. Lösche eine Quest und versuche es erneut.");
       vi.stubGlobal("localStorage", mockLocalStorage);
     });
+
+    it("drops a stored entry with no id instead of returning it broken", () => {
+      store.set("gq_quests", JSON.stringify([{ name: "Ohne ID" }, completeQuest]));
+      const all = getAllQuests();
+      expect(all).toHaveLength(1);
+      expect(all[0].id).toBe(completeQuest.id);
+    });
+
+    it("normalizes a stored entry missing stations/intro/outro instead of crashing on it", () => {
+      store.set("gq_quests", JSON.stringify([{ id: "legacy-1", name: "Alte Quest" }]));
+      const all = getAllQuests();
+      expect(all).toHaveLength(1);
+      expect(all[0].stations).toEqual([]);
+      expect(all[0].intro).toEqual({ text: "" });
+      expect(all[0].outro).toEqual({ text: "" });
+    });
+
+    it("normalizes a station missing modules instead of crashing on it", () => {
+      store.set("gq_quests", JSON.stringify([
+        { id: "legacy-2", name: "Quest", stations: [{ id: "s1", name: "Station ohne Module" }] },
+      ]));
+      const all = getAllQuests();
+      expect(all[0].stations[0].modules).toEqual([]);
+    });
+
+    it("still returns [] for syntactically invalid JSON", () => {
+      store.set("gq_quests", "not-json{{{");
+      expect(getAllQuests()).toEqual([]);
+    });
   });
 
   describe("createDraftQuest", () => {

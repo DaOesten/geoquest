@@ -27,8 +27,8 @@ export function QuestFilterTabs({ active, onChange }: QuestFilterTabsProps) {
             onClick={() => onChange(tab.value)}
             className={
               isActive
-                ? "px-4 py-2 rounded-pill bg-gq-teal text-gq-black text-tech text-[10px] tracking-[0.12em] font-bold shadow-glow transition-all duration-fast ease-gq"
-                : "px-4 py-2 rounded-pill border border-border text-gq-grey text-tech text-[10px] tracking-[0.12em] font-bold transition-all duration-fast ease-gq hover:text-gq-teal hover:border-gq-teal"
+                ? "min-h-11 inline-flex items-center px-4 rounded-pill bg-gq-teal text-gq-black text-tech text-[10px] tracking-[0.12em] font-bold shadow-glow transition-all duration-fast ease-gq"
+                : "min-h-11 inline-flex items-center px-4 rounded-pill border border-border text-gq-grey text-tech text-[10px] tracking-[0.12em] font-bold transition-all duration-fast ease-gq hover:text-gq-teal hover:border-gq-teal"
             }
           >
             {tab.label}
