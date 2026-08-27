@@ -1,6 +1,6 @@
 # PROJ-6: Creator — Quest-Verwaltung
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-08-27
 **Last Updated:** 2026-08-27
 
@@ -377,4 +377,20 @@ Alle drei in der QA gefundenen Bugs behoben:
 - **Recommendation:** Deploy. Alle drei vom Nutzer angeforderten Fixes sind verifiziert, keine neuen Regressionen gefunden. Einzige offene Einschränkung: Chromium-Cross-Browser-Testing konnte in dieser Sandbox nicht durchgeführt werden (Umgebungs-, kein Produktproblem) — die Chromium-E2E-Projektkonfiguration ist unverändert und unabhängig von den Fixes.
 
 ## Deployment
-_To be added by /deploy_
+
+**Production URL:** https://geoquesty.vercel.app
+**Deployed:** 2026-08-27
+**Platform:** Vercel (auto-deploy on push to main)
+**Commit:** 803eaf2
+**Tag:** v1.6.0-PROJ-6
+
+**Pre-Deployment Checks:**
+- `npm run build` ✓ · `npm run lint` ✓ (0 Fehler) · `npm test` ✓ (88/88)
+- Keine neuen Umgebungsvariablen, keine Secrets im Diff
+- Working Tree sauber (bis auf unabhängiges `design-preparation/`), 5 Commits nach `origin/main` gepusht
+
+**Post-Deployment-Verifikation (live auf Production):**
+- `/`, `/play`, `/create` → alle HTTP 200
+- HTML-Response von `/create` bestätigt den neuen Build (Headline "Create" vorhanden, alter Header-Titel "Meine Quests" verschwunden)
+- Browser-Smoke-Test (Playwright/WebKit) direkt gegen die Produktions-URL: Empty State → Neue Quest erstellen → Navigation zu `/create/[id]` → zurück zur Liste → Quest sichtbar mit Entwurf-Badge → Filter-Tab-Höhe 44px (BUG-2-Fix live bestätigt) → FAB öffnet Mini-Aktionen → HTML-only-Name (`<b></b>`) wird korrekt abgelehnt (BUG-1-Fix live bestätigt) — keine Konsolenfehler
+- Sicherheits-Header (next.config) und Error-Tracking wurden für dieses Projekt bisher bei keinem der vorherigen Deploys eingerichtet (PROJ-1–5) — bewusst außerhalb des Scopes von PROJ-6 belassen, keine Regression
