@@ -1,6 +1,6 @@
 # PROJ-6: Creator — Quest-Verwaltung
 
-## Status: In Review
+## Status: Approved
 **Created:** 2026-08-27
 **Last Updated:** 2026-08-27
 
@@ -301,7 +301,7 @@ Alle drei in der QA gefundenen Bugs behoben:
 
 ### Bugs Found
 
-#### BUG-1: HTML-only-Name umgeht die Pflichtfeld-Validierung und speichert eine Quest mit leerem Namen
+#### BUG-1: HTML-only-Name umgeht die Pflichtfeld-Validierung und speichert eine Quest mit leerem Namen — ✅ FIXED (siehe Re-Verifikation unten)
 - **Severity:** Medium
 - **Steps to Reproduce:**
   1. "Neue Quest erstellen" (oder "Umbenennen") öffnen
@@ -313,7 +313,7 @@ Alle drei in der QA gefundenen Bugs behoben:
 - **Screenshot:** siehe Implementation Notes — visuell bestätigt (leere Kartentitel-Zeile, leerer Name im Lösch-Dialog)
 - **Priority:** Fix before deployment (verletzt eine explizite Acceptance-Criterion in ihrem Kern, auch wenn der Trigger ungewöhnlich ist)
 
-#### BUG-2: Filter-Tabs ("Alle"/"Entwurf") unterschreiten die 44px-Touch-Target-Vorgabe
+#### BUG-2: Filter-Tabs ("Alle"/"Entwurf") unterschreiten die 44px-Touch-Target-Vorgabe — ✅ FIXED (siehe Re-Verifikation unten)
 - **Severity:** Low
 - **Steps to Reproduce:**
   1. `/create` mit mind. 1 Quest öffnen
@@ -324,7 +324,7 @@ Alle drei in der QA gefundenen Bugs behoben:
 - **Empfohlener Fix:** Vertikales Padding erhöhen (z.B. `py-3`); der Konsistenz halber am besten zusammen mit der Player-Variante in einem eigenen Follow-up angepasst, nicht isoliert nur hier.
 - **Priority:** Nice to have (nicht PROJ-6-spezifisch verursacht, betrifft aber auch diese neue Komponente)
 
-#### BUG-3: Ein Quest-Objekt mit fehlendem Pflichtfeld (z.B. `stations`) lässt die gesamte Seite abstürzen
+#### BUG-3: Ein Quest-Objekt mit fehlendem Pflichtfeld (z.B. `stations`) lässt die gesamte Seite abstürzen — ✅ FIXED (siehe Re-Verifikation unten)
 - **Severity:** Low
 - **Steps to Reproduce:**
   1. In der Konsole ein Quest-Objekt ohne `stations`-Feld in `gq_quests` schreiben (simuliert defekte/sehr alte Daten)
@@ -356,12 +356,25 @@ Alle drei in der QA gefundenen Bugs behoben:
 ### E2E Tests (neu)
 `tests/proj-6-creator-quest-verwaltung.spec.ts` — 12 Tests, je AC-Gruppe mind. ein Test (Liste, Neue Quest ×3, Entwurf-Kennzeichnung, Umbenennen ×2, Löschen ×2, Filter, FAB). Alle grün auf "Mobile Safari".
 
+### Re-Verifikation nach Bugfix-Pass (2026-08-27)
+
+**Getestet nach:** `fix(PROJ-6)`-Commit `fea30e6`
+
+- **BUG-1:** E2E-Regressionstest "a name made only of HTML tags is rejected instead of saving as empty" ✅ grün. Manuell erneut geprüft: `<b></b>` als Name → "Der Name darf nicht leer sein.", keine Navigation, `localStorage.getItem("gq_quests")` bleibt `null`.
+- **BUG-2:** E2E-Regressionstest misst die Tab-Höhe direkt (`boundingBox().height`) ✅ 44px (vorher 33px). Fix betrifft `quest-management-filter-tabs.tsx` UND `quest-filter-tabs.tsx` (Player) — für beide verifiziert.
+- **BUG-3:** E2E-Regressionstest seedet eine Quest ohne `stations`-Feld und prüft, dass weder ein Application-Error erscheint noch die Seite leer bleibt ✅ grün. Zusätzlich manuell auf `/play` gegengeprüft (derselbe `getAllQuests()`-Fix) — Quest erscheint dort ebenfalls tolerant als "0 Ziele" statt die Seite abstürzen zu lassen.
+- **Vollständige PROJ-6-Suite:** 15/15 E2E-Tests grün auf "Mobile Safari" (12 ursprüngliche + 3 neue Bug-Regressionstests).
+- **Unit-Tests:** 88/88 grün (4 neue Tests für `normalizeQuest`-Verhalten in `getAllQuests()`).
+- **Regressionstest (voller bestehender Suite):** 78/94 E2E-Tests grün auf "Mobile Safari" (94 = 91 bestehende + 3 neue). Die 16 Fehlschläge sind exakt dieselben wie vor dem Bugfix-Pass (PROJ-1/3/4-Tests, vorbestehende Umgebungs-Flakiness, bereits in der ersten QA-Runde per `git stash` als nicht PROJ-6-bedingt verifiziert) — keine neuen Regressionen durch die Fixes.
+- **Build:** `npm run build` ✓ · `npm run lint` ✓ (0 Fehler) · `npm test` ✓ (88/88)
+- **Cross-Browser:** Weiterhin nur WebKit in dieser Sandbox verifizierbar (Chromium-Download trotz erneutem Versuch nicht erfolgreich — Umgebungs-Einschränkung, siehe oben).
+
 ### Summary
 - **Acceptance Criteria:** 13/13 passed
-- **Bugs Found:** 3 total (0 critical, 0 high, 1 medium, 2 low)
-- **Security:** Pass (mit BUG-1 als nicht-sicherheitsrelevantem Validierungs-Hinweis)
-- **Production Ready:** YES (keine Critical/High-Bugs)
-- **Recommendation:** Nutzer hat entschieden, alle drei Bugs (BUG-1, BUG-2, BUG-3) vor dem Deploy zu fixen. Status bleibt daher `In Review`, bis der Fix-Pass durch `/frontend` abgeschlossen und mit `/qa` erneut verifiziert wurde.
+- **Bugs Found:** 3 total (0 critical, 0 high, 1 medium, 2 low) — **alle 3 gefixt und re-verifiziert**
+- **Security:** Pass
+- **Production Ready:** YES
+- **Recommendation:** Deploy. Alle drei vom Nutzer angeforderten Fixes sind verifiziert, keine neuen Regressionen gefunden. Einzige offene Einschränkung: Chromium-Cross-Browser-Testing konnte in dieser Sandbox nicht durchgeführt werden (Umgebungs-, kein Produktproblem) — die Chromium-E2E-Projektkonfiguration ist unverändert und unabhängig von den Fixes.
 
 ## Deployment
 _To be added by /deploy_
