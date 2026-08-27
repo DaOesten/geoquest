@@ -1,11 +1,8 @@
 import { z } from "zod";
 import { questSchema, type Quest } from "./quest-schema";
+import { stripHtmlTags } from "./sanitize";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
-
-function stripHtmlTags(str: string): string {
-  return str.replace(/<[^>]*>/g, "");
-}
 
 function sanitizeQuest(quest: Quest): Quest {
   function sanitizeString(val: unknown): string {

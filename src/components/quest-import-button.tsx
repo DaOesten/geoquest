@@ -19,9 +19,11 @@ interface QuestImportButtonProps {
   variant?: "dark" | "light";
   floating?: boolean;
   onImportSuccess?: () => void;
+  /** Overrides the built-in button markup (used to fold the trigger into a custom control, e.g. an expandable FAB) while still reusing the file input, import pipeline, and overwrite dialog below. */
+  renderTrigger?: (opts: { onClick: () => void; disabled: boolean }) => React.ReactNode;
 }
 
-export function QuestImportButton({ variant = "dark", floating = false, onImportSuccess }: QuestImportButtonProps) {
+export function QuestImportButton({ variant = "dark", floating = false, onImportSuccess, renderTrigger }: QuestImportButtonProps) {
   const {
     state,
     fileInputRef,
@@ -58,7 +60,9 @@ export function QuestImportButton({ variant = "dark", floating = false, onImport
 
   return (
     <>
-      {floating ? (
+      {renderTrigger ? (
+        renderTrigger({ onClick: triggerFilePicker, disabled: state.status === "processing" })
+      ) : floating ? (
         <button
           type="button"
           onClick={triggerFilePicker}
@@ -93,7 +97,10 @@ export function QuestImportButton({ variant = "dark", floating = false, onImport
       />
 
       <AlertDialog open={state.status === "confirm-overwrite"} onOpenChange={(open) => { if (!open) cancelOverwrite(); }}>
-        <AlertDialogContent>
+        {/* Radix portals to <body>, outside the page's themed container — re-apply the theme and its text color
+            here (color is otherwise inherited pre-computed from <body>'s dark default) so descendants without
+            their own explicit color class render correctly. */}
+        <AlertDialogContent data-theme={variant} className="text-foreground">
           <AlertDialogHeader>
             <AlertDialogTitle>Quest überschreiben?</AlertDialogTitle>
             <AlertDialogDescription>
