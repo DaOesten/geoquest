@@ -6,20 +6,22 @@ import type { Quest } from "@/lib/quest-schema";
 
 const STORAGE_KEY = "gq_quests";
 
-let cachedQuests: Quest[] = [];
+const EMPTY_QUESTS: Quest[] = [];
+
+let cachedQuests: Quest[] = EMPTY_QUESTS;
 let cachedRaw: string | null = null;
 
 function getSnapshot(): Quest[] {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (raw !== cachedRaw) {
     cachedRaw = raw;
-    cachedQuests = raw ? JSON.parse(raw) : [];
+    cachedQuests = raw ? JSON.parse(raw) : EMPTY_QUESTS;
   }
   return cachedQuests;
 }
 
 function getServerSnapshot(): Quest[] {
-  return [];
+  return EMPTY_QUESTS;
 }
 
 function subscribe(callback: () => void): () => void {

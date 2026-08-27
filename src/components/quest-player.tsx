@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import type { Quest } from "@/lib/quest-schema";
 import { useGeolocation } from "@/hooks/use-geolocation";
 import { useDeviceOrientation } from "@/hooks/use-device-orientation";
@@ -10,14 +11,16 @@ import { IntroScreen } from "./intro-screen";
 import { StationList } from "./station-list";
 import { NavigationScreen } from "./navigation-screen";
 import { StationModules } from "./station-modules";
+import { OutroScreen } from "./outro-screen";
 
-type Screen = "permission" | "intro" | "stations" | "navigation" | "modules";
+type Screen = "permission" | "intro" | "stations" | "navigation" | "modules" | "outro";
 
 interface QuestPlayerProps {
   quest: Quest;
 }
 
 export function QuestPlayer({ quest }: QuestPlayerProps) {
+  const router = useRouter();
   const {
     getStationStatus,
     getCurrentStationIndex,
@@ -40,8 +43,8 @@ export function QuestPlayer({ quest }: QuestPlayerProps) {
   const setScreen = useCallback(
     (s: Screen) => {
       setScreenState(s);
-      if (s === "intro" || s === "stations" || s === "modules") {
-        persistScreen(s === "modules" ? "stations" : s);
+      if (s === "intro" || s === "stations" || s === "modules" || s === "outro") {
+        persistScreen(s === "modules" || s === "outro" ? "stations" : s);
       }
     },
     [persistScreen]
@@ -98,10 +101,15 @@ export function QuestPlayer({ quest }: QuestPlayerProps) {
   const handleCompleteStation = useCallback(() => {
     if (viewingModulesIndex === null) return;
     const station = quest.stations[viewingModulesIndex];
+    const isLastStation = viewingModulesIndex === quest.stations.length - 1;
     completeStation(station.id);
     setViewingModulesIndex(null);
-    setScreen("stations");
+    setScreen(isLastStation ? "outro" : "stations");
   }, [viewingModulesIndex, quest.stations, completeStation, setScreen]);
+
+  const handleOutroDone = useCallback(() => {
+    router.push("/play");
+  }, [router]);
 
   const handleSolveTask = useCallback((moduleIndex: number) => {
     if (viewingModulesIndex === null) return;
@@ -177,5 +185,15 @@ export function QuestPlayer({ quest }: QuestPlayerProps) {
         />
       );
     }
+
+    case "outro":
+      return (
+        <OutroScreen
+          quest={quest}
+          completedCount={progress.completedStations.length}
+          totalCount={quest.stations.length}
+          onDone={handleOutroDone}
+        />
+      );
   }
 }

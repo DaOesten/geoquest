@@ -1,0 +1,122 @@
+{
+  "version": 1,
+  "id": "3f9c2a1d-6b7e-4f2a-8c3d-9e0f1a2b3c4d",
+  "name": "Nachts im Stadtpark",
+  "description": "Eine gruselige Nacht-Rallye durch den Stadtpark.",
+  "author": "Die Nachtwache",
+  "lastModified": "2026-08-26T09:00:00.000Z",
+  "estimatedDuration": "60 min",
+  "difficulty": "hard",
+  "intro": {
+    "text": "Wenn die Sonne untergeht, erwacht der Park...\nFolge den Lichtern und finde die 5 verborgenen Orte, bevor die Turmuhr Mitternacht schlägt."
+  },
+  "outro": {
+    "text": "Die Nacht gehört euch!\n- 5 Orte entdeckt\n- Alle Rätsel gelöst\nBis zur nächsten Rallye!"
+  },
+  "stations": [
+    {
+      "id": "3f9c2a1d-6b7e-4f2a-8c3d-9e0f1a2b3c01",
+      "name": "Der Brunnen",
+      "lat": 52.5145,
+      "lng": 13.3501,
+      "radiusMeters": 20,
+      "modules": [
+        {
+          "type": "text",
+          "content": "Am alten Brunnen beginnt eure Reise.\n- Er ist aus grauem Stein\n- Ein Löwenkopf spuckt Wasser"
+        },
+        {
+          "type": "task",
+          "taskType": "code",
+          "question": "Wie viele Löwenköpfe zählst du am Brunnen?",
+          "answer": "4"
+        }
+      ]
+    },
+    {
+      "id": "3f9c2a1d-6b7e-4f2a-8c3d-9e0f1a2b3c02",
+      "name": "Die Lichtung",
+      "lat": 52.515,
+      "lng": 13.3515,
+      "radiusMeters": 15,
+      "modules": [
+        {
+          "type": "image",
+          "url": "https://example.com/lichtung.jpg",
+          "caption": "Erkennst du diese Lichtung wieder?"
+        },
+        {
+          "type": "task",
+          "taskType": "multiple-choice",
+          "question": "Welche Farbe hat die Bank auf der Lichtung?",
+          "options": ["Rot", "Grün", "Blau", "Gelb"],
+          "correctIndices": [1]
+        }
+      ]
+    },
+    {
+      "id": "3f9c2a1d-6b7e-4f2a-8c3d-9e0f1a2b3c03",
+      "name": "Die alte Eisenbahnbrücke",
+      "lat": 52.5158,
+      "lng": 13.3529,
+      "radiusMeters": 25,
+      "modules": [
+        {
+          "type": "audio",
+          "url": "https://example.com/bruecke-geraeusch.mp3",
+          "caption": "Hör genau hin, bevor du weitergehst."
+        },
+        {
+          "type": "task",
+          "taskType": "multiple-choice",
+          "question": "Welche Geräusche hörst du? (Mehrfachauswahl möglich)",
+          "options": ["Eulen", "Zug", "Wasser", "Glocken"],
+          "correctIndices": [0, 2]
+        }
+      ]
+    },
+    {
+      "id": "3f9c2a1d-6b7e-4f2a-8c3d-9e0f1a2b3c04",
+      "name": "Der Aussichtsturm",
+      "lat": 52.5163,
+      "lng": 13.3542,
+      "radiusMeters": 10,
+      "modules": [
+        {
+          "type": "video",
+          "url": "https://example.com/turm-rundgang.mp4",
+          "caption": "So sieht es von oben aus."
+        },
+        {
+          "type": "text",
+          "content": "Von hier oben siehst du fast den ganzen Park."
+        },
+        {
+          "type": "task",
+          "taskType": "sorting",
+          "question": "In welcher Reihenfolge habt ihr die Orte besucht?",
+          "items": ["Brunnen", "Lichtung", "Brücke", "Turm"]
+        }
+      ]
+    },
+    {
+      "id": "3f9c2a1d-6b7e-4f2a-8c3d-9e0f1a2b3c05",
+      "name": "Das Gewächshaus",
+      "lat": 52.5170,
+      "lng": 13.3550,
+      "radiusMeters": 10,
+      "modules": [
+        {
+          "type": "text",
+          "content": "Das letzte Rätsel wartet im alten Gewächshaus.\nSchau genau hin!"
+        },
+        {
+          "type": "task",
+          "taskType": "code",
+          "question": "Welches Wort steht auf dem verwitterten Schild am Eingang?",
+          "answer": "Orangerie"
+        }
+      ]
+    }
+  ]
+}

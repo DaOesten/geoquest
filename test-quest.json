@@ -59,8 +59,8 @@
     {
       "id": "d1b2c3d4-e5f6-7890-abcd-ef1234567893",
       "name": "Das Versteck",
-      "lat": 52.5215,
-      "lng": 13.4070,
+      "lat": 52.5210,
+      "lng": 13.4060,
       "radiusMeters": 10,
       "modules": [
         {

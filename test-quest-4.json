@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "id": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+  "name": "Schatzsuche",
+  "lastModified": "2026-08-26T09:20:00.000Z",
+  "intro": {
+    "text": "Eine ganz kurze Quest mit nur einer Station - perfekt, um den Outro-Screen direkt nach der ersten Station zu testen."
+  },
+  "outro": {
+    "text": "Geschafft! Das war's schon - kurz und knackig.",
+    "mediaUrl": "https://example.com/schatz.jpg",
+    "mediaType": "image"
+  },
+  "stations": [
+    {
+      "id": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c01",
+      "name": "Die Truhe",
+      "lat": 52.5000,
+      "lng": 13.4000,
+      "radiusMeters": 15,
+      "modules": [
+        {
+          "type": "text",
+          "content": "Du hast die Truhe gefunden! Löse noch die letzte Aufgabe."
+        },
+        {
+          "type": "task",
+          "taskType": "code",
+          "question": "Wie viele Stationen hat diese Quest?",
+          "answer": "1"
+        }
+      ]
+    }
+  ]
+}

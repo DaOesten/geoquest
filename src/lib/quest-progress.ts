@@ -37,6 +37,22 @@ export function saveProgress(questId: string, progress: QuestProgress): void {
   }
 }
 
+export function deleteProgress(questId: string): void {
+  try {
+    localStorage.removeItem(getKey(questId));
+  } catch {
+    // localStorage unavailable — silently fail
+  }
+}
+
+export type QuestListStatus = "new" | "live" | "done";
+
+export function getQuestListStatus(progress: QuestProgress | null, totalStations: number): QuestListStatus {
+  if (!progress || progress.visitedStations.length === 0) return "new";
+  if (progress.completedStations.length >= totalStations) return "done";
+  return "live";
+}
+
 export function markStationVisited(questId: string, stationId: string): void {
   const progress = getProgress(questId) ?? {
     visitedStations: [],

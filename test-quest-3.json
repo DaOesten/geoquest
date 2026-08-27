@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "id": "7a1e2b3c-4d5f-4a6b-9c7d-8e9f0a1b2c3d",
+  "name": "Die Ultimative Riesen-Schnitzeljagd durch die komplette Altstadt und den Hafen",
+  "description": "Ein Härtetest für lange Quest-Namen in der Liste und im Player.",
+  "author": "QA-Team",
+  "lastModified": "2026-08-26T09:10:00.000Z",
+  "estimatedDuration": "90 min",
+  "difficulty": "hard",
+  "intro": {
+    "text": "Dies ist eine Test-Quest mit einem besonders langen Namen.\nSie hilft dabei zu prüfen, ob Titel in der Quest-Liste und im Player überall sauber umbrechen oder gekürzt werden, ohne abgeschnitten zu wirken."
+  },
+  "outro": {
+    "text": "Auch mit langem Namen bis zum Schluss durchgehalten!"
+  },
+  "stations": [
+    {
+      "id": "7a1e2b3c-4d5f-4a6b-9c7d-8e9f0a1b2c01",
+      "name": "Das Rathaus mit dem sehr langen Namen für den Zeilenumbruch-Test",
+      "lat": 53.5511,
+      "lng": 9.9937,
+      "radiusMeters": 30,
+      "modules": [
+        {
+          "type": "text",
+          "content": "Auch Stationsnamen können lang werden - hier testen wir das gleich mit."
+        },
+        {
+          "type": "task",
+          "taskType": "code",
+          "question": "Wie viele Buchstaben hat das Wort 'Rathaus'?",
+          "answer": "7"
+        }
+      ]
+    },
+    {
+      "id": "7a1e2b3c-4d5f-4a6b-9c7d-8e9f0a1b2c02",
+      "name": "Der Hafen",
+      "lat": 53.5450,
+      "lng": 9.9843,
+      "radiusMeters": 40,
+      "modules": [
+        {
+          "type": "text",
+          "content": "Letzte Station: der Hafen. Kurzer Name zum Vergleich."
+        },
+        {
+          "type": "task",
+          "taskType": "multiple-choice",
+          "question": "Was legt hier an?",
+          "options": ["Schiffe", "Flugzeuge", "Züge", "Autos"],
+          "correctIndices": [0]
+        }
+      ]
+    }
+  ]
+}
