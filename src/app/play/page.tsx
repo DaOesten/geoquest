@@ -16,13 +16,17 @@ const QuestListBackdrop = dynamic(
 );
 import { useQuests } from "@/hooks/use-quests";
 import { getProgress, deleteProgress, getQuestListStatus, type QuestListStatus } from "@/lib/quest-progress";
+import { isPublished } from "@/lib/quest-storage";
 
 const STATUS_ORDER: Record<QuestListStatus, number> = { live: 0, new: 1, done: 2 };
 
 export default function PlayPage() {
-  const { quests, refreshQuests } = useQuests();
+  const { quests: allQuests, refreshQuests } = useQuests();
   const [filter, setFilter] = useState<QuestFilter>("all");
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // Unpublished quests (still being built/tested in the Creator) aren't playable yet.
+  const quests = useMemo(() => allQuests.filter(isPublished), [allQuests]);
 
   const questsWithStatus = useMemo(() => {
     return quests.map((quest) => {

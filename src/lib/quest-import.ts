@@ -46,6 +46,9 @@ function sanitizeQuest(quest: Quest): Quest {
         return mod;
       }),
     })),
+    // Imported quests keep the pre-PROJ-6 "import and play immediately" behavior —
+    // only quests created in the Creator go through the draft → publish cycle.
+    published: true,
   };
 }
 

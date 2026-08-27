@@ -109,6 +109,13 @@ export const questSchema = z.object({
   stations: z.array(stationSchema).min(1, "Die Quest braucht mindestens eine Station.").max(20, "Maximal 20 Stationen."),
 });
 
-export type Quest = z.infer<typeof questSchema>;
+/**
+ * `published` is intentionally NOT part of questSchema: it's a local,
+ * device-specific flag (has the creator released this quest to the Play
+ * list on this device?), not a property of the shareable quest file — an
+ * imported file doesn't carry it, and it must stay independent of
+ * isQuestComplete()'s structural check. See PROJ-6 Tech Design.
+ */
+export type Quest = z.infer<typeof questSchema> & { published?: boolean };
 export type Station = z.infer<typeof stationSchema>;
 export type Module = z.infer<typeof moduleSchema>;

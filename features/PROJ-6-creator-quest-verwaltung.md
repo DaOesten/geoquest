@@ -1,6 +1,6 @@
 # PROJ-6: Creator — Quest-Verwaltung
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-08-27
 **Last Updated:** 2026-08-27
 
@@ -337,6 +337,26 @@ Alle drei in der QA gefundenen Bugs behoben:
 - **BUG-3 (Low, Crash bei kaputten Daten):** `quest-storage.ts` bekommt eine `normalizeQuest()`-Funktion, die jeden aus `localStorage` gelesenen Eintrag defensiv absichert (fehlende `stations`/`intro`/`outro`/Modul-Arrays werden mit leeren Defaults aufgefüllt, Einträge ganz ohne `id` werden verworfen) — greift in `getAllQuests()`. Wichtiger Fund dabei: `use-quests.ts`s `getSnapshot()` (der Pfad für den *ersten* Render) parste `localStorage` bisher direkt selbst und umging damit `getAllQuests()` komplett — behoben, indem `getSnapshot()` jetzt ebenfalls `getAllQuests()` verwendet. Ohne diese zweite Änderung hätte der Fix nur beim manuellen `refreshQuests()` gegriffen, nicht beim ersten Laden der Seite — genau der Pfad, der in der QA gecrasht ist.
 
 **Tests:** 4 neue Unit-Tests in `quest-storage.test.ts` (fehlende ID wird verworfen, fehlende `stations`/`intro`/`outro` normalisiert, fehlende `modules` normalisiert, weiterhin `[]` bei kaputtem JSON) + 3 neue E2E-Regressionstests in `tests/proj-6-creator-quest-verwaltung.spec.ts` (je einer pro Bug). `npm run build`/`lint`/`test` grün (88/88 Unit-Tests), alle 15 E2E-Tests grün auf "Mobile Safari". Alle drei Fixes zusätzlich manuell per Playwright/WebKit-Screenshot gegengeprüft, inkl. Bestätigung, dass BUG-3 auch auf `/play` behoben ist (derselbe `getAllQuests()`-Fix schützt beide Seiten).
+
+### Veröffentlichen-Refinement umgesetzt (2026-08-27, nach /architecture)
+
+Setzt das Tech Design aus dem `/refine`-Durchlauf 1:1 um.
+
+**Neue/geänderte Dateien:**
+| Datei | Änderung |
+|-------|----------|
+| `src/lib/quest-schema.ts` | `Quest`-Typ um `published?: boolean` erweitert — per Intersection-Type NACH `z.infer<typeof questSchema>`, nicht im Zod-Schema selbst (siehe Tech Design: bleibt außerhalb des Import-/Export-Vertrags) |
+| `src/lib/quest-storage.ts` | + `isPublished()` (Fallback `true`), + `publishQuest(id)` (symmetrisch zu `renameQuest`); `createDraftQuest()` setzt jetzt `published: false` |
+| `src/lib/quest-import.ts` | `sanitizeQuest()` setzt `published: true` auf jede importierte Quest |
+| `src/app/play/page.tsx` | Ein Filterschritt ganz am Anfang: `allQuests.filter(isPublished)` — alles danach (Filter-Tabs, Sortierung, Fortschritt) unverändert |
+| `src/components/quest-management-card.tsx` | Props `isDraft` → `isComplete` + `isPublished` + `onPublish`; neuer Menüpunkt "Veröffentlichen" (Icon: `Rocket`) — ausgeblendet wenn bereits veröffentlicht, deaktiviert wenn unvollständig, sonst aktiv; "Entwurf"-Badge jetzt `!isComplete || !isPublished` |
+| `src/app/create/page.tsx` | Berechnet `isComplete`/`isPublished` pro Quest statt eines einzelnen `isDraft`-Flags; neuer `handlePublish()` (ruft `publishQuest` + `refreshQuests` + Toast "Quest veröffentlicht"); Entwurf-Filter-Tab nutzt dieselbe `!isComplete || !isPublished`-Bedingung |
+
+**Kein Zod-Schema-Update nötig** — `published` ist bewusst kein Feld von `questSchema`, daher bleibt `isQuestComplete()` (das intern `questSchema.safeParse` nutzt) komplett unbeeinflusst vom Publish-Status, genau wie im Tech Design gefordert.
+
+**Tests:** 5 neue Unit-Tests in `quest-storage.test.ts` (`isPublished`-Fallback bei fehlendem Feld, explizit `false`/`true`, `publishQuest` aktualisiert Status + `lastModified`, No-op bei unbekannter ID) + 1 neuer Unit-Test in `quest-import.test.ts` (importierte Quest ist `published: true`). `npm test` grün (95/95).
+
+**Verifikation:** `npm run build`/`lint` grün. Manueller Playwright/WebKit-Durchlauf mit drei Quests (Entwurf 0 Stationen, vollständig-unveröffentlicht, bereits veröffentlicht): Menüzustände korrekt in allen drei Fällen (sichtbar+deaktiviert / sichtbar+aktiv / ausgeblendet), Veröffentlichen setzt Status + zeigt Toast + entfernt Badge, `/play` zeigt danach nur die zwei veröffentlichten Quests und nicht den unveröffentlichten Entwurf. Keine Konsolenfehler. E2E-Testsuite (`tests/proj-6-creator-quest-verwaltung.spec.ts`) wurde für dieses Refinement noch nicht erweitert — folgt in `/qa`.
 
 ## QA Test Results
 

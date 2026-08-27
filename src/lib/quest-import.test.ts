@@ -40,6 +40,15 @@ describe("parseAndValidateQuestFile", () => {
     }
   });
 
+  it("marks an imported quest as published (preserves import-and-play-immediately)", async () => {
+    const file = createFile(JSON.stringify(validQuest));
+    const result = await parseAndValidateQuestFile(file);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.quest.published).toBe(true);
+    }
+  });
+
   it("rejects files larger than 5 MB", async () => {
     const file = createFile("{}", "big.json", 6 * 1024 * 1024);
     const result = await parseAndValidateQuestFile(file);

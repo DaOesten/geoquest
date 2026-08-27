@@ -91,11 +91,32 @@ export function createDraftQuest(name: string): Quest {
     intro: { text: "" },
     outro: { text: "" },
     stations: [],
+    published: false,
   };
 }
 
 export function isQuestComplete(quest: Quest): boolean {
   return questSchema.safeParse(quest).success;
+}
+
+/**
+ * Whether this quest is visible/playable in the Play-mode list. Defaults to
+ * true when the field is absent so quests saved before this feature existed
+ * stay visible without a migration step — only new drafts explicitly start
+ * unpublished (see createDraftQuest).
+ */
+export function isPublished(quest: Quest): boolean {
+  return quest.published ?? true;
+}
+
+export function publishQuest(id: string): void {
+  const quest = getQuestById(id);
+  if (!quest) return;
+  saveQuest({
+    ...quest,
+    published: true,
+    lastModified: new Date().toISOString(),
+  });
 }
 
 export function renameQuest(id: string, name: string): void {

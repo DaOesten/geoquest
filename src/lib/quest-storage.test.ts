@@ -7,6 +7,8 @@ import {
   questExists,
   createDraftQuest,
   isQuestComplete,
+  isPublished,
+  publishQuest,
   renameQuest,
 } from "./quest-storage";
 import type { Quest } from "./quest-schema";
@@ -142,6 +144,11 @@ describe("quest-storage", () => {
       const draft = createDraftQuest("  <b>Fett</b>  ");
       expect(draft.name).toBe("Fett");
     });
+
+    it("starts unpublished", () => {
+      const draft = createDraftQuest("Entwurf");
+      expect(draft.published).toBe(false);
+    });
   });
 
   describe("isQuestComplete", () => {
@@ -162,6 +169,37 @@ describe("quest-storage", () => {
     it("returns false when a station has no modules", () => {
       const quest = { ...completeQuest, stations: [{ ...completeQuest.stations[0], modules: [] }] };
       expect(isQuestComplete(quest)).toBe(false);
+    });
+  });
+
+  describe("isPublished / publishQuest", () => {
+    it("defaults to true when the field is absent (quests saved before this feature)", () => {
+      const legacyQuest = { ...completeQuest };
+      // @ts-expect-error simulating a quest saved before `published` existed
+      delete legacyQuest.published;
+      expect(isPublished(legacyQuest)).toBe(true);
+    });
+
+    it("returns false for a quest explicitly marked unpublished", () => {
+      expect(isPublished({ ...completeQuest, published: false })).toBe(false);
+    });
+
+    it("returns true for a quest explicitly marked published", () => {
+      expect(isPublished({ ...completeQuest, published: true })).toBe(true);
+    });
+
+    it("publishQuest sets published to true and updates lastModified", () => {
+      const draft = { ...completeQuest, published: false, lastModified: "2020-01-01T00:00:00.000Z" };
+      saveQuest(draft);
+      publishQuest(draft.id);
+      const updated = getQuestById(draft.id);
+      expect(updated?.published).toBe(true);
+      expect(updated?.lastModified).not.toBe("2020-01-01T00:00:00.000Z");
+    });
+
+    it("publishQuest is a no-op when the quest id does not exist", () => {
+      publishQuest("does-not-exist");
+      expect(getAllQuests()).toEqual([]);
     });
   });
 

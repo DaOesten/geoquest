@@ -22,7 +22,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useQuests } from "@/hooks/use-quests";
-import { createDraftQuest, deleteQuest, isQuestComplete, renameQuest, saveQuest } from "@/lib/quest-storage";
+import {
+  createDraftQuest,
+  deleteQuest,
+  isPublished,
+  isQuestComplete,
+  publishQuest,
+  renameQuest,
+  saveQuest,
+} from "@/lib/quest-storage";
 import { deleteProgress } from "@/lib/quest-progress";
 import type { Quest } from "@/lib/quest-schema";
 
@@ -40,12 +48,19 @@ export default function CreatePage() {
     () =>
       [...quests]
         .sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime())
-        .map((quest) => ({ quest, isDraft: !isQuestComplete(quest) })),
+        .map((quest) => ({
+          quest,
+          isComplete: isQuestComplete(quest),
+          isPublished: isPublished(quest),
+        })),
     [quests]
   );
 
   const visibleQuests = useMemo(
-    () => (filter === "all" ? sortedQuests : sortedQuests.filter((q) => q.isDraft)),
+    () =>
+      filter === "all"
+        ? sortedQuests
+        : sortedQuests.filter((q) => !q.isComplete || !q.isPublished),
     [sortedQuests, filter]
   );
 
@@ -69,6 +84,15 @@ export default function CreatePage() {
       }
     },
     [nameDialog, refreshQuests, router]
+  );
+
+  const handlePublish = useCallback(
+    (quest: Quest) => {
+      publishQuest(quest.id);
+      refreshQuests();
+      toast.success("Quest veröffentlicht");
+    },
+    [refreshQuests]
   );
 
   const handleDeleteConfirm = useCallback(() => {
@@ -123,11 +147,13 @@ export default function CreatePage() {
               </p>
             ) : (
               <ul className="flex flex-col gap-3">
-                {visibleQuests.map(({ quest, isDraft }) => (
+                {visibleQuests.map(({ quest, isComplete, isPublished: published }) => (
                   <li key={quest.id}>
                     <QuestManagementCard
                       quest={quest}
-                      isDraft={isDraft}
+                      isComplete={isComplete}
+                      isPublished={published}
+                      onPublish={() => handlePublish(quest)}
                       onRename={() => setNameDialog({ mode: "rename", quest })}
                       onDelete={() => setDeleteTarget(quest)}
                     />
