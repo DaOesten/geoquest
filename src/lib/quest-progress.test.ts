@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { getProgress, saveProgress, markStationVisited, markStationCompleted, markTaskSolved, isStationVisited, isStationCompleted, isTaskSolved } from "./quest-progress";
+import { getProgress, saveProgress, markStationVisited, markStationCompleted, markTaskSolved, isStationVisited, isStationCompleted, isTaskSolved, deleteProgress, getQuestListStatus } from "./quest-progress";
 
 const store = new Map<string, string>();
 const mockLocalStorage = {
@@ -130,6 +130,40 @@ describe("quest-progress", () => {
       markTaskSolved("q", "s1", 2);
       expect(isTaskSolved("q", "s1", 2)).toBe(true);
       expect(isTaskSolved("q", "s1", 0)).toBe(false);
+    });
+  });
+
+  describe("deleteProgress", () => {
+    it("removes the stored progress entry", () => {
+      markStationVisited("q", "s1");
+      expect(getProgress("q")).not.toBeNull();
+      deleteProgress("q");
+      expect(getProgress("q")).toBeNull();
+    });
+
+    it("does nothing when no progress exists", () => {
+      expect(() => deleteProgress("never-played")).not.toThrow();
+    });
+  });
+
+  describe("getQuestListStatus", () => {
+    it("returns 'new' when no progress exists", () => {
+      expect(getQuestListStatus(null, 5)).toBe("new");
+    });
+
+    it("returns 'new' when no station has been visited yet", () => {
+      const progress = { visitedStations: [], completedStations: [], solvedTasks: {}, currentScreen: "intro" as const, lastStationIndex: 0 };
+      expect(getQuestListStatus(progress, 5)).toBe("new");
+    });
+
+    it("returns 'live' when at least one station is visited but not all completed", () => {
+      const progress = { visitedStations: ["s1"], completedStations: ["s1"], solvedTasks: {}, currentScreen: "stations" as const, lastStationIndex: 1 };
+      expect(getQuestListStatus(progress, 5)).toBe("live");
+    });
+
+    it("returns 'done' when all stations are completed", () => {
+      const progress = { visitedStations: ["s1", "s2"], completedStations: ["s1", "s2"], solvedTasks: {}, currentScreen: "stations" as const, lastStationIndex: 1 };
+      expect(getQuestListStatus(progress, 2)).toBe("done");
     });
   });
 });
