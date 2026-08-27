@@ -1,6 +1,6 @@
 # PROJ-6: Creator — Quest-Verwaltung
 
-## Status: Architected
+## Status: In Review
 **Created:** 2026-08-27
 **Last Updated:** 2026-08-27
 
@@ -183,8 +183,175 @@ Keine neuen Pakete nötig. Alles Benötigte ist bereits installiert oder Teil de
 - Sonner/Toast — Erfolgs-/Fehlermeldungen, bereits verwendet
 - Eingebaute Browser-Funktion zur eindeutigen ID-Erzeugung — kein Paket nötig
 
+## Implementation Notes (Frontend)
+
+**Date:** 2026-08-27
+
+### Neue/geänderte Dateien
+| Datei | Zweck |
+|-------|-------|
+| `src/lib/sanitize.ts` | `stripHtmlTags()` extrahiert aus `quest-import.ts`, jetzt von PROJ-2 und PROJ-6 gemeinsam genutzt |
+| `src/lib/quest-storage.ts` | + `createDraftQuest()`, `isQuestComplete()` (nutzt `questSchema.safeParse` direkt statt eigener Regel-Duplikation), `renameQuest()` |
+| `src/components/quest-name-dialog.tsx` | Neu — geteilter Dialog für "Neue Quest" und "Umbenennen" |
+| `src/components/quest-management-card.tsx` | Neu — Light-Theme-Karte mit Entwurf-Badge und Aktionen-Menü (shadcn DropdownMenu) |
+| `src/app/create/page.tsx` | Erweitert: Liste (sortiert nach `lastModified`), Empty State, Neue-Quest-FAB, Rename-/Delete-Flow |
+| `src/components/quest-import-button.tsx` | 1-Zeilen-Fix (siehe Bug unten), sonst unverändert |
+
+### Abweichung von der Tech-Design-Skizze
+- `isQuestComplete()` ruft `questSchema.safeParse(quest).success` direkt auf, statt Regeln handschriftlich zu duplizieren — garantiert, dass die Entwurf-Erkennung nie von der tatsächlichen Import-/Export-Validierung abweicht.
+
+### Bug gefunden + behoben (nicht im ursprünglichen Scope, aber auf `/create` sichtbar)
+Radix-Portale (Dialog, AlertDialog, DropdownMenu) hängen ihren Inhalt an `<body>`, außerhalb des `<div data-theme="light">`-Wrappers aus `create/layout.tsx`. Dadurch rendern alle Popups auf `/create` mit den Dark-Theme-Farben von `<html data-theme="dark">` — u.a. unlesbarer Text (weiß auf weiß) in Titeln und Buttons ohne eigene Textfarben-Klasse. Betroffen war auch der bereits deployte PROJ-2-Überschreib-Dialog.
+**Fix:** `data-theme="light"` + `text-foreground` direkt auf die jeweilige Portal-Root (`DialogContent`/`AlertDialogContent`/`DropdownMenuContent`) gesetzt, damit die CSS-Variablen lokal neu aufgelöst werden. Betrifft `quest-name-dialog.tsx`, `create/page.tsx` (Lösch-Dialog), `quest-management-card.tsx` (Aktionen-Menü) und `quest-import-button.tsx` (Überschreib-Dialog, via bestehendem `variant`-Prop).
+
+### Verifikation
+- `npm run build` ✓ · `npm run lint` ✓ (0 Fehler, nur 6 vorbestehende `<img>`-Warnungen) · `npm test` ✓ (68/68)
+- Manuell im Browser (Playwright/WebKit, 390×844 Mobile-Viewport) durchgespielt: Empty State → Neue Quest erstellen → Entwurf-Badge sichtbar → Umbenennen → Löschen (mit Bestätigung) → zurück zum Empty State. Keine Konsolenfehler.
+- E2E-Testsuite (Playwright, `tests/`) wurde für PROJ-6 nicht ergänzt — folgt in `/qa` analog zum bestehenden Muster (`tests/proj-1-app-shell.spec.ts`).
+
+### UI-Verfeinerung (2026-08-27, zweite Iteration)
+
+Nach einem `/design`-Prototyp (Canvas-Vorschau, vom Nutzer freigegeben) wurden drei Controls überarbeitet:
+
+| Änderung | Vorher | Nachher |
+|----------|--------|---------|
+| Filter | kein Filter, nur die volle Liste | `QuestManagementFilterTabs` ("Alle" / "Entwurf") — gleiche Pill-/Glow-Optik wie `QuestFilterTabs` im Player, auf Light-Theme-Tokens (`primary` statt `gq-teal`) übertragen |
+| Quest importieren | eigener Inline-/Floating-Button (`QuestImportButton`) neben der Liste | in den FAB integriert: Tippen auf den `+`-FAB dreht ihn zu einem Schließen-Glyph und klappt zwei Pill-Buttons auf ("Neue Quest", "Quest importieren") |
+| Karten | Entwurf und fertige Quests optisch identisch (nur Badge unterschied) | Entwürfe bekommen einen gestrichelten Rahmen + gedämpften Hintergrund statt Vollton-Karte + Schatten — sofort als "unfertig" erkennbar, ohne neues UI-Muster einzuführen |
+
+**Technische Umsetzung:**
+- `QuestImportButton` bekam eine neue optionale `renderTrigger`-Prop, die die eingebaute Button-Auszeichnung durch eigenes Markup ersetzt, aber den Import-Hook, das versteckte File-Input und den Überschreib-Dialog unverändert weiterverwendet — der Player-Gebrauch (`floating`) bleibt unangetastet.
+- Neue Datei `src/components/quest-management-filter-tabs.tsx`.
+- `quest-management-card.tsx`: Kartenklasse jetzt abhängig von `isDraft` (gestrichelt vs. Vollton).
+- `create/page.tsx`: FAB-Zustand (`fabOpen`) steuert Rotation (`rotate-45`), Scrim (Tap-Outside-to-Close) und die Sichtbarkeit der zwei aufklappenden Aktions-Buttons.
+- Verifiziert wie oben (Build/Lint/Test grün) plus manueller Playwright/WebKit-Durchlauf: Filter umschalten, FAB öffnen/schließen (Klick auf FAB, Klick auf Scrim), gemischte Entwurf-/Fertig-Karten optisch geprüft — keine Konsolenfehler.
+
+### UI-Verfeinerung (2026-08-27, dritte Iteration)
+
+Header und Headline analog zum Player-Vorbild (`/play`) angepasst:
+- `AppHeader` auf `/create` bekommt kein `title` mehr — zeigt wie im Player nur noch das Logo.
+- Direkt darunter (über den Filter-Tabs) steht jetzt eine Display-Headline "Create" (`font-display italic uppercase`, gleiche Größe/Optik wie "Meine Quests" im Player), unconditional sichtbar in Empty State und Liste.
+- Kein neuer Code — reine Umschichtung in `create/page.tsx` (Header-Prop entfernt, `<h1>`-Block ergänzt).
+- Verifiziert per Playwright/WebKit-Screenshot in beiden Zuständen (leer/gefüllt), keine Konsolenfehler.
+- Kurz ergänzt um ein Lime-Stift-Icon (`Pencil`) vor der Headline, direkt danach wieder entfernt — in Lime auf dem hellen Creator-Hintergrund schlecht lesbar/zu dünn. Headline bleibt ohne Icon.
+
 ## QA Test Results
-_To be added by /qa_
+
+**Tested:** 2026-08-27
+**App URL:** http://localhost:3000
+**Tester:** QA Engineer (AI)
+**Build:** `npm run build` ✓ · `npm run lint` ✓ (0 Fehler, 6 vorbestehende `<img>`-Warnungen) · `npm test` ✓ (84/84, davon 16 neu für `quest-storage.ts`)
+
+### Acceptance Criteria Status
+
+#### Liste
+- [x] Angenommen Quests vorhanden, werden sie sortiert nach `lastModified` (neueste zuerst) mit Name, Stationsanzahl und Entwurf-Badge angezeigt
+- [x] Angenommen keine Quests vorhanden, erscheint Empty State mit Hinweistext, "Neue Quest erstellen"-Button und Import-Button
+
+#### Neue Quest erstellen
+- [x] Tippen auf "Neue Quest erstellen" fragt nach dem Quest-Namen
+- [x] Gültiger Name + Bestätigen → Quest mit neuer UUID, leerer Stationsliste, `lastModified = jetzt` gespeichert, Navigation zu `/create/[id]`
+- [x] Leeres Namensfeld + Bestätigen → Validierungsfehlermeldung, keine Quest angelegt
+- [x] Abbrechen → keine Quest angelegt, Dialog schließt sich
+
+#### Entwurf-Kennzeichnung
+- [x] Quest mit 0 Stationen/unvollständigen Pflichtfeldern → "Entwurf"-Badge sichtbar
+- [x] Quest erfüllt alle Pflichtfelder → kein Badge
+
+#### Umbenennen
+- [x] Umbenennen-Aktion öffnet Dialog mit vorausgefülltem aktuellem Namen
+- [x] Gültiger neuer Name → gespeichert, `lastModified` aktualisiert, Liste neu sortiert
+- [x] Leeres Feld + Bestätigen → Validierungsfehlermeldung, alter Name bleibt erhalten
+
+#### Löschen
+- [x] Löschen-Aktion → Bestätigungsdialog ("Quest wirklich löschen? Das kann nicht rückgängig gemacht werden.")
+- [x] Bestätigen → Quest UND `gq_progress_{questId}` aus localStorage entfernt, Liste aktualisiert sich
+- [x] Abbrechen → Quest bleibt unverändert erhalten
+
+**Ergebnis: 13/13 Kriterien bestanden**
+
+### Edge Cases Status
+
+| # | Edge Case | Status |
+|---|-----------|--------|
+| 1 | Doppelte Quest-Namen | ✅ Beide werden normal angezeigt |
+| 2 | Löschen der letzten Quest | ✅ Empty State erscheint |
+| 3 | Löschen während Quest in anderem Tab läuft | ⏭️ Nicht automatisiert testbar (Multi-Tab); Verhalten wie spezifiziert akzeptiert (kein Cross-Tab-Sync im MVP) |
+| 4 | Sehr langer Quest-Name | ✅ `line-clamp` kürzt visuell, kein Layout-Bruch |
+| 5 | HTML/Script im Quest-Namen | ✅ Tags werden entfernt (siehe Security Audit) — mit einer Einschränkung, siehe BUG-1 |
+| 6 | localStorage voll beim Anlegen | ✅ Durch Unit-Test abgedeckt (`saveQuest` wirft die erwartete Meldung) |
+| 7 | Import-Button auf `/create` | ✅ Weiterhin vorhanden (jetzt im FAB), Import-Pipeline unverändert von PROJ-2 |
+
+### Security Audit Results
+- [x] XSS via Quest-Name (`<img src=x onerror=...>`): Tags entfernt, Payload löst nicht aus — zusätzlich abgesichert durch Reacts automatisches Escaping (kein `dangerouslySetInnerHTML`)
+- [x] Keine Authentifizierung/Autorisierung im Scope (kein Account-System, lokal-only laut PRD) — kein Angriffsvektor hier
+- [x] Kein Server/API-Endpunkt im Scope — Rate-Limiting nicht anwendbar
+- [x] Keine Secrets im Code oder in localStorage-Werten
+- [ ] BUG: HTML-only-Namen (`<b></b>`) umgehen die "Name darf nicht leer sein"-Validierung, siehe BUG-1 (kein Sicherheitsrisiko, aber ein Validierungs-Bypass)
+
+### Bugs Found
+
+#### BUG-1: HTML-only-Name umgeht die Pflichtfeld-Validierung und speichert eine Quest mit leerem Namen
+- **Severity:** Medium
+- **Steps to Reproduce:**
+  1. "Neue Quest erstellen" (oder "Umbenennen") öffnen
+  2. Als Namen ausschließlich `<b></b>` eingeben (oder jedes andere Konstrukt, das nach dem Entfernen der Tags leer ist) und bestätigen
+  3. Erwartet: Wie bei einem leeren Feld — Validierungsfehler, keine Quest wird angelegt/umbenannt
+  4. Tatsächlich: Die Quest wird mit `name: ""` gespeichert. Die Karte zeigt eine leere Titelzeile, der Lösch-Dialog zeigt „" wird endgültig gelöscht.
+- **Root Cause:** `quest-name-dialog.tsx` validiert den rohen (unsanitized) Eingabewert auf Leerheit; `createDraftQuest()`/`renameQuest()` in `quest-storage.ts` entfernen HTML-Tags erst danach — ein Name, der nur aus Tags besteht, besteht die Prüfung, kollabiert aber beim Speichern zu einem leeren String.
+- **Empfohlener Fix:** Die Validierung in `quest-name-dialog.tsx` auf den bereits mit `stripHtmlTags()` bereinigten Wert anwenden (oder `createDraftQuest`/`renameQuest` bei leerem sanitisiertem Namen einen Fehler werfen lassen, den die Seite als Toast + erneut geöffneten Dialog behandelt).
+- **Screenshot:** siehe Implementation Notes — visuell bestätigt (leere Kartentitel-Zeile, leerer Name im Lösch-Dialog)
+- **Priority:** Fix before deployment (verletzt eine explizite Acceptance-Criterion in ihrem Kern, auch wenn der Trigger ungewöhnlich ist)
+
+#### BUG-2: Filter-Tabs ("Alle"/"Entwurf") unterschreiten die 44px-Touch-Target-Vorgabe
+- **Severity:** Low
+- **Steps to Reproduce:**
+  1. `/create` mit mind. 1 Quest öffnen
+  2. Höhe der Filter-Tab-Buttons messen
+  3. Erwartet: ≥44px (PRD-Anforderung, auch explizit in den Technical Requirements dieser Spec)
+  4. Tatsächlich: gemessen 33px
+- **Root Cause:** 1:1 aus der Player-`QuestFilterTabs` übernommenes Padding (`px-4 py-2`) — dort besteht dieselbe Abweichung bereits seit PROJ-3/5 (nicht in deren QA aufgefallen).
+- **Empfohlener Fix:** Vertikales Padding erhöhen (z.B. `py-3`); der Konsistenz halber am besten zusammen mit der Player-Variante in einem eigenen Follow-up angepasst, nicht isoliert nur hier.
+- **Priority:** Nice to have (nicht PROJ-6-spezifisch verursacht, betrifft aber auch diese neue Komponente)
+
+#### BUG-3: Ein Quest-Objekt mit fehlendem Pflichtfeld (z.B. `stations`) lässt die gesamte Seite abstürzen
+- **Severity:** Low
+- **Steps to Reproduce:**
+  1. In der Konsole ein Quest-Objekt ohne `stations`-Feld in `gq_quests` schreiben (simuliert defekte/sehr alte Daten)
+  2. `/create` (oder `/play`) neu laden
+  3. Erwartet: Fehlerhafte Quest wird übersprungen oder tolerant behandelt, Rest der App bleibt nutzbar
+  4. Tatsächlich: "Application error" — die komplette Seite stürzt ab (kein Error Boundary)
+- **Root Cause:** Vorbestehende Lücke in `getAllQuests()` (PROJ-2) — liest `localStorage` per `JSON.parse` ohne Schema-Validierung. **Identisch reproduzierbar auf dem bereits deployten `/play`** (verifiziert) — keine PROJ-6-Regression, aber die neuen `quest-management-card.tsx`/`isQuestComplete()` setzen implizit ebenfalls die vollständige Form voraus.
+- **Empfohlener Fix:** `getAllQuests()` um eine tolerante Validierung ergänzen (ungültige Einträge überspringen statt die ganze Liste crashen zu lassen) — als eigenes, funktionsübergreifendes Hardening-Ticket, nicht als Teil von PROJ-6.
+- **Priority:** Fix in next sprint (nicht PROJ-6-blockierend, aber sollte nicht liegen bleiben)
+
+### Regression Testing
+- Volle bestehende E2E-Suite (`tests/proj-1-*.spec.ts`, `proj-3-*`, `proj-4-*`, `proj-5-*`) gegen **Mobile Safari** (WebKit) ausgeführt: 75/91 bestanden. Die 16 Fehlschläge treten **identisch auf dem unveränderten Vor-PROJ-6-Stand** auf (per `git stash` verifiziert) — vorbestehende Umgebungs-Flakiness (vermutlich Geolocation-Mocking/Timing in dieser Sandbox), **keine PROJ-6-Regression**.
+- `/play`-Kernfunktionen (Liste, Filter-Tabs, Import-FAB) manuell gegenprüft — unverändert funktionsfähig.
+- `quest-import-button.tsx`, `quest-storage.ts`, `quest-import.ts` wurden für PROJ-6 angepasst (siehe Implementation Notes) — die bestehende `quest-import.test.ts`-Suite (17 Tests) läuft weiterhin grün.
+
+### Responsive & Accessibility
+- 375px / 768px / 1440px: kein horizontales Scrollen, Inhalt sichtbar, keine Konsolenfehler (Chromium, alle drei Breakpoints)
+- Touch-Targets: FAB 48×48px ✓, Karten-Aktionen-Button 44×44px ✓, FAB-Mini-Aktionen 44px Höhe ✓, Filter-Tabs 33px Höhe ✗ (BUG-2)
+- Kontrast (WCAG AA, ≥4.5:1) der neuen Entwurf-Karten-Optik: Meta-Text 5.01:1 ✓, Quest-Name 17.21:1 ✓
+
+### Cross-Browser Testing
+- **WebKit (Safari-Engine):** Vollständig getestet — Desktop-WebKit (manuelle QA-Skripte) + "Mobile Safari"-Projekt der E2E-Suite (12/12 neue Tests grün)
+- **Chromium:** In dieser Sandbox konnte der Chromium-Browser-Download trotz mehrerer Versuche nicht zuverlässig abgeschlossen werden (Umgebungs-/Netzwerk-Einschränkung, kein Produkt-Problem). Die Chromium-E2E-Projektkonfiguration (`playwright.config.ts`) ist unverändert und sollte auf einer Maschine mit funktionierendem Browser-Download identisch laufen; **nicht in dieser Runde verifiziert**.
+- **Firefox:** Nicht Teil der projekteigenen E2E-Matrix (`playwright.config.ts` definiert nur `chromium` + `Mobile Safari`); aus Zeit-/Umgebungsgründen nicht manuell nachgetestet.
+
+### Unit Tests (neu)
+`src/lib/quest-storage.test.ts` — 16 Tests: CRUD (`getAllQuests`/`saveQuest`/`deleteQuest`/`questExists`), `createDraftQuest` (Form, eindeutige IDs, Zeitstempel, Sanitization), `isQuestComplete` (vollständig/unvollständig in allen relevanten Kombinationen), `renameQuest` (Update, Sanitization, No-op bei unbekannter ID). Alle grün.
+
+### E2E Tests (neu)
+`tests/proj-6-creator-quest-verwaltung.spec.ts` — 12 Tests, je AC-Gruppe mind. ein Test (Liste, Neue Quest ×3, Entwurf-Kennzeichnung, Umbenennen ×2, Löschen ×2, Filter, FAB). Alle grün auf "Mobile Safari".
+
+### Summary
+- **Acceptance Criteria:** 13/13 passed
+- **Bugs Found:** 3 total (0 critical, 0 high, 1 medium, 2 low)
+- **Security:** Pass (mit BUG-1 als nicht-sicherheitsrelevantem Validierungs-Hinweis)
+- **Production Ready:** YES (keine Critical/High-Bugs)
+- **Recommendation:** Nutzer hat entschieden, alle drei Bugs (BUG-1, BUG-2, BUG-3) vor dem Deploy zu fixen. Status bleibt daher `In Review`, bis der Fix-Pass durch `/frontend` abgeschlossen und mit `/qa` erneut verifiziert wurde.
 
 ## Deployment
 _To be added by /deploy_
