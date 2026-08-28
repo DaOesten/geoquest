@@ -1,6 +1,6 @@
 # PROJ-8: Creator — Modul-Editor
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-08-28
 **Last Updated:** 2026-08-28
 
@@ -268,7 +268,124 @@ Keine neuen Pakete erforderlich.
 - Nicht per Browser-Automation verifiziert: der Drag-and-Drop-Vorgang für Sortierungs-Items *innerhalb* des Sortierungs-Sheets selbst — die synthetischen Pointer-Events des WebKit-Treibers lösten `@dnd-kit`s Drag-Aktivierung dort nicht zuverlässig aus (Items blieben in Eingabereihenfolge), obwohl derselbe `@dnd-kit`-Sortable-Code auf der Modul-Liste (eine Ebene höher auf derselben Seite) im selben Testlauf nachweislich funktionierte und persistierte. Dies deckt sich mit der bereits in PROJ-7 dokumentierten Einschränkung des automatisierten Treibers bei echten Pointer-Drag-Vorgängen und ist keine neue, PROJ-8-spezifische Auffälligkeit. Sollte in `/qa` gezielt mit echter Touch-/Maus-Interaktion geprüft werden.
 
 ## QA Test Results
-_To be added by /qa_
+
+**Tested:** 2026-08-28
+**App URL:** http://localhost:3000
+**Tester:** QA Engineer (AI)
+**Build:** `npm run build` ✓ · `npm run lint` ✓ (0 Fehler, 6 vorbestehende `<img>`-Warnungen) · `npm test` ✓ (133/133)
+**Browser-Hinweis:** Der gebündelte Playwright-Chromium-Download bricht in dieser Sandbox beim Entpacken ab (reproduzierbar, auf Nutzerwunsch nicht weiter verfolgt). Alle Browser-Tests liefen auf `webkit` ("Mobile Safari"-Projekt) — bereits das etablierte Muster aus PROJ-3/4/6/7.
+
+### Acceptance Criteria Status
+
+#### Navigation zur Modul-Liste
+- [x] Puzzle-Icon auf `/create/[id]` navigiert zu `/create/[id]/station/[stationId]`
+- [x] "Zurück" auf der Modul-Liste kehrt zu `/create/[id]` zurück
+
+#### Modul-Liste
+- [x] Empty State mit Hinweistext und "Modul hinzufügen"-Button bei 0 Modulen
+- [x] Module werden in gespeicherter Reihenfolge mit Typ-Icon und Kurzvorschau angezeigt
+- [x] Unvollständiges Modul zeigt sichtbaren Warnhinweis (z.B. "Kein Inhalt")
+
+#### Modultyp-Auswahl
+- [x] "Modul hinzufügen" zeigt Typ-Auswahl mit 5 Kacheln (Text/Bild/Audio/Video/Aufgabe)
+- [x] "Aufgabe" blendet die 3 Aufgaben-Unterarten ein (Code-Eingabe/Multiple Choice/Sortierung)
+- [x] Typwahl öffnet das passende leere Formular-Sheet
+
+#### Text-Modul-Editor
+- [x] Mehrzeiliger Text mit `- `-Listenzeilen wird unverändert als `content` übernommen
+
+#### Bild-/Audio-/Video-Modul-Editor
+- [x] Nicht-https-URL wird mit Inline-Fehler abgelehnt, Sheet bleibt offen
+- [x] Gültige https-URL + optionale Caption werden gespeichert
+
+#### Code-Eingabe-Task-Editor
+- [x] Frage und Antwort werden gespeichert
+
+#### Multiple-Choice-Task-Editor
+- [x] "Option hinzufügen" fügt ein leeres Optionsfeld hinzu, deaktiviert bei 5 Optionen
+- [x] "Entfernen" hält mindestens 2 Optionen, deaktiviert bei genau 2
+- [x] Markierte Checkboxen werden korrekt als `correctIndices` gespeichert
+- [x] Entfernen einer markierten Option indiziert `correctIndices` korrekt neu (kein stiller Fehlzeiger auf die falsche, nachgerückte Option) — gezielt getestet, siehe Tech-Design-Hinweis
+
+#### Sortierungs-Task-Editor
+- [x] Eingabereihenfolge bestimmt `items`-Array
+- [x] Drag eines Items übernimmt die neue Reihenfolge im lokalen Entwurf sofort — **entgegen der Erwartung aus den Implementation Notes ("nicht per Browser-Automation verifizierbar") funktionierte der automatisierte Pointer-Drag in dieser QA-Runde zuverlässig**, siehe Hinweis unten
+- [x] "Entfernen" hält mindestens 3 Items, deaktiviert bei genau 3
+
+#### Speichern (Entwurfsprinzip)
+- [x] Unvollständiges Modul (leerer Text-Inhalt) wird trotzdem gespeichert, Sheet schließt sich
+- [x] Abbrechen verwirft alle Änderungen vollständig
+- [x] `lastModified` der Quest wird bei jedem Speichervorgang aktualisiert
+
+#### Reihenfolge (Drag & Drop)
+- [x] Echter Pointer-Drag eines Moduls an eine andere Position übernimmt und speichert die neue Reihenfolge sofort
+- [x] Neue Reihenfolge bleibt nach Reload erhalten
+
+#### Bearbeiten
+- [x] Sheet öffnet mit allen vorhandenen Werten korrekt vorausgefüllt (getestet am Bild-Modul: URL + Caption)
+
+#### Löschen
+- [x] Bestätigungsdialog erscheint mit korrektem Wortlaut
+- [x] Bestätigen entfernt das Modul aus der Station
+- [x] Abbrechen lässt das Modul unverändert
+
+**Ergebnis: 24/24 testbare Kriterien bestanden**
+
+### Edge Cases Status
+
+1. [x] Vollständigkeits-Definition pro Modultyp — verifiziert für Text, Multiple-Choice (getestet: "Kein Inhalt"), plus 10 dedizierte Unit-Tests in `module-warnings.test.ts` für alle 5 Typen/Task-Unterarten
+2. [x] Letztes Modul einer Station gelöscht → Empty State, Stationsliste zeigt "0 Module" (Regressionstest gegen PROJ-6/7 `isQuestComplete`/Modul-Zähler)
+3. [x] Multiple-Choice: alle Optionen korrekt markierbar — Code-Pfad erlaubt es ohne Sonderbehandlung (kein Limit auf `correctIndices.size`, per Code-Review bestätigt)
+4. [x] Multiple-Choice: keine Option korrekt → wird gespeichert, Warnhinweis "Keine Antwort markiert" (per `getModuleWarning`-Unit-Test abgedeckt)
+5. [x] Sortierung: identische Item-Texte → keine Sonderbehandlung im Code (per Code-Review bestätigt, kein Duplikat-Check vorhanden)
+6. [x] Media-URL wird nach Speichern ungültig → PROJ-4s bestehender `onError`-Fallback bleibt zuständig, PROJ-8 prüft nur das URL-Format beim Speichern
+7. [x] Kein Konflikt zwischen Modul-Listen-Drag und Sortierungs-Item-Drag — beide unabhängig getestet, funktionieren nebeneinander (gezielter Stresstest: Drag in der Liste, dann Drag im Sheet, keine Interferenz)
+8. [x] Zwischenstand-Garantie — jedes gespeicherte Modul landet sofort in `gq_quests`, verifiziert per Reload-Test
+9. [x] Kein Typ-Wechsel bei bestehendem Modul — Bearbeiten-Sheet zeigt immer den ursprünglichen Typ, kein Umschalter im UI vorhanden
+10. [x] Navigation zu ungültiger `stationId` → liefert korrekt HTTP 404 (`notFound()`), analog zum bestehenden `/create/[id]`-Verhalten
+
+### Security Audit Results
+- [x] XSS via `<script>` im Text-Modul-Inhalt: Tag wird entfernt (`stripHtmlTags`), kein Alert ausgelöst, kein rohes `<script>` im DOM
+- [x] XSS via `<img onerror>` in der Multiple-Choice-Frage: Tag entfernt, kein Alert
+- [x] XSS via `<svg onload>` in einer Multiple-Choice-Option: Tag entfernt, kein Alert
+- [x] `javascript:`-URL in einem Bild-Modul: von der UI-Validierung (`https://`-Präfix-Check in `MediaModuleSheet`) korrekt abgelehnt, Sheet bleibt offen, nichts gespeichert
+- [x] Gerenderte Medien-URLs landen ausschließlich in `src`-Attributen von `<img>`/`<audio>`/`<video>` (PROJ-4) — diese Elemente führen `javascript:`-URLs in modernen Browsern ohnehin nicht aus, selbst im hypothetischen Fall einer gespeicherten nicht-https-URL
+- [x] Keine neuen Netzwerk-Calls, keine Secrets, keine PII-Übertragung an Dritte
+- [x] localStorage-Schreibzugriffe laufen ausschließlich über die geprüften `quest-storage.ts`-Funktionen (`upsertModule`/`deleteModule`/`reorderModules`), konsequent an `questId`+`stationId` gebunden — kein Cross-Quest- oder Cross-Station-Datenleck möglich
+
+### Bugs Found
+
+Keine Bugs mit funktionaler Auswirkung gefunden. Ein Low-Severity-Hinweis zur Härtung wurde dokumentiert, ist aber kein Blocker:
+
+#### HINWEIS-1 (Low, kein Blocker): `upsertModule()` erzwingt den `https://`-Präfix für Medien-URLs nicht selbst
+- **Beobachtung:** Die `https://`-Validierung für Bild-/Audio-/Video-URLs sitzt ausschließlich in `MediaModuleSheet` (UI-Ebene). Die exportierte `upsertModule()`-Funktion in `quest-storage.ts` würde eine `javascript:`- oder `http://`-URL unverändert speichern, wenn sie direkt (unter Umgehung der Sheet-UI) aufgerufen würde.
+- **Tatsächliches Risiko:** Sehr gering bis keines. Es gibt keinen Angreifer, der davon profitiert — wer `upsertModule()` direkt aufrufen könnte, hätte bereits vollen Zugriff auf den eigenen Browser/localStorage und könnte ohnehin beliebige Daten injizieren (kein Privilegiensprung). Zusätzlich rendern die PROJ-4-Medien-Komponenten die URL ausschließlich als `src` von `<img>`/`<audio>`/`<video>` — diese Elemente ignorieren `javascript:`-URLs in allen relevanten Browsern, es gäbe also selbst im Erfolgsfall keine Codeausführung, nur einen fehlerhaften Medien-Placeholder (bestehender PROJ-4-Fallback).
+- **Empfehlung:** Optional in einem künftigen Hardening-Pass die `httpsUrl`-Prüflogik aus `quest-schema.ts` auch in `sanitizeDraftModule()` spiegeln, für Verteidigung in der Tiefe. Kein Fix vor Deploy nötig.
+
+### Code-Qualitäts-Hinweis (kein Bug, keine Aktion nötig)
+`ModuleListItem` und die Modul-Liste auf `/create/[id]/station/[stationId]/page.tsx` verwenden den Array-Index (`module-${index}`) als `@dnd-kit`-Sortable-`id` und React-`key`, statt einer stabilen, inhaltsunabhängigen ID (Module haben keine eigene `id` im PROJ-2-Schema, anders als Stationen). Das ist ein bekanntes React-Anti-Pattern, das theoretisch zu Drag-Status-Desyncs führen könnte. Gezielt stresstestet (Löschen mitten in der Liste gefolgt von sofortigem Drag; zwei aufeinanderfolgende Drags ohne Pause) — in allen Fällen stimmten sichtbare Liste und gespeicherte Reihenfolge exakt überein, kein Bug beobachtet. Keine Änderung empfohlen, da Module strukturell keine eigene ID besitzen und ein Umbau (z.B. synthetische UUIDs nur für die Editor-Session) unverhältnismäßigen Aufwand für ein rein hypothetisches Risiko bedeuten würde.
+
+### Regressionstests
+- **PROJ-7 (Creator — Stationen-Editor):** 1 veralteter Test gefunden und behoben — `shows all stations in saved order with name, radius, and position status` prüfte noch auf "25 m Radius" in der Stationsliste, das durch eine zwischenzeitliche, vom Nutzer angeforderte UI-Änderung (`fix(PROJ-7): Show module count instead of radius in station list`, Commit `c5db9a9`) durch die Modulanzahl ersetzt wurde. **Test korrigiert** (prüft jetzt "1 Modul" statt "25 m Radius"), keine Produktionscode-Änderung nötig, reiner Test-Fix — bestätigt per `git stash`-Vergleichslauf, dass alle anderen 19 PROJ-7-Tests bereits vor PROJ-8 unverändert grün waren. Volle PROJ-7-Suite jetzt wieder 20/20 grün.
+- **PROJ-1/PROJ-3/PROJ-4 E2E-Suiten:** 19 vorbestehende Fehlschläge unverändert vorhanden — durch Vergleichslauf mit `git stash` (alle PROJ-8-Commits sowie der PROJ-7-Test-Fix entfernt) bestätigt, dass exakt dieselben 19 Tests bereits ohne jede PROJ-8-Änderung fehlschlagen. Keine neuen Regressionen durch PROJ-8, deckt sich mit der bereits in PROJ-4/PROJ-7 dokumentierten Beobachtung.
+- **PROJ-6 (Creator — Quest-Verwaltung):** Keine direkten Tests in dieser Runde erneut ausgeführt (nicht von PROJ-8-Dateien berührt), aber die Regressionsprüfung "Stationsliste zeigt Modulanzahl korrekt, letztes Modul löschen setzt Station auf 'Entwurf' zurück" bestätigt indirekt, dass `isQuestComplete()` weiterhin korrekt mit PROJ-8-Modulen zusammenspielt.
+
+### Unit Tests
+Bereits im Frontend-Schritt ergänzt (24 neue Tests: 14 in `quest-storage.test.ts` für `getStationById`/`upsertModule`/`deleteModule`/`reorderModules`, 10 in `module-warnings.test.ts` für `getModuleWarning`) — keine weiteren im QA-Schritt nötig, bestehende Abdeckung wurde stichprobenartig gegen die tatsächliche Sanitization-Pipeline verifiziert (siehe Security Audit).
+
+### E2E Tests
+Neue Datei `tests/proj-8-creator-modul-editor.spec.ts`: 29 Tests, mindestens einer pro Akzeptanzkriterien-Gruppe plus dedizierte Edge-Case- und Regressionsprüfungen (ungültige `stationId` → 404, Stationsliste reagiert auf PROJ-8-Löschung). Alle 29 grün auf "Mobile Safari". Zusätzlich `tests/proj-7-creator-stationen-editor.spec.ts` um den oben beschriebenen Radius→Modulanzahl-Test-Fix korrigiert (weiterhin 20/20 grün, jetzt korrekt formuliert).
+
+### Production-Ready Decision
+
+**READY** — Keine Bugs mit funktionaler oder sicherheitsrelevanter Auswirkung gefunden. Alle 24 testbaren Akzeptanzkriterien bestanden, alle 10 dokumentierten Edge Cases verifiziert, Security-Audit ohne Befund. Ein Low-Severity-Härtungshinweis (HINWEIS-1) ist optional und kein Blocker.
+
+### Summary
+- **Acceptance Criteria:** 24/24 bestanden
+- **Bugs Found:** 0 (0 critical, 0 high, 0 medium, 0 low funktional) — 1 optionaler Härtungshinweis (Low, kein Bug)
+- **Security:** Pass — keine ausnutzbaren Schwachstellen gefunden
+- **Production Ready:** YES
+- **Recommendation:** Deploy freigegeben. Optional: HINWEIS-1 (https-Erzwingung auch in `sanitizeDraftModule()` spiegeln) in einem künftigen Hardening-Pass nachziehen, kein Blocker für dieses Release.
 
 ## Deployment
 _To be added by /deploy_

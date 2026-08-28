@@ -45,18 +45,18 @@ test.describe("PROJ-7: Creator — Stationen-Editor", () => {
       await expect(page.getByRole("button", { name: "Station hinzufügen" })).toBeVisible();
     });
 
-    test("shows all stations in saved order with name, radius, and position status", async ({ page }) => {
+    test("shows all stations in saved order with name, module count, and position status", async ({ page }) => {
       await seedQuest(
         page,
         draftQuest(QUEST_ID, "Quest mit Stationen", [
-          station(STATION_A_ID, "Der alte Brunnen", { radiusMeters: 25 }),
+          station(STATION_A_ID, "Der alte Brunnen", { modules: [{ type: "text", content: "Hallo" }] }),
           station(STATION_B_ID, "Zweite Station", { lat: undefined, lng: undefined }),
         ])
       );
       const items = page.locator("li");
       await expect(items).toHaveCount(2);
       await expect(items.nth(0)).toContainText("Der alte Brunnen");
-      await expect(items.nth(0)).toContainText("25 m Radius");
+      await expect(items.nth(0)).toContainText("1 Modul");
       await expect(items.nth(1)).toContainText("Zweite Station");
     });
 
