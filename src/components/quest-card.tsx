@@ -20,7 +20,7 @@ export function QuestCard({ quest, status, completedCount, onReset }: QuestCardP
 
   if (status === "done") {
     return (
-      <div className="flex flex-col gap-2 p-4 rounded-card bg-card border border-border shadow-card">
+      <div className="flex flex-col gap-2 p-4 rounded-card bg-card border border-border shadow-card transition-all duration-base ease-gq hover:-translate-y-0.5 hover:shadow-card-hover">
         <div className="flex justify-end">
           <button
             type="button"
@@ -72,7 +72,7 @@ export function QuestCard({ quest, status, completedCount, onReset }: QuestCardP
   return (
     <Link
       href={`/play/${quest.id}`}
-      className="flex flex-col gap-2 p-4 rounded-card bg-card border border-border shadow-card transition-all duration-base ease-gq hover:border-gq-grey-dark hover:shadow-card-hover active:scale-[0.98]"
+      className="flex flex-col gap-2 p-4 rounded-card bg-card border border-border shadow-card transition-all duration-base ease-gq hover:-translate-y-0.5 hover:border-gq-grey-dark hover:shadow-card-hover active:scale-[0.98]"
     >
       <div className="flex justify-end">
         <Badge variant="outline" className="flex-shrink-0 text-tech text-[10px] tracking-[0.1em]">

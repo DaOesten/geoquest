@@ -22,8 +22,8 @@ export function QuestManagementCard({ quest, isDraft, onRename, onDelete }: Ques
   const metaLine = `${totalCount} ${totalCount === 1 ? "Station" : "Stationen"}`;
 
   const cardClasses = isDraft
-    ? "relative flex flex-col gap-2 p-4 rounded-card bg-[#EEF2F3] border-[1.5px] border-dashed border-border"
-    : "relative flex flex-col gap-2 p-4 rounded-card bg-card border border-border shadow-card";
+    ? "relative flex flex-col gap-2 p-4 rounded-card bg-[#EEF2F3] border-[1.5px] border-dashed border-border transition-all duration-base ease-gq hover:-translate-y-0.5 hover:border-gq-lime"
+    : "relative flex flex-col gap-2 p-4 rounded-card bg-card border border-border shadow-card transition-all duration-base ease-gq hover:-translate-y-0.5 hover:border-gq-lime hover:shadow-card-hover";
 
   return (
     <div className={cardClasses}>
