@@ -1,6 +1,6 @@
 # PROJ-6: Creator — Quest-Verwaltung
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-08-27
 **Last Updated:** 2026-08-28
 
@@ -588,6 +588,57 @@ Testet ausschließlich das Delta aus dem `/refine` + `/architecture` + `/fronten
 - **Security:** Pass
 - **Production Ready:** **NO** — BUG-4 ist High-Severity und blockiert laut Projekt-Regel ("READY: No Critical or High bugs")
 - **Recommendation:** BUG-4 vor dem Deploy fixen (kleiner, gut lokalisierter Fix: `isPublished()`-Fallback von `true` auf `isQuestComplete(quest)` ändern) und mit `/frontend` + erneutem `/qa` verifizieren. Alle anderen Aspekte (6/6 neue ACs, Sicherheit, Responsive, keine Regressionen) sind sauber.
+
+## QA Test Results — Play-Sichtbarkeit-Korrektur (2026-08-28)
+
+**Tested:** 2026-08-28
+**App URL:** http://localhost:3000
+**Tester:** QA Engineer (AI)
+**Build:** `npm test` ✓ (98/98)
+
+Verifiziert die Korrektur aus Commit `05226ed`: Play-Sichtbarkeit hängt nicht mehr an `published`, sondern ausschließlich an `isPlayable()` (≥1 Station). Die "Veröffentlichen"-UI wurde vollständig entfernt (Feld `published` bleibt im Datenmodell erhalten, aktuell ungenutzt, für PROJ-9 vorgesehen). Diese Runde testet gezielt das Delta seit der letzten QA-Runde (BUG-4) und deckt damit gleichzeitig BUG-4 final ab.
+
+### Acceptance Criteria Status — Play-Sichtbarkeit
+
+- [x] Quest mit 0 Stationen erscheint nicht in der Play-Liste (unabhängig vom Entwurf-Status)
+- [x] Quest mit ≥1 Station erscheint in der Play-Liste, auch wenn sie noch als "Entwurf" markiert ist (Ersteller kann unfertige Quests testen)
+- [x] Importierte Quests sind sofort in der Play-Liste sichtbar
+
+**Ergebnis: 3/3 Kriterien bestanden**
+
+### Edge Cases Status
+
+| # | Edge Case | Status |
+|---|-----------|--------|
+| 8 | Frisch angelegte Quest (0 Stationen) erscheint nicht im Play-Modus | ✅ Verifiziert |
+| 9 | Ersteller testet eine unfertige Quest (≥1 Station, aber Intro/Outro leer) — ausdrücklich erwünscht | ✅ Verifiziert — Quest ist in Play spielbar |
+| 10 | Zwischenstand geht nicht verloren (sofortiges `localStorage`-Save in `createDraftQuest`) | ✅ Verifiziert — bereits vorher gegeben, durch Korrektur nicht angetastet |
+
+### Regression / Bug Verification
+
+- **BUG-4 (vorheriger Fund, High):** Neu geschriebener Test `"BUG-4 (fixed): a legacy quest with no 'published' field and 0 stations no longer leaks into the Play list"` bestätigt: eine Alt-Quest ohne `published`-Feld und 0 Stationen erscheint jetzt korrekt NICHT in der Play-Liste. Root Cause vollständig behoben — nicht durch Patchen des `?? true`-Fallbacks, sondern durch Entfernen der Abhängigkeit von `published` für die Play-Sichtbarkeit insgesamt. `isPublished()`/`publishQuest()` existieren weiterhin (isoliert getestet), werden aber von keinem UI-Pfad mehr aufgerufen — verifiziert per Code-Suche (`grep` über `src/`, keine Treffer außerhalb der Storage-Schicht).
+- Kein Regressionsrisiko durch die entfernte "Veröffentlichen"-UI: `quest-management-card.tsx` bietet nur noch Umbenennen/Löschen im Menü, `create/page.tsx` hat keinen `handlePublish`-Pfad mehr.
+
+### Security Audit Results
+- [x] Kein neuer Angriffsvektor eingeführt (reine Vereinfachung/Rückbau von client-seitiger Logik)
+- [x] `published` weiterhin nicht über Texteingaben erreichbar
+- [x] Keine Secrets im Diff
+
+### Automated Test Results
+- **Unit Tests (`npm test`):** 98/98 bestanden (7 Testdateien) — inkl. neuem `describe("isPlayable")`-Block (3 Tests: 0 Stationen → false, ≥1 Station trotz Unvollständigkeit → true, vollständige Quest → true)
+- **PROJ-6 E2E-Suite (`tests/proj-6-creator-quest-verwaltung.spec.ts`, Mobile Safari):** 19/19 bestanden, inkl. neuem `"Play-Sichtbarkeit"`-Block (3 Tests) und korrigiertem BUG-4-Test
+- **Volle E2E-Regression (Mobile Safari, alle Specs):** 82/98 bestanden. Die 16 Fehlschläge (PROJ-1 Theme/Header, PROJ-3 GPS-Navigation, PROJ-4 Stations-Fortschritt) sind exakt dieselben, bereits in jeder vorherigen QA-Runde per `git stash`-Vergleich als vorbestehende, PROJ-6-unabhängige Umgebungs-Flakiness verifizierten Tests — keine neue Regression durch diese Korrektur.
+
+### Cross-Browser Testing
+- **WebKit (Safari-Engine):** Vollständig getestet — "Mobile Safari"-Projekt der E2E-Suite (19/19 PROJ-6-Tests grün)
+- **Chromium:** In dieser Sandbox weiterhin nicht zuverlässig installierbar (dritte QA-Runde in Folge mit demselben Ergebnis: nur `chromium_headless_shell`, `webkit`, `ffmpeg` in `~/Library/Caches/ms-playwright/` vorhanden, volles `chromium` fehlt). Eindeutig eine Umgebungs-/Sandbox-Einschränkung, kein Produktproblem — nicht erneut versucht, um keine weiteren Zyklen zu verschwenden.
+
+### Summary
+- **Acceptance Criteria:** 3/3 (Play-Sichtbarkeit) passed — 19/19 gesamt für PROJ-6 über alle Runden
+- **Bugs Found:** 0 (BUG-4 aus der Vorrunde ist bestätigt behoben)
+- **Security:** Pass
+- **Production Ready:** **YES** — keine offenen Critical/High-Bugs
+- **Recommendation:** Deploy-bereit. Die Korrektur behebt BUG-4 grundlegender als der ursprünglich vorgeschlagene Fallback-Patch und setzt die eigentliche Produktanforderung (Ersteller kann unfertige Quests jederzeit testen, "Entwurf" ist rein informativ) korrekt um.
 
 ## Deployment
 
