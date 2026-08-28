@@ -16,7 +16,7 @@ const QuestListBackdrop = dynamic(
 );
 import { useQuests } from "@/hooks/use-quests";
 import { getProgress, deleteProgress, getQuestListStatus, type QuestListStatus } from "@/lib/quest-progress";
-import { isPublished } from "@/lib/quest-storage";
+import { isPlayable } from "@/lib/quest-storage";
 
 const STATUS_ORDER: Record<QuestListStatus, number> = { live: 0, new: 1, done: 2 };
 
@@ -25,8 +25,9 @@ export default function PlayPage() {
   const [filter, setFilter] = useState<QuestFilter>("all");
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Unpublished quests (still being built/tested in the Creator) aren't playable yet.
-  const quests = useMemo(() => allQuests.filter(isPublished), [allQuests]);
+  // A quest with no stations has nothing to navigate to — everything else
+  // (including an otherwise incomplete "Entwurf") is testable by the creator.
+  const quests = useMemo(() => allQuests.filter(isPlayable), [allQuests]);
 
   const questsWithStatus = useMemo(() => {
     return quests.map((quest) => {

@@ -100,15 +100,27 @@ export function isQuestComplete(quest: Quest): boolean {
 }
 
 /**
- * Whether this quest is visible/playable in the Play-mode list. Defaults to
- * true when the field is absent so quests saved before this feature existed
- * stay visible without a migration step — only new drafts explicitly start
- * unpublished (see createDraftQuest).
+ * Whether this quest has anything to navigate to. This is what gates
+ * visibility in the Play-mode list — a creator can test a quest as soon as
+ * it has at least one station, even if it's still an incomplete "Entwurf"
+ * (that badge is informational for the Creator's own list only, see PROJ-6
+ * spec's "Play-Sichtbarkeit" — it intentionally does NOT gate Play visibility).
+ */
+export function isPlayable(quest: Quest): boolean {
+  return quest.stations.length > 0;
+}
+
+/**
+ * Not currently used anywhere (Play visibility is governed by isPlayable()
+ * above, not this) — kept because PROJ-9 (Export) is expected to need a
+ * "has the creator released this quest" concept. Defaults to true when the
+ * field is absent so quests saved before this existed aren't affected.
  */
 export function isPublished(quest: Quest): boolean {
   return quest.published ?? true;
 }
 
+/** Not currently called anywhere — kept for PROJ-9, see isPublished() above. */
 export function publishQuest(id: string): void {
   const quest = getQuestById(id);
   if (!quest) return;

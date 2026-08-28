@@ -1,9 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 
-// `published: false` matches what createDraftQuest() actually writes for every
-// new quest. Pass `published: undefined` explicitly to simulate a quest saved
-// before this refinement shipped, when the field didn't exist at all yet.
-function draftQuest(id: string, name: string, lastModified: string, published: boolean | undefined = false) {
+function draftQuest(id: string, name: string, lastModified: string) {
   return {
     version: 1,
     id,
@@ -12,17 +9,10 @@ function draftQuest(id: string, name: string, lastModified: string, published: b
     intro: { text: "" },
     outro: { text: "" },
     stations: [],
-    ...(published !== undefined ? { published } : {}),
   };
 }
 
-function completeQuest(
-  id: string,
-  name: string,
-  lastModified: string,
-  stationId: string,
-  published = true
-) {
+function completeQuest(id: string, name: string, lastModified: string, stationId: string) {
   return {
     version: 1,
     id,
@@ -40,7 +30,30 @@ function completeQuest(
         modules: [{ type: "text", content: "Hallo" }],
       },
     ],
-    published,
+  };
+}
+
+// A quest that's genuinely being worked on: has one station (so it's testable
+// in Play), but is still missing required fields (so the "Entwurf" badge shows
+// in the Creator). Play-visibility and the draft badge are independent.
+function partiallyBuiltQuest(id: string, name: string, lastModified: string, stationId: string) {
+  return {
+    version: 1,
+    id,
+    name,
+    lastModified,
+    intro: { text: "" },
+    outro: { text: "" },
+    stations: [
+      {
+        id: stationId,
+        name: "Station 1",
+        lat: 53.6,
+        lng: 10.0,
+        radiusMeters: 10,
+        modules: [{ type: "text", content: "Hallo" }],
+      },
+    ],
   };
 }
 
@@ -163,60 +176,28 @@ test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
     });
   });
 
-  test.describe("Veröffentlichen", () => {
-    test("shows 'Veröffentlichen' disabled for an incomplete quest", async ({ page }) => {
-      await seedQuests(page, [draftQuest(DRAFT_ID, "Unvollständig", "2026-01-01T00:00:00.000Z")]);
-
-      await page.getByRole("button", { name: "Quest-Aktionen" }).click();
-      const publishItem = page.getByRole("menuitem", { name: "Veröffentlichen" });
-      await expect(publishItem).toBeVisible();
-      await expect(publishItem).toHaveAttribute("data-disabled", "");
-    });
-
-    test("publishing a complete quest sets published, shows a toast, and removes the draft badge", async ({ page }) => {
-      await seedQuests(page, [
-        completeQuest(COMPLETE_ID, "Fertig zum Veröffentlichen", "2026-01-01T00:00:00.000Z", COMPLETE_STATION_ID, false),
-      ]);
-
-      const card = page.getByRole("listitem").filter({ hasText: "Fertig zum Veröffentlichen" });
-      await expect(card.getByText("Entwurf")).toBeVisible();
-
-      await page.getByRole("button", { name: "Quest-Aktionen" }).click();
-      const publishItem = page.getByRole("menuitem", { name: "Veröffentlichen" });
-      await expect(publishItem).not.toHaveAttribute("data-disabled", "");
-      await publishItem.click();
-
-      await expect(page.getByText("Quest veröffentlicht")).toBeVisible();
-      await expect(card.getByText("Entwurf")).toHaveCount(0);
-
-      const stored = await page.evaluate(
-        (id) => JSON.parse(localStorage.getItem("gq_quests")!).find((q: { id: string }) => q.id === id),
-        COMPLETE_ID
-      );
-      expect(stored.published).toBe(true);
-    });
-
-    test("has no 'Veröffentlichen' option once a quest is already published", async ({ page }) => {
-      await seedQuests(page, [
-        completeQuest(COMPLETE_ID, "Schon veröffentlicht", "2026-01-01T00:00:00.000Z", COMPLETE_STATION_ID, true),
-      ]);
-
-      await page.getByRole("button", { name: "Quest-Aktionen" }).click();
-      await expect(page.getByRole("menuitem", { name: "Veröffentlichen" })).toHaveCount(0);
-    });
-
-    test("a published quest appears in the Play list; an unpublished one does not", async ({ page }) => {
-      await seedQuests(page, [
-        completeQuest(COMPLETE_ID, "Sichtbar im Play-Modus", "2026-01-02T00:00:00.000Z", COMPLETE_STATION_ID, true),
-        completeQuest(DRAFT_ID, "Nicht im Play-Modus", "2026-01-01T00:00:00.000Z", OLDER_ID, false),
-      ]);
+  test.describe("Play-Sichtbarkeit", () => {
+    test("a quest with 0 stations does not appear in the Play list", async ({ page }) => {
+      await seedQuests(page, [draftQuest(DRAFT_ID, "Noch leer", "2026-01-01T00:00:00.000Z")]);
 
       await page.goto("/play");
-      await expect(page.getByText("Sichtbar im Play-Modus")).toBeVisible();
-      await expect(page.getByText("Nicht im Play-Modus")).not.toBeVisible();
+      await expect(page.getByText("Noch leer")).not.toBeVisible();
     });
 
-    test("imported quests are automatically published and immediately visible in the Play list", async ({ page }) => {
+    test("a quest with at least one station appears in the Play list even while still marked 'Entwurf'", async ({ page }) => {
+      await seedQuests(page, [
+        partiallyBuiltQuest(DRAFT_ID, "Halbfertig aber testbar", "2026-01-01T00:00:00.000Z", COMPLETE_STATION_ID),
+      ]);
+
+      // Still shows the draft badge in the Creator — that's independent of Play visibility.
+      const card = page.getByRole("listitem").filter({ hasText: "Halbfertig aber testbar" });
+      await expect(card.getByText("Entwurf")).toBeVisible();
+
+      await page.goto("/play");
+      await expect(page.getByText("Halbfertig aber testbar")).toBeVisible();
+    });
+
+    test("imported quests are immediately visible in the Play list", async ({ page }) => {
       await gotoEmptyCreate(page);
 
       const importedQuest = {
@@ -351,12 +332,12 @@ test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
       await expect(page.getByText("0 Stationen")).toBeVisible();
     });
 
-    test("BUG-4 (known, unfixed): an incomplete quest saved before this refinement leaks into the Play list", async ({ page }) => {
-      // Simulates a draft created with the pre-refinement createDraftQuest(): 0
-      // stations, no `published` key at all (the field didn't exist yet).
-      // isPublished()'s `?? true` fallback can't tell this apart from an old,
-      // already-complete quest — so it defaults to published, even though it's
-      // structurally incomplete and was never explicitly published.
+    test("BUG-4 (fixed): a legacy quest with no 'published' field and 0 stations no longer leaks into the Play list", async ({ page }) => {
+      // Previously (when Play visibility was gated by isPublished()), a quest
+      // saved without a `published` field defaulted to "published" regardless
+      // of completeness, so an empty legacy draft would incorrectly show up in
+      // Play. Play visibility no longer depends on `published` at all — only
+      // on station count — so this can't happen anymore.
       const legacyDraftId = "22222222-2222-4222-8222-222222222222";
       await page.goto("/create");
       await page.evaluate((id) => {
@@ -366,16 +347,10 @@ test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
         ]));
       }, legacyDraftId);
       await page.reload();
-
-      // Documents the current (buggy) behavior: the publish menu item disappears
-      // (the app thinks it's already published)...
-      await page.getByRole("button", { name: "Quest-Aktionen" }).click();
-      await expect(page.getByRole("menuitem", { name: "Veröffentlichen" })).toHaveCount(0);
-      await page.keyboard.press("Escape");
-
-      // ...and the incomplete quest shows up in Play regardless.
-      await page.goto("/play");
       await expect(page.getByText("Alter Rohentwurf")).toBeVisible();
+
+      await page.goto("/play");
+      await expect(page.getByText("Alter Rohentwurf")).not.toBeVisible();
     });
   });
 

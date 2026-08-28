@@ -7,6 +7,7 @@ import {
   questExists,
   createDraftQuest,
   isQuestComplete,
+  isPlayable,
   isPublished,
   publishQuest,
   renameQuest,
@@ -169,6 +170,24 @@ describe("quest-storage", () => {
     it("returns false when a station has no modules", () => {
       const quest = { ...completeQuest, stations: [{ ...completeQuest.stations[0], modules: [] }] };
       expect(isQuestComplete(quest)).toBe(false);
+    });
+  });
+
+  describe("isPlayable", () => {
+    it("returns false for a fresh draft with no stations", () => {
+      const draft = createDraftQuest("Entwurf");
+      expect(isPlayable(draft)).toBe(false);
+    });
+
+    it("returns true as soon as a quest has at least one station, even if otherwise incomplete", () => {
+      const partiallyBuilt = { ...createDraftQuest("Halbfertig"), stations: completeQuest.stations };
+      expect(isPlayable(partiallyBuilt)).toBe(true);
+      // still structurally incomplete (empty intro/outro) — playable and "Entwurf" are independent
+      expect(isQuestComplete(partiallyBuilt)).toBe(false);
+    });
+
+    it("returns true for a fully complete quest", () => {
+      expect(isPlayable(completeQuest)).toBe(true);
     });
   });
 

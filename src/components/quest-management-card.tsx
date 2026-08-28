@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MoreVertical, Pencil, Rocket, Trash2 } from "lucide-react";
+import { MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -13,35 +13,23 @@ import type { Quest } from "@/lib/quest-schema";
 
 interface QuestManagementCardProps {
   quest: Quest;
-  isComplete: boolean;
-  isPublished: boolean;
-  onPublish: () => void;
+  isDraft: boolean;
   onRename: () => void;
   onDelete: () => void;
 }
 
-export function QuestManagementCard({
-  quest,
-  isComplete,
-  isPublished,
-  onPublish,
-  onRename,
-  onDelete,
-}: QuestManagementCardProps) {
+export function QuestManagementCard({ quest, isDraft, onRename, onDelete }: QuestManagementCardProps) {
   const totalCount = quest.stations.length;
   const metaLine = `${totalCount} ${totalCount === 1 ? "Station" : "Stationen"}`;
-  // "Entwurf" covers two reasons: still structurally incomplete, or complete
-  // but not yet published — both mean "not visible in the Play list".
-  const showDraftBadge = !isComplete || !isPublished;
 
-  const cardClasses = showDraftBadge
+  const cardClasses = isDraft
     ? "flex flex-col gap-2 p-4 rounded-card bg-[#EEF2F3] border-[1.5px] border-dashed border-border"
     : "flex flex-col gap-2 p-4 rounded-card bg-card border border-border shadow-card";
 
   return (
     <div className={cardClasses}>
       <div className="flex items-center justify-between gap-2">
-        {showDraftBadge ? (
+        {isDraft ? (
           <Badge variant="outline" className="flex-shrink-0 text-tech text-[10px] tracking-[0.1em]">
             Entwurf
           </Badge>
@@ -57,12 +45,6 @@ export function QuestManagementCard({
           </DropdownMenuTrigger>
           {/* Radix portals to <body>, outside the light-themed container from create/layout.tsx — re-apply the theme here so CSS variables resolve correctly. */}
           <DropdownMenuContent align="end" data-theme="light">
-            {!isPublished && (
-              <DropdownMenuItem onSelect={onPublish} disabled={!isComplete}>
-                <Rocket className="w-4 h-4" />
-                Veröffentlichen
-              </DropdownMenuItem>
-            )}
             <DropdownMenuItem onSelect={onRename}>
               <Pencil className="w-4 h-4" />
               Umbenennen

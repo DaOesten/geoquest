@@ -1,16 +1,16 @@
 # PROJ-6: Creator — Quest-Verwaltung
 
-## Status: In Review
+## Status: In Progress
 **Created:** 2026-08-27
 **Last Updated:** 2026-08-28
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — für Routing (`/create`) und UI-Rahmen
 - Requires: PROJ-2 (Quest Data Model & JSON Import) — für Quest-Schema, den `gq_quests`-Storage-Layer und den bestehenden Import-Button
-- Beeinflusst: PROJ-3 (Player — GPS-Navigation, bereits deployed) — die Play-Quest-Liste muss zusätzlich nach `published` filtern. Kein neuer PROJ-3-Spec-Abschnitt nötig, aber `src/app/play/page.tsx` ändert sich als Konsequenz dieser Spec.
+- Beeinflusst: PROJ-3 (Player — GPS-Navigation, bereits deployed) — die Play-Quest-Liste filtert Quests ohne Stationen heraus (nichts zu navigieren = nicht spielbar). Kein neuer PROJ-3-Spec-Abschnitt nötig, aber `src/app/play/page.tsx` ändert sich als Konsequenz dieser Spec.
 
 ## Summary
-Die zentrale Verwaltungsansicht im Creator-Modus (`/create`): Nutzer sehen alle ihre Quests (selbst erstellte + importierte), können neue Quests anlegen, bestehende umbenennen oder löschen. Bildet die Eingangstür zum gesamten Creator-Flow — jede hier angelegte Quest landet anschließend im Stationen-Editor (PROJ-7). Steuert außerdem, ob eine Quest im Play-Modus sichtbar/spielbar ist: Erst nach explizitem Veröffentlichen durch den Ersteller erscheint eine (vollständige) Quest in der Play-Liste — unvollständige oder noch nicht freigegebene Quests bleiben ausschließlich im Creator sichtbar.
+Die zentrale Verwaltungsansicht im Creator-Modus (`/create`): Nutzer sehen alle ihre Quests (selbst erstellte + importierte), können neue Quests anlegen, bestehende umbenennen oder löschen. Bildet die Eingangstür zum gesamten Creator-Flow — jede hier angelegte Quest landet anschließend im Stationen-Editor (PROJ-7). Steuert außerdem, ob eine Quest im Play-Modus überhaupt sinnvoll spielbar ist: Eine Quest ohne Stationen (nichts zum Navigieren) erscheint nicht in der Play-Liste; sobald mindestens eine Station existiert, kann der Ersteller sie dort selbst testen — auch wenn sie noch nicht "fertig" ist. Das "Entwurf"-Badge ist reine Information für die eigene Quest-Verwaltung und hat keinen Einfluss auf die Play-Sichtbarkeit.
 
 ## User Stories
 1. Als Ersteller möchte ich alle meine Quests auf einen Blick sehen, damit ich weiß, woran ich gerade arbeite.
@@ -18,8 +18,9 @@ Die zentrale Verwaltungsansicht im Creator-Modus (`/create`): Nutzer sehen alle 
 3. Als Ersteller möchte ich eine Quest umbenennen können, damit ich Tippfehler korrigieren oder den Arbeitstitel anpassen kann.
 4. Als Ersteller möchte ich eine Quest löschen können, damit ich nicht mehr benötigte Entwürfe oder Testquests entfernen kann.
 5. Als Ersteller möchte ich vor dem Löschen gefragt werden, ob ich sicher bin, damit ich nicht versehentlich Arbeit verliere.
-6. Als Ersteller möchte ich erkennen, welche Quests noch unvollständige Entwürfe sind, damit ich weiß, welche noch nicht spielbar/exportierbar sind.
-7. Als Ersteller möchte ich eine fertige Quest explizit veröffentlichen, damit sie erst dann im Play-Modus sichtbar und spielbar wird — vorher kann ich in Ruhe weiterarbeiten, ohne dass eine unfertige oder noch nicht freigegebene Quest dort auftaucht.
+6. Als Ersteller möchte ich erkennen, welche Quests noch unvollständige Entwürfe sind, damit ich weiß, woran ich noch arbeiten muss — unabhängig davon, ob ich sie schon testen kann.
+7. Als Ersteller möchte ich meinen Zwischenstand jederzeit gespeichert wissen, damit eine unfertige Quest nie verloren geht, egal was passiert.
+8. Als Ersteller möchte ich eine Quest bereits testen können, sobald sie mindestens eine Station hat, auch wenn sie noch nicht komplett ist — ich will meinen Fortschritt unterwegs ausprobieren, nicht erst am Ende.
 
 ## Out of Scope
 - Stationen-Editor / Karte zum Setzen von GPS-Koordinaten (PROJ-7)
@@ -32,8 +33,8 @@ Die zentrale Verwaltungsansicht im Creator-Modus (`/create`): Nutzer sehen alle 
 - Suche/Filter/Tags für die Quest-Liste (bei erwarteter Quest-Anzahl 10–20 nicht nötig)
 - Mehrbenutzer-Zugriff / Freigabe an andere Nutzer (kein Account-System laut PRD)
 - Feste Obergrenze für Quest-Anzahl (nur natürliches localStorage-Limit aus PROJ-2)
-- "Unveröffentlichen" / Zurückziehen einer bereits veröffentlichten Quest (bewusst einmalig/endgültig, siehe Decision Log)
-- JSON-Export selbst (PROJ-9, weiterhin nicht gebaut) — diese Refinement legt nur die Regel fest, dass Export später Veröffentlicht voraussetzt; die technische Umsetzung folgt bei `/write-spec PROJ-9`
+- **"Veröffentlichen"-Aktion/UI (zurückgestellt bis PROJ-9):** Der ursprüngliche Plan sah einen expliziten "Veröffentlichen"-Schalter vor, der die Play-Sichtbarkeit steuert. Nach Nutzer-Feedback korrigiert: Play-Sichtbarkeit hängt nur noch davon ab, ob die Quest Stationen hat — nicht von einem manuellen Veröffentlichen-Schritt. Das `published`-Datenfeld und die Storage-Funktionen (`isPublished`, `publishQuest`) bleiben im Code bestehen (bereits gebaut, getestet, keine sichtbare UI-Wirkung mehr), da PROJ-9 (Export) sie voraussichtlich braucht — siehe Decision Log
+- JSON-Export selbst (PROJ-9, weiterhin nicht gebaut)
 
 ## Acceptance Criteria
 
@@ -50,16 +51,14 @@ Die zentrale Verwaltungsansicht im Creator-Modus (`/create`): Nutzer sehen alle 
 - [ ] Angenommen der Namens-Dialog ist offen, wenn der Nutzer abbricht, dann wird keine Quest angelegt und der Dialog schließt sich
 
 **Entwurf-Kennzeichnung:**
-- [ ] Angenommen eine Quest hat 0 Stationen oder unvollständige Pflichtfelder (z.B. leerer Intro-Text) ODER ist vollständig aber noch nicht veröffentlicht, wenn sie in der Liste angezeigt wird, dann erscheint ein "Entwurf"-Badge
-- [ ] Angenommen eine Quest wurde veröffentlicht, wenn sie in der Liste angezeigt wird, dann erscheint kein "Entwurf"-Badge
+- [ ] Angenommen eine Quest hat 0 Stationen oder unvollständige Pflichtfelder (z.B. leerer Intro-Text), wenn sie in der Liste angezeigt wird, dann erscheint ein "Entwurf"-Badge
+- [ ] Angenommen eine Quest erfüllt alle Pflichtfelder des Quest-Schemas (min. 1 Station mit min. 1 Modul, Intro-/Outro-Text vorhanden), wenn sie in der Liste angezeigt wird, dann erscheint kein "Entwurf"-Badge
+- [ ] Das "Entwurf"-Badge ist ausschließlich eine Information für die eigene Quest-Verwaltung im Creator — es hat KEINEN Einfluss darauf, ob die Quest im Play-Modus erscheint (siehe "Play-Sichtbarkeit")
 
-**Veröffentlichen:**
-- [ ] Angenommen eine Quest ist unvollständig (erfüllt nicht alle Pflichtfelder des Quest-Schemas), wenn der Nutzer das Aktionen-Menü öffnet, dann ist "Veröffentlichen" sichtbar, aber deaktiviert
-- [ ] Angenommen eine Quest ist vollständig und noch nicht veröffentlicht, wenn der Nutzer das Aktionen-Menü öffnet, dann ist "Veröffentlichen" aktiv wählbar
-- [ ] Angenommen eine vollständige, unveröffentlichte Quest existiert, wenn der Nutzer "Veröffentlichen" wählt, dann wird `published` auf `true` gesetzt, `lastModified` aktualisiert, eine Erfolgsmeldung (Toast) erscheint, und das "Entwurf"-Badge verschwindet
-- [ ] Angenommen eine Quest wurde veröffentlicht, wenn der Nutzer die Quest-Liste im Play-Modus öffnet, dann erscheint die Quest dort (vorher nicht)
-- [ ] Angenommen eine Quest wurde bereits veröffentlicht, wenn der Nutzer das Aktionen-Menü öffnet, dann ist die Option "Veröffentlichen" nicht mehr vorhanden (Veröffentlichen ist einmalig, kein Zurück)
-- [ ] Angenommen eine Quest wird per Datei importiert (PROJ-2), wenn sie gespeichert wird, dann gilt sie automatisch als veröffentlicht (`published: true`), ohne dass ein manueller Schritt nötig ist
+**Play-Sichtbarkeit:**
+- [ ] Angenommen eine Quest hat 0 Stationen, wenn der Nutzer die Quest-Liste im Play-Modus öffnet, dann erscheint diese Quest dort NICHT (nichts zum Navigieren vorhanden)
+- [ ] Angenommen eine Quest hat mindestens 1 Station — unabhängig davon, ob sie als "Entwurf" markiert ist oder alle Pflichtfelder erfüllt —, wenn der Nutzer die Quest-Liste im Play-Modus öffnet, dann erscheint diese Quest dort und ist spielbar/testbar
+- [ ] Angenommen eine Quest wird per Datei importiert (PROJ-2), wenn sie gespeichert wird, dann ist sie sofort im Play-Modus sichtbar (unverändertes PROJ-2-Verhalten, importierte Dateien haben immer mind. 1 Station)
 
 **Umbenennen:**
 - [ ] Angenommen eine Quest existiert, wenn der Nutzer die Umbenennen-Aktion auf einer Quest-Karte auswählt, dann öffnet sich ein Dialog mit dem aktuellen Namen vorausgefüllt
@@ -79,10 +78,9 @@ Die zentrale Verwaltungsansicht im Creator-Modus (`/create`): Nutzer sehen alle 
 5. **HTML/Script im Quest-Namen:** Wird wie in PROJ-2 beim Speichern sanitized (Tags entfernt)
 6. **localStorage voll beim Anlegen einer neuen Quest:** Gleiche Fehlermeldung wie in PROJ-2 ("Speicher voll. Lösche eine Quest und versuche es erneut.")
 7. **Import-Button auf `/create`:** Bereits durch PROJ-2 abgedeckt — importierte Quests erscheinen in derselben Liste wie selbst erstellte
-8. **Import setzt automatisch `published: true`:** Bewahrt das bestehende "Import und sofort spielen"-Verhalten aus PROJ-2 — nur selbst erstellte Quests durchlaufen den Entwurf → Veröffentlichen-Zyklus
-9. **"Veröffentlichen" bei unvollständiger Quest:** Menüpunkt ist sichtbar, aber deaktiviert — kein Klick möglich, keine Fehlermeldung nötig, da die UI die Aktion gar nicht erst zulässt
-10. **Erneutes "Veröffentlichen" einer bereits veröffentlichten Quest:** Nicht möglich — die Option verschwindet aus dem Menü, sobald `published === true`
-11. **Bestehende Quests ohne `published`-Feld (vor diesem Refinement angelegt):** Werden beim Lesen als bereits veröffentlicht behandelt (siehe Open Questions) — verhindert, dass Quests durch dieses Update plötzlich aus der Play-Liste verschwinden
+8. **Frisch angelegte Quest (0 Stationen) erscheint nicht im Play-Modus:** Erwartetes Verhalten — es gibt nichts zu navigieren. Sobald der Ersteller (später in PROJ-7) die erste Station anlegt, wird die Quest automatisch im Play-Modus sichtbar, ganz ohne weiteren manuellen Schritt
+9. **Ersteller testet eine unfertige Quest (z.B. fehlender Outro-Text, nur 2 von geplanten 5 Stationen):** Ausdrücklich erwünscht — die Quest ist in der Creator-Liste weiterhin als "Entwurf" markiert, aber im Play-Modus ganz normal spielbar/testbar
+10. **Zwischenstand geht nicht verloren:** Jede Quest wird sofort bei Anlage in `localStorage` gespeichert (siehe `createDraftQuest`, PROJ-2-Speichermechanismus) — unabhängig vom Vollständigkeitsstatus. Es gibt keinen Zustand, in dem eine begonnene Quest ungespeichert bliebe
 
 ## Technical Requirements
 - Speicher: Nutzt den bestehenden `gq_quests`-Storage-Layer aus PROJ-2 (kein neuer Key)
@@ -90,14 +88,14 @@ Die zentrale Verwaltungsansicht im Creator-Modus (`/create`): Nutzer sehen alle 
 - Sanitization: Quest-Name wird wie andere Textfelder in PROJ-2 von HTML-Tags bereinigt
 - Touch-Targets: min. 44px (PRD-Anforderung)
 - Bestätigungsdialog bei kritischen Aktionen (Löschen) — PRD-Vorgabe
-- Neues Feld `published: boolean` im Quest-Datenmodell (Erweiterung von PROJ-2). Default `false` für neu angelegte Quests (`createDraftQuest`), `true` für per Datei importierte Quests (`quest-import.ts`)
-- `/play`-Quest-Liste (PROJ-3, `src/app/play/page.tsx`) muss zusätzlich nach `published === true` filtern — bestehende Live/Neu/Fertig-Filter-Tabs bleiben unverändert und wirken nur auf die bereits vorgefilterte, veröffentlichte Menge
+- `/play`-Quest-Liste (PROJ-3, `src/app/play/page.tsx`) filtert Quests mit 0 Stationen heraus (`isPlayable`) — bestehende Live/Neu/Fertig-Filter-Tabs bleiben unverändert und wirken nur auf die bereits vorgefilterte, spielbare Menge
+- Feld `published: boolean` bleibt im Quest-Datenmodell bestehen (Default `false` für neu angelegte Quests, `true` für importierte), wird aber aktuell an keiner Stelle der UI gesetzt oder ausgewertet — reserviert für PROJ-9 (Export), siehe Decision Log
 
 ## Open Questions
 - [x] Ab welcher Kombination von Feldern gilt eine Quest exakt als "vollständig" vs. "Entwurf"? → Gelöst in `/architecture`: Eine separate Vollständigkeits-Prüfung wendet dieselben Regeln wie das Import-Schema aus PROJ-2 an (mind. 1 Station mit mind. 1 Modul, Intro-/Outro-Text vorhanden), ohne beim Speichern zu blockieren. Siehe Tech Design.
 - [ ] Soll es eine maximale Zeichenlänge für den Quest-Namen geben (UI-Konsistenz), oder reicht das bestehende 5-MB-Gesamtlimit aus PROJ-2?
-- [x] Wie werden bereits gespeicherte Quests ohne `published`-Feld beim ersten Laden nach diesem Update behandelt? → Gelöst in `/architecture`: Eine `isPublished()`-Prüfung liest das Feld mit Fallback `true`, wenn es fehlt — bestehende Quests bleiben ohne Zutun weiterhin in der Play-Liste sichtbar. Siehe Tech Design.
-- [ ] Wie erzwingt PROJ-9 (JSON-Export, noch nicht spezifiziert) die Regel "Export setzt Veröffentlicht voraus" technisch (z.B. Export-Button deaktiviert bei unveröffentlichten Quests)? Wird bei `/write-spec PROJ-9` aufgegriffen.
+- [x] Wie werden bereits gespeicherte Quests ohne `published`-Feld beim ersten Laden nach diesem Update behandelt? → Gegenstandslos geworden: Play-Sichtbarkeit hängt nicht mehr von `published` ab, sondern nur noch von der Stationsanzahl (siehe Korrektur im Decision Log vom 2026-08-28). `isPublished()`/`publishQuest()` bleiben als ungenutzte, aber getestete Bausteine für PROJ-9 im Code.
+- [ ] Wie erzwingt PROJ-9 (JSON-Export, noch nicht spezifiziert) die Regel "Export setzt Veröffentlicht voraus" technisch (z.B. Export-Button deaktiviert bei unveröffentlichten Quests)? Weiterhin offen, wird bei `/write-spec PROJ-9` aufgegriffen — inklusive der Frage, WER/WAS `published` dann überhaupt setzt, da die UI dafür aktuell entfernt wurde
 
 ## Decision Log
 
@@ -120,6 +118,9 @@ Die zentrale Verwaltungsansicht im Creator-Modus (`/create`): Nutzer sehen alle 
 | Veröffentlichen ist einmalig/endgültig, kein "Unveröffentlichen" | Bewusste Vereinfachung auf ausdrücklichen Wunsch des Nutzers — einfacher, linearer Zustand ohne Zurück-Option | 2026-08-27 |
 | "Entwurf"-Badge wird für "unvollständig" UND "vollständig aber unveröffentlicht" wiederverwendet, statt ein zweites Badge einzuführen | Weniger visuelles Rauschen und keine dritte State-Unterscheidung nötig — ein Badge bedeutet einheitlich "noch nicht im Play-Modus sichtbar", unabhängig vom genauen Grund. Auf Wunsch des Nutzers vereinfacht | 2026-08-27 |
 | Export (PROJ-9, künftig) setzt Veröffentlicht voraus | Konsistente Regel: eine geteilte Quest-Datei sollte immer vom Ersteller freigegeben sein. Als Decision für die spätere PROJ-9-Spezifikation vorgemerkt, nicht Teil des PROJ-6-Scopes | 2026-08-27 |
+| **Korrektur (2026-08-28):** Play-Sichtbarkeit hängt NICHT mehr von einem manuellen "Veröffentlichen" ab, sondern nur noch davon, ob die Quest mindestens 1 Station hat | Nutzer-Klarstellung nach der QA-Runde: Das "Entwurf"-Badge ist reine Information für die eigene Quest-Verwaltung, kein Play-Gate — der Ersteller soll seine Quest jederzeit selbst testen können, sobald es etwas zu testen gibt, auch unfertig. Ersetzt die drei Zeilen oben zum manuellen Veröffentlichen-Schalter; diese bleiben als Aufzeichnung stehen, warum der erste Ansatz gewählt und dann verworfen wurde | 2026-08-28 |
+| "Veröffentlichen"-UI (Menüpunkt, Toast, Badge-Kopplung) entfernt, `published`-Feld + Storage-Funktionen bleiben im Code | Die UI hätte aktuell keine erkennbare Wirkung mehr (Play hängt nicht mehr davon ab) — ein Button ohne Funktion wäre verwirrend. Das Datenfeld selbst bleibt, weil PROJ-9 (Export) es voraussichtlich braucht ("Export setzt Veröffentlicht voraus", siehe oben) und die Storage-Funktionen bereits gebaut + getestet sind — Wiederverwendung statt Neubau bei PROJ-9 | 2026-08-28 |
+| Zwischenstand-Speicherung explizit als eigenes Edge Case dokumentiert (nicht nur implizit vorausgesetzt) | Nutzer betonte explizit: "was nicht passieren darf" ist Datenverlust bei einer unfertigen Quest. Das war durch `createDraftQuest()` (PROJ-2-Mechanismus, sofortiges Speichern) technisch schon immer erfüllt — jetzt aber als bewusste Garantie in der Spec festgehalten, nicht nur als Nebeneffekt | 2026-08-28 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -140,6 +141,9 @@ Die zentrale Verwaltungsansicht im Creator-Modus (`/create`): Nutzer sehen alle 
 | `/play/page.tsx` filtert die Quest-Liste einmalig ganz am Anfang nach `isPublished()`, vor der bestehenden Live/Neu/Fertig-Statusberechnung | Minimaler, chirurgischer Eingriff in bereits deployten Code — alles danach (Filter-Tabs, Sortierung, Fortschrittsanzeige) bleibt unverändert und arbeitet einfach auf einer kleineren, vorgefilterten Menge | 2026-08-27 |
 | `QuestManagementCard` bekommt zwei separate Booleans (`isComplete`, `isPublished`) statt eines einzigen `isDraft`-Flags | Das "Entwurf"-Badge braucht die ODER-Verknüpfung beider Zustände, aber der "Veröffentlichen"-Menüpunkt braucht sie einzeln (deaktiviert nur bei `!isComplete`, komplett ausgeblendet bei `isPublished`) — eine Komponente kann beide Anzeigen aus den zwei Rohwerten ableiten, ein einzelnes gemischtes Flag könnte das nicht mehr eindeutig | 2026-08-27 |
 | Kein Bestätigungsdialog beim Veröffentlichen | Anders als Löschen ist Veröffentlichen zwar einmalig, aber nicht destruktiv (kein Datenverlust) — passt nicht in die PRD-Vorgabe "Bestätigungsdialog bei kritischen Aktionen", die bislang ausschließlich für Löschen gilt | 2026-08-27 |
+| **Korrektur (2026-08-28):** `/play/page.tsx` filtert jetzt nach neuer `isPlayable(quest)`-Prüfung (`stations.length > 0`) statt nach `isPublished()` | Ersetzt den Publish-Gate-Mechanismus direkt an der Stelle, wo er eingebaut wurde — löst nebenbei BUG-4 aus der letzten QA-Runde (der Fehler existierte nur, weil Play von `isPublished()` abhing; diese Abhängigkeit gibt es jetzt nicht mehr) | 2026-08-28 |
+| `QuestManagementCard` zurück auf ein einzelnes `isDraft`-Flag statt `isComplete`+`isPublished` | Ohne die Veröffentlichen-Aktion gibt es nur noch einen Zustand zu unterscheiden (vollständig oder nicht) — die Aufspaltung in zwei Booleans war ausschließlich für den jetzt entfernten Menüpunkt nötig | 2026-08-28 |
+| `isPublished()`/`publishQuest()` bleiben unverändert in `quest-storage.ts` stehen, werden aber von keiner Seite mehr aufgerufen | Bewusst nicht gelöscht — bereits gebaut und unit-getestet, PROJ-9 (Export) wird sie voraussichtlich brauchen. Einzige Änderung: kein Aufrufer mehr in `/play` oder der Creator-UI | 2026-08-28 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
@@ -357,6 +361,24 @@ Setzt das Tech Design aus dem `/refine`-Durchlauf 1:1 um.
 **Tests:** 5 neue Unit-Tests in `quest-storage.test.ts` (`isPublished`-Fallback bei fehlendem Feld, explizit `false`/`true`, `publishQuest` aktualisiert Status + `lastModified`, No-op bei unbekannter ID) + 1 neuer Unit-Test in `quest-import.test.ts` (importierte Quest ist `published: true`). `npm test` grün (95/95).
 
 **Verifikation:** `npm run build`/`lint` grün. Manueller Playwright/WebKit-Durchlauf mit drei Quests (Entwurf 0 Stationen, vollständig-unveröffentlicht, bereits veröffentlicht): Menüzustände korrekt in allen drei Fällen (sichtbar+deaktiviert / sichtbar+aktiv / ausgeblendet), Veröffentlichen setzt Status + zeigt Toast + entfernt Badge, `/play` zeigt danach nur die zwei veröffentlichten Quests und nicht den unveröffentlichten Entwurf. Keine Konsolenfehler. E2E-Testsuite (`tests/proj-6-creator-quest-verwaltung.spec.ts`) wurde für dieses Refinement noch nicht erweitert — folgt in `/qa`.
+
+### Korrektur nach Nutzer-Feedback: Play-Sichtbarkeit entkoppelt von "Veröffentlichen" (2026-08-28)
+
+Setzt die Korrektur aus dem Decision Log vom 2026-08-28 um — direkt im Anschluss an die QA-Runde, die BUG-4 fand. Der Nutzer stellte klar: "Entwurf" ist eine reine Information für die eigene Quest-Verwaltung, kein Play-Gate. Der Ersteller soll jede Quest mit mindestens einer Station selbst testen können, auch unfertig.
+
+**Geänderte Dateien:**
+| Datei | Änderung |
+|-------|----------|
+| `src/lib/quest-storage.ts` | Neue `isPlayable(quest)` (`stations.length > 0`) — das ist jetzt die einzige Play-Sichtbarkeits-Regel. `isPublished()`/`publishQuest()` bleiben unverändert im Code stehen (für PROJ-9), werden aber von nichts mehr aufgerufen — Kommentare entsprechend ergänzt |
+| `src/app/play/page.tsx` | Filter von `isPublished` auf `isPlayable` umgestellt |
+| `src/components/quest-management-card.tsx` | Zurück auf ein einzelnes `isDraft`-Prop; "Veröffentlichen"-Menüpunkt (inkl. `Rocket`-Icon-Import) entfernt |
+| `src/app/create/page.tsx` | `handlePublish` entfernt, `sortedQuests`/`visibleQuests` zurück auf einfaches `isDraft` = `!isQuestComplete(quest)` |
+
+**Wichtiger Nebeneffekt:** Das behebt BUG-4 aus der letzten QA-Runde vollständig — der Fehler existierte nur, weil Play von `isPublished()` (mit seinem `?? true`-Fallback) abhing. Jetzt hängt Play nur noch von der Stationsanzahl ab, unabhängig vom `published`-Feld — ein alter Entwurf ohne `published`-Feld und ohne Stationen erscheint jetzt korrekt NICHT im Play-Modus.
+
+**Tests:** 3 neue Unit-Tests für `isPlayable` in `quest-storage.test.ts` (0 Stationen → false, 1+ Station trotz sonstiger Unvollständigkeit → true, vollständige Quest → true). E2E-Suite umgebaut: der "Veröffentlichen"-Testblock wurde durch einen neuen "Play-Sichtbarkeit"-Block ersetzt (0-Stationen-Quest nicht in Play, 1+-Stationen-Quest trotz Entwurf-Badge in Play sichtbar, Import weiterhin sofort sichtbar); der BUG-4-Test wurde von "known, unfixed" auf die jetzt korrekte (behobene) Erwartung umgedreht. `npm test` grün (98/98), volle PROJ-6-E2E-Suite grün (19/19 auf "Mobile Safari"), volle bestehende Suite weiterhin ohne neue Regressionen (dieselben 16 vorbestehenden, unabhängigen Fehlschläge aus PROJ-1/3/4).
+
+**Verifikation:** Manueller Playwright/WebKit-Durchlauf mit drei Quests (0 Stationen, 1 Station + sonst unvollständig, komplett fertig) bestätigt: Aktionen-Menü zeigt nur noch "Umbenennen"/"Löschen", Play-Liste zeigt genau die zwei Quests mit Stationen — inklusive der noch als "Entwurf" markierten, halbfertigen Quest, die der Ersteller jetzt testen kann. Keine Konsolenfehler.
 
 ## QA Test Results
 
