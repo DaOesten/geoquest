@@ -13,8 +13,25 @@ interface StationRadiusSliderProps {
   onChange: (radiusMeters: number) => void;
 }
 
+// Maps an arbitrary radius (e.g. from an imported quest whose radiusMeters
+// isn't one of the 4 UI steps, see PROJ-7 QA BUG-2) to the closest step index,
+// instead of indexOf's -1 collapsing to 0 — which silently parked the thumb at
+// 10m and made the first nudge shrink the radius instead of moving from it.
+function closestStepIndex(value: number): number {
+  let closest = 0;
+  let smallestDiff = Infinity;
+  RADIUS_STEPS.forEach((step, index) => {
+    const diff = Math.abs(step - value);
+    if (diff < smallestDiff) {
+      smallestDiff = diff;
+      closest = index;
+    }
+  });
+  return closest;
+}
+
 export function StationRadiusSlider({ value, onChange }: StationRadiusSliderProps) {
-  const stepIndex = Math.max(0, RADIUS_STEPS.indexOf(value as (typeof RADIUS_STEPS)[number]));
+  const stepIndex = closestStepIndex(value);
 
   return (
     <div className="flex flex-col gap-2">

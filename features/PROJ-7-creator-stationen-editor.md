@@ -1,6 +1,6 @@
 # PROJ-7: Creator — Stationen-Editor
 
-## Status: In Review
+## Status: Approved
 **Created:** 2026-08-28
 **Last Updated:** 2026-08-28
 
@@ -358,16 +358,35 @@ Bereits im Frontend-Schritt ergänzt (11 neue Tests in `quest-storage.test.ts` f
 ### E2E Tests
 Neue Datei `tests/proj-7-creator-stationen-editor.spec.ts`: 19 Tests, je mindestens einer pro Akzeptanzkriterien-Gruppe plus eine dedizierte PROJ-6-Regressionsprüfung. Alle 19 grün auf "Mobile Safari". Zusätzlich `tests/proj-6-creator-quest-verwaltung.spec.ts` um den oben beschriebenen Platzhaltertext-Fix korrigiert (weiterhin 19/19 grün).
 
-### Production-Ready Decision
+### Production-Ready Decision (ursprünglich)
 
 **NOT READY** — BUG-2 (Medium) sollte vor dem Deploy behoben werden, da er eine stille, für den Nutzer unsichtbare Datenverfälschung (Ankunftsradius schrumpft ohne erkennbaren Grund) ermöglicht, sobald ein Wert außerhalb der 4 UI-Stufen ins System gelangt. BUG-1 (Low) ist nicht blockierend und kann optional mit BUG-2 zusammen gefixt werden.
 
-### Summary
+### Summary (ursprünglich)
 - **Acceptance Criteria:** 19/19 funktional bestanden (2 mit dokumentierten Bugs als Abweichung)
 - **Bugs Found:** 2 total (0 critical, 0 high, 1 medium, 1 low)
 - **Security:** Pass — keine Schwachstellen gefunden
 - **Production Ready:** NO
 - **Recommendation:** BUG-2 vor Deploy fixen (Radius-Regler muss einen nicht-stufenkonformen Ausgangswert entweder auf die nächstgelegene Stufe abbilden oder den Rohwert beibehalten, bis der Nutzer den Regler bewusst bedient — nicht stillschweigend auf Index 0 zurückfallen). BUG-1 optional im selben Durchgang mitnehmen (Kontext-Pin-Auswahl nach `lastModified`-Zeitstempel statt Array-Position sortieren).
+
+### Bugfix-Pass (2026-08-28, nach /qa)
+
+Auf Nutzer-Entscheidung wurde nur **BUG-2** behoben; **BUG-1 bleibt bestehen** (Low, nicht blockierend, optional für einen späteren Durchgang).
+
+**BUG-2 (Medium, Radius-Regler bei nicht-stufenkonformem Wert):** `station-radius-slider.tsx` bildet den Ausgangswert jetzt über eine neue `closestStepIndex()`-Funktion auf die **nächstgelegene** der 4 Stufen ab, statt bei einem nicht exakt passenden Wert (`RADIUS_STEPS.indexOf(value)` → `-1`) auf Index 0 zurückzufallen. Ein importierter Wert wie `37` zeigt den Slider-Thumb jetzt korrekt nahe der 25m-Position (statt fälschlich bei 10m), und die erste Regler-Bedienung bewegt sich von dort aus vorhersehbar nach oben (37 → 50) statt unerwartet nach unten (37 → 25) zu springen. Der gespeicherte Rohwert bleibt beim reinen Öffnen/Speichern ohne Regler-Interaktion unverändert (`37` bleibt `37`) — das war schon vorher der Fall und ändert sich nicht.
+
+**Tests:** 1 neuer E2E-Test in `tests/proj-7-creator-stationen-editor.spec.ts` ("BUG-2 regression: …") verifiziert beide Teile des Fixes: unverändertes Speichern ohne Regler-Interaktion UND korrekte Aufwärtsbewegung bei der ersten Bedienung. `npm run build`/`lint`/`test` weiterhin grün (109/109 Unit-Tests), volle PROJ-7-E2E-Suite grün (20/20 auf "Mobile Safari", inkl. des neuen Tests), PROJ-6-Suite weiterhin 19/19 grün.
+
+### Production-Ready Decision (nach Bugfix-Pass)
+
+**READY** — BUG-2 (einziger blockierender Fund) ist behoben und regressionsgetestet. BUG-1 (Low) bleibt offen, ist aber laut ursprünglicher Bewertung nicht blockierend (kein Datenverlust, nur ein suboptimaler Kartenausschnitt in einem Sonderfall) und kann bei Bedarf in einem späteren `/refine`-Durchgang aufgegriffen werden.
+
+### Summary (nach Bugfix-Pass)
+- **Acceptance Criteria:** 19/19 bestanden
+- **Bugs Found:** 2 total, 1 behoben (BUG-2, Medium), 1 offen (BUG-1, Low, nicht blockierend)
+- **Security:** Pass — keine Schwachstellen gefunden
+- **Production Ready:** YES
+- **Recommendation:** Deploy freigegeben. BUG-1 optional zu einem späteren Zeitpunkt beheben.
 
 ## Deployment
 _To be added by /deploy_

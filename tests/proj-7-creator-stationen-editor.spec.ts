@@ -134,6 +134,24 @@ test.describe("PROJ-7: Creator — Stationen-Editor", () => {
       await page.keyboard.press("ArrowRight");
       await expect(page.getByText("100 m").last()).toBeVisible();
     });
+
+    test("BUG-2 regression: a non-step radius (e.g. from an import) keeps its value on save, and the first nudge moves up from its nearest step instead of collapsing to 10m", async ({ page }) => {
+      await seedQuest(page, draftQuest(QUEST_ID, "Quest", [station(STATION_A_ID, "Imported", { radiusMeters: 37 })]));
+      await page.getByText("Imported").click();
+      await expect(page.getByText("37 m").last()).toBeVisible();
+
+      // Saving without touching the slider must not silently change the value.
+      await page.getByRole("button", { name: "Speichern" }).click();
+      const savedUntouched = await page.evaluate(() => JSON.parse(localStorage.getItem("gq_quests")!)[0].stations[0].radiusMeters);
+      expect(savedUntouched).toBe(37);
+
+      // Nudging once from 37 (nearest step: 25) must move up to 50, not down to 25.
+      await page.getByText("Imported").click();
+      const slider = page.getByRole("slider");
+      await slider.focus();
+      await page.keyboard.press("ArrowRight");
+      await expect(page.getByText("50 m").last()).toBeVisible();
+    });
   });
 
   test.describe("Speichern (Entwurfsprinzip)", () => {
