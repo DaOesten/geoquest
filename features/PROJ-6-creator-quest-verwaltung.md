@@ -680,3 +680,15 @@ Verifiziert die Korrektur aus Commit `05226ed`: Play-Sichtbarkeit hängt nicht m
   - Aktionen-Menü zeigt nur noch "Umbenennen"/"Löschen" — "Veröffentlichen" ist vollständig entfernt
   - Keine Konsolen-/Seitenfehler während des gesamten Smoke-Tests
 - Bestätigt: BUG-4 ist auch in Production behoben (Alt-Quests ohne `published`-Feld werden nicht mehr fälschlich in Play angezeigt)
+
+## Implementation Notes — Creator-Redesign & Hover-Vereinheitlichung (2026-08-28)
+
+Zwei nutzergetriebene Styling-Änderungen ohne neue Acceptance Criteria, umgesetzt im selben Zug wie bei PROJ-7/PROJ-8 (siehe dortige Implementation Notes für den geteilten Kontext):
+
+**Creator-Redesign** (Commit `d5ce893`): `/create` erhält den Ambient-Background aus `design-preparation/Creator_Quest_List.html` (Radial-Gradient + Grid + animierte gestrichelte Route, neue Komponente `src/components/creator-backdrop.tsx`) sowie einen transparenten Header ohne Trennlinie (`AppHeader ... transparent`). Das "Entwurf"-Badge auf Quest-Karten (`quest-management-card.tsx`) wurde entfernt — die bestehende grau/gestrichelte Kartenoptik bleibt der einzige Entwurf-Indikator. Logo und Drei-Punkte-Menü unverändert.
+
+**Hover-Vereinheitlichung** (Commit `d7565a1`): Quest-Karten im Create-Modus (`quest-management-card.tsx`, alle Zustände inkl. Entwurf) haben jetzt bei Hover denselben Lift-Effekt wie die Play-Quest-Karten (`quest-card.tsx`) sowie einen Lime-Akzentrahmen (`hover:border-gq-lime`). In `quest-card.tsx` (Play-Modus) wurde der Lift-Effekt vereinheitlicht — vorher hatte nur der "Live"-Zustand eine Hover-Animation, jetzt haben "Live"/"Neu"/"Fertig" alle denselben Effekt.
+
+**Verifikation:** `npm run build` ✓ · `npm run lint` ✓ (0 Fehler, 6 vorbestehende Warnungen) · `npm test` ✓ (133/133) · E2E-Regressionslauf (Mobile Safari) ✓ — 2 veraltete PROJ-6-Assertions, die auf den entfernten "Entwurf"-Badge-Text prüften, wurden auf `.border-dashed`-Klassenprüfung umgestellt (siehe `tests/proj-6-creator-quest-verwaltung.spec.ts`), keine sonstigen Regressionen.
+
+**Kein neuer Feature-Spec-Eintrag:** Beide Änderungen sind reine visuelle Anpassungen an bereits deployten, QA-freigegebenen Features — kein neuer PROJ-X, keine neuen Acceptance Criteria.

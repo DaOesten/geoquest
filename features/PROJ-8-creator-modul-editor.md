@@ -414,3 +414,15 @@ Neue Datei `tests/proj-8-creator-modul-editor.spec.ts`: 29 Tests, mindestens ein
 
 ### Bekannte offene Punkte
 Keine. HINWEIS-1 aus dem QA-Bericht (fehlende serverseitige https-Erzwingung in `sanitizeDraftModule()`) ist ein optionaler Härtungsvorschlag ohne ausnutzbare Sicherheitslücke (siehe QA Security Audit) — kein Fix vor oder nach diesem Deploy erforderlich, kann bei Bedarf in einem künftigen Hardening-Pass nachgezogen werden.
+
+## Implementation Notes — Creator-Redesign & Hover-Vereinheitlichung (2026-08-28)
+
+Zwei nutzergetriebene Styling-Änderungen ohne neue Acceptance Criteria (siehe PROJ-6 für den ausführlichen, geteilten Kontext):
+
+**Creator-Redesign** (Commit `d5ce893`): `/create/[id]/station/[stationId]` erhält denselben Ambient-Background + transparenten Header wie die anderen beiden Creator-Screens, für ein konsistentes Erscheinungsbild im gesamten Creator-Modus (Nutzer-Entscheidung während der Umsetzung). Die Warnhinweis-Badges bei unvollständigen Modulen (z.B. "Kein Inhalt") sind davon nicht betroffen und bleiben unverändert.
+
+**Hover-Vereinheitlichung** (Commit `d7565a1`): Betrifft PROJ-8 nicht direkt — die Modul-Liste hat wie die Stationsliste bewusst keine Hover-Animation auf Kartenebene und bleibt unverändert.
+
+**Verifikation:** `npm run build` ✓ · `npm run lint` ✓ (0 Fehler, 6 vorbestehende Warnungen) · `npm test` ✓ (133/133) · volle PROJ-8-E2E-Suite weiterhin 29/29 grün (ein Testname wurde von "puzzle icon" auf "pencil icon" korrigiert, um den geänderten Icon-Namen widerzuspiegeln — reine Testbeschreibung, keine Assertion-Änderung), keine Regressionen.
+
+**Kein neuer Feature-Spec-Eintrag:** Reine visuelle Anpassung an ein bereits deploytes, QA-freigegebenes Feature.

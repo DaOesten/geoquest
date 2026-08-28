@@ -414,3 +414,15 @@ Neue Datei `tests/proj-7-creator-stationen-editor.spec.ts`: 19 Tests, je mindest
 
 ### Bekannte offene Punkte
 Keine. Der im QA-Durchgang zunächst als BUG-1 gemeldete Punkt (Kartenzentrierung bei "Station hinzufügen") wurde nach Review als korrektes, spezifiziertes Verhalten bestätigt — kein Bug, kein Fix nötig, keine Nacharbeit für dieses oder ein künftiges Release erforderlich.
+
+## Implementation Notes — Creator-Redesign & Hover-Vereinheitlichung (2026-08-28)
+
+Zwei nutzergetriebene Styling-Änderungen ohne neue Acceptance Criteria (siehe PROJ-6 für den ausführlichen, geteilten Kontext):
+
+**Creator-Redesign** (Commit `d5ce893`): `/create/[id]` erhält denselben Ambient-Background + transparenten Header wie `/create` (neue Komponente `src/components/creator-backdrop.tsx`, `AppHeader ... transparent`). "Module bearbeiten"-Icon in `station-list-item.tsx` von `Puzzle` auf `Pencil` (lucide-react) geändert — nur der Glyph, `aria-label` und Klickverhalten unverändert. Drag-Griffe, Drei-Punkte-Menü unverändert.
+
+**Hover-Vereinheitlichung** (Commit `d7565a1`): Betrifft PROJ-7 nicht direkt — die Stationsliste (`station-list-item.tsx`) hat bewusst keine Hover-Animation auf Kartenebene und bleibt unverändert.
+
+**Verifikation:** `npm run build` ✓ · `npm run lint` ✓ (0 Fehler, 6 vorbestehende Warnungen) · `npm test` ✓ (133/133) · volle PROJ-7-E2E-Suite weiterhin 20/20 grün, keine Regressionen durch das Icon-/Background-Redesign.
+
+**Kein neuer Feature-Spec-Eintrag:** Reine visuelle Anpassung an ein bereits deploytes, QA-freigegebenes Feature.
