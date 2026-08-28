@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useCallback, useMemo, useState } from "react";
-import { notFound } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
 import {
   DndContext,
   PointerSensor,
@@ -37,6 +37,7 @@ interface CreateQuestPageProps {
 
 export default function CreateQuestPage({ params }: CreateQuestPageProps) {
   const { id: questId } = use(params);
+  const router = useRouter();
   const { quests, refreshQuests } = useQuests();
   const quest = quests.find((q) => q.id === questId);
 
@@ -61,9 +62,12 @@ export default function CreateQuestPage({ params }: CreateQuestPageProps) {
     setIsEditorOpen(true);
   }, []);
 
-  const handleEditModules = useCallback(() => {
-    toast.info("Der Modul-Editor folgt in PROJ-8.");
-  }, []);
+  const handleEditModules = useCallback(
+    (station: DraftStation) => {
+      router.push(`/create/${questId}/station/${station.id}`);
+    },
+    [questId, router]
+  );
 
   const handleSaveStation = useCallback(
     (station: DraftStation) => {
@@ -144,7 +148,7 @@ export default function CreateQuestPage({ params }: CreateQuestPageProps) {
                       index={index}
                       onEdit={() => handleEditStation(station)}
                       onDelete={() => setDeleteTarget(station)}
-                      onEditModules={handleEditModules}
+                      onEditModules={() => handleEditModules(station)}
                     />
                   </li>
                 ))}

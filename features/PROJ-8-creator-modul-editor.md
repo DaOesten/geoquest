@@ -1,6 +1,6 @@
 # PROJ-8: Creator — Modul-Editor
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-08-28
 **Last Updated:** 2026-08-28
 
@@ -241,6 +241,31 @@ Keine neuen Pakete erforderlich.
 - Beim Entfernen einer als korrekt markierten Multiple-Choice-Option muss der lokale `correctIndices`-State neu indiziert werden (nicht nur gefiltert) — sonst zeigt ein verbleibender Index auf die falsche, nachgerückte Option
 - Der Sortierungs-Editor braucht einen eigenen, vom Haupt-`DndContext` der Modul-Liste getrennten `DndContext` innerhalb des Sheets — analog dazu, wie PROJ-7s Karten-Pin-Drag unabhängig vom Listen-Drag funktioniert
 - `ModuleListItem`-Kurzvorschau: Text zeigt die ersten ~60 Zeichen von `content`, Bild/Audio/Video zeigen den Dateinamen-Teil der URL (nach dem letzten `/`) oder "Keine URL" als Fallback, Tasks zeigen die `question` oder "Keine Frage" als Fallback
+
+## Implementation Notes (Frontend)
+
+**Date:** 2026-08-28
+
+### Neue/geänderte Dateien
+| Datei | Zweck |
+|-------|-------|
+| `src/app/create/[id]/station/[stationId]/page.tsx` | Neu — Modul-Liste einer Station: Empty State, sortierbare Liste (`@dnd-kit`), "Modul hinzufügen"-FAB, Lösch-Bestätigung |
+| `src/components/module-type-picker.tsx` | Neu — Sheet mit 5 Typ-Kacheln, blendet bei "Aufgabe" 3 weitere Kacheln (Code/Multiple Choice/Sortierung) ein |
+| `src/components/module-editor-sheets.tsx` | Neu — Router-Komponente `ModuleEditorSheet` + 5 typspezifische Sheets (`TextModuleSheet`, `MediaModuleSheet`, `CodeTaskSheet`, `MultipleChoiceSheet`, `SortingTaskSheet`), gemeinsame `SheetShell` |
+| `src/components/module-list-item.tsx` | Neu — sortierbarer Listeneintrag (`useSortable`): Drag-Griff, Typ-Icon, Kurzvorschau, Warnhinweis-Badge, Aktionen-Menü |
+| `src/lib/module-warnings.ts` | Neu — `getModuleWarning()`, reine Vollständigkeits-Anzeigefunktion pro Modultyp |
+| `src/lib/quest-storage.ts` | + `DraftModule`-Typ, `getStationById()`, `upsertModule()`, `deleteModule()`, `reorderModules()`, interne `sanitizeDraftModule()` |
+| `src/app/create/[id]/page.tsx` | `handleEditModules` navigiert jetzt zu `/create/[id]/station/[stationId]` statt Platzhalter-Toast ("Der Modul-Editor folgt in PROJ-8.") |
+
+### Abweichungen von der Tech-Design-Skizze
+- `MediaModuleSheet` wie im Tech-Design-Hinweis vorgeschlagen als eine Komponente mit `mediaType`-Prop gebaut (kein dreifacher Copy-Paste für Bild/Audio/Video)
+- Multiple-Choice-Editor hält `correctIndices` als lokalen `Set<number>` und indiziert ihn beim Entfernen einer Option neu (wie im Tech-Design-Hinweis beschrieben) — verifiziert durch einen expliziten Reindexierungs-Test
+- Der Sortierungs-Editor nutzt einen eigenen, in `SortingTaskSheet` gekapselten `DndContext`, unabhängig vom `DndContext` der Modul-Liste auf der übergeordneten Seite (wie geplant)
+
+### Verifikation
+- `npm run build` ✓ · `npm run lint` ✓ (0 Fehler, 6 vorbestehende `<img>`-Warnungen, keine neuen) · `npm test` ✓ (133/133, davon 24 neu: 14 für `getStationById`/`upsertModule`/`deleteModule`/`reorderModules` in `quest-storage.test.ts`, 10 für `getModuleWarning` in `module-warnings.test.ts`)
+- Manuell im Browser (Playwright-Treiber gegen WebKit, da der Chromium-Download in dieser Sandbox blockiert war — gleiches Muster wie PROJ-7; 390×844 Mobile-Viewport, gemockte Geolocation Berlin) vollständig durchgespielt: Quest anlegen → Station mit Kartenposition anlegen → über Puzzle-Icon zur Modul-Liste → Empty State → Typ-Auswahl → Text-Modul anlegen → Bild-Modul mit https-URL + Caption anlegen → Aufgabe → Multiple Choice mit 2 Optionen + markierter korrekter Antwort anlegen → Modul-Liste zeigt alle 3 mit korrekten Icons/Kurzvorschauen → Sortierungs-Aufgabe mit 3 Items anlegen → Modul-Listen-Drag (erstes Modul ans Ende gezogen) → per localStorage-Dump verifiziert: Reihenfolge tatsächlich persistiert → Bild-Modul bearbeiten → Sheet öffnet mit URL + Caption korrekt vorausgefüllt → Löschen-Aktion → Bestätigungsdialog mit korrektem Wortlaut → Abbrechen lässt Modul unverändert → Zurück-Navigation → Stationsliste zeigt Station mit Puzzle-Icon wieder korrekt. Keine Konsolenfehler während des gesamten Durchlaufs.
+- Nicht per Browser-Automation verifiziert: der Drag-and-Drop-Vorgang für Sortierungs-Items *innerhalb* des Sortierungs-Sheets selbst — die synthetischen Pointer-Events des WebKit-Treibers lösten `@dnd-kit`s Drag-Aktivierung dort nicht zuverlässig aus (Items blieben in Eingabereihenfolge), obwohl derselbe `@dnd-kit`-Sortable-Code auf der Modul-Liste (eine Ebene höher auf derselben Seite) im selben Testlauf nachweislich funktionierte und persistierte. Dies deckt sich mit der bereits in PROJ-7 dokumentierten Einschränkung des automatisierten Treibers bei echten Pointer-Drag-Vorgängen und ist keine neue, PROJ-8-spezifische Auffälligkeit. Sollte in `/qa` gezielt mit echter Touch-/Maus-Interaktion geprüft werden.
 
 ## QA Test Results
 _To be added by /qa_

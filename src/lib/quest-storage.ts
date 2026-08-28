@@ -1,4 +1,4 @@
-import { questSchema, type Quest, type Station } from "./quest-schema";
+import { questSchema, type Quest, type Station, type Module } from "./quest-schema";
 import { stripHtmlTags } from "./sanitize";
 
 const STORAGE_KEY = "gq_quests";
@@ -196,4 +196,99 @@ export function reorderStations(questId: string, orderedStationIds: string[]): v
   const byId = new Map(quest.stations.map((s) => [s.id, s]));
   const stations = orderedStationIds.map((id) => byId.get(id)).filter((s): s is Station => s !== undefined);
   saveQuest({ ...quest, stations, lastModified: new Date().toISOString() });
+}
+
+/**
+ * A module as held by the PROJ-8 editor: required fields (content, question/answer,
+ * options, items, correctIndices) are relaxed so a module can be saved before it's
+ * complete, mirroring DraftStation above (see PROJ-8 spec, "Speichern (Entwurfsprinzip)").
+ * isQuestComplete() treats an incomplete module as incomplete via the normal Zod
+ * check — the relaxed shape here only exists so the UI doesn't have to fake values.
+ */
+export type DraftModule =
+  | { type: "text"; content: string }
+  | { type: "image"; url: string; caption?: string }
+  | { type: "audio"; url: string; caption?: string }
+  | { type: "video"; url: string; caption?: string }
+  | { type: "task"; taskType: "code"; question: string; answer: string }
+  | { type: "task"; taskType: "multiple-choice"; question: string; options: string[]; correctIndices: number[] }
+  | { type: "task"; taskType: "sorting"; question: string; items: string[] };
+
+export function getStationById(questId: string, stationId: string): DraftStation | undefined {
+  const quest = getQuestById(questId);
+  return quest?.stations.find((s) => s.id === stationId) as DraftStation | undefined;
+}
+
+/** Inserts a new module or updates an existing one (matched by index) in the station's module list, then persists. */
+export function upsertModule(questId: string, stationId: string, moduleIndex: number | null, draft: DraftModule): void {
+  const quest = getQuestById(questId);
+  if (!quest) return;
+
+  const sanitized = sanitizeDraftModule(draft);
+  const stations = quest.stations.map((station) => {
+    if (station.id !== stationId) return station;
+    const modules = [...station.modules];
+    if (moduleIndex !== null && moduleIndex >= 0 && moduleIndex < modules.length) {
+      modules[moduleIndex] = sanitized as Module;
+    } else {
+      modules.push(sanitized as Module);
+    }
+    return { ...station, modules };
+  });
+
+  saveQuest({ ...quest, stations, lastModified: new Date().toISOString() });
+}
+
+export function deleteModule(questId: string, stationId: string, moduleIndex: number): void {
+  const quest = getQuestById(questId);
+  if (!quest) return;
+  const stations = quest.stations.map((station) => {
+    if (station.id !== stationId) return station;
+    return { ...station, modules: station.modules.filter((_, i) => i !== moduleIndex) };
+  });
+  saveQuest({ ...quest, stations, lastModified: new Date().toISOString() });
+}
+
+/** Persists a full reorder of a station's modules (e.g. after a drag-and-drop reorder in PROJ-8). */
+export function reorderModules(questId: string, stationId: string, orderedIndices: number[]): void {
+  const quest = getQuestById(questId);
+  if (!quest) return;
+  const stations = quest.stations.map((station) => {
+    if (station.id !== stationId) return station;
+    const modules = orderedIndices.map((i) => station.modules[i]).filter((m): m is Module => m !== undefined);
+    return { ...station, modules };
+  });
+  saveQuest({ ...quest, stations, lastModified: new Date().toISOString() });
+}
+
+function sanitizeDraftModule(draft: DraftModule): DraftModule {
+  switch (draft.type) {
+    case "text":
+      return { ...draft, content: stripHtmlTags(draft.content) };
+    case "image":
+    case "audio":
+    case "video":
+      return {
+        ...draft,
+        url: stripHtmlTags(draft.url).trim(),
+        caption: draft.caption !== undefined ? stripHtmlTags(draft.caption) : undefined,
+      };
+    case "task":
+      switch (draft.taskType) {
+        case "code":
+          return { ...draft, question: stripHtmlTags(draft.question), answer: stripHtmlTags(draft.answer) };
+        case "multiple-choice":
+          return {
+            ...draft,
+            question: stripHtmlTags(draft.question),
+            options: draft.options.map(stripHtmlTags),
+          };
+        case "sorting":
+          return {
+            ...draft,
+            question: stripHtmlTags(draft.question),
+            items: draft.items.map(stripHtmlTags),
+          };
+      }
+  }
 }

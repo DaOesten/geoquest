@@ -15,6 +15,11 @@ import {
   upsertStation,
   deleteStation,
   reorderStations,
+  getStationById,
+  upsertModule,
+  deleteModule,
+  reorderModules,
+  type DraftModule,
 } from "./quest-storage";
 import type { Quest } from "./quest-schema";
 
@@ -369,6 +374,171 @@ describe("quest-storage", () => {
 
     it("is a no-op when the quest id does not exist", () => {
       reorderStations("does-not-exist", ["a", "b"]);
+      expect(getAllQuests()).toEqual([]);
+    });
+  });
+
+  describe("getStationById", () => {
+    it("finds a station by id within a quest", () => {
+      const draftQuest = createDraftQuest("Neue Quest");
+      saveQuest(draftQuest);
+      const station = { ...createDraftStation(), name: "Gesucht" };
+      upsertStation(draftQuest.id, station);
+
+      expect(getStationById(draftQuest.id, station.id)?.name).toBe("Gesucht");
+    });
+
+    it("returns undefined when the station id does not exist", () => {
+      const draftQuest = createDraftQuest("Neue Quest");
+      saveQuest(draftQuest);
+      expect(getStationById(draftQuest.id, "ghost")).toBeUndefined();
+    });
+  });
+
+  describe("upsertModule", () => {
+    it("appends a new module to the station and updates lastModified", () => {
+      const draftQuest = createDraftQuest("Neue Quest");
+      draftQuest.lastModified = new Date(0).toISOString();
+      saveQuest(draftQuest);
+      const station = createDraftStation();
+      upsertStation(draftQuest.id, station);
+
+      upsertModule(draftQuest.id, station.id, null, { type: "text", content: "Hallo" });
+
+      const updated = getStationById(draftQuest.id, station.id);
+      expect(updated?.modules).toHaveLength(1);
+      expect(updated?.modules[0]).toEqual({ type: "text", content: "Hallo" });
+      expect(getQuestById(draftQuest.id)?.lastModified).not.toBe(draftQuest.lastModified);
+    });
+
+    it("saves an incomplete module (draft principle — empty content is allowed)", () => {
+      const draftQuest = createDraftQuest("Neue Quest");
+      saveQuest(draftQuest);
+      const station = createDraftStation();
+      upsertStation(draftQuest.id, station);
+
+      upsertModule(draftQuest.id, station.id, null, { type: "text", content: "" });
+
+      expect(getStationById(draftQuest.id, station.id)?.modules[0]).toEqual({ type: "text", content: "" });
+    });
+
+    it("updates an existing module in place when the index matches", () => {
+      const draftQuest = createDraftQuest("Neue Quest");
+      saveQuest(draftQuest);
+      const station = createDraftStation();
+      upsertStation(draftQuest.id, station);
+      upsertModule(draftQuest.id, station.id, null, { type: "text", content: "Original" });
+
+      upsertModule(draftQuest.id, station.id, 0, { type: "text", content: "Geändert" });
+
+      const updated = getStationById(draftQuest.id, station.id);
+      expect(updated?.modules).toHaveLength(1);
+      expect(updated?.modules[0]).toEqual({ type: "text", content: "Geändert" });
+    });
+
+    it("strips HTML tags from text content", () => {
+      const draftQuest = createDraftQuest("Neue Quest");
+      saveQuest(draftQuest);
+      const station = createDraftStation();
+      upsertStation(draftQuest.id, station);
+
+      upsertModule(draftQuest.id, station.id, null, { type: "text", content: "<b>Fett</b>" });
+
+      expect(getStationById(draftQuest.id, station.id)?.modules[0]).toEqual({ type: "text", content: "Fett" });
+    });
+
+    it("strips HTML tags from media url and caption", () => {
+      const draftQuest = createDraftQuest("Neue Quest");
+      saveQuest(draftQuest);
+      const station = createDraftStation();
+      upsertStation(draftQuest.id, station);
+
+      upsertModule(draftQuest.id, station.id, null, {
+        type: "image",
+        url: "  https://example.com/<script>.jpg  ",
+        caption: "<i>Bild</i>",
+      });
+
+      expect(getStationById(draftQuest.id, station.id)?.modules[0]).toEqual({
+        type: "image",
+        url: "https://example.com/.jpg",
+        caption: "Bild",
+      });
+    });
+
+    it("strips HTML tags from multiple-choice question and options", () => {
+      const draftQuest = createDraftQuest("Neue Quest");
+      saveQuest(draftQuest);
+      const station = createDraftStation();
+      upsertStation(draftQuest.id, station);
+
+      const draft: DraftModule = {
+        type: "task",
+        taskType: "multiple-choice",
+        question: "<b>Frage?</b>",
+        options: ["<i>A</i>", "B"],
+        correctIndices: [0],
+      };
+      upsertModule(draftQuest.id, station.id, null, draft);
+
+      expect(getStationById(draftQuest.id, station.id)?.modules[0]).toEqual({
+        type: "task",
+        taskType: "multiple-choice",
+        question: "Frage?",
+        options: ["A", "B"],
+        correctIndices: [0],
+      });
+    });
+
+    it("is a no-op when the quest id does not exist", () => {
+      upsertModule("does-not-exist", "some-station", null, { type: "text", content: "x" });
+      expect(getAllQuests()).toEqual([]);
+    });
+  });
+
+  describe("deleteModule", () => {
+    it("removes the module at the given index and updates lastModified", () => {
+      const draftQuest = createDraftQuest("Neue Quest");
+      saveQuest(draftQuest);
+      const station = createDraftStation();
+      upsertStation(draftQuest.id, station);
+      upsertModule(draftQuest.id, station.id, null, { type: "text", content: "A" });
+      upsertModule(draftQuest.id, station.id, null, { type: "text", content: "B" });
+      const before = new Date(0).toISOString();
+      const quest = getQuestById(draftQuest.id)!;
+      saveQuest({ ...quest, lastModified: before });
+
+      deleteModule(draftQuest.id, station.id, 0);
+
+      const updated = getStationById(draftQuest.id, station.id);
+      expect(updated?.modules).toHaveLength(1);
+      expect(updated?.modules[0]).toEqual({ type: "text", content: "B" });
+      expect(getQuestById(draftQuest.id)?.lastModified).not.toBe(before);
+    });
+
+    it("is a no-op when the quest id does not exist", () => {
+      deleteModule("does-not-exist", "some-station", 0);
+      expect(getAllQuests()).toEqual([]);
+    });
+  });
+
+  describe("reorderModules", () => {
+    it("persists the new module order", () => {
+      const draftQuest = createDraftQuest("Neue Quest");
+      saveQuest(draftQuest);
+      const station = createDraftStation();
+      upsertStation(draftQuest.id, station);
+      upsertModule(draftQuest.id, station.id, null, { type: "text", content: "A" });
+      upsertModule(draftQuest.id, station.id, null, { type: "text", content: "B" });
+
+      reorderModules(draftQuest.id, station.id, [1, 0]);
+
+      const updated = getStationById(draftQuest.id, station.id);
+      expect(updated?.modules.map((m) => (m.type === "text" ? m.content : ""))).toEqual(["B", "A"]);
+    });
+
+    it("is a no-op when the quest id does not exist", () => {
+      reorderModules("does-not-exist", "some-station", [0, 1]);
       expect(getAllQuests()).toEqual([]);
     });
   });
