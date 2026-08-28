@@ -272,7 +272,7 @@ Die Tech-Design-Notiz „Marker-Icons müssen lokal referenziert werden" wurde i
 
 #### Station hinzufügen
 - [x] Sheet öffnet mit leerem Namensfeld, keinem Pin, Radius-Default 10m
-- [x] Karte zentriert auf zuletzt *in der Stations-Liste stehende* Station mit Position und zeigt andere Stationen als graue Kontext-Pins — siehe **BUG-1**, Abweichung von "zuletzt *gesetzte*"
+- [x] Karte zentriert auf die letzte Station mit Position in der Stationsliste (= Spielreihenfolge) und zeigt andere Stationen als graue Kontext-Pins — "zuletzt gesetzte Station" in der Spec bezieht sich auf die Listen-/Spielreihenfolge, nicht auf den Bearbeitungszeitpunkt; siehe Klarstellung unten ("BUG-1 (kein Bug)")
 - [x] Karte zentriert auf Deutschland-Standardansicht, wenn keine Station der Quest eine Position hat
 
 #### Position setzen
@@ -315,7 +315,7 @@ Die Tech-Design-Notiz „Marker-Icons müssen lokal referenziert werden" wurde i
 7. [x] Sheet-Abbruch während laufendem GPS-Lookup → kein Absturz, State wird ohnehin nur bei "Speichern" übernommen
 8. [x] Schnelles Mehrfach-Antippen der Karte → nur letzte Position zählt (Code-Pfad: einfacher State-Setter, kein Race-Risiko)
 9. [x] Zwischenstand-Garantie → jede gespeicherte Station landet sofort in `gq_quests`, verifiziert per Reload-Test
-10. [ ] **BUG-2 (neu, nicht in Spec dokumentiert):** Station mit einem `radiusMeters`-Wert außerhalb der 4 UI-Stufen (z.B. `37`, wie er aus einem Import oder alten Datenbestand stammen könnte) — siehe unten
+10. [x] **BUG-2 (behoben):** Station mit einem `radiusMeters`-Wert außerhalb der 4 UI-Stufen (z.B. `37`, wie er aus einem Import oder alten Datenbestand stammen könnte) — siehe Bugfix-Pass unten
 
 ### Security Audit Results
 - [x] XSS via `<script>`/`<img onerror>` im Stationsnamen: Tags werden entfernt (`stripHtmlTags`), kein Alert ausgelöst, keine rohen Tags im DOM
@@ -326,16 +326,15 @@ Die Tech-Design-Notiz „Marker-Icons müssen lokal referenziert werden" wurde i
 
 ### Bugs Found
 
-#### BUG-1: Karte zentriert bei "Station hinzufügen" auf die letzte Station in Array-Reihenfolge, nicht auf die zuletzt bearbeitete/positionierte Station
-- **Severity:** Low
-- **Steps to Reproduce:**
+#### BUG-1 (kein Bug — Klarstellung nach Review): Karte zentriert bei "Station hinzufügen" auf die letzte Station in der Stationsliste, nicht auf die zuletzt bearbeitete Station
+- **Ursprüngliche Einschätzung (revidiert):** Im ersten QA-Durchgang als Low-Bug gemeldet, mit der Annahme, der Spec-Wortlaut "zentriert auf die zuletzt gesetzte Station" meine den Bearbeitungszeitpunkt (Recency).
+- **Klarstellung:** "Zuletzt gesetzte Station" bezieht sich auf die Position in der Stationsliste — also auf die Spielreihenfolge (PROJ-3: Stationen werden linear in dieser Reihenfolge gespielt), nicht auf einen Bearbeitungs-Zeitstempel. Die Implementierung (`initialMapView` liest `contextPins[contextPins.length - 1]`, die letzte Station in Array-/Listen-Reihenfolge) setzt das AC damit korrekt um.
+- **Steps to Reproduce (zur Nachvollziehbarkeit, kein Fehlerfall):**
   1. Quest mit zwei Stationen A und B anlegen, beide mit Position (Reihenfolge: A, B)
-  2. Station A öffnen und ihre Position neu setzen (A ist jetzt die zuletzt *bearbeitete* Station, aber immer noch zuerst im Array)
+  2. Station A öffnen und ihre Position neu setzen (Reihenfolge bleibt A, B — Bearbeiten ändert nicht die Listenposition)
   3. "Station hinzufügen" tippen
-  4. Erwartet (laut Spec-Wortlaut "zentriert auf die zuletzt gesetzte Station"): Karte zentriert auf A (zuletzt bearbeitet)
-  5. Tatsächlich: Karte zentriert auf B (letzte im `stations`-Array, `initialMapView` liest `contextPins[contextPins.length - 1]`, was reine Array-Reihenfolge ist, nicht Bearbeitungs-Reihenfolge)
-- **Screenshot:** Reproduziert und verifiziert per automatisiertem Playwright-Lauf (Positionsvergleich der beiden Stationen gegen den sichtbaren Kartenausschnitt)
-- **Priority:** Nice to have — die Komfortfunktion (PRD-Rationale: "Ersteller bauen Quests oft direkt am Zielort") trifft in den allermeisten Fällen trotzdem die richtige Station (neu angelegte Stationen landen ohnehin am Array-Ende), nur der Sonderfall "ältere Station nachträglich neu positionieren" weicht ab. Kein Datenverlust, keine Blockade — nur ein suboptimaler Kartenausschnitt beim Öffnen.
+  4. Karte zentriert auf B (letzte Station in der Liste) — das ist das spezifizierte und gewünschte Verhalten, kein Abweichen vom AC
+- **Status:** Kein Bug. Kein Code-Fix nötig, keine Spec-Änderung nötig — die Formulierung "zuletzt gesetzte Station" war von Anfang an listenreihenfolge-basiert gemeint.
 
 #### BUG-2: Radius-Regler zeigt bei einem nicht-stufenkonformen Ausgangswert eine falsche Slider-Position und kann den Wert beim ersten Antippen unerwartet verkleinern
 - **Severity:** Medium
@@ -360,18 +359,18 @@ Neue Datei `tests/proj-7-creator-stationen-editor.spec.ts`: 19 Tests, je mindest
 
 ### Production-Ready Decision (ursprünglich)
 
-**NOT READY** — BUG-2 (Medium) sollte vor dem Deploy behoben werden, da er eine stille, für den Nutzer unsichtbare Datenverfälschung (Ankunftsradius schrumpft ohne erkennbaren Grund) ermöglicht, sobald ein Wert außerhalb der 4 UI-Stufen ins System gelangt. BUG-1 (Low) ist nicht blockierend und kann optional mit BUG-2 zusammen gefixt werden.
+**NOT READY** — BUG-2 (Medium) sollte vor dem Deploy behoben werden, da er eine stille, für den Nutzer unsichtbare Datenverfälschung (Ankunftsradius schrumpft ohne erkennbaren Grund) ermöglicht, sobald ein Wert außerhalb der 4 UI-Stufen ins System gelangt. BUG-1 wurde zu diesem Zeitpunkt noch als Low-Bug eingestuft (siehe Klarstellung weiter unten — im Nachgang als korrektes, spezifiziertes Verhalten bestätigt, kein tatsächlicher Bug).
 
 ### Summary (ursprünglich)
-- **Acceptance Criteria:** 19/19 funktional bestanden (2 mit dokumentierten Bugs als Abweichung)
-- **Bugs Found:** 2 total (0 critical, 0 high, 1 medium, 1 low)
+- **Acceptance Criteria:** 19/19 funktional bestanden (2 mit dokumentierten Bugs als Abweichung, davon 1 im Nachgang als kein Bug bestätigt — siehe Klarstellung)
+- **Bugs Found:** 2 total (0 critical, 0 high, 1 medium, 1 low) — nach Review: 1 tatsächlicher Bug (Medium), 1 kein Bug (siehe "BUG-1 (kein Bug)")
 - **Security:** Pass — keine Schwachstellen gefunden
 - **Production Ready:** NO
-- **Recommendation:** BUG-2 vor Deploy fixen (Radius-Regler muss einen nicht-stufenkonformen Ausgangswert entweder auf die nächstgelegene Stufe abbilden oder den Rohwert beibehalten, bis der Nutzer den Regler bewusst bedient — nicht stillschweigend auf Index 0 zurückfallen). BUG-1 optional im selben Durchgang mitnehmen (Kontext-Pin-Auswahl nach `lastModified`-Zeitstempel statt Array-Position sortieren).
+- **Recommendation:** BUG-2 vor Deploy fixen (Radius-Regler muss einen nicht-stufenkonformen Ausgangswert entweder auf die nächstgelegene Stufe abbilden oder den Rohwert beibehalten, bis der Nutzer den Regler bewusst bedient — nicht stillschweigend auf Index 0 zurückfallen). BUG-1 wurde nach weiterer Prüfung als korrektes Verhalten bestätigt, kein Fix nötig.
 
 ### Bugfix-Pass (2026-08-28, nach /qa)
 
-Auf Nutzer-Entscheidung wurde nur **BUG-2** behoben; **BUG-1 bleibt bestehen** (Low, nicht blockierend, optional für einen späteren Durchgang).
+**BUG-2** wurde behoben. **BUG-1 wurde geprüft und als kein Bug bestätigt** — das gemeldete Verhalten (Karte zentriert auf die letzte Station in der Stationsliste) entspricht dem spezifizierten AC, siehe Klarstellung im Abschnitt "Bugs Found" oben. Kein Code-Fix, keine Spec-Änderung nötig.
 
 **BUG-2 (Medium, Radius-Regler bei nicht-stufenkonformem Wert):** `station-radius-slider.tsx` bildet den Ausgangswert jetzt über eine neue `closestStepIndex()`-Funktion auf die **nächstgelegene** der 4 Stufen ab, statt bei einem nicht exakt passenden Wert (`RADIUS_STEPS.indexOf(value)` → `-1`) auf Index 0 zurückzufallen. Ein importierter Wert wie `37` zeigt den Slider-Thumb jetzt korrekt nahe der 25m-Position (statt fälschlich bei 10m), und die erste Regler-Bedienung bewegt sich von dort aus vorhersehbar nach oben (37 → 50) statt unerwartet nach unten (37 → 25) zu springen. Der gespeicherte Rohwert bleibt beim reinen Öffnen/Speichern ohne Regler-Interaktion unverändert (`37` bleibt `37`) — das war schon vorher der Fall und ändert sich nicht.
 
@@ -379,14 +378,14 @@ Auf Nutzer-Entscheidung wurde nur **BUG-2** behoben; **BUG-1 bleibt bestehen** (
 
 ### Production-Ready Decision (nach Bugfix-Pass)
 
-**READY** — BUG-2 (einziger blockierender Fund) ist behoben und regressionsgetestet. BUG-1 (Low) bleibt offen, ist aber laut ursprünglicher Bewertung nicht blockierend (kein Datenverlust, nur ein suboptimaler Kartenausschnitt in einem Sonderfall) und kann bei Bedarf in einem späteren `/refine`-Durchgang aufgegriffen werden.
+**READY** — BUG-2 (einziger tatsächlicher Bug) ist behoben und regressionsgetestet. BUG-1 wurde als kein Bug bestätigt (spezifiziertes, korrektes Verhalten) und ist damit nicht Teil der offenen Punkte.
 
 ### Summary (nach Bugfix-Pass)
 - **Acceptance Criteria:** 19/19 bestanden
-- **Bugs Found:** 2 total, 1 behoben (BUG-2, Medium), 1 offen (BUG-1, Low, nicht blockierend)
+- **Bugs Found:** 1 tatsächlicher Bug, behoben (BUG-2, Medium). BUG-1 wurde als kein Bug bestätigt, siehe Klarstellung oben.
 - **Security:** Pass — keine Schwachstellen gefunden
 - **Production Ready:** YES
-- **Recommendation:** Deploy freigegeben. BUG-1 optional zu einem späteren Zeitpunkt beheben.
+- **Recommendation:** Deploy freigegeben. Keine offenen Bugs.
 
 ## Deployment
 
@@ -399,7 +398,7 @@ Auf Nutzer-Entscheidung wurde nur **BUG-2** behoben; **BUG-1 bleibt bestehen** (
 - [x] `npm run build` erfolgreich
 - [x] `npm run lint` erfolgreich (0 Fehler, 6 vorbestehende `<img>`-Warnungen)
 - [x] QA-Freigabe: "Approved" / "Production Ready: YES" (nach BUG-2-Fix)
-- [x] Keine Critical/High-Bugs offen (BUG-1 ist Low, nicht blockierend)
+- [x] Keine Critical/High-Bugs offen (der ursprünglich als BUG-1 gemeldete Punkt wurde als korrektes, spezifiziertes Verhalten bestätigt, kein Bug)
 - [x] Keine neuen Umgebungsvariablen nötig (Leaflet/OpenStreetMap benötigt keinen API-Key)
 - [x] Keine Secrets im Diff (`git diff origin/main main --stat` vor dem Push geprüft)
 - [x] Kein Datenbank-Layer betroffen (weiterhin reines localStorage, kein Supabase-Bezug)
@@ -414,4 +413,4 @@ Auf Nutzer-Entscheidung wurde nur **BUG-2** behoben; **BUG-1 bleibt bestehen** (
 - Test-Quest wurde ausschließlich im `localStorage` des Test-Browsers angelegt (kein Backend/keine geteilte Datenbank bei GeoQuest) und dort direkt wieder gelöscht — keine Bereinigung in Produktion nötig, da nichts serverseitig gespeichert wurde
 
 ### Bekannte offene Punkte
-- BUG-1 (Low, aus QA): Karte zentriert bei "Station hinzufügen" auf die letzte Station in Array-Reihenfolge statt auf die zuletzt bearbeitete — bewusst nicht behoben (Nutzer-Entscheidung), kein Blocker für dieses Release, Kandidat für einen späteren `/refine`-Durchgang
+Keine. Der im QA-Durchgang zunächst als BUG-1 gemeldete Punkt (Kartenzentrierung bei "Station hinzufügen") wurde nach Review als korrektes, spezifiziertes Verhalten bestätigt — kein Bug, kein Fix nötig, keine Nacharbeit für dieses oder ein künftiges Release erforderlich.
