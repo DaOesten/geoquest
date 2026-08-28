@@ -1,6 +1,6 @@
 # PROJ-6: Creator — Quest-Verwaltung
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-08-27
 **Last Updated:** 2026-08-28
 
@@ -658,3 +658,25 @@ Verifiziert die Korrektur aus Commit `05226ed`: Play-Sichtbarkeit hängt nicht m
 - HTML-Response von `/create` bestätigt den neuen Build (Headline "Create" vorhanden, alter Header-Titel "Meine Quests" verschwunden)
 - Browser-Smoke-Test (Playwright/WebKit) direkt gegen die Produktions-URL: Empty State → Neue Quest erstellen → Navigation zu `/create/[id]` → zurück zur Liste → Quest sichtbar mit Entwurf-Badge → Filter-Tab-Höhe 44px (BUG-2-Fix live bestätigt) → FAB öffnet Mini-Aktionen → HTML-only-Name (`<b></b>`) wird korrekt abgelehnt (BUG-1-Fix live bestätigt) — keine Konsolenfehler
 - Sicherheits-Header (next.config) und Error-Tracking wurden für dieses Projekt bisher bei keinem der vorherigen Deploys eingerichtet (PROJ-1–5) — bewusst außerhalb des Scopes von PROJ-6 belassen, keine Regression
+
+## Deployment — Play-Sichtbarkeit-Korrektur (2026-08-28)
+
+**Production URL:** https://geoquesty.vercel.app
+**Deployed:** 2026-08-28
+**Platform:** Vercel (auto-deploy on push to main)
+**Commit:** 954a937
+**Tag:** v1.7.0-PROJ-6
+
+**Pre-Deployment Checks:**
+- `npm run build` ✓ (Next.js 16.1.1, Turbopack, alle 6 Routen kompiliert) · `npm run lint` ✓ (0 Fehler, dieselben 6 vorbestehenden `<img>`-Warnungen) · `npm test` ✓ (98/98)
+- Keine neuen Umgebungsvariablen, keine Secrets im Diff
+- Working Tree sauber (bis auf unabhängiges `design-preparation/`), 6 Commits nach `origin/main` gepusht (`9c8dd6b..954a937`)
+
+**Post-Deployment-Verifikation (live auf Production):**
+- `/`, `/play`, `/create` → alle HTTP 200
+- Browser-Smoke-Test (Playwright/WebKit) direkt gegen die Produktions-URL mit injizierten `localStorage`-Testdaten:
+  - Quest mit 0 Stationen ("Leerer Entwurf PROD") → **nicht** in der Play-Liste sichtbar
+  - Quest mit 1 Station, sonst unvollständig ("Halbfertig Testbar PROD") → **korrekt** in der Play-Liste sichtbar ("1 Ziel") — bestätigt live, dass der Ersteller unfertige Quests testen kann
+  - Aktionen-Menü zeigt nur noch "Umbenennen"/"Löschen" — "Veröffentlichen" ist vollständig entfernt
+  - Keine Konsolen-/Seitenfehler während des gesamten Smoke-Tests
+- Bestätigt: BUG-4 ist auch in Production behoben (Alt-Quests ohne `published`-Feld werden nicht mehr fälschlich in Play angezeigt)
