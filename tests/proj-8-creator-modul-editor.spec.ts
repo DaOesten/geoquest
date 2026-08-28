@@ -38,7 +38,7 @@ async function seedQuest(page: Page, quest: unknown, stationId: string) {
 
 test.describe("PROJ-8: Creator — Modul-Editor", () => {
   test.describe("Navigation zur Modul-Liste", () => {
-    test("tapping the puzzle icon on a station navigates to its module list", async ({ page }) => {
+    test("tapping the pencil icon on a station navigates to its module list", async ({ page }) => {
       await page.goto("/create");
       await page.evaluate(
         ({ quest }) => {

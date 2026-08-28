@@ -2,7 +2,7 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, MapPin, MapPinOff, MoreVertical, Pencil, Puzzle, Trash2 } from "lucide-react";
+import { GripVertical, MapPin, MapPinOff, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,7 +72,7 @@ export function StationListItem({ station, index, onEdit, onDelete, onEditModule
         aria-label="Module bearbeiten"
         className="flex-shrink-0 w-11 h-11 rounded-full grid place-items-center text-muted-foreground transition-colors duration-fast ease-gq hover:text-primary active:scale-[0.96]"
       >
-        <Puzzle className="w-5 h-5" />
+        <Pencil className="w-5 h-5" />
       </button>
 
       <DropdownMenu>

@@ -6,6 +6,7 @@ import { PenTool, Plus, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { AppHeader } from "@/components/app-header";
+import { CreatorBackdrop } from "@/components/creator-backdrop";
 import { QuestImportButton } from "@/components/quest-import-button";
 import { QuestManagementCard } from "@/components/quest-management-card";
 import { QuestManagementFilterTabs, type QuestManagementFilter } from "@/components/quest-management-filter-tabs";
@@ -82,154 +83,157 @@ export default function CreatePage() {
 
   return (
     <>
-      <AppHeader variant="light" />
+      <CreatorBackdrop />
+      <div className="relative">
+        <AppHeader variant="light" transparent />
 
-      <div className="px-5 pt-4">
-        <h1 className="font-display italic text-[clamp(1.8rem,8vw,2.4rem)] leading-[0.95] uppercase text-foreground">
-          Create
-        </h1>
-      </div>
-
-      {quests.length === 0 ? (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-5 text-center">
-          <PenTool className="w-12 h-12 text-gq-grey" />
-          <p className="text-tech text-xs text-gq-grey tracking-[0.12em]">
-            Noch keine Quests erstellt
-          </p>
-          <p className="font-body text-sm text-[#5B646A] max-w-xs">
-            Erstelle deine erste Quest oder importiere eine bestehende.
-          </p>
-          <div className="mt-4 flex flex-col items-center gap-3">
-            <Button
-              onClick={() => setNameDialog({ mode: "create" })}
-              className="rounded-pill h-11 px-6 bg-primary text-primary-foreground text-tech text-xs tracking-[0.08em] active:scale-[0.96] transition-all duration-fast ease-gq"
-            >
-              <Plus className="w-4 h-4" />
-              Neue Quest erstellen
-            </Button>
-            <QuestImportButton variant="light" onImportSuccess={refreshQuests} />
-          </div>
+        <div className="px-5 pt-4">
+          <h1 className="font-display italic text-[clamp(1.8rem,8vw,2.4rem)] leading-[0.95] uppercase text-foreground">
+            Create
+          </h1>
         </div>
-      ) : (
-        <>
-          <div className="mt-4">
-            <QuestManagementFilterTabs active={filter} onChange={setFilter} />
+
+        {quests.length === 0 ? (
+          <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-5 text-center">
+            <PenTool className="w-12 h-12 text-gq-grey" />
+            <p className="text-tech text-xs text-gq-grey tracking-[0.12em]">
+              Noch keine Quests erstellt
+            </p>
+            <p className="font-body text-sm text-[#5B646A] max-w-xs">
+              Erstelle deine erste Quest oder importiere eine bestehende.
+            </p>
+            <div className="mt-4 flex flex-col items-center gap-3">
+              <Button
+                onClick={() => setNameDialog({ mode: "create" })}
+                className="rounded-pill h-11 px-6 bg-primary text-primary-foreground text-tech text-xs tracking-[0.08em] active:scale-[0.96] transition-all duration-fast ease-gq"
+              >
+                <Plus className="w-4 h-4" />
+                Neue Quest erstellen
+              </Button>
+              <QuestImportButton variant="light" onImportSuccess={refreshQuests} />
+            </div>
           </div>
+        ) : (
+          <>
+            <div className="mt-4">
+              <QuestManagementFilterTabs active={filter} onChange={setFilter} />
+            </div>
 
-          <div className="flex flex-col gap-3 px-5 py-4">
-            {visibleQuests.length === 0 ? (
-              <p className="font-body text-sm text-muted-foreground text-center py-8">
-                Keine Entwürfe
-              </p>
-            ) : (
-              <ul className="flex flex-col gap-3">
-                {visibleQuests.map(({ quest, isDraft }) => (
-                  <li key={quest.id}>
-                    <QuestManagementCard
-                      quest={quest}
-                      isDraft={isDraft}
-                      onRename={() => setNameDialog({ mode: "rename", quest })}
-                      onDelete={() => setDeleteTarget(quest)}
-                    />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+            <div className="flex flex-col gap-3 px-5 py-4">
+              {visibleQuests.length === 0 ? (
+                <p className="font-body text-sm text-muted-foreground text-center py-8">
+                  Keine Entwürfe
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-3">
+                  {visibleQuests.map(({ quest, isDraft }) => (
+                    <li key={quest.id}>
+                      <QuestManagementCard
+                        quest={quest}
+                        isDraft={isDraft}
+                        onRename={() => setNameDialog({ mode: "rename", quest })}
+                        onDelete={() => setDeleteTarget(quest)}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
 
-          {/* Scrim behind the expanded FAB — tapping it closes the actions back up */}
-          <div
-            onClick={() => setFabOpen(false)}
-            aria-hidden="true"
-            className={cn(
-              "fixed inset-0 z-30 bg-black/35 transition-opacity duration-base ease-gq",
-              fabOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-            )}
-          />
-
-          {/* Actions revealed by the FAB */}
-          <div
-            className={cn(
-              "fixed bottom-[84px] right-5 z-40 flex flex-col items-end gap-3 transition-all duration-base ease-gq",
-              fabOpen ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-3 pointer-events-none"
-            )}
-          >
-            <QuestImportButton
-              variant="light"
-              onImportSuccess={() => {
-                refreshQuests();
-                setFabOpen(false);
-              }}
-              renderTrigger={({ onClick, disabled }) => (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClick();
-                    setFabOpen(false);
-                  }}
-                  disabled={disabled}
-                  className="flex items-center gap-2 h-11 px-5 rounded-pill border border-primary bg-card text-primary shadow-card text-tech text-xs tracking-[0.08em] transition-all duration-fast ease-gq active:scale-[0.96] disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap"
-                >
-                  <Upload className="w-4 h-4" />
-                  Quest importieren
-                </button>
+            {/* Scrim behind the expanded FAB — tapping it closes the actions back up */}
+            <div
+              onClick={() => setFabOpen(false)}
+              aria-hidden="true"
+              className={cn(
+                "fixed inset-0 z-30 bg-black/35 transition-opacity duration-base ease-gq",
+                fabOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
               )}
             />
+
+            {/* Actions revealed by the FAB */}
+            <div
+              className={cn(
+                "fixed bottom-[84px] right-5 z-40 flex flex-col items-end gap-3 transition-all duration-base ease-gq",
+                fabOpen ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-3 pointer-events-none"
+              )}
+            >
+              <QuestImportButton
+                variant="light"
+                onImportSuccess={() => {
+                  refreshQuests();
+                  setFabOpen(false);
+                }}
+                renderTrigger={({ onClick, disabled }) => (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClick();
+                      setFabOpen(false);
+                    }}
+                    disabled={disabled}
+                    className="flex items-center gap-2 h-11 px-5 rounded-pill border border-primary bg-card text-primary shadow-card text-tech text-xs tracking-[0.08em] transition-all duration-fast ease-gq active:scale-[0.96] disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap"
+                  >
+                    <Upload className="w-4 h-4" />
+                    Quest importieren
+                  </button>
+                )}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setNameDialog({ mode: "create" });
+                  setFabOpen(false);
+                }}
+                className="flex items-center gap-2 h-11 px-5 rounded-pill bg-primary text-primary-foreground shadow-card text-tech text-xs tracking-[0.08em] transition-all duration-fast ease-gq active:scale-[0.96] whitespace-nowrap"
+              >
+                <Plus className="w-4 h-4" />
+                Neue Quest
+              </button>
+            </div>
+
+            {/* Main FAB — rotates into a close glyph while the actions above are open */}
             <button
               type="button"
-              onClick={() => {
-                setNameDialog({ mode: "create" });
-                setFabOpen(false);
-              }}
-              className="flex items-center gap-2 h-11 px-5 rounded-pill bg-primary text-primary-foreground shadow-card text-tech text-xs tracking-[0.08em] transition-all duration-fast ease-gq active:scale-[0.96] whitespace-nowrap"
+              onClick={() => setFabOpen((open) => !open)}
+              aria-label={fabOpen ? "Aktionen schließen" : "Quest hinzufügen"}
+              aria-expanded={fabOpen}
+              className="fixed bottom-6 right-5 z-40 flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg transition-all duration-base ease-gq active:scale-[0.96]"
             >
-              <Plus className="w-4 h-4" />
-              Neue Quest
+              <Plus
+                className={cn("w-5 h-5 transition-transform duration-base ease-gq", fabOpen && "rotate-45")}
+                strokeWidth={2.5}
+              />
             </button>
-          </div>
+          </>
+        )}
 
-          {/* Main FAB — rotates into a close glyph while the actions above are open */}
-          <button
-            type="button"
-            onClick={() => setFabOpen((open) => !open)}
-            aria-label={fabOpen ? "Aktionen schließen" : "Quest hinzufügen"}
-            aria-expanded={fabOpen}
-            className="fixed bottom-6 right-5 z-40 flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg transition-all duration-base ease-gq active:scale-[0.96]"
-          >
-            <Plus
-              className={cn("w-5 h-5 transition-transform duration-base ease-gq", fabOpen && "rotate-45")}
-              strokeWidth={2.5}
-            />
-          </button>
-        </>
-      )}
+        <QuestNameDialog
+          open={nameDialog !== null}
+          onOpenChange={(open) => !open && setNameDialog(null)}
+          title={nameDialog?.mode === "rename" ? "Quest umbenennen" : "Neue Quest erstellen"}
+          confirmLabel={nameDialog?.mode === "rename" ? "Speichern" : "Erstellen"}
+          initialValue={nameDialog?.mode === "rename" ? nameDialog.quest.name : ""}
+          onConfirm={handleNameConfirm}
+        />
 
-      <QuestNameDialog
-        open={nameDialog !== null}
-        onOpenChange={(open) => !open && setNameDialog(null)}
-        title={nameDialog?.mode === "rename" ? "Quest umbenennen" : "Neue Quest erstellen"}
-        confirmLabel={nameDialog?.mode === "rename" ? "Speichern" : "Erstellen"}
-        initialValue={nameDialog?.mode === "rename" ? nameDialog.quest.name : ""}
-        onConfirm={handleNameConfirm}
-      />
-
-      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        {/* Radix portals to <body>, outside the light-themed container from create/layout.tsx — re-apply the theme
-            and its text color here (color is otherwise inherited pre-computed from <body>'s dark default) so
-            descendants without their own explicit color class render correctly. */}
-        <AlertDialogContent data-theme="light" className="text-foreground">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Quest wirklich löschen?</AlertDialogTitle>
-            <AlertDialogDescription>
-              „{deleteTarget?.name}“ wird endgültig gelöscht. Das kann nicht rückgängig gemacht werden.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm}>Löschen</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+          {/* Radix portals to <body>, outside the light-themed container from create/layout.tsx — re-apply the theme
+              and its text color here (color is otherwise inherited pre-computed from <body>'s dark default) so
+              descendants without their own explicit color class render correctly. */}
+          <AlertDialogContent data-theme="light" className="text-foreground">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Quest wirklich löschen?</AlertDialogTitle>
+              <AlertDialogDescription>
+                „{deleteTarget?.name}“ wird endgültig gelöscht. Das kann nicht rückgängig gemacht werden.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteConfirm}>Löschen</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </>
   );
 }

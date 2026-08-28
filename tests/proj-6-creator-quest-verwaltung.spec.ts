@@ -84,7 +84,7 @@ async function gotoEmptyCreate(page: Page) {
 
 test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
   test.describe("Liste", () => {
-    test("shows all quests sorted by lastModified (newest first) with name, station count, and draft badge", async ({ page }) => {
+    test("shows all quests sorted by lastModified (newest first) with name, station count, and greyed-out draft styling", async ({ page }) => {
       await seedQuests(page, [
         draftQuest(OLDER_ID, "Ältere Quest", "2026-01-01T00:00:00.000Z"),
         completeQuest(COMPLETE_ID, "Neueste Quest", "2026-01-03T00:00:00.000Z", COMPLETE_STATION_ID),
@@ -98,7 +98,7 @@ test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
       await expect(cards.nth(2)).toContainText("Ältere Quest");
       await expect(cards.nth(0)).toContainText("1 Station");
       await expect(cards.nth(1)).toContainText("0 Stationen");
-      await expect(cards.nth(1).getByText("Entwurf")).toBeVisible();
+      await expect(cards.nth(1).locator(".border-dashed")).toBeVisible();
     });
 
     test("shows an empty state with a create button and an import button when no quests exist", async ({ page }) => {
@@ -124,7 +124,7 @@ test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
       await page.goto("/create");
       const card = page.getByRole("listitem").filter({ hasText: "Meine erste Quest" });
       await expect(card).toBeVisible();
-      await expect(card.getByText("Entwurf")).toBeVisible();
+      await expect(card.locator(".border-dashed")).toBeVisible();
     });
 
     test("shows a validation error and creates nothing when the name is empty", async ({ page }) => {
@@ -163,7 +163,7 @@ test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
   });
 
   test.describe("Entwurf-Kennzeichnung", () => {
-    test("shows the draft badge for an incomplete quest and hides it for a complete one", async ({ page }) => {
+    test("shows greyed-out/dashed draft styling for an incomplete quest and hides it for a complete one", async ({ page }) => {
       await seedQuests(page, [
         completeQuest(COMPLETE_ID, "Fertige Quest", "2026-01-02T00:00:00.000Z", COMPLETE_STATION_ID),
         draftQuest(DRAFT_ID, "Unfertige Quest", "2026-01-01T00:00:00.000Z"),
@@ -171,8 +171,8 @@ test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
 
       const completeCard = page.locator(`li:has(a[href="/create/${COMPLETE_ID}"])`);
       const draftCard = page.locator(`li:has(a[href="/create/${DRAFT_ID}"])`);
-      await expect(completeCard.getByText("Entwurf")).toHaveCount(0);
-      await expect(draftCard.getByText("Entwurf")).toBeVisible();
+      await expect(completeCard.locator(".border-dashed")).toHaveCount(0);
+      await expect(draftCard.locator(".border-dashed")).toBeVisible();
     });
   });
 
@@ -189,9 +189,9 @@ test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
         partiallyBuiltQuest(DRAFT_ID, "Halbfertig aber testbar", "2026-01-01T00:00:00.000Z", COMPLETE_STATION_ID),
       ]);
 
-      // Still shows the draft badge in the Creator — that's independent of Play visibility.
+      // Still shows the greyed-out/dashed draft styling in the Creator — that's independent of Play visibility.
       const card = page.getByRole("listitem").filter({ hasText: "Halbfertig aber testbar" });
-      await expect(card.getByText("Entwurf")).toBeVisible();
+      await expect(card.locator(".border-dashed")).toBeVisible();
 
       await page.goto("/play");
       await expect(page.getByText("Halbfertig aber testbar")).toBeVisible();
@@ -227,7 +227,7 @@ test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
 
       await expect(page.getByText("erfolgreich importiert")).toBeVisible();
       const card = page.getByRole("listitem").filter({ hasText: "Per Datei importiert" });
-      await expect(card.getByText("Entwurf")).toHaveCount(0);
+      await expect(card.locator(".border-dashed")).toHaveCount(0);
 
       await page.goto("/play");
       await expect(page.getByText("Per Datei importiert")).toBeVisible();
