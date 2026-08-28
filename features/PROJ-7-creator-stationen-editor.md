@@ -426,3 +426,5 @@ Zwei nutzergetriebene Styling-Änderungen ohne neue Acceptance Criteria (siehe P
 **Verifikation:** `npm run build` ✓ · `npm run lint` ✓ (0 Fehler, 6 vorbestehende Warnungen) · `npm test` ✓ (133/133) · volle PROJ-7-E2E-Suite weiterhin 20/20 grün, keine Regressionen durch das Icon-/Background-Redesign.
 
 **Kein neuer Feature-Spec-Eintrag:** Reine visuelle Anpassung an ein bereits deploytes, QA-freigegebenes Feature.
+
+**Deployment:** Mit Commits `d5ce893`/`d7565a1`/`85c6300` nach `main` gepusht und live verifiziert — siehe "Deployment — Creator-Redesign & Hover-Vereinheitlichung" in PROJ-6 für Details (kein separater Git-Tag, betrifft PROJ-6/7/8 gemeinsam).

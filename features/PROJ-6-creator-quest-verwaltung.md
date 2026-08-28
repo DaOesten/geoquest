@@ -692,3 +692,12 @@ Zwei nutzergetriebene Styling-Änderungen ohne neue Acceptance Criteria, umgeset
 **Verifikation:** `npm run build` ✓ · `npm run lint` ✓ (0 Fehler, 6 vorbestehende Warnungen) · `npm test` ✓ (133/133) · E2E-Regressionslauf (Mobile Safari) ✓ — 2 veraltete PROJ-6-Assertions, die auf den entfernten "Entwurf"-Badge-Text prüften, wurden auf `.border-dashed`-Klassenprüfung umgestellt (siehe `tests/proj-6-creator-quest-verwaltung.spec.ts`), keine sonstigen Regressionen.
 
 **Kein neuer Feature-Spec-Eintrag:** Beide Änderungen sind reine visuelle Anpassungen an bereits deployten, QA-freigegebenen Features — kein neuer PROJ-X, keine neuen Acceptance Criteria.
+
+## Deployment — Creator-Redesign & Hover-Vereinheitlichung (2026-08-28)
+
+**Production URL:** https://geoquesty.vercel.app
+**Deployed:** 2026-08-28
+**Platform:** Vercel (auto-deploy on push to main, Commits `d5ce893`, `d7565a1`, `85c6300`)
+**Kein neuer Git-Tag:** Reine Styling-Änderung über drei bereits getaggte Features (PROJ-6/PROJ-7/PROJ-8) hinweg, kein einzelner PROJ-X-Anker — Redeploy wird stattdessen direkt in den betroffenen Spec-Dateien vermerkt.
+
+**Post-Deployment-Verifikation (live auf Production):** Browser-Check (Playwright/WebKit) gegen `/create` mit injizierten `localStorage`-Testdaten bestätigt den neuen Build: Header ohne `border-bottom` (transparent), Grid- und animierte Dashed-Route-Hintergrundlayer vorhanden, Quest-Karte zeigt kein "Entwurf"-Badge mehr (der ursprünglich fälschlich als Treffer gemeldete "Entwurf"-Text stammt vom unveränderten Filter-Tab, nicht von der Karte — per Screenshot verifiziert). Keine Konsolenfehler. Testdaten ausschließlich im Browser-`localStorage` angelegt und wieder entfernt, kein serverseitiger Cleanup nötig.
