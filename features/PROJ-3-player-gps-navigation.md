@@ -502,6 +502,16 @@ Alle bestehenden Stationsliste-relevanten Criteria aus PROJ-3/PROJ-4 erneut gege
 ## Deployment
 
 **Deployed:** 2026-08-24
-**Production URL:** https://geoquest-eight.vercel.app
+**Production URL:** https://geoquesty.vercel.app
 **Commit:** d104943
 **Tag:** v1.3.0-PROJ-3
+
+> Korrektur (2026-08-28): Die Production-URL war hier fälschlich als `geoquest-eight.vercel.app` dokumentiert — das ist eine andere, unabhängige Vercel-App, nicht dieses Projekt. Alle anderen Feature-Specs (PROJ-1, 2, 4, 5, 6, 7) nennen korrekt `geoquesty.vercel.app`; hier entsprechend korrigiert.
+
+### Redeploy: Stationsliste-Redesign (2026-08-28)
+
+**Deployed:** 2026-08-28
+**Production URL:** https://geoquesty.vercel.app
+**Commit:** 1a0acc5
+**Tag:** v1.9.0-PROJ-3
+**Verifiziert:** `/play` liefert HTTP 200 mit frischem `age: 0` (Vercel-Cache) direkt nach dem Push — konsistent mit einem gerade abgeschlossenen Auto-Deploy über die GitHub-Integration. Keine Live-Klick-Verifikation durch den Nutzer im Rahmen dieses Deploys (siehe QA-Hinweis oben zur fehlenden Browser-Bestätigung dieser Session).
