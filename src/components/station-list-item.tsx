@@ -25,6 +25,8 @@ export function StationListItem({ station, index, onEdit, onDelete, onEditModule
   });
 
   const hasPosition = station.lat !== undefined && station.lng !== undefined;
+  const moduleCount = station.modules.length;
+  const moduleLabel = `${moduleCount} ${moduleCount === 1 ? "Modul" : "Module"}`;
 
   return (
     <div
@@ -53,7 +55,7 @@ export function StationListItem({ station, index, onEdit, onDelete, onEditModule
           {hasPosition ? (
             <>
               <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-primary" />
-              {station.radiusMeters} m Radius
+              {moduleLabel}
             </>
           ) : (
             <>
