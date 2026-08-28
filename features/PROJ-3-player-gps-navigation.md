@@ -2,7 +2,7 @@
 
 ## Status: Deployed
 **Created:** 2026-08-23
-**Last Updated:** 2026-08-24
+**Last Updated:** 2026-08-28
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — für Routing und UI-Rahmen
@@ -311,7 +311,7 @@ Keine neuen Packages erforderlich. Alle genutzten APIs:
 | `quest-player.tsx` | State Machine: permission → intro → stations → navigation. Einzige GPS-Instanz, wird als `geoState` an NavigationScreen weitergereicht. `onFirstPosition`-Callback fuer Permission→Intro-Uebergang. |
 | `permission-screen.tsx` | GPS/Kompass-Permission-Anfrage mit Erklaerungstext, Denied- und Unavailable-States |
 | `intro-screen.tsx` | Quest-Intro mit Pin-Icon, Anton-Headline, Meta-Badges (Dauer/Ziele), optionalem Medium, Teal-Pill-CTA |
-| `station-list.tsx` | Fortschritts-Hub mit Progress-Bar, Station-Rows (visited/current/locked), Teal-Glow auf aktueller Station |
+| `station-list.tsx` | Fortschritts-Hub: Eyebrow-Label + Anton-Titel + Meta-Zeile (Ziele-Anzahl, berechnete Routen-km via `haversine`), Station-Rows (completed/visited/current/locked) mit Teal-Glow auf aktueller Station, "Aktiv"/"Gesperrt"/"Abgeschlossen"-Subtitles, animierte Lime-Routenlinie (`wavyPath`, gemessen per `getBoundingClientRect` von erster bis letzter Stations-Badge), Partikel-Backdrop (`quest-list-backdrop.tsx`, wiederverwendet) |
 | `navigation-screen.tsx` | Richtungspfeil + Entfernungsanzeige, ArrivalOverlay (Konfetti, mark-pin.jpg, Haken-Badge, "Ziel erreicht!"), GpsLostOverlay |
 | `direction-arrow.tsx` | Responsive Kompass-SVG (`min(80vw, 360px)`), N/O/S/W, Teal↔Lime Farbwechsel bei Naehe, Pulse-Animation |
 
@@ -343,6 +343,17 @@ Keine neuen Packages erforderlich. Alle genutzten APIs:
 - Teal-Strich unter "Ziel erreicht!" analog zum Home-Screen
 - Teal-Pill-Button statt Brush-Stroke-Button fuer CTAs (Brush-Stroke skaliert schlecht)
 - `max-w-[430px]` Container im Play-Layout (nicht in einzelnen Komponenten)
+
+### Nachtraegliches Redesign: Stationsliste (2026-08-28)
+
+`station-list.tsx` wurde nach Deployment anhand von `design-preparation/Station_Screen.html` (Claude-Design-Export) ueberarbeitet — rein visuell, keine Aenderung an Klick-Verhalten, Status-Logik oder Datenfluss:
+
+- Header: Teal-Eyebrow "Stationen" + grosser italic Anton-Titel (Quest-Name) + Meta-Zeile (Ziele-Anzahl, Routen-km per `haversine`-Summe ueber Stationskoordinaten) + Divider. Bewusst **ohne** Live-GPS-Distanz zur aktuellen Station ("40 m entfernt" aus der Vorlage) — auf Wunsch des Nutzers weggelassen.
+- Partikel-Backdrop von `quest-list-backdrop.tsx` (Quest-Liste) wiederverwendet statt neu gebaut.
+- Animierte Lime-Routenlinie: geschwungener S-Kurven-Pfad (`wavyPath`-Funktion), der die Nummer-Badges der ersten und letzten Station exakt verbindet — Endpunkte per `getBoundingClientRect` gemessen (nicht hartkodiert wie in der Vorlage), da Kartenpositionen je nach Stationsliste variieren. Anzahl der Wellen skaliert mit `stations.length - 1`. `ResizeObserver` + `requestAnimationFrame`-verzoegerte Erstmessung halten die Linie bei Layout-Aenderungen synchron.
+- Gesperrte Stationen an die Vorlage angeglichen: keine `opacity`-Abdunkelung mehr, stattdessen helleres Grau (`#C4CACE`) fuer Name/Nummer, sichtbarerer Badge-Rand, Lock-Icon ohne Kreis-Hintergrund — bleibt erkennbar deaktiviert, aber lesbar.
+- Neue Subtitles: "Aktiv" (aktuelle Station), "Gesperrt" (gesperrte Stationen) — ergaenzend zum bestehenden "Abgeschlossen".
+- Stacking-Fallstrick: Routenlinie braucht `position: relative` **mit explizitem** `z-index` (`z-0`) auf dem Listen-Container, sonst erzeugt der Container keinen eigenen Stacking-Context und die Linie mit `-z-10` faellt hinter den gesamten Seitenhintergrund (unsichtbar).
 
 ## QA Test Results
 
@@ -406,6 +417,87 @@ Keine neuen Packages erforderlich. Alle genutzten APIs:
 ### Production-Ready Decision
 
 **READY** — No Critical or High bugs. All unit tests passing. E2E tests written and structurally sound (browser install is an environment issue, not a code issue). Security audit clean.
+
+---
+
+## QA Test Results — Stationsliste-Redesign (2026-08-28)
+
+**Tested:** 2026-08-28
+**App URL:** http://localhost:3000
+**Tester:** QA Engineer (AI)
+
+**Methodik-Hinweis:** Auf ausdrücklichen Wunsch des Nutzers wurde für diese Runde **kein** Playwright-Chromium-Install versucht (bekanntes, wiederholt bestätigtes Environment-Problem auf dieser Maschine, siehe PROJ-4 QA). Diese QA-Freigabe basiert ausschließlich auf Code-Review gegen jedes Acceptance Criterion, statischer Analyse (Kontrastrechnung, Stacking-Context-Nachvollzug, DOM-Rechnung von Hand) und der grünen Vitest-Suite (109/109). Keine Live-Browser-Bestätigung, kein `npm run test:e2e`-Lauf. Der Nutzer hat den Redesign-Flow (unsichtbare Linie, gerade statt geschwungene Linie) bereits zweimal live im Browser gegengeprüft und Fehler gemeldet, die hier bereits behoben sind — dieser Report deckt die seitdem unveränderte Version ab.
+
+### Scope
+
+Betrifft ausschließlich `src/components/station-list.tsx` (+ 1 neues Keyframe in `globals.css`) — die Stationsliste im Player-Flow (PROJ-3), redesignt anhand von `design-preparation/Station_Screen.html`. Keine Backend-, Daten- oder Routing-Änderungen.
+
+### Regression Testing (bestehende Acceptance Criteria)
+
+Alle bestehenden Stationsliste-relevanten Criteria aus PROJ-3/PROJ-4 erneut gegen den neuen Code geprüft:
+
+- [x] Klick auf "current" Station → Navigation startet (`onNavigate`, unverändert)
+- [x] Klick auf "visited" Station → Modul-Screen öffnet (`onOpenModules`, unverändert)
+- [x] "locked" Stationen sind `disabled`, kein Klick möglich (unverändert, `disabled={isLocked}`)
+- [x] Stationen erscheinen in Quest-Reihenfolge (`stations.map`, unverändert)
+- [x] `completedCount`/`onBack`-Props werden vom Aufrufer (`quest-player.tsx`) weiterhin korrekt übergeben — im Component-Body aktuell ungenutzt (siehe BUG-1)
+
+### Neue Funktionalität — Code-Review
+
+#### Meta-Zeile (Ziele-Anzahl + Routen-km)
+- [x] `totalRouteKm()` summiert `haversine()` über aufeinanderfolgende Stationen — `haversine` selbst ist in `geo-utils.test.ts` unit-getestet, der dünne Summierungs-Wrapper hier hat keine eigene Verzweigungslogik und wurde bewusst nicht separat unit-getestet (siehe QA-Skill-Richtlinie "was nicht unit-testen")
+- [x] Singular/Plural "Ziel"/"Ziele" korrekt für `stations.length === 1`
+- [x] km-Segment wird bei `routeKm === 0` (0 oder 1 Station) korrekt ausgeblendet statt "0,0 km" anzuzeigen
+
+#### Animierte Routenlinie (`wavyPath`/`RouteLine`)
+- [x] Endpunkte werden per `getBoundingClientRect` gemessen, nicht hartkodiert — verifiziert per Code-Lesung, entspricht dem vom Nutzer verlangten Fix
+- [x] 1-Stationen-Fall: `firstBadgeRef === lastBadgeRef` (`index === 0` und `index === stations.length - 1` treffen beide auf Index 0 zu) → `measureRoute` erkennt `first === last` und setzt `routePoints` auf `null` → keine Linie gerendert. Korrekt, nichts zu verbinden.
+- [x] 0-Stationen-Fall: Beide Refs bleiben `null` (kein Loop-Durchlauf rendert eine `StationRow`) → ebenfalls `null`-Guard greift, kein Crash. (Dieser Fall ist aktuell nur über eine direkte `/play/[id]`-URL zu einem unvollständigen Draft erreichbar, unverändert seit vor diesem Redesign — außerhalb des Scopes dieser Session.)
+- [x] Stacking-Context: `listRef`-Container hat `relative z-0` (explizites `z-index`), wodurch ein lokaler Stacking-Context entsteht. `RouteLine`s `-z-10` bleibt dadurch innerhalb dieses Contexts und rendert hinter den Stations-Karten, aber nicht hinter der Seite — der vom Nutzer gemeldete "Linie unsichtbar"-Bug ist durch genau dieses Setup behoben und durch Nachvollzug der CSS-Stacking-Regeln bestätigt
+- [x] `ResizeObserver` + `requestAnimationFrame`-verzögerte Erstmessung + `resize`-Listener sind sauber in der Cleanup-Funktion aufgeräumt (`cancelAnimationFrame`, `removeEventListener`, `observer.disconnect()`) — kein Leak
+- [x] Kontrastrechnung bestätigt: Farben unverändert zur Vorlage (Lime `#C6FF00`), keine WCAG-Relevanz für ein rein dekoratives (`aria-hidden="true"`) Element
+
+#### Gesperrte Stationen (Vorlagen-Angleichung)
+- [x] Kontrastrechnung: Name-Text `#C4CACE` auf effektivem Karten-Hintergrund (`rgba(14,31,36,.78)` über `#0B0F12`) ergibt **10,6:1**, Subtitle/Icon `#A0A7AD` ergibt **7,2:1** — beide deutlich über der PRD-Vorgabe von 4,5:1 (WCAG AA), sogar über AAA (7:1)
+- [x] Keine `dangerouslySetInnerHTML`, keine neue XSS-Fläche — `station.name`/`questName` weiterhin als reiner JSX-Text-Content gerendert (React-Escaping greift wie zuvor)
+
+#### Neue Subtitles ("Aktiv"/"Gesperrt")
+- [x] Kein doppeltes Vorlesen durch Screenreader: `aria-label` am `<button>` ersetzt den Accessible Name vollständig, die sichtbaren Subtitle-`<span>`s werden dadurch nicht zusätzlich als separater Text vorgelesen — Verhalten korrekt
+
+### Bugs Found
+
+#### BUG-1: `completedCount` und `onBack` werden von `StationList` entgegengenommen, aber nie verwendet
+- **Severity:** Low
+- **Steps to Reproduce:**
+  1. `quest-player.tsx` übergibt `completedCount={progress.completedStations.length}` und `onBack={() => window.history.back()}` an `<StationList>`
+  2. In `station-list.tsx` sind beide Felder Teil von `StationListProps`, werden aber im Funktions-Body nicht destrukturiert/verwendet
+  3. Erwartet: Ungenutzte Props werden entweder verwendet oder aus Interface + Aufrufstelle entfernt
+  4. Tatsächlich: Totes Interface-Feld bleibt bestehen — kein funktionaler Fehler (TypeScript/React erlauben das), aber verwirrend für zukünftige Bearbeiter, die eine Verwendung erwarten könnten
+- **Priority:** Nice to have — kein Blocker, reines Aufräumen bei nächster Gelegenheit an dieser Datei
+- **Status:** Fixed — `completedCount`/`onBack` aus `StationListProps` und der Aufrufstelle in `quest-player.tsx` entfernt. `onBack` wird bei den anderen beiden `StationList`-Aufrufern (`NavigationScreen`, `StationModules`) weiterhin genutzt, unverändert.
+
+#### BUG-2: `gq-dash`-Keyframe nutzt einen fixen `stroke-dashoffset`-Wert unabhängig von der tatsächlichen Pfadlänge
+- **Severity:** Low
+- **Steps to Reproduce:**
+  1. `wavyPath()` erzeugt je nach `stations.length` unterschiedlich lange Pfade (mehr Wellen bei mehr Stationen)
+  2. `@keyframes gq-dash { to { stroke-dashoffset: -176; } }` in `globals.css` ist ein fixer Wert, unabhängig von der Pfadlänge
+  3. Erwartet: Die "Fließgeschwindigkeit" des gestrichelten Musters wirkt bei sehr langen (vielen Stationen) und sehr kurzen (2 Stationen) Pfaden gleich
+  4. Tatsächlich: Bei längeren Pfaden wirkt die Animation relativ langsamer/schneller als bei kurzen — rein kosmetische Abweichung, gleiche Einschränkung galt bereits für den ursprünglichen, hartkodierten Vorlagen-Pfad
+- **Priority:** Nice to have
+- **Status:** Fixed — `RouteLine` berechnet jetzt eine analytische Pfadlängen-Näherung aus `waveCount`/Segmenthöhe/Amplitude (Diagonale pro Segment via `Math.hypot`, kein `getTotalLength()` nötig) und erzeugt daraus pro Instanz ein eigenes `gq-dash-${waveCount}`-Keyframe mit `stroke-dashoffset` als exaktem Vielfachen der Dash-Periode (14+18=32px, für nahtlose Loops) sowie eine proportionale Animationsdauer (~40px/s, an der ursprünglichen 176px/6s-Vorlage kalibriert). Der globale, jetzt ungenutzte `gq-dash`-Keyframe wurde aus `globals.css` entfernt.
+
+### Security Audit Results
+- [x] XSS: `station.name`/`questName` nur als JSX-Text-Content, kein `dangerouslySetInnerHTML` in der Datei
+- [x] Keine neuen externen Requests, keine neuen localStorage-Zugriffe, keine neuen Berechtigungen
+- [x] `aria-label`-Template-Strings landen über die DOM-Attribut-API, nicht über `innerHTML` — keine Injection-Fläche
+
+### Summary
+- **Scope:** 1 Komponente (`station-list.tsx`), rein visuelles Redesign, keine Verhaltensänderung
+- **Acceptance Criteria:** Alle bestehenden Stationsliste-Criteria weiterhin erfüllt (Regressionsprüfung bestanden)
+- **Bugs Found:** 2 total (0 Critical, 0 High, 0 Medium, 2 Low) — beide "Nice to have", beide auf Nutzerwunsch behoben (siehe Status je Bug oben)
+- **Security:** Pass, keine offenen Befunde
+- **Production Ready:** YES
+- **Recommendation:** Deploybar. `tsc`, ESLint, Vitest (109/109) und `next build` bestätigt nach beiden Fixes. Live-Browser-Bestätigung durch den Nutzer selbst hat die beiden zuvor gefundenen visuellen Bugs (unsichtbare Linie, gerade statt geschwungene Linie) bereits vor diesem QA-Pass aufgedeckt und beide sind seitdem behoben — dieser Report bestätigt den aktuellen Stand nur code-seitig, ersetzt aber keine erneute visuelle Kontrolle im Browser vor dem `/deploy`.
 
 ## Deployment
 

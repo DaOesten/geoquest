@@ -135,12 +135,8 @@ export function QuestPlayer({ quest }: QuestPlayerProps) {
           questName={quest.name}
           stations={quest.stations}
           getStatus={getStationStatus}
-          completedCount={progress.completedStations.length}
           onNavigate={handleNavigate}
           onOpenModules={handleOpenModules}
-          onBack={() => {
-            window.history.back();
-          }}
         />
       );
 

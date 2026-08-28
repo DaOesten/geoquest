@@ -68,6 +68,15 @@
 | **ModeTabs** | Quest Game ↔ Quest Creator Switch |
 | **Input** | Labelled Text/Multiline Field |
 
+## Ambient / Backdrop
+
+Screen-weite Atmosphäre-Layer, kein Component im engeren Sinn — vor dem Bauen eines neuen Screens hier zuerst prüfen, ob sich ein bestehender Layer wiederverwenden lässt.
+
+| Element | Beschreibung | Implementierung |
+|---------|-------------|------------------|
+| **Partikel-Backdrop** | Faines Teal-Grid + weicher Teal-Glow oben rechts + schwebende Teal/Lime-Punkte (`gq-float`-Keyframe, randomisierte Positionen/Timing) | `src/components/quest-list-backdrop.tsx` — bisher genutzt auf Quest-Liste (`/play`) und Stationsliste (`station-list.tsx`). Per `dynamic(..., { ssr: false })` einbinden, da Positionen randomisiert sind (SSR/Hydration-Diff sonst) |
+| **Animierte Routenlinie** | Gestrichelte Lime-Linie (`gq-dash`-Keyframe), verbindet zwei Punkte als geschwungener S-Kurven-Pfad statt gerader/glatter Bezier — Motiv aus `Station_Screen.html` | Aktuell nur in `station-list.tsx` (`wavyPath`-Funktion + `RouteLine`), verbindet erste und letzte Stations-Badge. Endpunkte immer per `getBoundingClientRect` messen, nie hartkodieren — Kartenpositionen sind dynamisch |
+
 ## Corner Radii
 
 - Buttons & Chips: Pill (`999px`)
