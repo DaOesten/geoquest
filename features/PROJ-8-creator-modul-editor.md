@@ -1,6 +1,6 @@
 # PROJ-8: Creator — Modul-Editor
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-08-28
 **Last Updated:** 2026-08-28
 
@@ -142,13 +142,105 @@ _Keine offenen Fragen._
 <!-- Added by /architecture -->
 | Decision | Rationale | Date |
 |----------|-----------|------|
-| _Wird von /architecture ergänzt_ | | |
+| Neue Route `/create/[id]/station/[stationId]` als eigene Page-Komponente | Next.js App Router-Standardmuster für eine per-Entity-Unterseite, konsistent mit dem bereits vorhandenen `/create/[id]`-Muster; kein neuer Routing-Mechanismus nötig | 2026-08-28 |
+| `DraftModule`-Typ + `createDraftModule`/`upsertModule`/`deleteModule`/`reorderModules` in `quest-storage.ts` | Spiegelt exakt das in PROJ-7 etablierte Muster für `DraftStation` — gleiche Datei, gleiche Funktionssignatur-Form, gleiche "Draft lockert Pflichtfelder, isQuestComplete() bleibt die einzige strikte Prüfung"-Philosophie | 2026-08-28 |
+| Kein neuer localStorage-Key — Module leben weiterhin im `modules`-Array der jeweiligen Station innerhalb von `gq_quests` | Konsistent mit PROJ-2/PROJ-6/PROJ-7: eine Quest ist ein einziges Objekt, Module sind kein eigenständig adressierbares Storage-Konzept | 2026-08-28 |
+| `ModuleTypePicker` als eigene, neue Komponente (kein bestehendes shadcn-Primitive) | Eine Typ-Auswahl mit 5 Kacheln + bedingten Task-Unterarten ist eine geschäftsspezifische Komposition, die intern bestehende Bausteine (Button/Card) verwendet — kein direktes shadcn-Äquivalent vorhanden | 2026-08-28 |
+| Fünf typspezifische Sheet-Formular-Komponenten statt eines generischen Formulars mit Feldern nach Bedarf | Jeder Modultyp hat strukturell unterschiedliche Felder (z.B. Options-Array bei Multiple Choice, Items-Array bei Sortierung) — separate Komponenten sind einfacher zu verstehen, zu testen und zu erweitern als ein bedingtes Mega-Formular; folgt dem bereits etablierten Muster separater Komponenten pro Renderer in `station-modules.tsx` (PROJ-4) | 2026-08-28 |
+| Wiederverwendung von `@dnd-kit/core` + `@dnd-kit/sortable` (bereits aus PROJ-7 installiert) für Modul-Liste UND Sortierungs-Item-Liste | Keine neue Dependency nötig, gleiches Interaktionsmuster (PointerSensor/TouchSensor mit Aktivierungsdistanz) wie die Stationsliste in PROJ-7 | 2026-08-28 |
+| Vollständigkeits-Warnhinweis als reine Anzeige-Funktion (`getModuleWarning(module)`), kein Zod-Schema-Zweitpfad | Die Prüfung ist informativ, nicht blockierend (Entwurfsprinzip) — eine einfache, direkt lesbare Prüf-Funktion pro Modultyp ist verständlicher als ein zweites, gelockertes Zod-Schema nur für Warnhinweise | 2026-08-28 |
+| Multiple-Choice-Editor hält `correctIndices` als lokales `Set<number>`, das beim Entfernen einer Option automatisch neu indiziert wird | Verhindert, dass ein gelöschtes Options-Index-Loch stehen bleibt oder auf eine falsche Option zeigt — die Neuindizierung passiert rein im lokalen Sheet-State, bevor überhaupt gespeichert wird | 2026-08-28 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+### Komponenten-Struktur
+
+```
+/create/[id]/station/[stationId] (NEUE Page)
+├── AppHeader (Stationsname + Zurück → /create/[id]) — gleiches Muster wie bestehende Header
+├── Empty State (Module leer)
+│   ├── Hinweistext
+│   └── "Modul hinzufügen"-Button
+├── Modul-Liste (sortierbar via @dnd-kit, wie StationListItem in PROJ-7)
+│   └── ModuleListItem (neu, pro Modul)
+│       ├── Drag-Griff (Icon, min. 44px Touch-Target)
+│       ├── Typ-Icon + Kurzvorschau (Textanfang / Dateiname aus URL / Frage)
+│       ├── Warnhinweis-Badge, falls unvollständig (z.B. "Kein Inhalt")
+│       └── Aktionen-Menü: "Bearbeiten" / "Löschen"
+├── "Modul hinzufügen"-Button (FAB, analog zum PROJ-7-Muster)
+├── ModuleTypePicker (neu, Sheet oder Vollbild-Auswahl)
+│   ├── 5 Kacheln: Text / Bild / Audio / Video / Aufgabe
+│   └── Bei "Aufgabe": 3 weitere Kacheln (Code-Eingabe / Multiple Choice / Sortierung)
+├── Fünf typspezifische Editor-Sheets (neu, je nach gewähltem/bearbeitetem Typ)
+│   ├── TextModuleSheet — Textarea für Inhalt
+│   ├── MediaModuleSheet — URL-Feld + optionale Caption (wiederverwendet für Bild/Audio/Video, Titel/Icon je Typ)
+│   ├── CodeTaskSheet — Frage + Antwort
+│   ├── MultipleChoiceSheet — Frage + Options-Liste mit Checkbox "korrekt" + Hinzufügen/Entfernen
+│   └── SortingTaskSheet — Frage + sortierbare Item-Liste (eigener @dnd-kit-Kontext) + Hinzufügen/Entfernen
+└── Lösch-Bestätigung (AlertDialog, gleiches Muster wie PROJ-7 Stations-Löschen)
+```
+
+### Daten-Architektur
+
+Kein neuer Speicherort. Module sind bereits Teil des Quest-Objekts im bestehenden `gq_quests`-localStorage-Eintrag (`stations[].modules`-Array, PROJ-2-Schema) — PROJ-8 liest/schreibt ausschließlich über den bestehenden Storage-Layer aus PROJ-2/PROJ-6/PROJ-7.
+
+**Lockerung gegenüber dem strikten Import-/Export-Schema** (identisches Prinzip wie `DraftStation` in PROJ-7): Ein `DraftModule` darf mit leeren Pflichtfeldern gespeichert werden — leerer `content`, leere `question`/`answer`, `options` mit weniger als den schema-geforderten 2 Einträgen, `items` mit weniger als den geforderten 3 Einträgen, leere `correctIndices`. Das strikte PROJ-2-Zod-Schema (`questSchema`) bleibt unverändert die einzige Grundlage für Import/Export-Validierung; `isQuestComplete()` erkennt ein unvollständiges Modul automatisch, kein neuer Prüfmechanismus nötig.
+
+**Ablauf beim Bearbeiten eines Moduls:**
+1. Sheet öffnet mit einer lokalen Kopie der Moduldaten (neu: leeres Formular für den gewählten Typ; bearbeiten: vorhandene Werte)
+2. Eingaben verändern nur diesen lokalen Entwurf — die gespeicherte Quest bleibt unangetastet
+3. Erst "Speichern" schreibt den Entwurf zurück ins `modules`-Array der Station und aktualisiert `lastModified`
+4. "Abbrechen" verwirft den lokalen Entwurf vollständig, keine Schreiboperation
+
+**Reihenfolge:** Die Position im `modules`-Array bestimmt die Anzeigereihenfolge im Player (bereits die Regel aus PROJ-4). Ein Drag-Vorgang in der Modul-Liste schreibt die neue Array-Reihenfolge sofort in `gq_quests`.
+
+**Löschen:** Entfernt den Modul-Eintrag aus dem Array, aktualisiert `lastModified` — nutzt denselben Schreib-Mechanismus wie jede andere Änderung.
+
+**Vollständigkeits-Warnhinweis:** Eine reine Anzeigefunktion prüft pro Modultyp, ob die für den Player relevanten Pflichtfelder gefüllt sind (z.B. Multiple Choice: mindestens 2 ausgefüllte Optionen UND mindestens eine als korrekt markiert). Das Ergebnis steuert nur den Warnhinweis in der Liste — es verändert nicht, ob gespeichert werden darf.
+
+### Modultyp-Auswahl-Verhalten
+
+- "Modul hinzufügen" öffnet zunächst den `ModuleTypePicker` — keine Vorauswahl eines Typs
+- Wahl von "Aufgabe" blendet direkt darunter/danach die 3 Unterarten ein (kein zusätzlicher Navigationsschritt zurück)
+- Nach der Typwahl öffnet sich sofort das passende leere Editor-Sheet — der Picker selbst schreibt nichts, er bestimmt nur, welches Sheet als Nächstes gerendert wird
+- Beim Bearbeiten eines bestehenden Moduls wird der Picker übersprungen — der Typ ist bereits durch `module.type`/`module.taskType` festgelegt
+
+### Wiederverwendete vs. neue Bausteine
+
+| Baustein | Status |
+|----------|--------|
+| `gq_quests`-Storage (Laden/Speichern) | ♻️ Wiederverwendet aus PROJ-2/PROJ-6/PROJ-7 |
+| `isQuestComplete()` | ♻️ Wiederverwendet aus PROJ-6, keine Änderung nötig |
+| `stripHtmlTags()` | ♻️ Wiederverwendet aus PROJ-6/PROJ-7 |
+| `httpsUrl`-Validierungslogik (Präfix-Check) | ♻️ Wiederverwendet aus PROJ-2 (`quest-schema.ts`) |
+| shadcn Sheet, AlertDialog, DropdownMenu, Checkbox, Input, Textarea, Label, Button | ♻️ Bereits im Projekt vorhanden |
+| `@dnd-kit/core` + `@dnd-kit/sortable` | ♻️ Wiederverwendet aus PROJ-7 |
+| PointerSensor/TouchSensor-Aktivierungsdistanz-Setup | ♻️ Gleiches Muster wie `/create/[id]/page.tsx` (PROJ-7) |
+| Light-Theme-Portal-Fix (`data-theme="light"` + `text-foreground`) | ♻️ Bestehendes Muster aus PROJ-6/PROJ-7, auf alle neuen Sheets/Dialoge übertragen |
+| `ModuleListItem` | 🆕 Neu (analog zu `StationListItem`) |
+| `ModuleTypePicker` | 🆕 Neu |
+| `TextModuleSheet`, `MediaModuleSheet`, `CodeTaskSheet`, `MultipleChoiceSheet`, `SortingTaskSheet` | 🆕 Neu (5 typspezifische Editor-Sheets) |
+| `getModuleWarning()`-Hilfsfunktion (Vollständigkeits-Check für den Warnhinweis) | 🆕 Neu |
+| `/create/[id]/station/[stationId]/page.tsx` | 🆕 Neu |
+
+### Dependencies
+
+| Package | Zweck | Status |
+|---------|-------|--------|
+| `@dnd-kit/core`, `@dnd-kit/sortable` | Drag & Drop für Modul-Liste und Sortierungs-Items | ♻️ Bereits installiert (PROJ-7) |
+| Zod, Sonner, bestehende shadcn-Komponenten | Wiederverwendung des `httpsUrl`-Schemas, Toasts, UI-Bausteine | ♻️ Bereits installiert |
+
+Keine neuen Pakete erforderlich.
+
+### Offene technische Hinweise für `/frontend`
+
+- `MediaModuleSheet` sollte als eine Komponente mit einem `mediaType`-Prop ("image"/"audio"/"video") gebaut werden statt drei fast identischer Kopien — Titel, Icon und ggf. Platzhaltertext ändern sich, Feldstruktur (URL + optionale Caption) ist identisch
+- Beim Entfernen einer als korrekt markierten Multiple-Choice-Option muss der lokale `correctIndices`-State neu indiziert werden (nicht nur gefiltert) — sonst zeigt ein verbleibender Index auf die falsche, nachgerückte Option
+- Der Sortierungs-Editor braucht einen eigenen, vom Haupt-`DndContext` der Modul-Liste getrennten `DndContext` innerhalb des Sheets — analog dazu, wie PROJ-7s Karten-Pin-Drag unabhängig vom Listen-Drag funktioniert
+- `ModuleListItem`-Kurzvorschau: Text zeigt die ersten ~60 Zeichen von `content`, Bild/Audio/Video zeigen den Dateinamen-Teil der URL (nach dem letzten `/`) oder "Keine URL" als Fallback, Tasks zeigen die `question` oder "Keine Frage" als Fallback
 
 ## QA Test Results
 _To be added by /qa_
