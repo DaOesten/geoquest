@@ -1,6 +1,6 @@
 # PROJ-8: Creator — Modul-Editor
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-08-28
 **Last Updated:** 2026-08-28
 
@@ -388,4 +388,29 @@ Neue Datei `tests/proj-8-creator-modul-editor.spec.ts`: 29 Tests, mindestens ein
 - **Recommendation:** Deploy freigegeben. Optional: HINWEIS-1 (https-Erzwingung auch in `sanitizeDraftModule()` spiegeln) in einem künftigen Hardening-Pass nachziehen, kein Blocker für dieses Release.
 
 ## Deployment
-_To be added by /deploy_
+
+**Production URL:** https://geoquesty.vercel.app
+**Deployed:** 2026-08-28
+**Platform:** Vercel (auto-deploy on push to main)
+**Git Tag:** v1.11.0-PROJ-8
+
+### Pre-Deployment Checks
+- [x] `npm run build` erfolgreich
+- [x] `npm run lint` erfolgreich (0 Fehler, 6 vorbestehende `<img>`-Warnungen)
+- [x] QA-Freigabe: "Approved" / "Production Ready: YES"
+- [x] Keine Critical/High-Bugs offen (0 Bugs gefunden, 1 optionaler Low-Härtungshinweis, kein Blocker)
+- [x] Keine neuen Umgebungsvariablen nötig
+- [x] Keine Secrets im Diff (`git diff origin/main main --stat` vor dem Push geprüft)
+- [x] Kein Datenbank-Layer betroffen (weiterhin reines localStorage, kein Supabase-Bezug)
+- [x] Alle Commits gepusht nach `main`
+
+### Deploy-Vorgang
+`git push origin main` (Commit `0d60a1d`) löst den bestehenden Vercel-GitHub-Auto-Deploy aus — kein manueller `vercel --prod`-Schritt nötig, da das Projekt bereits seit PROJ-1 verbunden ist.
+
+### Post-Deployment-Verifikation
+- Neuer Build bestätigt live per End-to-End-Roundtrip direkt in Produktion (Playwright/WebKit): Testquest via `localStorage` gesät → `/create/[id]` geöffnet → Puzzle-Icon "Module bearbeiten" getippt → Navigation zu `/create/[id]/station/[stationId]` erfolgreich (diese Route existierte im vorherigen Deploy noch nicht — eindeutiger Beleg für den neuen Build) → Empty State sichtbar → Text-Modul angelegt und gespeichert → Modul erscheint korrekt in der Liste. Keine Konsolenfehler.
+- Erster Verifikationsversuch (unmittelbar nach dem Push) schlug noch fehl, weil der alte Build (Puzzle-Icon ohne Funktion) noch live war — nach kurzer Wartezeit erneut geprüft, dann erfolgreich. Kein Fehler im neuen Code, nur normale Vercel-Build-Propagationszeit.
+- Test-Quest wurde ausschließlich im `localStorage` des Test-Browsers angelegt (kein Backend/keine geteilte Datenbank bei GeoQuest) und dort direkt wieder entfernt — keine Bereinigung in Produktion nötig, da nichts serverseitig gespeichert wurde
+
+### Bekannte offene Punkte
+Keine. HINWEIS-1 aus dem QA-Bericht (fehlende serverseitige https-Erzwingung in `sanitizeDraftModule()`) ist ein optionaler Härtungsvorschlag ohne ausnutzbare Sicherheitslücke (siehe QA Security Audit) — kein Fix vor oder nach diesem Deploy erforderlich, kann bei Bedarf in einem künftigen Hardening-Pass nachgezogen werden.
