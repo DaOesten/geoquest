@@ -62,7 +62,7 @@ export default function PlayPage() {
   return (
     <>
       <QuestListBackdrop />
-      <AppHeader />
+      <AppHeader transparent />
 
       <div className="relative px-5 pt-4">
         <h1 className="font-display italic text-[clamp(1.8rem,8vw,2.4rem)] leading-[0.95] uppercase text-foreground">

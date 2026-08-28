@@ -87,7 +87,7 @@ export function StationList({
       <QuestListBackdrop />
 
       <div className="relative">
-        <AppHeader backHref="/play" />
+        <AppHeader backHref="/play" transparent />
 
         <div className="px-5 pt-3">
           <span className="text-tech text-[10px] text-gq-teal">Stationen</span>

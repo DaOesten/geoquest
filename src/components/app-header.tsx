@@ -9,14 +9,21 @@ interface AppHeaderProps {
   backHref?: string;
   rightAction?: React.ReactNode;
   variant?: "dark" | "light";
+  /** Omit the background/blur/border so an ambient backdrop (e.g. QuestListBackdrop) shows through unbroken. */
+  transparent?: boolean;
 }
 
-export function AppHeader({ title, backHref, rightAction, variant = "dark" }: AppHeaderProps) {
+export function AppHeader({ title, backHref, rightAction, variant = "dark", transparent = false }: AppHeaderProps) {
   const isTopLevel = !backHref;
   const logoSrc = variant === "light" ? "/assets/mark-pin-whitebg.png" : "/assets/mark-pin.jpg";
 
   return (
-    <header className="sticky top-0 z-50 flex h-14 items-center gap-3 px-5 bg-background/80 backdrop-blur-sm border-b border-border">
+    <header
+      className={
+        "sticky top-0 z-50 flex h-14 items-center gap-3 px-5" +
+        (transparent ? "" : " bg-background/80 backdrop-blur-sm border-b border-border")
+      }
+    >
       {isTopLevel ? (
         <Link href="/" className="flex-shrink-0" aria-label="Zurück zum Start">
           <Image

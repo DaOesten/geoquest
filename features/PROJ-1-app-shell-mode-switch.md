@@ -191,7 +191,7 @@ src/app/
 
 | Komponente | Zweck |
 |------------|-------|
-| `AppHeader` | Kontextabhängiger Header: Logo/Zurück links, Titel mitte, Actions rechts |
+| `AppHeader` | Kontextabhängiger Header: Logo/Zurück links, Titel mitte, Actions rechts. `transparent`-Prop (Default `false`) entfernt Background/Blur/Border, damit ein dahinterliegender Partikel-Backdrop (z.B. `quest-list-backdrop.tsx`) nahtlos durchscheint — genutzt auf Quest-Liste (`/play`) und Stationsliste (`station-list.tsx`, PROJ-3) |
 | `ModeCard` | Große Karte auf Startscreen mit Brush-Stroke-Button |
 | `FirstVisitDialog` | Einmaliger Erststart-Dialog (nutzt shadcn Dialog) |
 | `BrushStrokeButton` | Button mit SVG-Brush-Stroke-Hintergrund (Brand-Element) |
@@ -296,3 +296,11 @@ E2E-Testsuite geschrieben in `tests/proj-1-app-shell.spec.ts` (23 Tests). Playwr
 **Deployed:** 2026-08-23
 **Platform:** Vercel (auto-deploy on push to main)
 **Git Tag:** v1.0.0-PROJ-1
+
+### Redeploy: Transparenter Header über Partikel-Backdrop (2026-08-28)
+
+**Deployed:** 2026-08-28
+**Production URL:** https://geoquesty.vercel.app
+**Git Tag:** v1.10.0-PROJ-1
+
+`AppHeader` bekommt eine neue `transparent`-Prop (Default `false`, bestehende Aufrufer unverändert). Auf Quest-Liste (`/play/page.tsx`) und Stationsliste (`station-list.tsx`, PROJ-3) — den einzigen beiden Screens mit `QuestListBackdrop` — entfernt sie `bg-background/80 backdrop-blur-sm border-b border-border`, sodass der Partikel-Hintergrund nahtlos unter dem Header durchscheint statt sichtbar abgesetzt zu wirken. Creator-Screens (`variant="light"`, kein Partikel-Backdrop) bleiben unverändert opak. Nutzer hat das Ergebnis im Browser bestätigt ("Sieht gut aus").
