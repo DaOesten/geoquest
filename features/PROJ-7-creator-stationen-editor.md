@@ -1,6 +1,6 @@
 # PROJ-7: Creator — Stationen-Editor
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-08-28
 **Last Updated:** 2026-08-28
 
@@ -389,4 +389,29 @@ Auf Nutzer-Entscheidung wurde nur **BUG-2** behoben; **BUG-1 bleibt bestehen** (
 - **Recommendation:** Deploy freigegeben. BUG-1 optional zu einem späteren Zeitpunkt beheben.
 
 ## Deployment
-_To be added by /deploy_
+
+**Production URL:** https://geoquesty.vercel.app
+**Deployed:** 2026-08-28
+**Platform:** Vercel (auto-deploy on push to main)
+**Git Tag:** v1.8.0-PROJ-7
+
+### Pre-Deployment Checks
+- [x] `npm run build` erfolgreich
+- [x] `npm run lint` erfolgreich (0 Fehler, 6 vorbestehende `<img>`-Warnungen)
+- [x] QA-Freigabe: "Approved" / "Production Ready: YES" (nach BUG-2-Fix)
+- [x] Keine Critical/High-Bugs offen (BUG-1 ist Low, nicht blockierend)
+- [x] Keine neuen Umgebungsvariablen nötig (Leaflet/OpenStreetMap benötigt keinen API-Key)
+- [x] Keine Secrets im Diff (`git diff origin/main main --stat` vor dem Push geprüft)
+- [x] Kein Datenbank-Layer betroffen (weiterhin reines localStorage, kein Supabase-Bezug)
+- [x] Alle Commits gepusht nach `main`
+
+### Deploy-Vorgang
+`git push origin main` (Commit `3fe22ef`) löst den bestehenden Vercel-GitHub-Auto-Deploy aus — kein manueller `vercel --prod`-Schritt nötig, da das Projekt bereits seit PROJ-1 verbunden ist.
+
+### Post-Deployment-Verifikation
+- Neuer Build bestätigt live: `https://geoquesty.vercel.app/leaflet/marker-icon.png` liefert `200` (dieses Asset existiert erst seit dem PROJ-7-Commit, war im vorherigen Deploy nicht vorhanden — eindeutiger Beleg, dass der neue Build ausgeliefert wurde, nicht nur der alte weiterläuft)
+- Manueller End-to-End-Smoketest direkt in Produktion (Playwright/WebKit): Neue Quest anlegen → Stationen-Editor-Empty-State sichtbar → "Station hinzufügen" → Leaflet-Karte lädt → Antippen setzt Pin → Speichern → Station erscheint in der Liste. Keine Konsolenfehler.
+- Test-Quest wurde ausschließlich im `localStorage` des Test-Browsers angelegt (kein Backend/keine geteilte Datenbank bei GeoQuest) und dort direkt wieder gelöscht — keine Bereinigung in Produktion nötig, da nichts serverseitig gespeichert wurde
+
+### Bekannte offene Punkte
+- BUG-1 (Low, aus QA): Karte zentriert bei "Station hinzufügen" auf die letzte Station in Array-Reihenfolge statt auf die zuletzt bearbeitete — bewusst nicht behoben (Nutzer-Entscheidung), kein Blocker für dieses Release, Kandidat für einen späteren `/refine`-Durchgang
