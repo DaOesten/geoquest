@@ -1,8 +1,8 @@
 # PROJ-6: Creator — Quest-Verwaltung
 
-## Status: In Progress
+## Status: In Review
 **Created:** 2026-08-27
-**Last Updated:** 2026-08-27
+**Last Updated:** 2026-08-28
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — für Routing (`/create`) und UI-Rahmen
@@ -488,6 +488,84 @@ Setzt das Tech Design aus dem `/refine`-Durchlauf 1:1 um.
 - **Security:** Pass
 - **Production Ready:** YES
 - **Recommendation:** Deploy. Alle drei vom Nutzer angeforderten Fixes sind verifiziert, keine neuen Regressionen gefunden. Einzige offene Einschränkung: Chromium-Cross-Browser-Testing konnte in dieser Sandbox nicht durchgeführt werden (Umgebungs-, kein Produktproblem) — die Chromium-E2E-Projektkonfiguration ist unverändert und unabhängig von den Fixes.
+
+---
+
+## QA Test Results — Veröffentlichen-Refinement (2026-08-28)
+
+**Tested:** 2026-08-28
+**App URL:** http://localhost:3000
+**Tester:** QA Engineer (AI)
+**Build:** `npm run build` ✓ · `npm run lint` ✓ (0 Fehler, 6 vorbestehende `<img>`-Warnungen) · `npm test` ✓ (95/95)
+
+Testet ausschließlich das Delta aus dem `/refine` + `/architecture` + `/frontend`-Durchlauf (Commit `194a936`). Die 13 ursprünglichen PROJ-6-Kriterien wurden bereits in der vorherigen QA-Runde vollständig verifiziert und sind durch die volle Regressionssuite (unten) erneut mit abgedeckt.
+
+### Acceptance Criteria Status — Veröffentlichen
+
+- [x] Unvollständige Quest → "Veröffentlichen" im Menü sichtbar, aber deaktiviert
+- [x] Vollständige, unveröffentlichte Quest → "Veröffentlichen" aktiv wählbar
+- [x] Klick auf "Veröffentlichen" → `published: true`, `lastModified` aktualisiert, Toast "Quest veröffentlicht", Badge verschwindet
+- [x] Veröffentlichte Quest erscheint danach in der Play-Modus-Liste
+- [x] Bereits veröffentlichte Quest → Menüpunkt "Veröffentlichen" nicht mehr vorhanden
+- [x] Per Datei importierte Quest → automatisch `published: true`, ohne manuellen Schritt
+
+**Ergebnis: 6/6 Kriterien bestanden**
+
+### Edge Cases Status — Veröffentlichen
+
+| # | Edge Case | Status |
+|---|-----------|--------|
+| 8 | Import setzt automatisch `published: true` | ✅ Verifiziert mit echtem Datei-Upload (nicht nur Unit-Test) — Quest sofort in Play-Liste sichtbar |
+| 9 | "Veröffentlichen" bei unvollständiger Quest deaktiviert | ✅ Zusätzlich erzwungener Klick auf das deaktivierte Element getestet — kein Effekt, `published` bleibt `false` |
+| 10 | Erneutes Veröffentlichen einer bereits veröffentlichten Quest | ✅ Menüpunkt verschwindet zuverlässig |
+| 11 | Bestehende Quests ohne `published`-Feld werden als veröffentlicht behandelt | ⚠️ Bestätigt — **deckt aber BUG-4 auf** (siehe unten): der Fallback ist zu grob für unvollständige Altbestände |
+
+### Security Audit Results
+- [x] `published` ist ausschließlich über das Aktionen-Menü erreichbar, kein Texteingabefeld kann diesen Wert setzen — getestet mit `{"published":true}` als Quest-Name via Umbenennen-Dialog: Name wird als reiner String gespeichert, `published` bleibt unverändert
+- [x] Kein neuer Server-/API-Angriffsvektor (weiterhin rein client-seitig, localStorage)
+- [x] Keine Secrets im Diff
+
+### Bugs Found
+
+#### BUG-4: Unvollständige Alt-Quests (vor diesem Refinement angelegt) werden fälschlich als veröffentlicht behandelt und erscheinen im Play-Modus
+- **Severity:** High
+- **Steps to Reproduce:**
+  1. In der Konsole eine Quest OHNE `published`-Feld und mit 0 Stationen speichern (simuliert eine Quest, die mit dem *vorherigen* `createDraftQuest()` — vor diesem Refinement — angelegt und nie fertiggestellt wurde; genau dieser Zustand existierte bereits produktiv, bevor dieses Refinement gebaut wurde)
+  2. `/create` öffnen → Aktionen-Menü der Quest öffnen
+  3. Erwartet: "Veröffentlichen" sichtbar und deaktiviert (Quest ist unvollständig, sollte NICHT im Play-Modus erscheinen)
+  4. Tatsächlich: "Veröffentlichen" ist komplett aus dem Menü verschwunden (die App hält die Quest bereits für veröffentlicht) — UND die Quest erscheint im Play-Modus mit "0 Ziele", exakt der Bug, den dieses gesamte Refinement beheben sollte
+- **Root Cause:** `isPublished()` nutzt `quest.published ?? true` — ein fehlendes Feld wird IMMER als "veröffentlicht" interpretiert, unabhängig davon, ob die Quest überhaupt vollständig ist. Das war für den ursprünglichen Zweck (bereits fertige Alt-Quests nicht plötzlich aus der Play-Liste verschwinden lassen) richtig gedacht, deckt aber nicht den — real bereits existierenden — Fall unvollständiger Alt-Entwürfe ab, die vor diesem Feature mit dem alten `createDraftQuest()` angelegt wurden.
+- **Impact:** Kein Datenverlust, keine Sicherheitslücke — aber die Kern-Funktion dieses gesamten Refinements ("Entwurfsquests erscheinen nicht im Play-Modus") ist für genau die Art von Daten gebrochen, die den ursprünglichen Bug-Report des Nutzers ausgelöst hat. Zusätzlich gibt es aktuell KEINEN UI-Weg, eine so betroffene Quest zu reparieren (der Veröffentlichen-Button ist ja verschwunden) — der Nutzer müsste sie löschen und neu anlegen.
+- **Empfohlener Fix:** Fallback in `isPublished()` von einem festen `true` auf `isQuestComplete(quest)` ändern, wenn das Feld fehlt — d.h. "wenn wir es nicht wissen, nimm an, veröffentlicht war es nur, wenn es auch tatsächlich vollständig war". Das bewahrt das gewünschte Verhalten für alte VOLLSTÄNDIGE Quests (weiterhin sichtbar) und korrigiert es rückwirkend für alte UNVOLLSTÄNDIGE Entwürfe (werden jetzt korrekt als unveröffentlicht behandelt UND bekommen ihren "Veröffentlichen"-Button zurück).
+- **Regression Test:** Bereits als `tests/proj-6-creator-quest-verwaltung.spec.ts` → "Robustheit › BUG-4 (known, unfixed)" hinterlegt — dokumentiert aktuell das (fehlerhafte) Ist-Verhalten; nach dem Fix muss die Assertion umgedreht werden (Quest darf NICHT mehr in `/play` erscheinen, Menüpunkt muss wieder erscheinen)
+- **Priority:** Fix before deployment (Kernfunktion des Features ist für einen realistischen, bereits produktiv existierenden Datenzustand nicht erfüllt)
+
+### Regression Testing
+- Volle bestehende E2E-Suite (`tests/proj-1-*`, `proj-3-*`, `proj-4-*`, `proj-5-*`) gegen **Mobile Safari**: 84/100 bestanden (100 = 94 vorherige + 6 neue Veröffentlichen-Tests). Die 16 Fehlschläge sind exakt dieselben, bereits mehrfach (inkl. per `git stash`) als vorbestehende, PROJ-6-unabhängige Umgebungs-Flakiness verifizierten Tests aus PROJ-1/3/4 — keine neue Regression durch dieses Refinement, insbesondere keine Beeinträchtigung der GPS-Navigation/Modul-Rendering durch die Änderung an `/play/page.tsx`.
+- PROJ-6-eigene Suite: 21/21 grün (15 vorherige + 6 neue: 4 Veröffentlichen-ACs + 1 Import-Test + 1 BUG-4-Tracking-Test; die ursprünglich geplanten 6 neuen Tests wurden zu diesen 6 zusammengeführt).
+
+### Responsive & Accessibility
+- 375px / 768px / 1440px: kein horizontales Scrollen, "Veröffentlichen"-Menüpunkt an allen drei Breakpoints erreichbar, keine Konsolenfehler
+- Dropdown-Menüpunkte (Veröffentlichen/Umbenennen/Löschen) sind ca. 32px hoch — konsistent mit den bereits bestehenden Menüpunkten aus der ersten QA-Runde, kein neuer Touch-Target-Regressionsfall (nur primäre Controls wie FAB/Filter-Tabs/Karten-Aktionsbutton werden gegen die 44px-Vorgabe geprüft, nicht einzelne Einträge in einem bereits geöffneten Menü)
+
+### Cross-Browser Testing
+- **WebKit (Safari-Engine):** Vollständig getestet — Desktop-WebKit (manuelle QA-Skripte, u.a. echter Datei-Upload für den Import-Test) + "Mobile Safari"-Projekt der E2E-Suite (21/21 PROJ-6-Tests grün)
+- **Chromium:** Erneut in dieser Sandbox nicht zuverlässig installierbar (mehrere Versuche über zwei QA-Runden hinweg, konsistent fehlgeschlagen — eindeutig eine Umgebungs-/Netzwerk-Einschränkung dieser Sandbox, kein Produktproblem). Weiterhin nicht in dieser Runde verifiziert.
+
+### Unit Tests (neu)
+- `quest-storage.test.ts`: +5 Tests (`isPublished`-Fallback bei fehlendem Feld, explizit `false`/`true`, `publishQuest` aktualisiert Status + `lastModified`, No-op bei unbekannter ID)
+- `quest-import.test.ts`: +1 Test (importierte Quest ist `published: true`)
+- Alle 95/95 grün
+
+### E2E Tests (neu)
+`tests/proj-6-creator-quest-verwaltung.spec.ts` — 6 neue Tests: 3 für die Veröffentlichen-Menüzustände + Publish-Flow, 1 für Play-Liste-Sichtbarkeit, 1 für den echten Import-Upload-Flow, 1 als Tracking-Test für BUG-4. Gesamt jetzt 21 Tests, alle grün auf "Mobile Safari".
+
+### Summary
+- **Acceptance Criteria:** 6/6 (Veröffentlichen) passed — 19/19 gesamt für PROJ-6 inkl. vorheriger Runde
+- **Bugs Found:** 1 total (0 critical, **1 high**, 0 medium, 0 low)
+- **Security:** Pass
+- **Production Ready:** **NO** — BUG-4 ist High-Severity und blockiert laut Projekt-Regel ("READY: No Critical or High bugs")
+- **Recommendation:** BUG-4 vor dem Deploy fixen (kleiner, gut lokalisierter Fix: `isPublished()`-Fallback von `true` auf `isQuestComplete(quest)` ändern) und mit `/frontend` + erneutem `/qa` verifizieren. Alle anderen Aspekte (6/6 neue ACs, Sicherheit, Responsive, keine Regressionen) sind sauber.
 
 ## Deployment
 

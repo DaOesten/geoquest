@@ -1,6 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
 
-function draftQuest(id: string, name: string, lastModified: string) {
+// `published: false` matches what createDraftQuest() actually writes for every
+// new quest. Pass `published: undefined` explicitly to simulate a quest saved
+// before this refinement shipped, when the field didn't exist at all yet.
+function draftQuest(id: string, name: string, lastModified: string, published: boolean | undefined = false) {
   return {
     version: 1,
     id,
@@ -9,10 +12,17 @@ function draftQuest(id: string, name: string, lastModified: string) {
     intro: { text: "" },
     outro: { text: "" },
     stations: [],
+    ...(published !== undefined ? { published } : {}),
   };
 }
 
-function completeQuest(id: string, name: string, lastModified: string, stationId: string) {
+function completeQuest(
+  id: string,
+  name: string,
+  lastModified: string,
+  stationId: string,
+  published = true
+) {
   return {
     version: 1,
     id,
@@ -30,6 +40,7 @@ function completeQuest(id: string, name: string, lastModified: string, stationId
         modules: [{ type: "text", content: "Hallo" }],
       },
     ],
+    published,
   };
 }
 
@@ -152,6 +163,96 @@ test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
     });
   });
 
+  test.describe("Veröffentlichen", () => {
+    test("shows 'Veröffentlichen' disabled for an incomplete quest", async ({ page }) => {
+      await seedQuests(page, [draftQuest(DRAFT_ID, "Unvollständig", "2026-01-01T00:00:00.000Z")]);
+
+      await page.getByRole("button", { name: "Quest-Aktionen" }).click();
+      const publishItem = page.getByRole("menuitem", { name: "Veröffentlichen" });
+      await expect(publishItem).toBeVisible();
+      await expect(publishItem).toHaveAttribute("data-disabled", "");
+    });
+
+    test("publishing a complete quest sets published, shows a toast, and removes the draft badge", async ({ page }) => {
+      await seedQuests(page, [
+        completeQuest(COMPLETE_ID, "Fertig zum Veröffentlichen", "2026-01-01T00:00:00.000Z", COMPLETE_STATION_ID, false),
+      ]);
+
+      const card = page.getByRole("listitem").filter({ hasText: "Fertig zum Veröffentlichen" });
+      await expect(card.getByText("Entwurf")).toBeVisible();
+
+      await page.getByRole("button", { name: "Quest-Aktionen" }).click();
+      const publishItem = page.getByRole("menuitem", { name: "Veröffentlichen" });
+      await expect(publishItem).not.toHaveAttribute("data-disabled", "");
+      await publishItem.click();
+
+      await expect(page.getByText("Quest veröffentlicht")).toBeVisible();
+      await expect(card.getByText("Entwurf")).toHaveCount(0);
+
+      const stored = await page.evaluate(
+        (id) => JSON.parse(localStorage.getItem("gq_quests")!).find((q: { id: string }) => q.id === id),
+        COMPLETE_ID
+      );
+      expect(stored.published).toBe(true);
+    });
+
+    test("has no 'Veröffentlichen' option once a quest is already published", async ({ page }) => {
+      await seedQuests(page, [
+        completeQuest(COMPLETE_ID, "Schon veröffentlicht", "2026-01-01T00:00:00.000Z", COMPLETE_STATION_ID, true),
+      ]);
+
+      await page.getByRole("button", { name: "Quest-Aktionen" }).click();
+      await expect(page.getByRole("menuitem", { name: "Veröffentlichen" })).toHaveCount(0);
+    });
+
+    test("a published quest appears in the Play list; an unpublished one does not", async ({ page }) => {
+      await seedQuests(page, [
+        completeQuest(COMPLETE_ID, "Sichtbar im Play-Modus", "2026-01-02T00:00:00.000Z", COMPLETE_STATION_ID, true),
+        completeQuest(DRAFT_ID, "Nicht im Play-Modus", "2026-01-01T00:00:00.000Z", OLDER_ID, false),
+      ]);
+
+      await page.goto("/play");
+      await expect(page.getByText("Sichtbar im Play-Modus")).toBeVisible();
+      await expect(page.getByText("Nicht im Play-Modus")).not.toBeVisible();
+    });
+
+    test("imported quests are automatically published and immediately visible in the Play list", async ({ page }) => {
+      await gotoEmptyCreate(page);
+
+      const importedQuest = {
+        version: 1,
+        id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+        name: "Per Datei importiert",
+        lastModified: "2026-01-01T00:00:00.000Z",
+        intro: { text: "Willkommen" },
+        outro: { text: "Geschafft" },
+        stations: [
+          {
+            id: "11111111-1111-4111-8111-111111111111",
+            name: "Station 1",
+            lat: 53.6,
+            lng: 10.0,
+            radiusMeters: 10,
+            modules: [{ type: "text", content: "Hallo" }],
+          },
+        ],
+      };
+
+      await page.setInputFiles("input[type=file]", {
+        name: "quest.json",
+        mimeType: "application/json",
+        buffer: Buffer.from(JSON.stringify(importedQuest)),
+      });
+
+      await expect(page.getByText("erfolgreich importiert")).toBeVisible();
+      const card = page.getByRole("listitem").filter({ hasText: "Per Datei importiert" });
+      await expect(card.getByText("Entwurf")).toHaveCount(0);
+
+      await page.goto("/play");
+      await expect(page.getByText("Per Datei importiert")).toBeVisible();
+    });
+  });
+
   test.describe("Umbenennen", () => {
     test("prefills the current name, saves the new one, and re-sorts the list", async ({ page }) => {
       await seedQuests(page, [draftQuest(DRAFT_ID, "Alter Name", "2026-01-01T00:00:00.000Z")]);
@@ -248,6 +349,33 @@ test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
       await expect(page.getByText("Application error", { exact: false })).not.toBeVisible();
       await expect(page.getByText("Kaputte Quest")).toBeVisible();
       await expect(page.getByText("0 Stationen")).toBeVisible();
+    });
+
+    test("BUG-4 (known, unfixed): an incomplete quest saved before this refinement leaks into the Play list", async ({ page }) => {
+      // Simulates a draft created with the pre-refinement createDraftQuest(): 0
+      // stations, no `published` key at all (the field didn't exist yet).
+      // isPublished()'s `?? true` fallback can't tell this apart from an old,
+      // already-complete quest — so it defaults to published, even though it's
+      // structurally incomplete and was never explicitly published.
+      const legacyDraftId = "22222222-2222-4222-8222-222222222222";
+      await page.goto("/create");
+      await page.evaluate((id) => {
+        localStorage.setItem("gq_first_visit_done", "true");
+        localStorage.setItem("gq_quests", JSON.stringify([
+          { version: 1, id, name: "Alter Rohentwurf", lastModified: new Date().toISOString(), intro: { text: "" }, outro: { text: "" }, stations: [] },
+        ]));
+      }, legacyDraftId);
+      await page.reload();
+
+      // Documents the current (buggy) behavior: the publish menu item disappears
+      // (the app thinks it's already published)...
+      await page.getByRole("button", { name: "Quest-Aktionen" }).click();
+      await expect(page.getByRole("menuitem", { name: "Veröffentlichen" })).toHaveCount(0);
+      await page.keyboard.press("Escape");
+
+      // ...and the incomplete quest shows up in Play regardless.
+      await page.goto("/play");
+      await expect(page.getByText("Alter Rohentwurf")).toBeVisible();
     });
   });
 
