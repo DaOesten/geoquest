@@ -119,7 +119,7 @@ test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
       await page.getByRole("button", { name: "Erstellen" }).click();
 
       await expect(page).toHaveURL(/\/create\/[0-9a-f-]{36}$/);
-      await expect(page.getByText("Quest-Editor wird in PROJ-7 implementiert.")).toBeVisible();
+      await expect(page.getByText("Noch keine Stationen")).toBeVisible();
 
       await page.goto("/create");
       const card = page.getByRole("listitem").filter({ hasText: "Meine erste Quest" });

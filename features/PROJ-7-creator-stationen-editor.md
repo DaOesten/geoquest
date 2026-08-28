@@ -1,6 +1,6 @@
 # PROJ-7: Creator — Stationen-Editor
 
-## Status: In Progress
+## Status: In Review
 **Created:** 2026-08-28
 **Last Updated:** 2026-08-28
 
@@ -256,7 +256,118 @@ Die Tech-Design-Notiz „Marker-Icons müssen lokal referenziert werden" wurde i
 - Nicht manuell verifiziert: Drag-and-Drop-Reihenfolge-Änderung selbst (Klick-Interaktionen wurden getestet, ein echter Pointer-Drag-Vorgang ließ sich im automatisierten Treiber-Skript nicht zuverlässig simulieren) — Code folgt dem Standard-`@dnd-kit`-Sortable-Muster, sollte in `/qa` gezielt mit echter Touch-/Maus-Interaktion geprüft werden
 
 ## QA Test Results
-_To be added by /qa_
+
+**Tested:** 2026-08-28
+**App URL:** http://localhost:3000
+**Tester:** QA Engineer (AI)
+**Build:** `npm run build` ✓ · `npm run lint` ✓ (0 Fehler, 6 vorbestehende `<img>`-Warnungen) · `npm test` ✓ (109/109)
+**Browser-Hinweis:** Der gebündelte Playwright-Chromium-Download bricht in dieser Sandbox beim Entpacken ab (Netzwerk zur Playwright-CDN blockiert, reproduzierbar über zwei Sitzungen). Alle Browser-Tests liefen stattdessen auf `webkit` ("Mobile Safari"-Projekt) — funktionsfähig und bereits das etablierte Muster aus den PROJ-3/4/6-QA-Runden.
+
+### Acceptance Criteria Status
+
+#### Stationsliste
+- [x] Empty State mit Hinweistext und "Station hinzufügen"-Button bei 0 Stationen
+- [x] Stationen werden in gespeicherter Reihenfolge mit Name, Radius und Positions-Status angezeigt
+- [x] Station ohne Position zeigt "Keine Position gesetzt" statt Koordinaten
+
+#### Station hinzufügen
+- [x] Sheet öffnet mit leerem Namensfeld, keinem Pin, Radius-Default 10m
+- [x] Karte zentriert auf zuletzt *in der Stations-Liste stehende* Station mit Position und zeigt andere Stationen als graue Kontext-Pins — siehe **BUG-1**, Abweichung von "zuletzt *gesetzte*"
+- [x] Karte zentriert auf Deutschland-Standardansicht, wenn keine Station der Quest eine Position hat
+
+#### Position setzen
+- [x] Antippen der Karte setzt/verschiebt den Pin
+- [x] Pin ist per Drag verschiebbar (Code-Pfad verifiziert: `dragend`-Handler übernimmt neue Lat/Lng, gleiche Marker-API wie das Tap-Handling)
+- [x] "Aktuelle Position verwenden" setzt Pin bei erteilter Permission + Signal und zentriert die Karte
+- [x] Fehlermeldung "Standort nicht verfügbar." bei verweigerter Permission, Karte bleibt für manuelles Antippen nutzbar
+
+#### Name & Radius
+- [x] Eingegebener Name wird beim Speichern übernommen
+- [x] Radius-Regler läuft über die 4 Stufen (10/25/50/100m) und deckelt korrekt am Maximum — siehe **BUG-2** für den Fall eines nicht-stufenkonformen Ausgangswerts
+
+#### Speichern (Entwurfsprinzip)
+- [x] Station ohne Position wird gespeichert (lat/lng bleiben `undefined`), Sheet schließt sich
+- [x] Abbrechen verwirft alle Änderungen vollständig
+- [x] `lastModified` der Quest wird bei jedem Speichervorgang aktualisiert
+
+#### Reihenfolge (Drag & Drop)
+- [x] Echter Pointer-Drag einer Station an eine andere Position übernimmt und speichert die neue Reihenfolge sofort (im Frontend-Review noch unverifiziert — jetzt mit echtem Maus-Drag bestätigt, kein reiner Klick-Test)
+- [x] Neue Reihenfolge bleibt nach Reload erhalten
+
+#### Bearbeiten
+- [x] Sheet öffnet mit allen vorhandenen Werten (Name, Position, Radius) korrekt vorausgefüllt
+
+#### Löschen
+- [x] Bestätigungsdialog erscheint mit korrektem Wortlaut inkl. Stationsname
+- [x] Bestätigen entfernt die Station (inkl. ihrer `modules`) aus der Quest
+- [x] Abbrechen lässt die Station unverändert
+
+**Ergebnis: 19/19 testbare Kriterien bestanden** (2 mit dokumentierten Bugs, siehe unten — beide sind funktionale Abweichungen, keine Totalausfälle der jeweiligen Kriterien)
+
+### Edge Cases Status
+
+1. [x] Station ohne Position → Quest bleibt "Entwurf", Play-Sichtbarkeit unabhängig davon (siehe PROJ-6-Regression unten)
+2. [x] Erste Station mit Position → Quest automatisch im Play-Modus sichtbar (verifiziert, keine neue Logik nötig)
+3. [x] GPS-Permission verweigert → gleicher Fehlerhinweis, Karte bleibt nutzbar
+4. [x] Tippen auf Wasser/entlegene Stelle → wird ohne Sonderbehandlung akzeptiert
+5. [x] Zwei Stationen an (fast) derselben Position → erlaubt, keine Kollisionsprüfung, wie spezifiziert
+6. [x] Kein Konflikt zwischen Listen-Drag und Karten-Pin-Drag (Sheet ist beim Listen-Drag geschlossen)
+7. [x] Sheet-Abbruch während laufendem GPS-Lookup → kein Absturz, State wird ohnehin nur bei "Speichern" übernommen
+8. [x] Schnelles Mehrfach-Antippen der Karte → nur letzte Position zählt (Code-Pfad: einfacher State-Setter, kein Race-Risiko)
+9. [x] Zwischenstand-Garantie → jede gespeicherte Station landet sofort in `gq_quests`, verifiziert per Reload-Test
+10. [ ] **BUG-2 (neu, nicht in Spec dokumentiert):** Station mit einem `radiusMeters`-Wert außerhalb der 4 UI-Stufen (z.B. `37`, wie er aus einem Import oder alten Datenbestand stammen könnte) — siehe unten
+
+### Security Audit Results
+- [x] XSS via `<script>`/`<img onerror>` im Stationsnamen: Tags werden entfernt (`stripHtmlTags`), kein Alert ausgelöst, keine rohen Tags im DOM
+- [x] HTML-only-Name (`<b></b>`) kollabiert zu leerem String — bewusst kein Blocker (Entwurfsprinzip), Liste zeigt korrekt "Unbenannte Station"-Fallback statt leerer Zeile
+- [x] localStorage-Schreibzugriffe laufen ausschließlich über bestehende, geprüfte `quest-storage.ts`-Funktionen — kein direkter ungefilterter Schreibpfad von der UI
+- [x] Keine neuen Netzwerk-Calls außer OpenStreetMap-Tile-Requests (öffentliche, unauthentifizierte Kartenkacheln) und der lokalen `getCurrentPosition()`-Browser-API — keine Secrets, keine PII-Übertragung an Dritte
+- [x] Keine Cross-Quest-Datenlecks: `upsertStation`/`deleteStation`/`reorderStations` sind konsequent an eine `questId` gebunden
+
+### Bugs Found
+
+#### BUG-1: Karte zentriert bei "Station hinzufügen" auf die letzte Station in Array-Reihenfolge, nicht auf die zuletzt bearbeitete/positionierte Station
+- **Severity:** Low
+- **Steps to Reproduce:**
+  1. Quest mit zwei Stationen A und B anlegen, beide mit Position (Reihenfolge: A, B)
+  2. Station A öffnen und ihre Position neu setzen (A ist jetzt die zuletzt *bearbeitete* Station, aber immer noch zuerst im Array)
+  3. "Station hinzufügen" tippen
+  4. Erwartet (laut Spec-Wortlaut "zentriert auf die zuletzt gesetzte Station"): Karte zentriert auf A (zuletzt bearbeitet)
+  5. Tatsächlich: Karte zentriert auf B (letzte im `stations`-Array, `initialMapView` liest `contextPins[contextPins.length - 1]`, was reine Array-Reihenfolge ist, nicht Bearbeitungs-Reihenfolge)
+- **Screenshot:** Reproduziert und verifiziert per automatisiertem Playwright-Lauf (Positionsvergleich der beiden Stationen gegen den sichtbaren Kartenausschnitt)
+- **Priority:** Nice to have — die Komfortfunktion (PRD-Rationale: "Ersteller bauen Quests oft direkt am Zielort") trifft in den allermeisten Fällen trotzdem die richtige Station (neu angelegte Stationen landen ohnehin am Array-Ende), nur der Sonderfall "ältere Station nachträglich neu positionieren" weicht ab. Kein Datenverlust, keine Blockade — nur ein suboptimaler Kartenausschnitt beim Öffnen.
+
+#### BUG-2: Radius-Regler zeigt bei einem nicht-stufenkonformen Ausgangswert eine falsche Slider-Position und kann den Wert beim ersten Antippen unerwartet verkleinern
+- **Severity:** Medium
+- **Steps to Reproduce:**
+  1. Eine Station mit `radiusMeters: 37` in `gq_quests` speichern (z.B. via Import aus einer Datei, die nicht von diesem Editor stammt — das Zod-Schema aus PROJ-2 erlaubt beliebige Zahlen 10–100, nicht nur die 4 UI-Stufen)
+  2. Diese Station im PROJ-7-Editor öffnen
+  3. Erwartet: Regler zeigt einen Zustand, der nicht zu einer stillen Wertänderung führt, sobald der Nutzer die Position nicht bewusst ändert
+  4. Tatsächlich: Das Zahlen-Label zeigt korrekt "37 m", aber der Slider-Thumb springt auf Position 0 (visuell "10 m"). Bewegt der Nutzer den Regler nur einmal nach rechts (in der Erwartung, von 37m zum nächsthöheren Schritt 50m zu gelangen), landet der Wert stattdessen bei **25m** — niedriger als der ursprüngliche Wert, ohne dass der Nutzer das beabsichtigt hat
+- **Screenshot:** Reproduziert und verifiziert per automatisiertem Playwright-Lauf (`radiusMeters: 37` injiziert, Slider-`aria-valuenow` vor/nach einer Pfeiltaste ausgelesen, gespeicherter Wert nach dem Speichern kontrolliert)
+- **Priority:** Fix in next sprint — kein Datenverlust beim reinen Öffnen/Speichern ohne Regler-Interaktion (Wert bleibt `37`, wenn der Nutzer den Regler nicht anfasst), aber eine stille, unerwartete Verkleinerung des Ankunftsradius bei einer scheinbar harmlosen Regler-Bedienung ist ein reales Korrektheits-Problem, sobald PROJ-9 (Export) oder ein künftiger Import-Pfad Werte außerhalb der 4 Stufen ins System bringt. Betrifft aktuell nur Datenbestände außerhalb des PROJ-7-Editors selbst (der Editor schreibt immer einen der 4 Werte), ist also heute noch nicht über die UI allein reproduzierbar — aber real, sobald ein Import-Feature (PROJ-9-Umfeld) oder ein manuell bearbeiteter JSON-Import ins Spiel kommt.
+
+### Regressionstests
+- **PROJ-6 (Creator — Quest-Verwaltung):** Alle 19 E2E-Tests weiterhin grün. Ein bestehender Test prüfte noch den PROJ-6-Platzhaltertext ("Quest-Editor wird in PROJ-7 implementiert.") auf `/create/[id]` — dieser Text existiert nach der PROJ-7-Implementierung nicht mehr. **Test korrigiert** (prüft jetzt den PROJ-7-Empty-State "Noch keine Stationen"), keine Produktionscode-Änderung nötig, reiner Test-Fix.
+- **`isQuestComplete`/`isPlayable` (PROJ-6):** Manuell und per E2E verifiziert, dass eine über PROJ-7 angelegte Station mit Position die Quest korrekt aus dem "Entwurf"-Zustand *nicht* herausholt (fehlende Module/Intro/Outro halten sie im Entwurf), aber sofort `isPlayable` triggert — exakt das in PROJ-6 spezifizierte, entkoppelte Verhalten. Kein Regressionscode nötig, reine Bestätigung.
+- **PROJ-1/PROJ-3/PROJ-4 E2E-Suiten:** 19 vorbestehende Fehlschläge unverändert vorhanden — durch Vergleichslauf mit `git stash` (PROJ-7-Änderungen komplett entfernt) bestätigt, dass exakt dieselben 19 Tests bereits ohne jede PROJ-7-Änderung fehlschlagen. Keine neuen Regressionen durch PROJ-7, alle 19 sind umgebungs-/vorbestehende Fehler außerhalb des PROJ-7-Scopes (deckt sich mit der in PROJ-6 dokumentierten Beobachtung "dieselben vorbestehenden, unabhängigen Fehlschläge").
+
+### Unit Tests
+Bereits im Frontend-Schritt ergänzt (11 neue Tests in `quest-storage.test.ts` für `createDraftStation`/`upsertStation`/`deleteStation`/`reorderStations`) — keine weiteren im QA-Schritt nötig, da die verbleibende Logik (Slider-Stufen-Mapping, Karten-Zentrierung) am sinnvollsten über die neuen E2E-Tests abgedeckt wird (UI-nahe Berechnungen, keine isolierte Utility-Funktion).
+
+### E2E Tests
+Neue Datei `tests/proj-7-creator-stationen-editor.spec.ts`: 19 Tests, je mindestens einer pro Akzeptanzkriterien-Gruppe plus eine dedizierte PROJ-6-Regressionsprüfung. Alle 19 grün auf "Mobile Safari". Zusätzlich `tests/proj-6-creator-quest-verwaltung.spec.ts` um den oben beschriebenen Platzhaltertext-Fix korrigiert (weiterhin 19/19 grün).
+
+### Production-Ready Decision
+
+**NOT READY** — BUG-2 (Medium) sollte vor dem Deploy behoben werden, da er eine stille, für den Nutzer unsichtbare Datenverfälschung (Ankunftsradius schrumpft ohne erkennbaren Grund) ermöglicht, sobald ein Wert außerhalb der 4 UI-Stufen ins System gelangt. BUG-1 (Low) ist nicht blockierend und kann optional mit BUG-2 zusammen gefixt werden.
+
+### Summary
+- **Acceptance Criteria:** 19/19 funktional bestanden (2 mit dokumentierten Bugs als Abweichung)
+- **Bugs Found:** 2 total (0 critical, 0 high, 1 medium, 1 low)
+- **Security:** Pass — keine Schwachstellen gefunden
+- **Production Ready:** NO
+- **Recommendation:** BUG-2 vor Deploy fixen (Radius-Regler muss einen nicht-stufenkonformen Ausgangswert entweder auf die nächstgelegene Stufe abbilden oder den Rohwert beibehalten, bis der Nutzer den Regler bewusst bedient — nicht stillschweigend auf Index 0 zurückfallen). BUG-1 optional im selben Durchgang mitnehmen (Kontext-Pin-Auswahl nach `lastModified`-Zeitstempel statt Array-Position sortieren).
 
 ## Deployment
 _To be added by /deploy_
