@@ -1,6 +1,6 @@
 # PROJ-7: Creator — Stationen-Editor
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-08-28
 **Last Updated:** 2026-08-28
 
@@ -224,6 +224,36 @@ Kein neuer Speicherort. Stationen sind bereits Teil des Quest-Objekts im bestehe
 - Leaflet benötigt eigenes CSS (`leaflet/dist/leaflet.css`) — muss global importiert werden, sonst werden Kacheln/Marker falsch positioniert dargestellt
 - Leaflets Standard-Marker-Icons laden per Default von einem CDN-Pfad, der in Next.js-Bundling-Setups oft bricht — Marker-Icons müssen lokal referenziert oder als Custom-Icon gesetzt werden
 - `@dnd-kit` benötigt einen `PointerSensor`/`TouchSensor`-Setup mit einer kleinen Aktivierungs-Distanz, damit ein normaler Tap (z.B. auf "Bearbeiten") nicht versehentlich als Drag-Start interpretiert wird
+
+## Implementation Notes (Frontend)
+
+**Date:** 2026-08-28
+
+### Neue/geänderte Dateien
+| Datei | Zweck |
+|-------|-------|
+| `src/app/create/[id]/page.tsx` | Ersetzt den PROJ-6-Platzhalter: Stationsliste (sortierbar via `@dnd-kit`), Empty State, "Station hinzufügen"-FAB, Lösch-Bestätigung |
+| `src/components/station-editor-sheet.tsx` | Neu — Sheet (`side="bottom"`, `h-[92dvh]`) für Anlegen/Bearbeiten einer Station: Namensfeld, Karte, "Aktuelle Position verwenden", Radius-Regler |
+| `src/components/station-map.tsx` | Neu — Leaflet/`react-leaflet`-Wrapper: eigener Pin (Tap + Drag), graue Kontext-Pins, Klick-Handler, Recenter-Handler bei Positionswechsel |
+| `src/components/station-list-item.tsx` | Neu — sortierbarer Listeneintrag (`useSortable`): Drag-Griff, Name, Positions-Status, "Module bearbeiten"-Button (Platzhalter für PROJ-8), Aktionen-Menü |
+| `src/components/station-radius-slider.tsx` | Neu — shadcn `Slider` mit 4 festen Stufen (10/25/50/100m) |
+| `src/hooks/use-current-position.ts` | Neu — einmalige `getCurrentPosition()`-Abfrage (kein `watchPosition`) für den "Aktuelle Position verwenden"-Button |
+| `src/lib/quest-storage.ts` | + `DraftStation`-Typ (lat/lng optional), `createDraftStation()`, `upsertStation()`, `deleteStation()`, `reorderStations()` |
+| `src/components/ui/slider.tsx` | Neu installiert via `npx shadcn@latest add slider` |
+| `public/leaflet/*.png` | Leaflets Marker-/Schatten-Icons lokal aus `node_modules/leaflet/dist/images/` kopiert (siehe Bug unten) |
+
+### Abweichung von der Tech-Design-Skizze
+- Grauer Kontext-Pin nutzt keinen separaten "grey marker"-Asset (den Leaflet gar nicht mitliefert), sondern denselben Icon-PNG wie der eigene Pin, per CSS (`opacity-50 grayscale`) abgedunkelt — spart einen dritten Marker-Asset-Satz ohne visuellen Unterschied für den MVP-Zweck (rein informative Kontext-Pins)
+
+### Bug gefunden + behoben (während der Browser-Verifikation)
+Die Tech-Design-Notiz „Marker-Icons müssen lokal referenziert werden" wurde in der ersten Implementierung fälschlich mit einem Verweis auf einen *anderen* CDN-Host (`unpkg.com`) statt echter lokaler Assets umgesetzt. Beim Browser-Test blockierte Chrome den grauen Kontext-Pin mit `ERR_BLOCKED_BY_ORB` (Cross-Origin-Read-Blocking) — der Pin blieb unsichtbar.
+**Fix:** Leaflets eigene Marker-/Schatten-PNGs aus `node_modules/leaflet/dist/images/` nach `public/leaflet/` kopiert, `station-map.tsx` referenziert jetzt `/leaflet/*.png` (Next.js Static-Asset-Pfad), keine externe Domain mehr im Spiel.
+
+### Verifikation
+- `npm run build` ✓ · `npm run lint` ✓ (0 Fehler, 6 vorbestehende `<img>`-Warnungen) · `npm test` ✓ (109/109, davon 11 neu für `upsertStation`/`deleteStation`/`reorderStations`/`createDraftStation`)
+- Manuell im Browser (Playwright-Treiber gegen System-Chrome, da der gebündelte Playwright-Chromium-Download in dieser Sandbox blockiert war; 390×844 Mobile-Viewport, gemockte Geolocation Berlin) durchgespielt: Empty State → Station hinzufügen → Karte antippen (Pin setzen) → Radius per Tastatur auf 25m → Speichern → zweite Station per "Aktuelle Position verwenden" → beide Stationen in Liste sichtbar mit Positions-Icon/Radius → Bearbeiten (Werte korrekt vorausgefüllt) → Löschen mit Bestätigungsdialog → nur verbleibende Station sichtbar. Keine Konsolenfehler außer einem vorbestehenden, unabhängigen `favicon.ico`-404.
+- E2E-Testsuite (Playwright, `tests/`) wurde für PROJ-7 noch nicht ergänzt — folgt in `/qa` analog zum bestehenden Muster (`tests/proj-6-creator-quest-verwaltung.spec.ts`)
+- Nicht manuell verifiziert: Drag-and-Drop-Reihenfolge-Änderung selbst (Klick-Interaktionen wurden getestet, ein echter Pointer-Drag-Vorgang ließ sich im automatisierten Treiber-Skript nicht zuverlässig simulieren) — Code folgt dem Standard-`@dnd-kit`-Sortable-Muster, sollte in `/qa` gezielt mit echter Touch-/Maus-Interaktion geprüft werden
 
 ## QA Test Results
 _To be added by /qa_

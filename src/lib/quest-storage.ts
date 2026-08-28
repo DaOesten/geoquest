@@ -1,4 +1,4 @@
-import { questSchema, type Quest } from "./quest-schema";
+import { questSchema, type Quest, type Station } from "./quest-schema";
 import { stripHtmlTags } from "./sanitize";
 
 const STORAGE_KEY = "gq_quests";
@@ -139,4 +139,61 @@ export function renameQuest(id: string, name: string): void {
     name: stripHtmlTags(name).trim(),
     lastModified: new Date().toISOString(),
   });
+}
+
+/**
+ * A station as held by the PROJ-7 editor: lat/lng are optional, unlike the
+ * strict Station type (questSchema), because a draft station may be saved
+ * before its position is set on the map (see PROJ-7 spec, "Speichern
+ * (Entwurfsprinzip)"). isQuestComplete() treats a station missing lat/lng as
+ * incomplete via the normal Zod check, no separate validation needed here.
+ */
+export type DraftStation = Omit<Station, "lat" | "lng"> & {
+  lat?: number;
+  lng?: number;
+};
+
+export function createDraftStation(): DraftStation {
+  return {
+    id: crypto.randomUUID(),
+    name: "",
+    radiusMeters: 10,
+    modules: [],
+  };
+}
+
+/** Inserts a new station or updates an existing one (matched by id) in the quest's station list, then persists. */
+export function upsertStation(questId: string, station: DraftStation): void {
+  const quest = getQuestById(questId);
+  if (!quest) return;
+
+  const sanitized: DraftStation = { ...station, name: stripHtmlTags(station.name).trim() };
+  const index = quest.stations.findIndex((s) => s.id === sanitized.id);
+  const stations = [...quest.stations];
+  if (index >= 0) {
+    stations[index] = sanitized as Station;
+  } else {
+    stations.push(sanitized as Station);
+  }
+
+  saveQuest({ ...quest, stations, lastModified: new Date().toISOString() });
+}
+
+export function deleteStation(questId: string, stationId: string): void {
+  const quest = getQuestById(questId);
+  if (!quest) return;
+  saveQuest({
+    ...quest,
+    stations: quest.stations.filter((s) => s.id !== stationId),
+    lastModified: new Date().toISOString(),
+  });
+}
+
+/** Persists a full reorder of the quest's stations (e.g. after a drag-and-drop reorder in PROJ-7). */
+export function reorderStations(questId: string, orderedStationIds: string[]): void {
+  const quest = getQuestById(questId);
+  if (!quest) return;
+  const byId = new Map(quest.stations.map((s) => [s.id, s]));
+  const stations = orderedStationIds.map((id) => byId.get(id)).filter((s): s is Station => s !== undefined);
+  saveQuest({ ...quest, stations, lastModified: new Date().toISOString() });
 }

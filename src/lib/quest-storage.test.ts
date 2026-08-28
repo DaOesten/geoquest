@@ -6,11 +6,15 @@ import {
   deleteQuest,
   questExists,
   createDraftQuest,
+  createDraftStation,
   isQuestComplete,
   isPlayable,
   isPublished,
   publishQuest,
   renameQuest,
+  upsertStation,
+  deleteStation,
+  reorderStations,
 } from "./quest-storage";
 import type { Quest } from "./quest-schema";
 
@@ -240,6 +244,131 @@ describe("quest-storage", () => {
 
     it("is a no-op when the quest id does not exist", () => {
       renameQuest("does-not-exist", "Neu");
+      expect(getAllQuests()).toEqual([]);
+    });
+  });
+
+  describe("createDraftStation", () => {
+    it("creates a station with a unique id, empty name, default radius, no position, no modules", () => {
+      const station = createDraftStation();
+      expect(station.id).toBeTruthy();
+      expect(station.name).toBe("");
+      expect(station.radiusMeters).toBe(10);
+      expect(station.lat).toBeUndefined();
+      expect(station.lng).toBeUndefined();
+      expect(station.modules).toEqual([]);
+    });
+  });
+
+  describe("upsertStation", () => {
+    it("appends a new station to the quest and updates lastModified", () => {
+      const draftQuest = createDraftQuest("Neue Quest");
+      draftQuest.lastModified = new Date(0).toISOString();
+      saveQuest(draftQuest);
+
+      const station = createDraftStation();
+      upsertStation(draftQuest.id, { ...station, name: "Erste Station" });
+
+      const updated = getQuestById(draftQuest.id);
+      expect(updated?.stations).toHaveLength(1);
+      expect(updated?.stations[0].name).toBe("Erste Station");
+      expect(updated?.lastModified).not.toBe(draftQuest.lastModified);
+    });
+
+    it("saves a station without lat/lng (draft principle — position is optional)", () => {
+      const draftQuest = createDraftQuest("Neue Quest");
+      saveQuest(draftQuest);
+      const station = createDraftStation();
+
+      upsertStation(draftQuest.id, station);
+
+      const updated = getQuestById(draftQuest.id);
+      expect(updated?.stations[0].lat).toBeUndefined();
+      expect(updated?.stations[0].lng).toBeUndefined();
+    });
+
+    it("updates an existing station in place when the id matches", () => {
+      const draftQuest = createDraftQuest("Neue Quest");
+      saveQuest(draftQuest);
+      const station = createDraftStation();
+      upsertStation(draftQuest.id, { ...station, name: "Original" });
+
+      upsertStation(draftQuest.id, { ...station, name: "Geändert", lat: 52.5, lng: 13.4 });
+
+      const updated = getQuestById(draftQuest.id);
+      expect(updated?.stations).toHaveLength(1);
+      expect(updated?.stations[0].name).toBe("Geändert");
+      expect(updated?.stations[0].lat).toBe(52.5);
+    });
+
+    it("strips HTML tags and trims the station name", () => {
+      const draftQuest = createDraftQuest("Neue Quest");
+      saveQuest(draftQuest);
+      const station = createDraftStation();
+
+      upsertStation(draftQuest.id, { ...station, name: "  <b>Brunnen</b>  " });
+
+      expect(getQuestById(draftQuest.id)?.stations[0].name).toBe("Brunnen");
+    });
+
+    it("is a no-op when the quest id does not exist", () => {
+      upsertStation("does-not-exist", createDraftStation());
+      expect(getAllQuests()).toEqual([]);
+    });
+  });
+
+  describe("deleteStation", () => {
+    it("removes the station from the quest and updates lastModified", () => {
+      const draftQuest = createDraftQuest("Neue Quest");
+      saveQuest(draftQuest);
+      const station = createDraftStation();
+      upsertStation(draftQuest.id, station);
+      const before = new Date(0).toISOString();
+      const quest = getQuestById(draftQuest.id)!;
+      saveQuest({ ...quest, lastModified: before });
+
+      deleteStation(draftQuest.id, station.id);
+
+      const updated = getQuestById(draftQuest.id);
+      expect(updated?.stations).toHaveLength(0);
+      expect(updated?.lastModified).not.toBe(before);
+    });
+
+    it("is a no-op when the quest id does not exist", () => {
+      deleteStation("does-not-exist", "some-station-id");
+      expect(getAllQuests()).toEqual([]);
+    });
+  });
+
+  describe("reorderStations", () => {
+    it("persists the new station order", () => {
+      const draftQuest = createDraftQuest("Neue Quest");
+      saveQuest(draftQuest);
+      const stationA = { ...createDraftStation(), name: "A" };
+      const stationB = { ...createDraftStation(), name: "B" };
+      upsertStation(draftQuest.id, stationA);
+      upsertStation(draftQuest.id, stationB);
+
+      reorderStations(draftQuest.id, [stationB.id, stationA.id]);
+
+      const updated = getQuestById(draftQuest.id);
+      expect(updated?.stations.map((s) => s.name)).toEqual(["B", "A"]);
+    });
+
+    it("drops ids from the ordering list that no longer exist on the quest", () => {
+      const draftQuest = createDraftQuest("Neue Quest");
+      saveQuest(draftQuest);
+      const station = createDraftStation();
+      upsertStation(draftQuest.id, station);
+
+      reorderStations(draftQuest.id, [station.id, "ghost-id"]);
+
+      const updated = getQuestById(draftQuest.id);
+      expect(updated?.stations).toHaveLength(1);
+    });
+
+    it("is a no-op when the quest id does not exist", () => {
+      reorderStations("does-not-exist", ["a", "b"]);
       expect(getAllQuests()).toEqual([]);
     });
   });
