@@ -169,6 +169,7 @@ export function QuestPlayer({ quest }: QuestPlayerProps) {
       }
       const station = quest.stations[viewingModulesIndex];
       const solvedTaskIndices = progress.solvedTasks[station.id] ?? [];
+      const isCompleted = progress.completedStations.includes(station.id);
       return (
         <StationModules
           station={station}
@@ -178,6 +179,7 @@ export function QuestPlayer({ quest }: QuestPlayerProps) {
           onSolveTask={handleSolveTask}
           onComplete={handleCompleteStation}
           onBack={handleBackFromModules}
+          readOnly={isCompleted}
         />
       );
     }

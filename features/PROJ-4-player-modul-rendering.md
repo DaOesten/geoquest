@@ -1,8 +1,8 @@
 # PROJ-4: Player — Modul-Rendering
 
-## Status: Deployed
+## Status: Approved
 **Created:** 2026-08-24
-**Last Updated:** 2026-08-26
+**Last Updated:** 2026-08-30
 
 ## Dependencies
 - Requires: PROJ-2 (Quest Data Model & JSON Import) — für Modul-Datenstruktur
@@ -11,6 +11,8 @@
 ## Summary
 Nach der Ankunft an einer Station werden dem Spieler die Stations-Inhalte (Module) angezeigt: Texte, Bilder, Audio, Video und interaktive Aufgaben. Die Module erscheinen als scrollbare Liste. Aufgaben müssen gelöst werden, bevor die Station abgeschlossen werden kann. Bereits gelöste Aufgaben bleiben gespeichert.
 
+> **Hinweis:** Der Kern dieses Features ist bereits deployed (siehe QA/Deployment-Abschnitte unten). Status wurde am 2026-08-30 auf "Planned" zurückgesetzt, da ein neuer Scope (Ansichtsmodus für abgeschlossene Stationen, siehe User Story 7 und AC "Ansichtsmodus für abgeschlossene Stationen") hinzugekommen ist. Für `/frontend` ist nur dieses Delta zu bauen, nicht das gesamte Feature neu.
+
 ## User Stories
 1. Als Spieler möchte ich nach der Ankunft an einer Station die Inhalte (Text, Bilder, Audio, Video) sehen, damit ich die Geschichte der Quest erlebe.
 2. Als Spieler möchte ich Aufgaben (Code-Eingabe, Multiple Choice, Sortierung) lösen können, damit das Spiel herausfordernd und interaktiv ist.
@@ -18,6 +20,7 @@ Nach der Ankunft an einer Station werden dem Spieler die Stations-Inhalte (Modul
 4. Als Spieler möchte ich unbegrenzte Versuche bei Aufgaben haben, damit ich nicht steckenbleibe und frustriert aufgebe.
 5. Als Spieler möchte ich eine Station erst abschließen können wenn alle Aufgaben gelöst sind, damit ich nichts verpasse.
 6. Als Spieler möchte ich eine bereits erreichte Station jederzeit wieder öffnen können (ohne erneut hinlaufen zu müssen), damit ich unterbrochene Aufgaben fortsetzen kann.
+7. Als Spieler möchte ich eine bereits abgeschlossene Station erneut öffnen und mir ihre Inhalte ansehen können, ohne sie nochmal abschließen zu müssen, damit ich Texte/Medien in Ruhe nachlesen kann.
 
 ## Out of Scope
 - Outro-Anzeige nach der letzten Station — PROJ-5
@@ -31,6 +34,8 @@ Nach der Ankunft an einer Station werden dem Spieler die Stations-Inhalte (Modul
 - Aufgaben überspringen
 - Medien-Download für Offline-Nutzung
 - Vollbild-Lightbox für Bilder (Tap-to-Zoom) — kann als Enhancement später ergänzt werden
+- Erneutes Lösen von Tasks im Ansichtsmodus einer abgeschlossenen Station (rein read-only, siehe Decision Log)
+- Separate visuelle Kennzeichnung "Ansichtsmodus" im Header (z.B. Badge) — der deaktivierte "Bereits abgeschlossen"-Button am Ende der Liste genügt als Signal
 
 ## Acceptance Criteria
 
@@ -87,6 +92,13 @@ Nach der Ankunft an einer Station werden dem Spieler die Stations-Inhalte (Modul
 - [ ] Angenommen der Spieler hat eine Station bereits erreicht (Ankunft erkannt), wenn er in der Stationsliste auf diese Station tippt, dann öffnet sich direkt der Modul-Screen (ohne erneute GPS-Navigation)
 - [ ] Angenommen der Spieler hat eine Station abgeschlossen, wenn er sie in der Stationsliste sieht, dann ist sie als abgeschlossen markiert (Häkchen) und die nächste Station ist freigeschaltet
 
+**Ansichtsmodus für abgeschlossene Stationen:**
+- [ ] Angenommen eine Station ist bereits abgeschlossen, wenn der Spieler in der Stationsliste darauf tippt, dann öffnet sich der Modul-Screen dieser Station (statt bisher: kein Effekt)
+- [ ] Angenommen der Modul-Screen einer abgeschlossenen Station ist geöffnet, wenn er gerendert wird, dann werden alle Module (Text/Bild/Audio/Video/Tasks) unverändert wie im normalen Modul-Screen angezeigt
+- [ ] Angenommen der Modul-Screen einer abgeschlossenen Station ist geöffnet, wenn der Spieler die Task-Module sieht, dann sind sie im read-only-Zustand (Eingabefelder/Radio/Checkbox/Drag-Handles deaktiviert, Häkchen sichtbar) — identisch zum Zustand "bereits gelöst" im normalen Modul-Screen
+- [ ] Angenommen der Modul-Screen einer abgeschlossenen Station ist geöffnet, wenn der Spieler ans Ende scrollt, dann sieht er statt "Station abschließen" einen deaktivierten Button mit Häkchen und Text "Bereits abgeschlossen" (kein Tap-Effekt, kein erneutes `onComplete`)
+- [ ] Angenommen der Spieler ist im Ansichtsmodus einer abgeschlossenen Station, wenn er den Zurück-Button tippt, dann kehrt er zur Stationsliste zurück (identisch zum normalen Modul-Screen)
+
 ## Edge Cases
 1. **Station ohne Tasks (nur Content-Module):** "Station abschließen"-Button ist sofort aktiv — keine Aufgaben zu lösen.
 2. **Station mit nur Tasks (kein Text/Medien):** Funktioniert normal — nur Task-Module in der Liste.
@@ -97,6 +109,8 @@ Nach der Ankunft an einer Station werden dem Spieler die Stations-Inhalte (Modul
 7. **Sehr viele Module (>10):** Scrollbare Liste, kein Performance-Problem (Module werden linear gerendert, kein Lazy Loading nötig).
 8. **App wird während Audio/Video-Wiedergabe geschlossen:** Wiedergabe stoppt automatisch (Browser-Verhalten). Beim Wiedereinstieg startet das Medium von vorne — kein Playback-Fortschritt gespeichert.
 9. **Datenmodell-Migration (correctIndex → correctIndices):** Altes Feld `correctIndex` wird beim Laden zu `[correctIndex]` konvertiert. Neue Quests nutzen `correctIndices`.
+10. **Station ohne Tasks (nur Content-Module) ist abgeschlossen:** Ansichtsmodus funktioniert identisch — es gibt einfach keine Task-Module, die read-only dargestellt werden müssten.
+11. **Sortierungs-Task im Ansichtsmodus:** Verhält sich wie der bestehende "gelöst"-Zustand (`solved === true`) — zeigt nur "Richtig" mit Häkchen, keine Item-Liste mehr. Keine Änderung an `sorting-task.tsx` nötig, da dieser Zustand schon existiert.
 
 ## Technical Requirements
 - Datenmodell-Erweiterung: `correctIndex: number` → `correctIndices: number[]` (abwärtskompatibel)
@@ -109,9 +123,15 @@ Nach der Ankunft an einer Station werden dem Spieler die Stations-Inhalte (Modul
 - Kein Autoplay bei Video/Audio
 - Min. 16px Body-Text (PRD-Anforderung)
 - Responsive innerhalb max-w-[430px] Container
+- Ansichtsmodus für abgeschlossene Stationen: `StationModules` erhält einen `readOnly`-Flag (abgeleitet aus `completedStations.includes(station.id)`), der den "Station abschließen"-Button durch einen deaktivierten "Bereits abgeschlossen"-Button ersetzt; alle Task-Module werden mit `solved={true}` gerendert (unabhängig vom tatsächlichen `solvedTasks`-Eintrag), da bei einer abgeschlossenen Station laut Datenmodell ohnehin alle Tasks gelöst sind
 
 ## Open Questions
 _Keine offenen Fragen._
+
+### Refine 2026-08-30: Ansichtsmodus für abgeschlossene Stationen
+- [x] Was passiert beim Tippen auf eine bereits abgeschlossene Station in der Stationsliste? → Modul-Screen öffnet sich (statt bisher: kein Effekt), read-only (2026-08-30)
+- [x] Soll der "Station abschließen"-Button im Ansichtsmodus verschwinden oder als deaktivierter Hinweis bleiben? → Bleibt sichtbar als deaktivierter Button "Bereits abgeschlossen" mit Häkchen (2026-08-30)
+- [x] Sollen Tasks im Ansichtsmodus erneut lösbar sein? → Nein, read-only, identisch zum bestehenden "gelöst"-Zustand der Task-Module (2026-08-30)
 
 ## Decision Log
 
@@ -132,6 +152,9 @@ _Keine offenen Fragen._
 | Kaputte Medien-URLs blockieren nicht | Ersteller-Fehler soll Spielerlebnis nicht zerstören — nur Tasks sind Pflicht | 2026-08-24 |
 | Kein Fortschrittsbalken innerhalb Station | Module sind linear scrollbar, Spieler sieht direkt was noch kommt | 2026-08-24 |
 | Teal-Pill-Button für "Station abschließen" | Konsistent mit bestehendem CTA-Style (PROJ-3 Arrival, Intro) | 2026-08-24 |
+| Abgeschlossene Stationen sind in der Stationsliste antippbar und öffnen den Modul-Screen im Ansichtsmodus | Spieler wollen Inhalte (Texte, Medien) nachträglich nachlesen können, ohne den Fortschritt erneut zu bestätigen — bisher passierte beim Tippen auf eine abgeschlossene Station gar nichts | 2026-08-30 |
+| "Station abschließen"-Button bleibt im Ansichtsmodus sichtbar, aber deaktiviert mit Text "Bereits abgeschlossen" + Häkchen | Gibt dem Spieler eine klare visuelle Bestätigung, dass er im Rückblick-Modus ist, statt den Button ersatzlos verschwinden zu lassen | 2026-08-30 |
+| Tasks im Ansichtsmodus sind read-only (kein erneutes Lösen möglich) | Konsistent mit dem bereits bestehenden "gelöst"-Zustand der Task-Module, kein neuer Interaktionszustand nötig, verhindert Verwirrung durch nochmaliges Beantworten bereits gelöster Rätsel | 2026-08-30 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -272,6 +295,32 @@ Keine neuen Packages zwingend erforderlich. Optional:
 
 ---
 
+## Implementation Notes
+
+### Refine 2026-08-30: Ansichtsmodus für abgeschlossene Stationen
+
+Umsetzung des in `/refine` festgelegten Deltas — nur die drei betroffenen Dateien geändert, kein Neubau:
+
+| Datei | Änderung |
+|-------|----------|
+| `station-list.tsx` | `StationRow.handleClick`: `isCompleted` löst jetzt ebenfalls `onOpenModules()` aus (vorher: nur `isVisited`). `aria-label` für abgeschlossene Stationen ergänzt um "zum Ansehen tippen". Kein neuer `disabled`-Zustand — abgeschlossene Stationen waren bereits nicht `disabled`, nur ihr Klick-Handler tat nichts |
+| `station-modules.tsx` | Neuer optionaler Prop `readOnly` (Default `false`). Bei `readOnly`: alle Module erhalten `solved={true}` erzwungen (statt `solvedTasks.includes(i)`) — die Task-Komponenten (`CodeTask`/`MultipleChoiceTask`/`SortingTask`) haben bereits einen reinen `solved`-Anzeigezustand ohne Eingabeelemente, keine Änderung an den Task-Komponenten nötig. Der "Station abschließen"-Button wird durch einen nicht-klickbaren `<div>` mit Lime-Häkchen-Icon und Text "Bereits abgeschlossen" ersetzt (kein `<button onClick>`, daher strukturell kein erneutes `onComplete` möglich) |
+| `quest-player.tsx` | Übergibt `readOnly={progress.completedStations.includes(station.id)}` an `StationModules` im `"modules"`-Case |
+
+### Architektur-Entscheidung
+- `readOnly` wird aus `completedStations` abgeleitet, nicht als separater State geführt — konsistent mit dem bestehenden Pattern in PROJ-5 ("Status wird aus vorhandenen Fortschrittsdaten berechnet, nicht separat gespeichert")
+
+### Tests
+- `npm test` (Vitest): 151/151 bestehen, keine neuen Testfälle nötig — die Änderung nutzt ausschließlich bereits getestete Bausteine (bestehender `solved`-Anzeigezustand der Task-Module, bestehende `completedStations`-Logik aus `use-quest-progress.ts`)
+- `npx tsc --noEmit`: keine neuen Fehler (2 vorbestehende, unveränderte Fehler in `quest-storage.test.ts`, nicht durch diese Änderung verursacht — verifiziert per `git stash`-Vergleich)
+- `npm run lint`: 0 Fehler, nur vorbestehende `<img>`-Optimierungs-Warnungen
+- Manuell per Playwright/WebKit verifiziert (Screenshots): Klick auf abgeschlossene Station in der Stationsliste öffnet den Modul-Screen; Code-Task zeigt "Richtig" mit Häkchen (read-only); Button zeigt "Bereits abgeschlossen" statt "Station abschließen"; Klick auf den deaktivierten Button hat keinen Effekt (Screen bleibt unverändert); Zurück-Button führt zur Stationsliste zurück
+
+### Bekannte Einschränkung
+- Kein automatisierter E2E-Test (`tests/`) für dieses Delta ergänzt — die manuelle Playwright-Verifikation deckt den Kern-Flow ab, ein dauerhafter Regressionstest sollte bei `/qa` nachgezogen werden
+
+---
+
 ## QA Test Results
 
 **Tested:** 2026-08-26
@@ -388,6 +437,71 @@ Keine neuen Packages zwingend erforderlich. Optional:
 - **Security:** Pass, keine offenen Befunde
 - **Production Ready:** YES
 - **Recommendation:** Kann deployed werden (keine offenen Bugs, keine Critical/High-Findings). Bekannte Einschränkung: Die 24 neuen E2E-Tests (`tests/proj-4-player-modul-rendering.spec.ts`) sowie die 3 aktualisierten PROJ-3-Tests wurden noch nie live ausgeführt, weil die Playwright-Browser-Installation auf diesem Rechner (Sandbox und lokales Terminal) wiederholt hängen blieb. Sobald das Environment-Problem gelöst ist, `npm run test:e2e` nachholen.
+
+---
+
+## QA Test Results — Ansichtsmodus für abgeschlossene Stationen (2026-08-30)
+
+**Tested:** 2026-08-30
+**App URL:** http://localhost:3000
+**Tester:** QA Engineer (AI)
+
+**Scope:** Nur das in `/refine` (2026-08-30) hinzugefügte Delta — AC-Block "Ansichtsmodus für abgeschlossene Stationen" sowie die drei geänderten Dateien (`station-list.tsx`, `station-modules.tsx`, `quest-player.tsx`). Alle anderen PROJ-4-Acceptance-Criteria wurden bereits in der QA-Runde vom 2026-08-26 geprüft (siehe oben) und sind durch dieses Delta unverändert.
+
+**Methodik-Hinweis:** Diesmal war sowohl Playwright-Chromium (normales Chromium-Binary, nicht die Headless-Shell-Variante) als auch WebKit im lokalen Cache installiert und lauffähig — anders als in früheren PROJ-3/4-QA-Runden. Die volle E2E-Suite (`tests/proj-4-player-modul-rendering.spec.ts`) wurde live mit `--project="Mobile Safari"` ausgeführt (Chromium-Headless-Shell fehlte; Nachinstallation auf ausdrücklichen Wunsch des Nutzers übersprungen — WebKit genügt für dieses Delta). Zusätzlich mehrere gezielte Ad-hoc-Playwright/WebKit-Skripte für Edge Cases und den Security-Check, alle wieder aus dem Repo entfernt (waren nur temporäre Scratch-Skripte).
+
+### Acceptance Criteria Status
+
+#### Ansichtsmodus für abgeschlossene Stationen
+- [x] Klick auf eine abgeschlossene Station in der Stationsliste öffnet jetzt den Modul-Screen (vorher: kein Effekt) — E2E-Test `tapping a completed station in the list opens its module screen`
+- [x] Alle Module (Text/Bild/Audio/Video/Tasks) werden unverändert wie im normalen Modul-Screen angezeigt — verifiziert per Code-Review (`readOnly` beeinflusst nur `solved`-Prop der Task-Module und den Abschluss-Button, keine anderen Modul-Typen) und Screenshot
+- [x] Task-Module sind read-only (Häkchen sichtbar, keine Eingabeelemente) — E2E-Test `shows the task in its read-only solved state instead of the input field`; zusätzlich per Ad-hoc-Skript für alle drei Task-Typen (Code, Multiple-Choice, Sortierung) gemeinsam auf einer Station verifiziert: 0 interaktive `<input>`-Elemente, 0 draggable Sortier-Items
+- [x] Button zeigt "Bereits abgeschlossen" (deaktiviert, kein Tap-Effekt) statt "Station abschließen" — E2E-Tests `shows a disabled 'Bereits abgeschlossen' indicator...` und `tapping the disabled indicator does not re-trigger completion or change screen`
+- [x] Zurück-Button führt zur Stationsliste zurück — E2E-Test `the back button returns to the station list`
+
+**5/5 Acceptance Criteria bestanden.**
+
+### Edge Cases Status
+
+- [x] EC-10 (Station ohne Tasks, abgeschlossen): Ad-hoc-Skript bestätigt — zeigt "Bereits abgeschlossen", kein "Station abschließen"-Text im DOM
+- [x] EC-11 (Sortierungs-Task im Ansichtsmodus): Zeigt "Richtig" ohne Item-Liste, wie spezifiziert (kein Code in `sorting-task.tsx` geändert, Verhalten kommt aus dem bereits bestehenden `solved`-Zustand)
+- [x] Zusätzlicher, nicht dokumentierter Fall (selbst identifiziert): Station mit 3 gemischten Task-Typen, bei der `solvedTasks` in localStorage nur 1 von 3 Tasks als gelöst listet (inkonsistente/veraltete Progress-Daten) — alle 3 Tasks werden trotzdem korrekt read-only mit "Richtig" gerendert, da `readOnly` das `solved`-Flag hart auf `true` erzwingt statt sich auf `solvedTasks` zu verlassen. Bestätigt, dass die Implementierung robust gegen diesen Datenzustand ist
+
+### Regression Testing
+
+Volle E2E-Suite (`npx playwright test --project="Mobile Safari" tests/proj-4-player-modul-rendering.spec.ts`) gegen den Stand **vor** diesem Delta (`git stash`) und **danach** verglichen:
+
+| Lauf | Ergebnis |
+|------|----------|
+| Vor dem Delta (git stash) | 25 passed, 2 failed (`completing a station marks it completed and unlocks the next station`, `a completed station shows a checkmark and unlocks the next one in the list`) |
+| Nach dem Delta | 30 passed, 2 failed (identische 2 Fehlschläge) |
+
+Die 2 Fehlschläge waren bereits vor diesem Delta vorhanden (per `git stash`-Vergleich verifiziert) und keine PROJ-4-Delta-Regression, sondern ein Fixture-Fehler in den Tests selbst: Beide seedeten `visitedStations: [ALL_STATION_IDS[1]]` (nur "Code Station" besucht, "Content Station" davor nie), wodurch "Content Station" laut `getStationStatus`-Logik dauerhaft "current" blieb (erste nicht-abgeschlossene Station) und "MC Single Station" entsprechend "locked" blieb statt freigeschaltet zu werden.
+
+**BUG-5 (behoben, 2026-08-30): Testfixture seedet Station 1 nicht mit, blockiert dadurch fälschlich die Freischaltung von Station 3**
+- **Severity:** Low (reiner Testcode-Fehler, keine Produktivcode-Auswirkung)
+- **Fix:** Beide Tests (`completing a station marks it completed and unlocks the next station`, `a completed station shows a checkmark and unlocks the next one in the list`) seeden jetzt zusätzlich `ALL_STATION_IDS[0]` in `visitedStations` und `completedStations`, sodass "Content Station" korrekt als abgeschlossen gilt und "Code Station" wie beabsichtigt "current"/wird-abgeschlossen ist
+- **Verifiziert:** Volle Suite danach 32/32 bestanden (`npx playwright test --project="Mobile Safari" tests/proj-4-player-modul-rendering.spec.ts`), keine neuen Fehlschläge
+
+`npm test` (Vitest): 151/151 bestehen (keine neuen Unit-Tests nötig, siehe Implementation Notes — die Änderung nutzt ausschließlich bereits getestete Bausteine).
+
+### Security Audit Results
+- [x] XSS über injizierten Stationsnamen (`<img src=x onerror=alert(1)>...`) im neuen Ansichtsmodus-Renderpfad: kein Alert ausgelöst, Name erscheint als reiner Text im DOM (React-Escaping greift identisch zum bestehenden Verhalten)
+- [x] XSS über injizierten Task-Fragetext (`<script>...</script>`) im read-only-Zustand: Skript wird nicht ausgeführt (verifiziert per `window`-Flag-Check nach dem Rendern)
+- [x] Kein neuer `dangerouslySetInnerHTML`, `eval()` oder `new Function()` in den 3 geänderten Dateien (Grep bestätigt)
+- [x] `readOnly`-Ableitung (`completedStations.includes(station.id)`) liest ausschließlich bereits vorhandene, geräteeigene localStorage-Daten — keine neue Angriffsfläche, kein neuer Netzwerk-Request, keine neue Cross-Origin- oder Cross-User-Auswirkung
+
+### Bugs Found
+
+Keine neuen Bugs im getesteten Delta gefunden. 1 vorbestehender Testcode-Bug (BUG-5, siehe Regression Testing) identifiziert und behoben.
+
+### Summary
+- **Acceptance Criteria (Delta):** 5/5 bestanden
+- **Bugs Found:** 1 total (0 Critical, 0 High, 0 Medium, 1 Low) — BUG-5 (Testfixture, kein Produktivcode-Bug), behoben
+- **Security:** Pass, keine offenen Befunde
+- **Regression:** Pass — nach Fix der Testfixture (BUG-5) besteht die volle E2E-Suite 32/32, keine PROJ-4-Delta-Regression
+- **Production Ready:** YES
+- **Recommendation:** Kann deployed werden. Keine offenen Punkte mehr.
 
 ---
 

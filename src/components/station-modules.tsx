@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import dynamic from "next/dynamic";
+import { Check } from "lucide-react";
 import type { Station, Module } from "@/lib/quest-schema";
 import { AppHeader } from "./app-header";
 import { TextModule } from "./modules/text-module";
@@ -26,6 +27,7 @@ interface StationModulesProps {
   onSolveTask: (moduleIndex: number) => void;
   onComplete: () => void;
   onBack: () => void;
+  readOnly?: boolean;
 }
 
 export function StationModules({
@@ -36,6 +38,7 @@ export function StationModules({
   onSolveTask,
   onComplete,
   onBack,
+  readOnly = false,
 }: StationModulesProps) {
   const taskIndices = useMemo(
     () => station.modules
@@ -75,24 +78,31 @@ export function StationModules({
             key={i}
             module={module}
             moduleIndex={i}
-            solved={solvedTasks.includes(i)}
+            solved={readOnly || solvedTasks.includes(i)}
             onSolved={() => onSolveTask(i)}
           />
         ))}
 
         {/* Complete button */}
         <div className="pt-4">
-          <button
-            onClick={onComplete}
-            disabled={!allTasksSolved}
-            className={`w-full h-14 rounded-pill font-tech text-sm uppercase tracking-[0.1em] font-bold transition-all duration-fast active:scale-[0.96] ${
-              allTasksSolved
-                ? "bg-gq-teal text-gq-black shadow-glow-strong hover:bg-gq-teal-hover"
-                : "bg-[#2B3438] text-[#5B646A] cursor-not-allowed"
-            }`}
-          >
-            {allTasksSolved ? "Station abschließen" : `Noch ${unsolvedCount} ${unsolvedCount === 1 ? "Aufgabe" : "Aufgaben"} offen`}
-          </button>
+          {readOnly ? (
+            <div className="w-full h-14 rounded-pill font-tech text-sm uppercase tracking-[0.1em] font-bold flex items-center justify-center gap-2 bg-[#0E1F24] border border-gq-lime/20 text-gq-lime">
+              <Check className="w-4 h-4" />
+              Bereits abgeschlossen
+            </div>
+          ) : (
+            <button
+              onClick={onComplete}
+              disabled={!allTasksSolved}
+              className={`w-full h-14 rounded-pill font-tech text-sm uppercase tracking-[0.1em] font-bold transition-all duration-fast active:scale-[0.96] ${
+                allTasksSolved
+                  ? "bg-gq-teal text-gq-black shadow-glow-strong hover:bg-gq-teal-hover"
+                  : "bg-[#2B3438] text-[#5B646A] cursor-not-allowed"
+              }`}
+            >
+              {allTasksSolved ? "Station abschließen" : `Noch ${unsolvedCount} ${unsolvedCount === 1 ? "Aufgabe" : "Aufgaben"} offen`}
+            </button>
+          )}
         </div>
       </div>
     </div>

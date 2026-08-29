@@ -166,7 +166,10 @@ test.describe("PROJ-4: Player — Modul-Rendering", () => {
 
     test("completing a station marks it completed and unlocks the next station", async ({ page }) => {
       await seedQuest(page);
-      await seedProgress(page, { visitedStations: [ALL_STATION_IDS[1]] });
+      await seedProgress(page, {
+        visitedStations: [ALL_STATION_IDS[0], ALL_STATION_IDS[1]],
+        completedStations: [ALL_STATION_IDS[0]],
+      });
       await openStation(page, "Code Station");
 
       await page.getByPlaceholder("Deine Antwort...").fill("4");
@@ -477,8 +480,8 @@ test.describe("PROJ-4: Player — Modul-Rendering", () => {
     test("a completed station shows a checkmark and unlocks the next one in the list", async ({ page }) => {
       await seedQuest(page);
       await seedProgress(page, {
-        visitedStations: [ALL_STATION_IDS[1]],
-        completedStations: [ALL_STATION_IDS[1]],
+        visitedStations: [ALL_STATION_IDS[0], ALL_STATION_IDS[1]],
+        completedStations: [ALL_STATION_IDS[0], ALL_STATION_IDS[1]],
       });
       await page.goto(`/play/${TEST_QUEST.id}`);
 
@@ -486,6 +489,66 @@ test.describe("PROJ-4: Player — Modul-Rendering", () => {
       await expect(
         page.getByRole("button", { name: /Navigation zu MC Single Station starten/ })
       ).toBeEnabled();
+    });
+  });
+
+  test.describe("Ansichtsmodus für abgeschlossene Stationen", () => {
+    async function seedCompletedCodeStation(page: Page) {
+      await seedQuest(page);
+      await seedProgress(page, {
+        visitedStations: [ALL_STATION_IDS[1]],
+        completedStations: [ALL_STATION_IDS[1]],
+        solvedTasks: { [ALL_STATION_IDS[1]]: [0] },
+      });
+      await page.goto(`/play/${TEST_QUEST.id}`);
+    }
+
+    test("tapping a completed station in the list opens its module screen", async ({ page }) => {
+      await seedCompletedCodeStation(page);
+
+      await page
+        .getByRole("button", { name: /Code Station.*abgeschlossen/ })
+        .click();
+
+      await expect(page.getByText("Was ist 2 + 2?")).toBeVisible();
+    });
+
+    test("shows the task in its read-only solved state instead of the input field", async ({ page }) => {
+      await seedCompletedCodeStation(page);
+      await page.getByRole("button", { name: /Code Station.*abgeschlossen/ }).click();
+
+      await expect(page.getByText("Richtig")).toBeVisible();
+      await expect(page.getByPlaceholder("Deine Antwort...")).not.toBeVisible();
+    });
+
+    test("shows a disabled 'Bereits abgeschlossen' indicator instead of the complete button", async ({ page }) => {
+      await seedCompletedCodeStation(page);
+      await page.getByRole("button", { name: /Code Station.*abgeschlossen/ }).click();
+
+      await expect(page.getByText("Bereits abgeschlossen")).toBeVisible();
+      await expect(page.getByRole("button", { name: "Station abschließen" })).not.toBeVisible();
+    });
+
+    test("tapping the disabled indicator does not re-trigger completion or change screen", async ({ page }) => {
+      await seedCompletedCodeStation(page);
+      await page.getByRole("button", { name: /Code Station.*abgeschlossen/ }).click();
+
+      const indicator = page.getByText("Bereits abgeschlossen");
+      await indicator.click({ force: true });
+
+      // Still on the module screen for this station — no navigation happened.
+      await expect(page.getByText("Was ist 2 + 2?")).toBeVisible();
+      await expect(page.getByText("Bereits abgeschlossen")).toBeVisible();
+    });
+
+    test("the back button returns to the station list", async ({ page }) => {
+      await seedCompletedCodeStation(page);
+      await page.getByRole("button", { name: /Code Station.*abgeschlossen/ }).click();
+      await expect(page.getByText("Was ist 2 + 2?")).toBeVisible();
+
+      await page.getByRole("button", { name: "Zurück" }).click();
+
+      await expect(page.getByRole("button", { name: /Code Station.*abgeschlossen/ })).toBeVisible();
     });
   });
 });

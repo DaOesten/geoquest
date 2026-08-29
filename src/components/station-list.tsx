@@ -289,7 +289,7 @@ function StationRow({ station, index, status, badgeRef, onNavigate, onOpenModule
 
   const handleClick = () => {
     if (isCurrent) onNavigate();
-    else if (isVisited) onOpenModules();
+    else if (isVisited || isCompleted) onOpenModules();
   };
 
   const iconType = isCurrent ? "nav" : isVisited ? "book" : "check";
@@ -313,7 +313,7 @@ function StationRow({ station, index, status, badgeRef, onNavigate, onOpenModule
             ? `Navigation zu ${station.name} starten`
             : isVisited
               ? `${station.name} — Aufgaben fortsetzen`
-              : `${station.name} — abgeschlossen`
+              : `${station.name} — abgeschlossen, zum Ansehen tippen`
       }
     >
       {/* Number badge */}
