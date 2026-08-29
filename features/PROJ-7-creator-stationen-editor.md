@@ -510,3 +510,39 @@ Keine Bugs in dieser Änderung gefunden.
 - **Security:** Pass — keine Schwachstellen gefunden
 - **Production Ready:** YES
 - **Recommendation:** Deploy freigegeben. Keine offenen Bugs.
+
+---
+
+## Deployment — Bearbeiten-Einstiege getrennt & Positions-Icon verschoben (2026-08-30)
+
+**Production URL:** https://geoquesty.vercel.app
+**Deployed:** 2026-08-30
+**Platform:** Vercel (auto-deploy on push to main)
+**Git Tag:** v1.14.0-PROJ-7
+
+### Pre-Deployment Checks
+- [x] `npm run build` erfolgreich
+- [x] `npm run lint` erfolgreich (0 Fehler, 6 vorbestehende `<img>`-Warnungen)
+- [x] QA-Freigabe: "Approved" / "Production Ready: YES"
+- [x] Keine Critical/High-Bugs offen (0 Bugs im QA-Durchgang gefunden)
+- [x] Keine neuen Umgebungsvariablen nötig
+- [x] Keine Secrets im Diff (`git diff origin/main main --stat` vor dem Push geprüft — nur Spec-Markdown, `station-list-item.tsx`, zwei Testdateien)
+- [x] Kein Datenbank-Layer betroffen (weiterhin reines localStorage)
+- [x] Alle Commits gepusht nach `main` (`8b6ea60`, `cf889bb`)
+
+### Deploy-Vorgang
+`git push origin main` löst den bestehenden Vercel-GitHub-Auto-Deploy aus — kein manueller `vercel --prod`-Schritt nötig.
+
+### Post-Deployment-Verifikation
+Manueller End-to-End-Smoketest direkt in Produktion (Playwright/WebKit gegen `https://geoquesty.vercel.app`, Testquest per `localStorage`-Seed):
+- Stationsliste zeigt MapPin-Icon vor der Nummerierung im Titel ("📍 1. Marktplatz") und MapPinOff bei fehlender Position ("2. Ohne Position") — visuell per Screenshot bestätigt
+- Meta-Zeile zeigt Puzzle-Icon mit Modulanzahl ("1 Modul") statt MapPin — visuell bestätigt
+- Antippen der Stationszeile navigiert korrekt zu `/create/{questId}/station/{stationId}` (Modul-Editor) — URL-Assertion bestanden
+- ⋮-Menü ("Stations-Aktionen") zeigt "Station bearbeiten" und "Löschen" — Textinhalt verifiziert
+- "Station bearbeiten" öffnet das Sheet mit korrekt vorausgefülltem Namen ("Marktplatz") — Wert-Assertion bestanden
+- Keine Konsolenfehler während des Durchlaufs
+
+Test-Quest wurde ausschließlich im `localStorage` des Test-Browsers angelegt (kein Backend/keine geteilte Datenbank bei GeoQuest) — keine Bereinigung in Produktion nötig, da nichts serverseitig gespeichert wurde.
+
+### Bekannte offene Punkte
+Keine. Die im QA-Durchgang dokumentierte Beobachtung zu `module-warnings.ts` (Absturz bei einem Text-Modul ohne `content`-Feld) war ein Fehler in den eigenen QA-Testdaten, kein Produktionsbug, und über die reguläre UI nicht erreichbar (siehe QA Test Results oben) — kein Blocker für dieses Deployment.
