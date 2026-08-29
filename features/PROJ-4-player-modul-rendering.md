@@ -1,6 +1,6 @@
 # PROJ-4: Player — Modul-Rendering
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-08-24
 **Last Updated:** 2026-08-30
 
@@ -512,3 +512,12 @@ Keine neuen Bugs im getesteten Delta gefunden. 1 vorbestehender Testcode-Bug (BU
 **Commit:** 0527a96
 **Tag:** v1.4.0-PROJ-4
 **Verifiziert:** Nutzer hat den vollständigen Flow (Quest starten → Stationsliste → Station öffnen → Aufgabe lösen) live in Produktion durchgeklickt und bestätigt, dass es funktioniert.
+
+### Redeploy: Ansichtsmodus für abgeschlossene Stationen (2026-08-30)
+
+**Deployed:** 2026-08-30
+**Production URL:** https://geoquesty.vercel.app
+**Commit:** eb21a7a
+**Tag:** v1.10.0-PROJ-4
+**Pre-Deployment-Checks:** `npm run build` erfolgreich, `npm run lint` 0 Fehler (nur vorbestehende `<img>`-Warnungen), `npx tsc --noEmit` keine neuen Fehler, `npm test` 151/151, volle E2E-Suite (`tests/proj-4-player-modul-rendering.spec.ts`) 32/32 bestanden
+**Verifiziert:** Push nach `origin/main` löste den Vercel-GitHub-Auto-Deploy aus. Direkt danach per Playwright/WebKit **live gegen die Produktions-URL** verifiziert (nicht nur lokal): Test-Quest mit einer abgeschlossenen Station in `localStorage` geseedet, Klick auf die Station in der Stationsliste öffnet den Modul-Screen (`aria-label` "... — abgeschlossen, zum Ansehen tippen" gefunden), Modul-Inhalt wird angezeigt, "Bereits abgeschlossen"-Button sichtbar. Kein Backend/keine ENV-Variablen betroffen (reines localStorage-Feature).
