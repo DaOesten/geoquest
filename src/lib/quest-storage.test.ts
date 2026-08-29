@@ -13,7 +13,7 @@ import {
   publishQuest,
   hasUnsavedChanges,
   markExported,
-  renameQuest,
+  updateQuestDetails,
   upsertStation,
   deleteStation,
   reorderStations,
@@ -130,35 +130,35 @@ describe("quest-storage", () => {
   });
 
   describe("createDraftQuest", () => {
-    it("creates a minimal quest with an empty station list and empty intro/outro text", () => {
-      const draft = createDraftQuest("Meine neue Quest");
+    it("creates a quest with an empty station list and the given name/intro/outro", () => {
+      const draft = createDraftQuest("Meine neue Quest", { text: "Willkommen" }, { text: "Geschafft" });
       expect(draft.name).toBe("Meine neue Quest");
       expect(draft.stations).toEqual([]);
-      expect(draft.intro.text).toBe("");
-      expect(draft.outro.text).toBe("");
+      expect(draft.intro.text).toBe("Willkommen");
+      expect(draft.outro.text).toBe("Geschafft");
       expect(draft.version).toBe(1);
     });
 
     it("generates a unique UUID per call", () => {
-      const a = createDraftQuest("A");
-      const b = createDraftQuest("B");
+      const a = createDraftQuest("A", { text: "Intro" }, { text: "Outro" });
+      const b = createDraftQuest("B", { text: "Intro" }, { text: "Outro" });
       expect(a.id).not.toBe(b.id);
       expect(a.id).toMatch(/^[0-9a-f-]{36}$/i);
     });
 
     it("sets lastModified to a valid ISO timestamp", () => {
-      const draft = createDraftQuest("Zeitstempel-Test");
+      const draft = createDraftQuest("Zeitstempel-Test", { text: "Intro" }, { text: "Outro" });
       expect(() => new Date(draft.lastModified).toISOString()).not.toThrow();
       expect(new Date(draft.lastModified).toISOString()).toBe(draft.lastModified);
     });
 
     it("strips HTML tags and trims the name", () => {
-      const draft = createDraftQuest("  <b>Fett</b>  ");
+      const draft = createDraftQuest("  <b>Fett</b>  ", { text: "Intro" }, { text: "Outro" });
       expect(draft.name).toBe("Fett");
     });
 
     it("starts unpublished", () => {
-      const draft = createDraftQuest("Entwurf");
+      const draft = createDraftQuest("Entwurf", { text: "Intro" }, { text: "Outro" });
       expect(draft.published).toBe(false);
     });
   });
@@ -169,7 +169,7 @@ describe("quest-storage", () => {
     });
 
     it("returns false for a fresh draft (no stations)", () => {
-      const draft = createDraftQuest("Entwurf");
+      const draft = createDraftQuest("Entwurf", { text: "Intro" }, { text: "Outro" });
       expect(isQuestComplete(draft)).toBe(false);
     });
 
@@ -186,12 +186,15 @@ describe("quest-storage", () => {
 
   describe("isPlayable", () => {
     it("returns false for a fresh draft with no stations", () => {
-      const draft = createDraftQuest("Entwurf");
+      const draft = createDraftQuest("Entwurf", { text: "Intro" }, { text: "Outro" });
       expect(isPlayable(draft)).toBe(false);
     });
 
     it("returns true as soon as a quest has at least one station, even if otherwise incomplete", () => {
-      const partiallyBuilt = { ...createDraftQuest("Halbfertig"), stations: completeQuest.stations };
+      const partiallyBuilt = {
+        ...createDraftQuest("Halbfertig", { text: "" }, { text: "" }),
+        stations: completeQuest.stations,
+      };
       expect(isPlayable(partiallyBuilt)).toBe(true);
       // still structurally incomplete (empty intro/outro) — playable and "Entwurf" are independent
       expect(isQuestComplete(partiallyBuilt)).toBe(false);
@@ -228,7 +231,7 @@ describe("quest-storage", () => {
     });
 
     it("publishQuest returns false and leaves published unchanged when the quest has no stations", () => {
-      const draft = createDraftQuest("Leerer Entwurf");
+      const draft = createDraftQuest("Leerer Entwurf", { text: "Intro" }, { text: "Outro" });
       saveQuest(draft);
       expect(publishQuest(draft.id)).toBe(false);
       expect(getQuestById(draft.id)?.published).toBe(false);
@@ -259,7 +262,7 @@ describe("quest-storage", () => {
     });
 
     it("markExported stamps lastExported to now", () => {
-      const draft = createDraftQuest("Zu sichern");
+      const draft = createDraftQuest("Zu sichern", { text: "Intro" }, { text: "Outro" });
       saveQuest(draft);
       markExported(draft.id);
       const updated = getQuestById(draft.id);
@@ -273,24 +276,44 @@ describe("quest-storage", () => {
     });
   });
 
-  describe("renameQuest", () => {
-    it("updates the name and lastModified of an existing quest", () => {
+  describe("updateQuestDetails", () => {
+    it("updates name, intro, outro and lastModified of an existing quest", () => {
       saveQuest(completeQuest);
       const before = completeQuest.lastModified;
-      renameQuest(completeQuest.id, "Umbenannt");
+      updateQuestDetails(completeQuest.id, {
+        name: "Umbenannt",
+        intro: { text: "Neues Intro" },
+        outro: { text: "Neues Outro" },
+      });
       const updated = getQuestById(completeQuest.id);
       expect(updated?.name).toBe("Umbenannt");
+      expect(updated?.intro.text).toBe("Neues Intro");
+      expect(updated?.outro.text).toBe("Neues Outro");
       expect(updated?.lastModified).not.toBe(before);
     });
 
     it("strips HTML tags and trims the new name", () => {
       saveQuest(completeQuest);
-      renameQuest(completeQuest.id, "  <b>Sauber</b>  ");
+      updateQuestDetails(completeQuest.id, {
+        name: "  <b>Sauber</b>  ",
+        intro: completeQuest.intro,
+        outro: completeQuest.outro,
+      });
       expect(getQuestById(completeQuest.id)?.name).toBe("Sauber");
     });
 
+    it("leaves stations untouched", () => {
+      saveQuest(completeQuest);
+      updateQuestDetails(completeQuest.id, {
+        name: "Neuer Name",
+        intro: completeQuest.intro,
+        outro: completeQuest.outro,
+      });
+      expect(getQuestById(completeQuest.id)?.stations).toEqual(completeQuest.stations);
+    });
+
     it("is a no-op when the quest id does not exist", () => {
-      renameQuest("does-not-exist", "Neu");
+      updateQuestDetails("does-not-exist", { name: "Neu", intro: { text: "Intro" }, outro: { text: "Outro" } });
       expect(getAllQuests()).toEqual([]);
     });
   });
@@ -309,7 +332,7 @@ describe("quest-storage", () => {
 
   describe("upsertStation", () => {
     it("appends a new station to the quest and updates lastModified", () => {
-      const draftQuest = createDraftQuest("Neue Quest");
+      const draftQuest = createDraftQuest("Neue Quest", { text: "Intro" }, { text: "Outro" });
       draftQuest.lastModified = new Date(0).toISOString();
       saveQuest(draftQuest);
 
@@ -323,7 +346,7 @@ describe("quest-storage", () => {
     });
 
     it("saves a station without lat/lng (draft principle — position is optional)", () => {
-      const draftQuest = createDraftQuest("Neue Quest");
+      const draftQuest = createDraftQuest("Neue Quest", { text: "Intro" }, { text: "Outro" });
       saveQuest(draftQuest);
       const station = createDraftStation();
 
@@ -335,7 +358,7 @@ describe("quest-storage", () => {
     });
 
     it("updates an existing station in place when the id matches", () => {
-      const draftQuest = createDraftQuest("Neue Quest");
+      const draftQuest = createDraftQuest("Neue Quest", { text: "Intro" }, { text: "Outro" });
       saveQuest(draftQuest);
       const station = createDraftStation();
       upsertStation(draftQuest.id, { ...station, name: "Original" });
@@ -349,7 +372,7 @@ describe("quest-storage", () => {
     });
 
     it("strips HTML tags and trims the station name", () => {
-      const draftQuest = createDraftQuest("Neue Quest");
+      const draftQuest = createDraftQuest("Neue Quest", { text: "Intro" }, { text: "Outro" });
       saveQuest(draftQuest);
       const station = createDraftStation();
 
@@ -366,7 +389,7 @@ describe("quest-storage", () => {
 
   describe("deleteStation", () => {
     it("removes the station from the quest and updates lastModified", () => {
-      const draftQuest = createDraftQuest("Neue Quest");
+      const draftQuest = createDraftQuest("Neue Quest", { text: "Intro" }, { text: "Outro" });
       saveQuest(draftQuest);
       const station = createDraftStation();
       upsertStation(draftQuest.id, station);
@@ -389,7 +412,7 @@ describe("quest-storage", () => {
 
   describe("reorderStations", () => {
     it("persists the new station order", () => {
-      const draftQuest = createDraftQuest("Neue Quest");
+      const draftQuest = createDraftQuest("Neue Quest", { text: "Intro" }, { text: "Outro" });
       saveQuest(draftQuest);
       const stationA = { ...createDraftStation(), name: "A" };
       const stationB = { ...createDraftStation(), name: "B" };
@@ -403,7 +426,7 @@ describe("quest-storage", () => {
     });
 
     it("drops ids from the ordering list that no longer exist on the quest", () => {
-      const draftQuest = createDraftQuest("Neue Quest");
+      const draftQuest = createDraftQuest("Neue Quest", { text: "Intro" }, { text: "Outro" });
       saveQuest(draftQuest);
       const station = createDraftStation();
       upsertStation(draftQuest.id, station);
@@ -422,7 +445,7 @@ describe("quest-storage", () => {
 
   describe("getStationById", () => {
     it("finds a station by id within a quest", () => {
-      const draftQuest = createDraftQuest("Neue Quest");
+      const draftQuest = createDraftQuest("Neue Quest", { text: "Intro" }, { text: "Outro" });
       saveQuest(draftQuest);
       const station = { ...createDraftStation(), name: "Gesucht" };
       upsertStation(draftQuest.id, station);
@@ -431,7 +454,7 @@ describe("quest-storage", () => {
     });
 
     it("returns undefined when the station id does not exist", () => {
-      const draftQuest = createDraftQuest("Neue Quest");
+      const draftQuest = createDraftQuest("Neue Quest", { text: "Intro" }, { text: "Outro" });
       saveQuest(draftQuest);
       expect(getStationById(draftQuest.id, "ghost")).toBeUndefined();
     });
@@ -439,7 +462,7 @@ describe("quest-storage", () => {
 
   describe("upsertModule", () => {
     it("appends a new module to the station and updates lastModified", () => {
-      const draftQuest = createDraftQuest("Neue Quest");
+      const draftQuest = createDraftQuest("Neue Quest", { text: "Intro" }, { text: "Outro" });
       draftQuest.lastModified = new Date(0).toISOString();
       saveQuest(draftQuest);
       const station = createDraftStation();
@@ -454,7 +477,7 @@ describe("quest-storage", () => {
     });
 
     it("saves an incomplete module (draft principle — empty content is allowed)", () => {
-      const draftQuest = createDraftQuest("Neue Quest");
+      const draftQuest = createDraftQuest("Neue Quest", { text: "Intro" }, { text: "Outro" });
       saveQuest(draftQuest);
       const station = createDraftStation();
       upsertStation(draftQuest.id, station);
@@ -465,7 +488,7 @@ describe("quest-storage", () => {
     });
 
     it("updates an existing module in place when the index matches", () => {
-      const draftQuest = createDraftQuest("Neue Quest");
+      const draftQuest = createDraftQuest("Neue Quest", { text: "Intro" }, { text: "Outro" });
       saveQuest(draftQuest);
       const station = createDraftStation();
       upsertStation(draftQuest.id, station);
@@ -479,7 +502,7 @@ describe("quest-storage", () => {
     });
 
     it("strips HTML tags from text content", () => {
-      const draftQuest = createDraftQuest("Neue Quest");
+      const draftQuest = createDraftQuest("Neue Quest", { text: "Intro" }, { text: "Outro" });
       saveQuest(draftQuest);
       const station = createDraftStation();
       upsertStation(draftQuest.id, station);
@@ -490,7 +513,7 @@ describe("quest-storage", () => {
     });
 
     it("strips HTML tags from media url and caption", () => {
-      const draftQuest = createDraftQuest("Neue Quest");
+      const draftQuest = createDraftQuest("Neue Quest", { text: "Intro" }, { text: "Outro" });
       saveQuest(draftQuest);
       const station = createDraftStation();
       upsertStation(draftQuest.id, station);
@@ -509,7 +532,7 @@ describe("quest-storage", () => {
     });
 
     it("strips HTML tags from multiple-choice question and options", () => {
-      const draftQuest = createDraftQuest("Neue Quest");
+      const draftQuest = createDraftQuest("Neue Quest", { text: "Intro" }, { text: "Outro" });
       saveQuest(draftQuest);
       const station = createDraftStation();
       upsertStation(draftQuest.id, station);
@@ -540,7 +563,7 @@ describe("quest-storage", () => {
 
   describe("deleteModule", () => {
     it("removes the module at the given index and updates lastModified", () => {
-      const draftQuest = createDraftQuest("Neue Quest");
+      const draftQuest = createDraftQuest("Neue Quest", { text: "Intro" }, { text: "Outro" });
       saveQuest(draftQuest);
       const station = createDraftStation();
       upsertStation(draftQuest.id, station);
@@ -566,7 +589,7 @@ describe("quest-storage", () => {
 
   describe("reorderModules", () => {
     it("persists the new module order", () => {
-      const draftQuest = createDraftQuest("Neue Quest");
+      const draftQuest = createDraftQuest("Neue Quest", { text: "Intro" }, { text: "Outro" });
       saveQuest(draftQuest);
       const station = createDraftStation();
       upsertStation(draftQuest.id, station);

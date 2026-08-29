@@ -77,19 +77,19 @@ export function questExists(id: string): boolean {
 }
 
 /**
- * Builds a new, minimal Quest for the Creator's "Neue Quest erstellen" flow.
- * Intentionally does not satisfy questSchema (empty stations, empty intro/outro
- * text) — the strict schema only gates file import/export, not in-app drafts.
- * Use isQuestComplete() to check whether a quest is ready to play/export.
+ * Builds a new Quest for the Creator's "Neue Quest erstellen" flow. Name,
+ * intro and outro are required inputs (PROJ-6 refinement) — every quest
+ * created through the app now satisfies questSchema except for its empty
+ * station list, which is the only thing that still makes it a draft.
  */
-export function createDraftQuest(name: string): Quest {
+export function createDraftQuest(name: string, intro: Quest["intro"], outro: Quest["outro"]): Quest {
   return {
     version: 1,
     id: crypto.randomUUID(),
     name: stripHtmlTags(name).trim(),
     lastModified: new Date().toISOString(),
-    intro: { text: "" },
-    outro: { text: "" },
+    intro,
+    outro,
     stations: [],
     published: false,
   };
@@ -155,12 +155,15 @@ export function markExported(id: string): void {
   });
 }
 
-export function renameQuest(id: string, name: string): void {
+/** Updates a quest's name, intro and outro together — the "Bearbeiten" flow (PROJ-6). Leaves stations/modules untouched. */
+export function updateQuestDetails(id: string, details: { name: string; intro: Quest["intro"]; outro: Quest["outro"] }): void {
   const quest = getQuestById(id);
   if (!quest) return;
   saveQuest({
     ...quest,
-    name: stripHtmlTags(name).trim(),
+    name: stripHtmlTags(details.name).trim(),
+    intro: details.intro,
+    outro: details.outro,
     lastModified: new Date().toISOString(),
   });
 }

@@ -16,7 +16,7 @@ interface QuestManagementCardProps {
   hasUnsavedChanges: boolean;
   onExport: () => void;
   onPublish: () => void;
-  onRename: () => void;
+  onEdit: () => void;
   onDelete: () => void;
 }
 
@@ -26,7 +26,7 @@ export function QuestManagementCard({
   hasUnsavedChanges,
   onExport,
   onPublish,
-  onRename,
+  onEdit,
   onDelete,
 }: QuestManagementCardProps) {
   const totalCount = quest.stations.length;
@@ -55,9 +55,9 @@ export function QuestManagementCard({
             <Rocket className="w-4 h-4" />
             Veröffentlichen
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={onRename}>
+          <DropdownMenuItem onSelect={onEdit}>
             <Pencil className="w-4 h-4" />
-            Umbenennen
+            Bearbeiten
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={onDelete} className="text-destructive focus:text-destructive">
             <Trash2 className="w-4 h-4" />

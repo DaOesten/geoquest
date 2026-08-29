@@ -781,4 +781,32 @@ Zwei nutzergetriebene Styling-Änderungen ohne neue Acceptance Criteria, umgeset
 **Platform:** Vercel (auto-deploy on push to main, Commits `d5ce893`, `d7565a1`, `85c6300`)
 **Kein neuer Git-Tag:** Reine Styling-Änderung über drei bereits getaggte Features (PROJ-6/PROJ-7/PROJ-8) hinweg, kein einzelner PROJ-X-Anker — Redeploy wird stattdessen direkt in den betroffenen Spec-Dateien vermerkt.
 
+## Implementation Notes — Intro/Outro-Pflichtfelder, "Bearbeiten" statt "Umbenennen" (2026-08-29)
+
+Setzt das Refinement vom 2026-08-29 um (siehe Decision Log und Tech-Design-Refinement oben).
+
+### Neue/geänderte Dateien
+| Datei | Änderung |
+|-------|----------|
+| `src/lib/quest-storage.ts` | `createDraftQuest(name, intro, outro)` — nimmt Intro/Outro jetzt als Parameter statt sie fix leer zu setzen; `renameQuest()` entfernt, ersetzt durch `updateQuestDetails(id, { name, intro, outro })` |
+| `src/lib/quest-schema.ts` | Keine Änderung nötig — `Quest`-Typ hatte `intro`/`outro` bereits als Pflichtfelder im `questSchema` |
+| `src/components/quest-form-dialog.tsx` | Neu, ersetzt `quest-name-dialog.tsx` (gelöscht) — 5 Felder: Quest-Name, Intro-Text, Intro-Bild-URL (optional), Outro-Text, Outro-Bild-URL (optional). Validierung: Name/Intro-Text/Outro-Text dürfen nicht leer sein (HTML-only wie `<b></b>` zählt als leer, gleiches Muster wie der bisherige Namens-Dialog), Bild-URLs müssen mit `https://` beginnen oder leer bleiben (identisches Muster zu `module-editor-sheets.tsx`, PROJ-8) |
+| `src/components/quest-management-card.tsx` | `onRename` → `onEdit`, Menüpunkt-Label "Umbenennen" → "Bearbeiten" (Icon unverändert: `Pencil`) |
+| `src/app/create/page.tsx` | `isDraft` vereinfacht von `!isQuestComplete(quest) \|\| !isPublished(quest)` zu `!isPublished(quest)` (siehe Decision Log); `NameDialogState`/`nameDialog` → `FormDialogState`/`formDialog` (Modi `create`/`edit` statt `create`/`rename`); nutzt `QuestFormDialog` statt `QuestNameDialog`; `handleFormConfirm` ruft `createDraftQuest(name, intro, outro)` bzw. `updateQuestDetails()` |
+| `src/app/create/[id]/page.tsx` | Neuer Bearbeiten-Button (Pencil-Icon) im `AppHeader`-`rightAction`-Slot, öffnet denselben `QuestFormDialog`, vorausgefüllt mit den aktuellen Quest-Werten; `handleEditQuestConfirm` ruft `updateQuestDetails()` |
+| `tests/proj-6-creator-quest-verwaltung.spec.ts` | Fixture-Helper (`draftQuest`/`completeQuest`/`partiallyBuiltQuest`) umbenannt/erweitert um explizites `published`-Feld (vorher implizit über `isQuestComplete` bestimmt); "Neue Quest erstellen"-Tests füllen jetzt Intro/Outro mit; neuer Test für https-Validierung der Bild-URLs; "Umbenennen"-Block → "Bearbeiten"-Block inkl. neuem Test für den Header-Zugang von `/create/[id]`; neuer Test für Alt-Quests ohne `published`-Feld (Fallback-Verhalten) |
+
+### Wichtige Korrektur während der Umsetzung
+Der erste Entwurf dieses Refinements (im vorherigen `/refine`-Durchlauf) hatte das "Entwurf"-Konzept versehentlich komplett gestrichen, nicht nur die `isQuestComplete`-Bedingung. Der Nutzer wollte weiterhin einen selbstgesetzten "Entwurf"-Merker behalten, unabhängig von Spielbarkeit — die Spec wurde korrigiert, bevor `/frontend` begann. Umgesetzt wurde ausschließlich die korrigierte Fassung: `isDraft = !isPublished(quest)`.
+
+### Abweichung von der Tech-Design-Skizze
+Keine — Umsetzung folgt dem Tech Design 1:1.
+
+### Verifikation
+- `npm run build` ✓ · `npm run lint` ✓ (0 Fehler, dieselben 6 vorbestehenden `<img>`-Warnungen) · `npm test` ✓ (140/140, 1 neuer Test: `updateQuestDetails` lässt Stationen unverändert)
+- **PROJ-6 E2E-Suite** (`tests/proj-6-creator-quest-verwaltung.spec.ts`, Mobile Safari): 22/22 bestanden, inkl. 3 neuer Tests (https-URL-Validierung, Bearbeiten-Zugang von der Stationsdetailseite, Alt-Quest-Fallback ohne `published`-Feld)
+- **Cross-Feature-Regression** (PROJ-6 + PROJ-7 + PROJ-8 zusammen, Mobile Safari): 71/71 bestanden — keine Regression durch die geänderte `AppHeader`-Nutzung auf `/create/[id]` oder die entfernte `renameQuest`-Funktion
+- Manuelle visuelle Verifikation per Playwright-Screenshot (390×844, Mobile-Viewport): Erstellen-Dialog (5 Felder, Light-Theme korrekt), Bearbeiten-Dialog von der Detailseite (vorausgefüllt), 4-teiliges Aktionen-Menü (Sicherung/Veröffentlichen/Bearbeiten/Löschen) auf der Karte — keine Konsolenfehler, Light-Theme-Portal-Fix (aus dem ursprünglichen PROJ-6-Bugfix-Pass) greift weiterhin korrekt für den neuen Dialog
+- Chromium weiterhin nicht installierbar in dieser Sandbox (wiederholtes, bekanntes Umgebungsproblem) — komplett auf "Mobile Safari" (WebKit) verifiziert, das laut `playwright.config.ts` ohnehin das primäre E2E-Projekt ist
+
 **Post-Deployment-Verifikation (live auf Production):** Browser-Check (Playwright/WebKit) gegen `/create` mit injizierten `localStorage`-Testdaten bestätigt den neuen Build: Header ohne `border-bottom` (transparent), Grid- und animierte Dashed-Route-Hintergrundlayer vorhanden, Quest-Karte zeigt kein "Entwurf"-Badge mehr (der ursprünglich fälschlich als Treffer gemeldete "Entwurf"-Text stammt vom unveränderten Filter-Tab, nicht von der Karte — per Screenshot verifiziert). Keine Konsolenfehler. Testdaten ausschließlich im Browser-`localStorage` angelegt und wieder entfernt, kein serverseitiger Cleanup nötig.

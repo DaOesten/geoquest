@@ -1,18 +1,23 @@
 import { test, expect, type Page } from "@playwright/test";
 
+// A quest the creator marked as a draft ("Entwurf") — published: false is what
+// drives the dashed-card styling now (PROJ-6 refinement), independent of
+// completeness or playability.
 function draftQuest(id: string, name: string, lastModified: string) {
   return {
     version: 1,
     id,
     name,
     lastModified,
-    intro: { text: "" },
-    outro: { text: "" },
+    intro: { text: "Willkommen" },
+    outro: { text: "Geschafft" },
     stations: [],
+    published: false,
   };
 }
 
-function completeQuest(id: string, name: string, lastModified: string, stationId: string) {
+// A quest the creator has published — no dashed styling, regardless of station count.
+function publishedQuest(id: string, name: string, lastModified: string, stationId: string) {
   return {
     version: 1,
     id,
@@ -30,20 +35,21 @@ function completeQuest(id: string, name: string, lastModified: string, stationId
         modules: [{ type: "text", content: "Hallo" }],
       },
     ],
+    published: true,
   };
 }
 
 // A quest that's genuinely being worked on: has one station (so it's testable
-// in Play), but is still missing required fields (so the "Entwurf" badge shows
-// in the Creator). Play-visibility and the draft badge are independent.
-function partiallyBuiltQuest(id: string, name: string, lastModified: string, stationId: string) {
+// in Play) and is still marked "Entwurf" (unpublished) in the Creator.
+// Play-visibility and the draft badge are independent.
+function partiallyBuiltDraftQuest(id: string, name: string, lastModified: string, stationId: string) {
   return {
     version: 1,
     id,
     name,
     lastModified,
-    intro: { text: "" },
-    outro: { text: "" },
+    intro: { text: "Willkommen" },
+    outro: { text: "Geschafft" },
     stations: [
       {
         id: stationId,
@@ -54,11 +60,10 @@ function partiallyBuiltQuest(id: string, name: string, lastModified: string, sta
         modules: [{ type: "text", content: "Hallo" }],
       },
     ],
+    published: false,
   };
 }
 
-// Fixed, schema-valid UUIDs (version 4 / variant 8) so isQuestComplete()'s
-// questSchema.safeParse() check passes for the "complete" fixtures.
 const COMPLETE_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const COMPLETE_STATION_ID = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
 const DRAFT_ID = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
@@ -82,12 +87,18 @@ async function gotoEmptyCreate(page: Page) {
   await page.reload();
 }
 
+async function fillQuestForm(page: Page, values: { name?: string; introText?: string; outroText?: string }) {
+  if (values.name !== undefined) await page.locator("#quest-name").fill(values.name);
+  if (values.introText !== undefined) await page.locator("#intro-text").fill(values.introText);
+  if (values.outroText !== undefined) await page.locator("#outro-text").fill(values.outroText);
+}
+
 test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
   test.describe("Liste", () => {
     test("shows all quests sorted by lastModified (newest first) with name, station count, and greyed-out draft styling", async ({ page }) => {
       await seedQuests(page, [
         draftQuest(OLDER_ID, "Ältere Quest", "2026-01-01T00:00:00.000Z"),
-        completeQuest(COMPLETE_ID, "Neueste Quest", "2026-01-03T00:00:00.000Z", COMPLETE_STATION_ID),
+        publishedQuest(COMPLETE_ID, "Neueste Quest", "2026-01-03T00:00:00.000Z", COMPLETE_STATION_ID),
         draftQuest(DRAFT_ID, "Mittlere Quest", "2026-01-02T00:00:00.000Z"),
       ]);
 
@@ -110,12 +121,18 @@ test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
   });
 
   test.describe("Neue Quest erstellen", () => {
-    test("asks for a name, creates the quest, and navigates to the editor placeholder", async ({ page }) => {
+    test("asks for name, intro and outro, creates the quest, and navigates to the editor placeholder", async ({ page }) => {
       await gotoEmptyCreate(page);
       await page.getByRole("button", { name: "Neue Quest erstellen" }).click();
       await expect(page.getByText("Quest-Name")).toBeVisible();
+      await expect(page.getByText("Intro-Text")).toBeVisible();
+      await expect(page.getByText("Outro-Text")).toBeVisible();
 
-      await page.locator("#quest-name").fill("Meine erste Quest");
+      await fillQuestForm(page, {
+        name: "Meine erste Quest",
+        introText: "Willkommen bei der Jagd",
+        outroText: "Geschafft!",
+      });
       await page.getByRole("button", { name: "Erstellen" }).click();
 
       await expect(page).toHaveURL(/\/create\/[0-9a-f-]{36}$/);
@@ -124,16 +141,30 @@ test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
       await page.goto("/create");
       const card = page.getByRole("listitem").filter({ hasText: "Meine erste Quest" });
       await expect(card).toBeVisible();
+      // Freshly created quests start unpublished ("Entwurf"), regardless of intro/outro completeness.
       await expect(card.locator(".border-dashed")).toBeVisible();
     });
 
-    test("shows a validation error and creates nothing when the name is empty", async ({ page }) => {
+    test("shows validation errors and creates nothing when name, intro or outro are empty", async ({ page }) => {
       await gotoEmptyCreate(page);
       await page.getByRole("button", { name: "Neue Quest erstellen" }).click();
-      await page.locator("#quest-name").fill("");
       await page.getByRole("button", { name: "Erstellen" }).click();
 
       await expect(page.getByText("Der Name darf nicht leer sein.")).toBeVisible();
+      await expect(page.getByText("Der Intro-Text darf nicht leer sein.")).toBeVisible();
+      await expect(page.getByText("Der Outro-Text darf nicht leer sein.")).toBeVisible();
+      await expect(page).toHaveURL("/create");
+      await expect(page.getByText("Noch keine Quests erstellt")).toBeVisible();
+    });
+
+    test("shows a validation error and creates nothing when an image URL is not https", async ({ page }) => {
+      await gotoEmptyCreate(page);
+      await page.getByRole("button", { name: "Neue Quest erstellen" }).click();
+      await fillQuestForm(page, { name: "Quest", introText: "Intro", outroText: "Outro" });
+      await page.locator("#intro-url").fill("http://unsicher.de/bild.jpg");
+      await page.getByRole("button", { name: "Erstellen" }).click();
+
+      await expect(page.getByText("Nur HTTPS-URLs sind erlaubt.")).toBeVisible();
       await expect(page).toHaveURL("/create");
       await expect(page.getByText("Noch keine Quests erstellt")).toBeVisible();
     });
@@ -141,7 +172,7 @@ test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
     test("creates nothing when the dialog is cancelled", async ({ page }) => {
       await gotoEmptyCreate(page);
       await page.getByRole("button", { name: "Neue Quest erstellen" }).click();
-      await page.locator("#quest-name").fill("Wird verworfen");
+      await fillQuestForm(page, { name: "Wird verworfen", introText: "Intro", outroText: "Outro" });
       await page.getByRole("button", { name: "Abbrechen" }).click();
 
       await expect(page.locator("#quest-name")).not.toBeVisible();
@@ -151,7 +182,7 @@ test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
     test("BUG-1 regression: a name made only of HTML tags is rejected instead of saving as empty", async ({ page }) => {
       await gotoEmptyCreate(page);
       await page.getByRole("button", { name: "Neue Quest erstellen" }).click();
-      await page.locator("#quest-name").fill("<b></b>");
+      await fillQuestForm(page, { name: "<b></b>", introText: "Intro", outroText: "Outro" });
       await page.getByRole("button", { name: "Erstellen" }).click();
 
       await expect(page.getByText("Der Name darf nicht leer sein.")).toBeVisible();
@@ -163,15 +194,15 @@ test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
   });
 
   test.describe("Entwurf-Kennzeichnung", () => {
-    test("shows greyed-out/dashed draft styling for an incomplete quest and hides it for a complete one", async ({ page }) => {
+    test("shows greyed-out/dashed draft styling for an unpublished quest and hides it for a published one", async ({ page }) => {
       await seedQuests(page, [
-        completeQuest(COMPLETE_ID, "Fertige Quest", "2026-01-02T00:00:00.000Z", COMPLETE_STATION_ID),
-        draftQuest(DRAFT_ID, "Unfertige Quest", "2026-01-01T00:00:00.000Z"),
+        publishedQuest(COMPLETE_ID, "Veröffentlichte Quest", "2026-01-02T00:00:00.000Z", COMPLETE_STATION_ID),
+        draftQuest(DRAFT_ID, "Unveröffentlichte Quest", "2026-01-01T00:00:00.000Z"),
       ]);
 
-      const completeCard = page.locator(`li:has(a[href="/create/${COMPLETE_ID}"])`);
+      const publishedCard = page.locator(`li:has(a[href="/create/${COMPLETE_ID}"])`);
       const draftCard = page.locator(`li:has(a[href="/create/${DRAFT_ID}"])`);
-      await expect(completeCard.locator(".border-dashed")).toHaveCount(0);
+      await expect(publishedCard.locator(".border-dashed")).toHaveCount(0);
       await expect(draftCard.locator(".border-dashed")).toBeVisible();
     });
   });
@@ -186,7 +217,7 @@ test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
 
     test("a quest with at least one station appears in the Play list even while still marked 'Entwurf'", async ({ page }) => {
       await seedQuests(page, [
-        partiallyBuiltQuest(DRAFT_ID, "Halbfertig aber testbar", "2026-01-01T00:00:00.000Z", COMPLETE_STATION_ID),
+        partiallyBuiltDraftQuest(DRAFT_ID, "Halbfertig aber testbar", "2026-01-01T00:00:00.000Z", COMPLETE_STATION_ID),
       ]);
 
       // Still shows the greyed-out/dashed draft styling in the Creator — that's independent of Play visibility.
@@ -226,44 +257,56 @@ test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
       });
 
       await expect(page.getByText("erfolgreich importiert")).toBeVisible();
-      const card = page.getByRole("listitem").filter({ hasText: "Per Datei importiert" });
-      await expect(card.locator(".border-dashed")).toHaveCount(0);
-
       await page.goto("/play");
       await expect(page.getByText("Per Datei importiert")).toBeVisible();
     });
   });
 
-  test.describe("Umbenennen", () => {
-    test("prefills the current name, saves the new one, and re-sorts the list", async ({ page }) => {
+  test.describe("Bearbeiten", () => {
+    test("prefills name/intro/outro, saves the new values, and re-sorts the list", async ({ page }) => {
       await seedQuests(page, [draftQuest(DRAFT_ID, "Alter Name", "2026-01-01T00:00:00.000Z")]);
 
       await page.getByRole("button", { name: "Quest-Aktionen" }).click();
-      await page.getByRole("menuitem", { name: "Umbenennen" }).click();
+      await page.getByRole("menuitem", { name: "Bearbeiten" }).click();
       await expect(page.locator("#quest-name")).toHaveValue("Alter Name");
+      await expect(page.locator("#intro-text")).toHaveValue("Willkommen");
+      await expect(page.locator("#outro-text")).toHaveValue("Geschafft");
 
-      await page.locator("#quest-name").fill("Neuer Name");
+      await fillQuestForm(page, { name: "Neuer Name", introText: "Neues Intro", outroText: "Neues Outro" });
       await page.getByRole("button", { name: "Speichern" }).click();
 
       await expect(page.getByText("Neuer Name")).toBeVisible();
-      await expect(page.getByText("Quest umbenannt")).toBeVisible();
+      await expect(page.getByText("Quest gespeichert")).toBeVisible();
     });
 
-    test("shows a validation error and keeps the old name when the field is emptied", async ({ page }) => {
+    test("shows validation errors and keeps the old values when a required field is emptied", async ({ page }) => {
       await seedQuests(page, [draftQuest(DRAFT_ID, "Bleibt so", "2026-01-01T00:00:00.000Z")]);
 
       await page.getByRole("button", { name: "Quest-Aktionen" }).click();
-      await page.getByRole("menuitem", { name: "Umbenennen" }).click();
+      await page.getByRole("menuitem", { name: "Bearbeiten" }).click();
       await page.locator("#quest-name").fill("");
       await page.getByRole("button", { name: "Speichern" }).click();
 
       await expect(page.getByText("Der Name darf nicht leer sein.")).toBeVisible();
     });
+
+    test("is also reachable from the station editor header and updates the title", async ({ page }) => {
+      await seedQuests(page, [draftQuest(DRAFT_ID, "Von Detailseite", "2026-01-01T00:00:00.000Z")]);
+      await page.goto(`/create/${DRAFT_ID}`);
+
+      await page.getByRole("button", { name: "Quest bearbeiten" }).click();
+      await expect(page.locator("#quest-name")).toHaveValue("Von Detailseite");
+      await page.locator("#quest-name").fill("Umbenannt von Detailseite");
+      await page.getByRole("button", { name: "Speichern" }).click();
+
+      await expect(page.getByText("Quest gespeichert")).toBeVisible();
+      await expect(page.getByText("Umbenannt von Detailseite")).toBeVisible();
+    });
   });
 
   test.describe("Löschen", () => {
     test("asks for confirmation, then removes the quest and its progress on confirm", async ({ page }) => {
-      await seedQuests(page, [completeQuest(COMPLETE_ID, "Verschwindequest", "2026-01-01T00:00:00.000Z", COMPLETE_STATION_ID)]);
+      await seedQuests(page, [publishedQuest(COMPLETE_ID, "Verschwindequest", "2026-01-01T00:00:00.000Z", COMPLETE_STATION_ID)]);
       await page.evaluate((id) => {
         localStorage.setItem(`gq_progress_${id}`, JSON.stringify({
           visitedStations: ["x"], completedStations: [], solvedTasks: {}, currentScreen: "stations", lastStationIndex: 0,
@@ -293,9 +336,9 @@ test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
   });
 
   test.describe("Filter", () => {
-    test("'Entwurf' tab shows only draft quests, 'Alle' shows everything again", async ({ page }) => {
+    test("'Entwurf' tab shows only draft (unpublished) quests, 'Alle' shows everything again", async ({ page }) => {
       await seedQuests(page, [
-        completeQuest(COMPLETE_ID, "Fertige Quest", "2026-01-02T00:00:00.000Z", COMPLETE_STATION_ID),
+        publishedQuest(COMPLETE_ID, "Veröffentlichte Quest", "2026-01-02T00:00:00.000Z", COMPLETE_STATION_ID),
         draftQuest(DRAFT_ID, "Entwurf Quest", "2026-01-01T00:00:00.000Z"),
       ]);
 
@@ -351,6 +394,19 @@ test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
 
       await page.goto("/play");
       await expect(page.getByText("Alter Rohentwurf")).not.toBeVisible();
+    });
+
+    test("a legacy quest with no 'published' field is treated as published (no draft badge)", async ({ page }) => {
+      // isPublished() falls back to true when the field is absent, so quests
+      // saved before PROJ-9 introduced `published` aren't retroactively
+      // flagged as drafts.
+      const legacyId = "33333333-3333-4333-8333-333333333333";
+      await seedQuests(page, [
+        { version: 1, id: legacyId, name: "Altbestand ohne published-Feld", lastModified: "2026-01-01T00:00:00.000Z", intro: { text: "Hallo" }, outro: { text: "Tschüss" }, stations: [] },
+      ]);
+
+      const card = page.getByRole("listitem").filter({ hasText: "Altbestand ohne published-Feld" });
+      await expect(card.locator(".border-dashed")).toHaveCount(0);
     });
   });
 

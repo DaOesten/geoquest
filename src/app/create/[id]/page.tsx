@@ -12,12 +12,13 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { MapPinned, Plus } from "lucide-react";
+import { MapPinned, Pencil, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/app-header";
 import { CreatorBackdrop } from "@/components/creator-backdrop";
 import { StationListItem } from "@/components/station-list-item";
 import { StationEditorSheet } from "@/components/station-editor-sheet";
+import { QuestFormDialog, type QuestFormValues } from "@/components/quest-form-dialog";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -30,7 +31,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useQuests } from "@/hooks/use-quests";
-import { deleteStation, reorderStations, upsertStation, type DraftStation } from "@/lib/quest-storage";
+import { deleteStation, reorderStations, updateQuestDetails, upsertStation, type DraftStation } from "@/lib/quest-storage";
 
 interface CreateQuestPageProps {
   params: Promise<{ id: string }>;
@@ -45,6 +46,7 @@ export default function CreateQuestPage({ params }: CreateQuestPageProps) {
   const [editorStation, setEditorStation] = useState<DraftStation | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<DraftStation | null>(null);
+  const [isEditFormOpen, setIsEditFormOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -75,6 +77,16 @@ export default function CreateQuestPage({ params }: CreateQuestPageProps) {
       upsertStation(questId, station);
       refreshQuests();
       toast.success("Station gespeichert");
+    },
+    [questId, refreshQuests]
+  );
+
+  const handleEditQuestConfirm = useCallback(
+    (values: QuestFormValues) => {
+      updateQuestDetails(questId, values);
+      refreshQuests();
+      toast.success("Quest gespeichert");
+      setIsEditFormOpen(false);
     },
     [questId, refreshQuests]
   );
@@ -122,7 +134,22 @@ export default function CreateQuestPage({ params }: CreateQuestPageProps) {
     <>
       <CreatorBackdrop />
       <div className="relative">
-        <AppHeader title={quest.name} backHref="/create" variant="light" transparent />
+        <AppHeader
+          title={quest.name}
+          backHref="/create"
+          variant="light"
+          transparent
+          rightAction={
+            <button
+              type="button"
+              onClick={() => setIsEditFormOpen(true)}
+              aria-label="Quest bearbeiten"
+              className="flex items-center justify-center w-11 h-11 rounded-full text-muted-foreground transition-colors duration-fast ease-gq hover:text-primary active:scale-[0.96]"
+            >
+              <Pencil className="w-5 h-5" />
+            </button>
+          }
+        />
 
         {stations.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-5 text-center">
@@ -178,6 +205,15 @@ export default function CreateQuestPage({ params }: CreateQuestPageProps) {
           station={editorStation}
           contextPins={contextPins}
           onSave={handleSaveStation}
+        />
+
+        <QuestFormDialog
+          open={isEditFormOpen}
+          onOpenChange={setIsEditFormOpen}
+          title="Quest bearbeiten"
+          confirmLabel="Speichern"
+          initialValues={{ name: quest.name, intro: quest.intro, outro: quest.outro }}
+          onConfirm={handleEditQuestConfirm}
         />
 
         <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>

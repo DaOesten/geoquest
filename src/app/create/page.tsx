@@ -10,7 +10,7 @@ import { CreatorBackdrop } from "@/components/creator-backdrop";
 import { QuestImportButton } from "@/components/quest-import-button";
 import { QuestManagementCard } from "@/components/quest-management-card";
 import { QuestManagementFilterTabs, type QuestManagementFilter } from "@/components/quest-management-filter-tabs";
-import { QuestNameDialog } from "@/components/quest-name-dialog";
+import { QuestFormDialog, type QuestFormValues } from "@/components/quest-form-dialog";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -28,22 +28,21 @@ import {
   deleteQuest,
   hasUnsavedChanges as questHasUnsavedChanges,
   isPublished,
-  isQuestComplete,
   markExported,
   publishQuest,
-  renameQuest,
   saveQuest,
+  updateQuestDetails,
 } from "@/lib/quest-storage";
 import { exportQuest } from "@/lib/quest-export";
 import { deleteProgress } from "@/lib/quest-progress";
 import type { Quest } from "@/lib/quest-schema";
 
-type NameDialogState = { mode: "create" } | { mode: "rename"; quest: Quest } | null;
+type FormDialogState = { mode: "create" } | { mode: "edit"; quest: Quest } | null;
 
 export default function CreatePage() {
   const router = useRouter();
   const { quests, refreshQuests } = useQuests();
-  const [nameDialog, setNameDialog] = useState<NameDialogState>(null);
+  const [formDialog, setFormDialog] = useState<FormDialogState>(null);
   const [deleteTarget, setDeleteTarget] = useState<Quest | null>(null);
   const [filter, setFilter] = useState<QuestManagementFilter>("all");
   const [fabOpen, setFabOpen] = useState(false);
@@ -54,7 +53,7 @@ export default function CreatePage() {
         .sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime())
         .map((quest) => ({
           quest,
-          isDraft: !isQuestComplete(quest) || !isPublished(quest),
+          isDraft: !isPublished(quest),
           hasUnsavedChanges: questHasUnsavedChanges(quest),
         })),
     [quests]
@@ -65,26 +64,26 @@ export default function CreatePage() {
     [sortedQuests, filter]
   );
 
-  const handleNameConfirm = useCallback(
-    (name: string) => {
-      if (!nameDialog) return;
+  const handleFormConfirm = useCallback(
+    (values: QuestFormValues) => {
+      if (!formDialog) return;
       try {
-        if (nameDialog.mode === "create") {
-          const quest = createDraftQuest(name);
+        if (formDialog.mode === "create") {
+          const quest = createDraftQuest(values.name, values.intro, values.outro);
           saveQuest(quest);
-          setNameDialog(null);
+          setFormDialog(null);
           router.push(`/create/${quest.id}`);
         } else {
-          renameQuest(nameDialog.quest.id, name);
+          updateQuestDetails(formDialog.quest.id, values);
           refreshQuests();
-          toast.success("Quest umbenannt");
-          setNameDialog(null);
+          toast.success("Quest gespeichert");
+          setFormDialog(null);
         }
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Etwas ist schiefgelaufen.");
       }
     },
-    [nameDialog, refreshQuests, router]
+    [formDialog, refreshQuests, router]
   );
 
   const handleExport = useCallback(
@@ -151,7 +150,7 @@ export default function CreatePage() {
             </p>
             <div className="mt-4 flex flex-col items-center gap-3">
               <Button
-                onClick={() => setNameDialog({ mode: "create" })}
+                onClick={() => setFormDialog({ mode: "create" })}
                 className="rounded-pill h-11 px-6 bg-primary text-primary-foreground text-tech text-xs tracking-[0.08em] active:scale-[0.96] transition-all duration-fast ease-gq"
               >
                 <Plus className="w-4 h-4" />
@@ -181,7 +180,7 @@ export default function CreatePage() {
                         hasUnsavedChanges={hasUnsavedChanges}
                         onExport={() => handleExport(quest)}
                         onPublish={() => handlePublish(quest)}
-                        onRename={() => setNameDialog({ mode: "rename", quest })}
+                        onEdit={() => setFormDialog({ mode: "edit", quest })}
                         onDelete={() => setDeleteTarget(quest)}
                       />
                     </li>
@@ -231,7 +230,7 @@ export default function CreatePage() {
               <button
                 type="button"
                 onClick={() => {
-                  setNameDialog({ mode: "create" });
+                  setFormDialog({ mode: "create" });
                   setFabOpen(false);
                 }}
                 className="flex items-center gap-2 h-11 px-5 rounded-pill bg-primary text-primary-foreground shadow-card text-tech text-xs tracking-[0.08em] transition-all duration-fast ease-gq active:scale-[0.96] whitespace-nowrap"
@@ -257,13 +256,17 @@ export default function CreatePage() {
           </>
         )}
 
-        <QuestNameDialog
-          open={nameDialog !== null}
-          onOpenChange={(open) => !open && setNameDialog(null)}
-          title={nameDialog?.mode === "rename" ? "Quest umbenennen" : "Neue Quest erstellen"}
-          confirmLabel={nameDialog?.mode === "rename" ? "Speichern" : "Erstellen"}
-          initialValue={nameDialog?.mode === "rename" ? nameDialog.quest.name : ""}
-          onConfirm={handleNameConfirm}
+        <QuestFormDialog
+          open={formDialog !== null}
+          onOpenChange={(open) => !open && setFormDialog(null)}
+          title={formDialog?.mode === "edit" ? "Quest bearbeiten" : "Neue Quest erstellen"}
+          confirmLabel={formDialog?.mode === "edit" ? "Speichern" : "Erstellen"}
+          initialValues={
+            formDialog?.mode === "edit"
+              ? { name: formDialog.quest.name, intro: formDialog.quest.intro, outro: formDialog.quest.outro }
+              : undefined
+          }
+          onConfirm={handleFormConfirm}
         />
 
         <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
