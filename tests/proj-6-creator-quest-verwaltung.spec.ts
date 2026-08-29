@@ -193,6 +193,74 @@ test.describe("PROJ-6: Creator — Quest-Verwaltung", () => {
     });
   });
 
+  test.describe("Security (QA red-team pass, 2026-08-29)", () => {
+    test("XSS: a script tag in the quest name never executes and is stripped from storage", async ({ page }) => {
+      await gotoEmptyCreate(page);
+      await page.getByRole("button", { name: "Neue Quest erstellen" }).click();
+      await fillQuestForm(page, { name: "<script>window.__xss=true</script>Harmlos", introText: "I", outroText: "O" });
+      await page.getByRole("button", { name: "Erstellen" }).click();
+      await expect(page).toHaveURL(/\/create\/[0-9a-f-]{36}$/);
+      const xssRan = await page.evaluate(() => (window as unknown as { __xss?: boolean }).__xss);
+      expect(xssRan).toBeUndefined();
+      const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("gq_quests") || "[]"));
+      expect(stored[0].name).not.toContain("<script>");
+    });
+
+    test("XSS: a script tag mixed with real text in intro is stripped but the remaining text is kept", async ({ page }) => {
+      await gotoEmptyCreate(page);
+      await page.getByRole("button", { name: "Neue Quest erstellen" }).click();
+      await fillQuestForm(page, { name: "Quest", introText: 'Willkommen <img src=x onerror="window.__xss2=true"> Reisende', outroText: "O" });
+      await page.getByRole("button", { name: "Erstellen" }).click();
+      await expect(page).toHaveURL(/\/create\/[0-9a-f-]{36}$/);
+      const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("gq_quests") || "[]"));
+      expect(stored[0].intro.text).not.toContain("<img");
+      expect(stored[0].intro.text).not.toContain("onerror");
+    });
+
+    test("XSS: an intro text that is ONLY an HTML tag collapses to empty and is correctly rejected, not silently saved", async ({ page }) => {
+      await gotoEmptyCreate(page);
+      await page.getByRole("button", { name: "Neue Quest erstellen" }).click();
+      await fillQuestForm(page, { name: "Quest", introText: '<img src=x onerror="window.__xss2=true">', outroText: "O" });
+      await page.getByRole("button", { name: "Erstellen" }).click();
+      await expect(page.getByText("Der Intro-Text darf nicht leer sein.")).toBeVisible();
+      const stored = await page.evaluate(() => localStorage.getItem("gq_quests"));
+      expect(stored).toBeNull();
+    });
+
+    test("Injection: javascript: URL scheme is rejected for the intro image URL", async ({ page }) => {
+      await gotoEmptyCreate(page);
+      await page.getByRole("button", { name: "Neue Quest erstellen" }).click();
+      await fillQuestForm(page, { name: "Q", introText: "I", outroText: "O" });
+      await page.locator("#intro-url").fill("javascript:alert(1)");
+      await page.getByRole("button", { name: "Erstellen" }).click();
+      await expect(page.getByText("Nur HTTPS-URLs sind erlaubt.")).toBeVisible();
+    });
+
+    test("Injection: data: URL scheme is rejected for the outro image URL", async ({ page }) => {
+      await gotoEmptyCreate(page);
+      await page.getByRole("button", { name: "Neue Quest erstellen" }).click();
+      await fillQuestForm(page, { name: "Q", introText: "I", outroText: "O" });
+      await page.locator("#outro-url").fill("data:text/html,<script>alert(1)</script>");
+      await page.getByRole("button", { name: "Erstellen" }).click();
+      await expect(page.getByText("Nur HTTPS-URLs sind erlaubt.")).toBeVisible();
+    });
+
+    test("localStorage tampering: a quest with a __proto__ key does not crash the page or pollute Object.prototype", async ({ page }) => {
+      await gotoEmptyCreate(page);
+      await page.evaluate(() => {
+        localStorage.setItem("gq_quests", JSON.stringify([
+          { version: 1, id: "50505050-1111-4505-8505-505050505050", name: "Normal", lastModified: new Date().toISOString(),
+            intro: { text: "I" }, outro: { text: "O" }, stations: [], published: false, "__proto__": { polluted: true } },
+        ]));
+      });
+      await page.reload();
+      await expect(page.getByText("Application error", { exact: false })).not.toBeVisible();
+      await expect(page.getByText("Normal")).toBeVisible();
+      const polluted = await page.evaluate(() => (Object.prototype as unknown as { polluted?: boolean }).polluted);
+      expect(polluted).toBeUndefined();
+    });
+  });
+
   test.describe("Entwurf-Kennzeichnung", () => {
     test("shows greyed-out/dashed draft styling for an unpublished quest and hides it for a published one", async ({ page }) => {
       await seedQuests(page, [

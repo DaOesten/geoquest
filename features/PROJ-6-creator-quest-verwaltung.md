@@ -810,3 +810,107 @@ Keine — Umsetzung folgt dem Tech Design 1:1.
 - Chromium weiterhin nicht installierbar in dieser Sandbox (wiederholtes, bekanntes Umgebungsproblem) — komplett auf "Mobile Safari" (WebKit) verifiziert, das laut `playwright.config.ts` ohnehin das primäre E2E-Projekt ist
 
 **Post-Deployment-Verifikation (live auf Production):** Browser-Check (Playwright/WebKit) gegen `/create` mit injizierten `localStorage`-Testdaten bestätigt den neuen Build: Header ohne `border-bottom` (transparent), Grid- und animierte Dashed-Route-Hintergrundlayer vorhanden, Quest-Karte zeigt kein "Entwurf"-Badge mehr (der ursprünglich fälschlich als Treffer gemeldete "Entwurf"-Text stammt vom unveränderten Filter-Tab, nicht von der Karte — per Screenshot verifiziert). Keine Konsolenfehler. Testdaten ausschließlich im Browser-`localStorage` angelegt und wieder entfernt, kein serverseitiger Cleanup nötig.
+
+---
+
+## QA Test Results — Intro/Outro-Pflichtfelder, "Bearbeiten" (2026-08-29)
+
+**Tested:** 2026-08-29
+**App URL:** http://localhost:3000
+**Tester:** QA Engineer (AI)
+**Browser:** WebKit ("Mobile Safari", 390×844) — Chromium bewusst ausgelassen auf Nutzeranweisung ("lass chromium weg"), siehe Cross-Browser-Testing unten für Begründung
+**Build:** `npm run build` ✓ · `npm run lint` ✓ (0 Fehler, 6 vorbestehende `<img>`-Warnungen) · `npm test` ✓ (140/140)
+
+### Acceptance Criteria Status
+
+#### Liste
+- [x] Sortierung nach `lastModified` (neueste zuerst), Name + Stationsanzahl + Entwurf-Badge korrekt angezeigt
+- [x] Empty State mit Hinweistext, "Neue Quest erstellen"-Button und Import-Button
+
+#### Neue Quest erstellen
+- [x] Dialog fragt nach Name, Intro-Text, Outro-Text (Pflicht) sowie optionalen Bild-URLs
+- [x] Gültige Eingabe → Quest mit allen Werten gespeichert, Navigation zu `/create/[id]`
+- [x] Leerer Name/Intro/Outro → jeweils eigene Validierungsfehlermeldung, nichts gespeichert (auch bei nur einem leeren Feld — nur die betroffene Meldung erscheint)
+- [x] Nicht-https Bild-URL (Intro ODER Outro) → "Nur HTTPS-URLs sind erlaubt.", nichts gespeichert
+- [x] Leere (optionale) Bild-URLs sind erlaubt, kein Fehler
+- [x] Abbrechen → keine Quest angelegt
+
+#### Bearbeiten (ersetzt Umbenennen)
+- [x] Von der Listen-Karte UND vom Header-Button auf `/create/[id]` erreichbar, beide vorausgefüllt mit aktuellen Werten
+- [x] Gültige Werte gespeichert, `lastModified` aktualisiert, `published`/`lastExported` bleiben unverändert erhalten (verifiziert — Edit überschreibt sie nicht)
+- [x] Leeres Pflichtfeld → Validierungsfehler, alte Werte bleiben in der Quest erhalten
+- [x] Bearbeiten ändert nachweislich NICHT die Stationsliste
+
+#### Entwurf-Kennzeichnung (`isDraft = !isPublished`)
+- [x] `published: false` → Entwurf-Badge sichtbar
+- [x] `published: true` → kein Entwurf-Badge
+- [x] Badge beeinflusst nachweislich nicht die Play-Sichtbarkeit
+
+#### Play-Sichtbarkeit
+- [x] 0 Stationen → nicht in Play sichtbar, unabhängig vom `published`-Status
+- [x] ≥1 Station → in Play sichtbar, auch wenn `published: false` (Entwurf)
+- [x] Import → sofort in Play sichtbar
+
+#### Löschen
+- [x] Bestätigungsdialog, Quest + Fortschritt (`gq_progress_{id}`) werden entfernt
+- [x] Abbrechen → Quest bleibt unverändert
+
+### Edge Cases Status
+1. [x] Doppelte Quest-Namen erlaubt
+2. [x] Löschen der letzten Quest → Empty State
+3. — Cross-Tab (kein automatisierter Test, dokumentiertes MVP-Verhalten)
+4. [x] Sehr langer Name → `line-clamp` (visuell bestätigt in früherer Runde, unverändert)
+5. [x] HTML im Namen wird sanitized
+6. — localStorage voll (durch Unit-Tests in `quest-storage.test.ts` abgedeckt)
+7. [x] Import-Button funktioniert weiterhin
+8. [x] Frisch angelegte Quest (0 Stationen) nicht in Play
+9. [x] Unfertige Quest (≥1 Station) spielbar — ursprünglicher "fehlender Outro-Text"-Fall entfällt korrekt, da jetzt Pflichtfeld
+10. [x] Zwischenstand geht nicht verloren — sofortiges Speichern bestätigt
+11. [x] Ungültige Bild-URL blockiert Speichern, leer ist erlaubt
+12. [x] Bearbeiten lässt Stationen/Module unverändert
+
+### Security Audit Results (Red-Team)
+- [x] XSS: `<script>`-Tag im Quest-Namen wird gestrippt, führt nicht aus
+- [x] XSS: `<img onerror>` in Intro-Text wird gestrippt (Text mit Rest-Inhalt bleibt erhalten, reiner Tag-Payload kollabiert korrekt zu leer und wird als Pflichtfeld-Fehler abgefangen — **kein stiller Datenverlust, kein XSS-Vektor**)
+- [x] Injection: `javascript:`-URL-Schema für Bild-URLs wird abgelehnt (https-Whitelist greift)
+- [x] Injection: `data:`-URL-Schema für Bild-URLs wird abgelehnt
+- [x] localStorage-Tampering: Eintrag mit `__proto__`-Schlüssel verursacht keinen Crash und pollutet `Object.prototype` nicht (JSON.parse erzeugt kein natives Prototype-Pollution-Risiko, defensiv zusätzlich verifiziert)
+- [x] Keine Secrets/sensiblen Daten in Konsole oder `localStorage` während des Create/Edit/Publish-Flows
+- [x] HTML-only-Eingaben (`<b></b>`) werden konsistent als "leer" behandelt, nicht als gültiger, aber unsichtbarer Inhalt gespeichert
+
+### Bugs Found
+
+#### BUG-5: Aktionen-Menü-Einträge (Sicherung/Veröffentlichen/Bearbeiten/Löschen) unterschreiten die 44px-Touch-Target-Vorgabe
+- **Severity:** Low
+- **Steps to Reproduce:**
+  1. Gehe zu `/create`, öffne das Aktionen-Menü (⋮) einer beliebigen Quest-Karte
+  2. Miss die Höhe eines Menüpunkts (z.B. per DevTools oder `getBoundingClientRect()`)
+  3. Erwartet: ≥44px (PRD-Vorgabe, explizit auch in PROJ-6 UND PROJ-9 Technical Requirements gefordert)
+  4. Tatsächlich: 32px für alle vier Menüpunkte
+- **Root Cause:** `DropdownMenuItem` (shadcn, `src/components/ui/dropdown-menu.tsx`) nutzt die Standard-Klassen `py-1.5 text-sm` ohne `min-h-11`. Der exakt gleiche Bug wurde bereits einmal für die Filter-Tabs gefunden und behoben (BUG-2, PROJ-6-Erstrunde) — der Fix (`min-h-11` statt reinem Padding) wurde damals nicht auf das Aktionen-Menü übertragen, das zu dem Zeitpunkt nur 2 Einträge hatte
+- **Betroffen:** Alle 4 Einträge (Sicherung, Veröffentlichen, Bearbeiten, Löschen) — nicht nur die 2 neuen aus diesem Refinement, das Problem existierte bereits vorher für Umbenennen/Löschen, wurde aber nie gefunden/gemeldet
+- **Regressionstest:** `tests/proj-9-creator-json-export.spec.ts` → `"BUG: Touch-Targets"` (bewusst als fehlschlagender Test committed, um den Fix zu erzwingen und zu verifizieren, analog zum ursprünglichen BUG-2-Muster)
+- **Priority:** Fix vor Deployment empfohlen — einfacher, risikoarmer Fix (eine Klasse ergänzen), PRD-Anforderung ist explizit
+
+### Regression Testing
+- **PROJ-6 E2E-Suite** (`tests/proj-6-creator-quest-verwaltung.spec.ts`): 24/24 bestanden (22 bestehend + 2 neu: `"BUG-1 regression"`-Nachbarschaft blieb unverändert, 6 neue Security-Tests hinzugefügt unter `"Security (QA red-team pass, 2026-08-29)"`)
+- **PROJ-9 E2E-Suite** (`tests/proj-9-creator-json-export.spec.ts`, neu erstellt): 14/14 bestanden, 1 bewusst fehlschlagender Regressionstest für BUG-5
+- **Volle Cross-Feature-Regression** (alle Spec-Dateien, Mobile Safari): 131/150 bestanden. Die 19 Fehlschläge liegen ausschließlich in `proj-1-app-shell.spec.ts`, `proj-3-player-gps-navigation.spec.ts`, `proj-4-player-modul-rendering.spec.ts` — durch `git log --name-only` bestätigt, dass keiner der PROJ-6/PROJ-9-Commits diese Dateien oder die zugehörigen Screens (`/`, `/play`-Navigation, Stations-Fortschritt) berührt hat. Stichprobenartig verifiziert (`proj-1-app-shell.spec.ts:6`): Ursache ist ein Locator-Strict-Mode-Konflikt (`getByText('Deine Quests')` matcht zwei Elemente), ein vorbestehender Testautorenfehler in einer unabhängigen Spec-Datei, keine Regression durch diese Änderung
+- **Unit-Tests:** 140/140 bestanden
+
+### Responsive & Accessibility
+- 375px (Mobile): Erstellen-/Bearbeiten-Dialog vollständig nutzbar (scrollbar bei Bedarf), Header mit langem Quest-Namen truncated korrekt per Ellipsis, Zurück-Pfeil und Bearbeiten-Stift überlappen nicht — per Screenshot verifiziert
+- Touch-Targets: FAB 48px ✓, Karten-Aktionen-Button 44px ✓, Header-Bearbeiten-Button 44px ✓, Aktionen-Menü-Einträge 32px ✗ (BUG-5)
+- 768px/1440px: Nicht erneut manuell getestet in dieser Runde (Content-Container ist laut Design System auf `max-w-[430px]` begrenzt — Desktop-Verhalten ist unverändert zu vorherigen, bereits verifizierten Runden)
+
+### Cross-Browser Testing
+- **WebKit (Mobile Safari):** Vollständig getestet, primäres E2E-Projekt laut `playwright.config.ts`
+- **Chromium:** Auf ausdrücklichen Nutzerwunsch für diese Runde ausgelassen ("lass chromium weg") — in früheren QA-Runden ohnehin wiederholt nicht installierbar in dieser Sandbox (bekanntes Umgebungsproblem, kein Produktrisiko)
+- **Firefox:** Nicht getestet (kein Playwright-Projekt dafür konfiguriert)
+
+### Summary
+- **Acceptance Criteria:** 24/24 passed (alle ACs aus PROJ-6 und PROJ-9, siehe oben und PROJ-9-QA-Abschnitt)
+- **Bugs Found:** 1 total (0 Critical, 0 High, 0 Medium, 1 Low)
+- **Security:** Pass — keine Schwachstellen gefunden, mehrere gezielte XSS-/Injection-/Tampering-Versuche liefen ins Leere
+- **Production Ready:** **YES** — kein Critical/High-Bug, der Low-Bug (Touch-Targets) blockiert laut Bug-Severity-Richtlinie kein Deployment, sollte aber zeitnah nachgezogen werden
+- **Recommendation:** Deploy-bereit. BUG-5 vor oder kurz nach dem nächsten Deploy beheben (kleiner, risikoarmer CSS-Fix)
