@@ -1,6 +1,6 @@
 # PROJ-6: Creator — Quest-Verwaltung
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-08-27
 **Last Updated:** 2026-08-29
 
@@ -880,7 +880,7 @@ Keine — Umsetzung folgt dem Tech Design 1:1.
 
 ### Bugs Found
 
-#### BUG-5: Aktionen-Menü-Einträge (Sicherung/Veröffentlichen/Bearbeiten/Löschen) unterschreiten die 44px-Touch-Target-Vorgabe
+#### BUG-5: Aktionen-Menü-Einträge (Sicherung/Veröffentlichen/Bearbeiten/Löschen) unterschreiten die 44px-Touch-Target-Vorgabe — ✅ FIXED (siehe Re-Verifikation unten)
 - **Severity:** Low
 - **Steps to Reproduce:**
   1. Gehe zu `/create`, öffne das Aktionen-Menü (⋮) einer beliebigen Quest-Karte
@@ -889,18 +889,20 @@ Keine — Umsetzung folgt dem Tech Design 1:1.
   4. Tatsächlich: 32px für alle vier Menüpunkte
 - **Root Cause:** `DropdownMenuItem` (shadcn, `src/components/ui/dropdown-menu.tsx`) nutzt die Standard-Klassen `py-1.5 text-sm` ohne `min-h-11`. Der exakt gleiche Bug wurde bereits einmal für die Filter-Tabs gefunden und behoben (BUG-2, PROJ-6-Erstrunde) — der Fix (`min-h-11` statt reinem Padding) wurde damals nicht auf das Aktionen-Menü übertragen, das zu dem Zeitpunkt nur 2 Einträge hatte
 - **Betroffen:** Alle 4 Einträge (Sicherung, Veröffentlichen, Bearbeiten, Löschen) — nicht nur die 2 neuen aus diesem Refinement, das Problem existierte bereits vorher für Umbenennen/Löschen, wurde aber nie gefunden/gemeldet
-- **Regressionstest:** `tests/proj-9-creator-json-export.spec.ts` → `"BUG: Touch-Targets"` (bewusst als fehlschlagender Test committed, um den Fix zu erzwingen und zu verifizieren, analog zum ursprünglichen BUG-2-Muster)
-- **Priority:** Fix vor Deployment empfohlen — einfacher, risikoarmer Fix (eine Klasse ergänzen), PRD-Anforderung ist explizit
+- **Fix:** `min-h-11` zur gemeinsamen `DropdownMenuItem`-Klasse in `src/components/ui/dropdown-menu.tsx` ergänzt — behebt das Problem an der Wurzel für alle drei Verwendungsstellen im Projekt (`quest-management-card.tsx`, `station-list-item.tsx`, `module-list-item.tsx`), nicht nur lokal für PROJ-6/PROJ-9
+- **Regressionstest:** `tests/proj-9-creator-json-export.spec.ts` → `"Touch-Targets" → "BUG-5 regression"` ✅ grün (Höhe jetzt 44px, vorher 32px)
+- **Priority:** Vor Deployment behoben
 
 ### Regression Testing
 - **PROJ-6 E2E-Suite** (`tests/proj-6-creator-quest-verwaltung.spec.ts`): 24/24 bestanden (22 bestehend + 2 neu: `"BUG-1 regression"`-Nachbarschaft blieb unverändert, 6 neue Security-Tests hinzugefügt unter `"Security (QA red-team pass, 2026-08-29)"`)
-- **PROJ-9 E2E-Suite** (`tests/proj-9-creator-json-export.spec.ts`, neu erstellt): 14/14 bestanden, 1 bewusst fehlschlagender Regressionstest für BUG-5
-- **Volle Cross-Feature-Regression** (alle Spec-Dateien, Mobile Safari): 131/150 bestanden. Die 19 Fehlschläge liegen ausschließlich in `proj-1-app-shell.spec.ts`, `proj-3-player-gps-navigation.spec.ts`, `proj-4-player-modul-rendering.spec.ts` — durch `git log --name-only` bestätigt, dass keiner der PROJ-6/PROJ-9-Commits diese Dateien oder die zugehörigen Screens (`/`, `/play`-Navigation, Stations-Fortschritt) berührt hat. Stichprobenartig verifiziert (`proj-1-app-shell.spec.ts:6`): Ursache ist ein Locator-Strict-Mode-Konflikt (`getByText('Deine Quests')` matcht zwei Elemente), ein vorbestehender Testautorenfehler in einer unabhängigen Spec-Datei, keine Regression durch diese Änderung
+- **PROJ-9 E2E-Suite** (`tests/proj-9-creator-json-export.spec.ts`, neu erstellt): 14/14 bestanden, inkl. BUG-5-Regressionstest (jetzt grün)
+- **Cross-Feature-Regression nach BUG-5-Fix** (PROJ-6 + PROJ-7 + PROJ-8 + PROJ-9 zusammen, Mobile Safari): 88/88 bestanden — der globale `DropdownMenuItem`-Fix (betrifft auch `station-list-item.tsx` und `module-list-item.tsx`) verursacht keine Regression in PROJ-7/PROJ-8, deren Aktionen-Menüs dieselbe Komponente nutzen
+- **Volle Cross-Feature-Regression** (alle Spec-Dateien, Mobile Safari): 131/150 bestanden. Die 19 Fehlschläge liegen ausschließlich in `proj-1-app-shell.spec.ts`, `proj-3-player-gps-navigation.spec.ts`, `proj-4-player-modul-rendering.spec.ts` — durch `git log --name-only` bestätigt, dass keiner der PROJ-6/PROJ-9-Commits diese Dateien oder die zugehörigen Screens (`/`, `/play`-Navigation, Stations-Fortschritt) berührt hat. Stichprobenartig verifiziert (`proj-1-app-shell.spec.ts:6`): Ursache ist ein Locator-Strict-Mode-Konflikt (`getByText('Deine Quests')` matcht zwei Elemente), ein vorbestehender Testautorenfehler in einer unabhängigen Spec-Datei, keine Regression durch diese Änderung — separat als Follow-up vorgemerkt, nicht Teil dieses Features
 - **Unit-Tests:** 140/140 bestanden
 
 ### Responsive & Accessibility
 - 375px (Mobile): Erstellen-/Bearbeiten-Dialog vollständig nutzbar (scrollbar bei Bedarf), Header mit langem Quest-Namen truncated korrekt per Ellipsis, Zurück-Pfeil und Bearbeiten-Stift überlappen nicht — per Screenshot verifiziert
-- Touch-Targets: FAB 48px ✓, Karten-Aktionen-Button 44px ✓, Header-Bearbeiten-Button 44px ✓, Aktionen-Menü-Einträge 32px ✗ (BUG-5)
+- Touch-Targets: FAB 48px ✓, Karten-Aktionen-Button 44px ✓, Header-Bearbeiten-Button 44px ✓, Aktionen-Menü-Einträge 44px ✓ (BUG-5 behoben, per Screenshot re-verifiziert)
 - 768px/1440px: Nicht erneut manuell getestet in dieser Runde (Content-Container ist laut Design System auf `max-w-[430px]` begrenzt — Desktop-Verhalten ist unverändert zu vorherigen, bereits verifizierten Runden)
 
 ### Cross-Browser Testing
@@ -908,9 +910,12 @@ Keine — Umsetzung folgt dem Tech Design 1:1.
 - **Chromium:** Auf ausdrücklichen Nutzerwunsch für diese Runde ausgelassen ("lass chromium weg") — in früheren QA-Runden ohnehin wiederholt nicht installierbar in dieser Sandbox (bekanntes Umgebungsproblem, kein Produktrisiko)
 - **Firefox:** Nicht getestet (kein Playwright-Projekt dafür konfiguriert)
 
+### Re-Verifikation nach Bugfix (2026-08-29)
+Alle vier Menüpunkte (Sicherung, Veröffentlichen, Bearbeiten, Löschen) messen jetzt 44px Höhe (vorher 32px), per E2E-Regressionstest UND manuellem Playwright-Screenshot bestätigt. Keine visuellen Nebenwirkungen — größerer Zeilenabstand im Menü, sonst unverändert.
+
 ### Summary
 - **Acceptance Criteria:** 24/24 passed (alle ACs aus PROJ-6 und PROJ-9, siehe oben und PROJ-9-QA-Abschnitt)
-- **Bugs Found:** 1 total (0 Critical, 0 High, 0 Medium, 1 Low)
+- **Bugs Found:** 1 total (0 Critical, 0 High, 0 Medium, 1 Low) — **behoben**
 - **Security:** Pass — keine Schwachstellen gefunden, mehrere gezielte XSS-/Injection-/Tampering-Versuche liefen ins Leere
-- **Production Ready:** **YES** — kein Critical/High-Bug, der Low-Bug (Touch-Targets) blockiert laut Bug-Severity-Richtlinie kein Deployment, sollte aber zeitnah nachgezogen werden
-- **Recommendation:** Deploy-bereit. BUG-5 vor oder kurz nach dem nächsten Deploy beheben (kleiner, risikoarmer CSS-Fix)
+- **Production Ready:** **YES**
+- **Recommendation:** Deploy-bereit.

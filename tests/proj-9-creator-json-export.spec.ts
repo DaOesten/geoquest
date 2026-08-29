@@ -205,8 +205,8 @@ test.describe("PROJ-9: Creator — JSON-Export", () => {
     });
   });
 
-  test.describe("BUG: Touch-Targets", () => {
-    test("action menu items should meet the 44px touch-target minimum (PRD requirement) — currently failing", async ({ page }) => {
+  test.describe("Touch-Targets", () => {
+    test("BUG-5 regression: action menu items meet the 44px touch-target minimum", async ({ page }) => {
       await seedQuests(page, [draftQuestNoStations("d0d0d0d0-1111-4d0d-8d0d-d0d0d0d0d0d0", "TouchTest", "2020-01-01T00:00:00.000Z")]);
       await page.getByRole("button", { name: "Quest-Aktionen" }).click();
       for (const label of ["Sicherung", "Veröffentlichen", "Bearbeiten", "Löschen"]) {

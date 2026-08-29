@@ -1,6 +1,6 @@
 # PROJ-9: Creator — JSON-Export
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-08-28
 **Last Updated:** 2026-08-29
 
@@ -288,11 +288,12 @@ Keine — Umsetzung folgt dem Tech Design 1:1, inklusive der Entscheidung, `publ
 
 ### Bugs Found
 
-Siehe **BUG-5** in der PROJ-6-QA-Runde vom selben Datum (`features/PROJ-6-creator-quest-verwaltung.md`) — betrifft auch die beiden neuen PROJ-9-Menüpunkte ("Sicherung", "Veröffentlichen") im selben Aktionen-Menü. Nicht separat dupliziert, da Root Cause und Fix identisch mit PROJ-6s "Bearbeiten"/"Löschen" sind (gemeinsame `DropdownMenuItem`-Komponente).
+Siehe **BUG-5** in der PROJ-6-QA-Runde vom selben Datum (`features/PROJ-6-creator-quest-verwaltung.md`) — betraf auch die beiden neuen PROJ-9-Menüpunkte ("Sicherung", "Veröffentlichen") im selben Aktionen-Menü. Nicht separat dupliziert, da Root Cause und Fix identisch mit PROJ-6s "Bearbeiten"/"Löschen" sind (gemeinsame `DropdownMenuItem`-Komponente). **✅ FIXED** (siehe Re-Verifikation unten) — `min-h-11` zur gemeinsamen `DropdownMenuItem`-Klasse ergänzt, betrifft alle 4 Menüpunkte inkl. der beiden PROJ-9-eigenen.
 
 ### Regression Testing
-- **Neue permanente E2E-Suite** `tests/proj-9-creator-json-export.spec.ts`: 14/14 bestanden (13 grün + 1 bewusst fehlschlagender Regressionstest für BUG-5)
-- **Cross-Feature-Regression:** siehe PROJ-6-QA-Abschnitt (gemeinsam getestet) — 131/150 über die volle Suite, alle 19 Fehlschläge in unabhängigen, unberührten Specs (PROJ-1/3/4)
+- **Neue permanente E2E-Suite** `tests/proj-9-creator-json-export.spec.ts`: 14/14 bestanden, inkl. BUG-5-Regressionstest (jetzt grün, 44px statt vorher 32px)
+- **Cross-Feature-Regression nach BUG-5-Fix** (PROJ-6+7+8+9 gemeinsam): 88/88 bestanden — keine Nebenwirkung durch den globalen `DropdownMenuItem`-Fix
+- **Cross-Feature-Regression (volle Suite):** siehe PROJ-6-QA-Abschnitt (gemeinsam getestet) — 131/150 über die volle Suite, alle 19 Fehlschläge in unabhängigen, unberührten Specs (PROJ-1/3/4), separat als Follow-up vorgemerkt
 
 ### Cross-Browser Testing
 - **WebKit (Mobile Safari):** Vollständig getestet
@@ -300,10 +301,10 @@ Siehe **BUG-5** in der PROJ-6-QA-Runde vom selben Datum (`features/PROJ-6-creato
 
 ### Summary
 - **Acceptance Criteria:** 10/10 passed
-- **Bugs Found:** 0 neue (BUG-5 wird in PROJ-6 getrackt, betrifft aber auch diese Menüpunkte)
+- **Bugs Found:** 0 neue (BUG-5 wurde in PROJ-6 getrackt und behoben, betraf auch diese Menüpunkte)
 - **Security:** Pass
-- **Production Ready:** **YES** — kein Critical/High-Bug für PROJ-9 selbst
-- **Recommendation:** Deploy-bereit, gemeinsam mit PROJ-6 (BUG-5-Fix vor Deploy empfohlen, betrifft beide Features gemeinsam). Edge Case 9 im PROJ-9-Spec-Text sollte in einem `/refine` korrigiert werden (Dokumentationsfehler, keine Code-Änderung).
+- **Production Ready:** **YES**
+- **Recommendation:** Deploy-bereit, gemeinsam mit PROJ-6. Edge Case 9 im PROJ-9-Spec-Text sollte in einem künftigen `/refine` korrigiert werden (reiner Dokumentationsfehler, keine Code-Änderung nötig).
 
 ## Deployment
 _To be added by /deploy_
