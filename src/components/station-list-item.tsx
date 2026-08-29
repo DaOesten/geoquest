@@ -2,7 +2,7 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, MapPin, MapPinOff, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { GripVertical, MapPin, MapPinOff, MoreVertical, Pencil, Puzzle, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,32 +47,25 @@ export function StationListItem({ station, index, onEdit, onDelete, onEditModule
         <GripVertical className="w-5 h-5" />
       </button>
 
-      <button type="button" onClick={onEdit} className="flex flex-col gap-1 min-w-0 flex-1 text-left">
-        <span className="font-body text-sm font-medium text-foreground truncate">
+      <button type="button" onClick={onEditModules} className="flex flex-col gap-1 min-w-0 flex-1 text-left">
+        <span className="flex items-center gap-1.5 font-body text-sm font-medium text-foreground truncate">
+          {hasPosition ? (
+            <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-primary" />
+          ) : (
+            <MapPinOff className="w-3.5 h-3.5 flex-shrink-0 text-muted-foreground" />
+          )}
           {index + 1}. {station.name || "Unbenannte Station"}
         </span>
         <span className="flex items-center gap-1.5 font-body text-xs text-muted-foreground">
           {hasPosition ? (
             <>
-              <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-primary" />
+              <Puzzle className="w-3.5 h-3.5 flex-shrink-0" />
               {moduleLabel}
             </>
           ) : (
-            <>
-              <MapPinOff className="w-3.5 h-3.5 flex-shrink-0" />
-              Keine Position gesetzt
-            </>
+            "Keine Position gesetzt"
           )}
         </span>
-      </button>
-
-      <button
-        type="button"
-        onClick={onEditModules}
-        aria-label="Module bearbeiten"
-        className="flex-shrink-0 w-11 h-11 rounded-full grid place-items-center text-muted-foreground transition-colors duration-fast ease-gq hover:text-primary active:scale-[0.96]"
-      >
-        <Pencil className="w-5 h-5" />
       </button>
 
       <DropdownMenu>
@@ -86,7 +79,7 @@ export function StationListItem({ station, index, onEdit, onDelete, onEditModule
         <DropdownMenuContent align="end" data-theme="light">
           <DropdownMenuItem onSelect={onEdit}>
             <Pencil className="w-4 h-4" />
-            Bearbeiten
+            Station bearbeiten
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={onDelete} className="text-destructive focus:text-destructive">
             <Trash2 className="w-4 h-4" />

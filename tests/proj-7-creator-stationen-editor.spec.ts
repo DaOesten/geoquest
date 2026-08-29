@@ -137,7 +137,8 @@ test.describe("PROJ-7: Creator — Stationen-Editor", () => {
 
     test("BUG-2 regression: a non-step radius (e.g. from an import) keeps its value on save, and the first nudge moves up from its nearest step instead of collapsing to 10m", async ({ page }) => {
       await seedQuest(page, draftQuest(QUEST_ID, "Quest", [station(STATION_A_ID, "Imported", { radiusMeters: 37 })]));
-      await page.getByText("Imported").click();
+      await page.getByLabel("Stations-Aktionen").click();
+      await page.getByRole("menuitem", { name: "Station bearbeiten" }).click();
       await expect(page.getByText("37 m").last()).toBeVisible();
 
       // Saving without touching the slider must not silently change the value.
@@ -146,7 +147,8 @@ test.describe("PROJ-7: Creator — Stationen-Editor", () => {
       expect(savedUntouched).toBe(37);
 
       // Nudging once from 37 (nearest step: 25) must move up to 50, not down to 25.
-      await page.getByText("Imported").click();
+      await page.getByLabel("Stations-Aktionen").click();
+      await page.getByRole("menuitem", { name: "Station bearbeiten" }).click();
       const slider = page.getByRole("slider");
       await slider.focus();
       await page.keyboard.press("ArrowRight");
@@ -217,7 +219,8 @@ test.describe("PROJ-7: Creator — Stationen-Editor", () => {
   test.describe("Bearbeiten", () => {
     test("opens the sheet prefilled with the station's existing values", async ({ page }) => {
       await seedQuest(page, draftQuest(QUEST_ID, "Quest", [station(STATION_A_ID, "Der alte Brunnen", { radiusMeters: 50 })]));
-      await page.getByText("Der alte Brunnen").click();
+      await page.getByLabel("Stations-Aktionen").click();
+      await page.getByRole("menuitem", { name: "Station bearbeiten" }).click();
       await expect(page.getByLabel("Stationsname")).toHaveValue("Der alte Brunnen");
       await expect(page.getByText("50 m").last()).toBeVisible();
       await expect(page.locator(".leaflet-marker-icon")).toHaveCount(1);

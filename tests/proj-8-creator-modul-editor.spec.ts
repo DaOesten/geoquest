@@ -38,7 +38,7 @@ async function seedQuest(page: Page, quest: unknown, stationId: string) {
 
 test.describe("PROJ-8: Creator — Modul-Editor", () => {
   test.describe("Navigation zur Modul-Liste", () => {
-    test("tapping the pencil icon on a station navigates to its module list", async ({ page }) => {
+    test("tapping the station row navigates to its module list", async ({ page }) => {
       await page.goto("/create");
       await page.evaluate(
         ({ quest }) => {
@@ -48,7 +48,7 @@ test.describe("PROJ-8: Creator — Modul-Editor", () => {
         { quest: draftQuest(QUEST_ID, "Quest", [station(STATION_ID, "Der alte Brunnen")]) }
       );
       await page.goto(`/create/${QUEST_ID}`);
-      await page.getByRole("button", { name: "Module bearbeiten" }).click();
+      await page.getByRole("button", { name: /Der alte Brunnen/ }).click();
       await expect(page).toHaveURL(`/create/${QUEST_ID}/station/${STATION_ID}`);
       await expect(page.getByText("Der alte Brunnen")).toBeVisible();
     });

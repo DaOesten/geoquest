@@ -74,7 +74,8 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 - [x] ~~Antippen der Stationszeile öffnet das Stationsdetails-Sheet~~ → Ersetzt: Antippen der Stationszeile führt jetzt direkt zum Modul-Editor (PROJ-8), da das während des Quest-Aufbaus die häufigste Aktion ist
 - [ ] Angenommen eine Station existiert, wenn der Nutzer die Stationszeile antippt, dann navigiert die App zum Modul-Editor dieser Station (PROJ-8) — der separate Stift-Button für Module entfällt, die ganze Zeile ist der Einstiegspunkt
 - [ ] Angenommen eine Station existiert, wenn der Nutzer im Drei-Punkte-Menü der Zeile "Station bearbeiten" auswählt, dann öffnet sich das Sheet mit allen vorhandenen Werten (Name, Position, Radius) vorausgefüllt
-- [ ] Angenommen die Stationszeile wird angezeigt, wenn sie gerendert wird, dann zeigt die Meta-Zeile neben dem Positions-Status ein Puzzle-Icon mit der Modulanzahl als visuellen Hinweis, dass die Zeile zum Modul-Editor führt
+- [ ] Angenommen die Stationszeile wird angezeigt, wenn sie gerendert wird, dann zeigt die Meta-Zeile ein Puzzle-Icon mit der Modulanzahl als visuellen Hinweis, dass die Zeile zum Modul-Editor führt
+- [ ] Angenommen eine Station hat eine Position, wenn die Zeile gerendert wird, dann steht das MapPin-Icon direkt vor der Nummerierung im Titel (z.B. "📍 1. Marktplatz"), nicht mehr in der Meta-Zeile
 
 **Löschen:**
 - [ ] Angenommen eine Station existiert, wenn der Nutzer die Löschen-Aktion auswählt, dann erscheint ein Bestätigungsdialog ("Station wirklich löschen? Das kann nicht rückgängig gemacht werden.")
@@ -110,8 +111,8 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 - [x] Soll der Radius-Regler in festen Schritten oder stufenlos laufen? → Gelöst in `/architecture`: feste Stufen 10/25/50/100m
 - [x] Wie genau sieht der "Deutschland-Default-Zoom" aus? → Gelöst in `/architecture`: Kartenmittelpunkt 51.1657° N, 10.4515° O (geographische Mitte Deutschlands), Zoomstufe 6
 
-**Neu seit Refine 2026-08-30 — noch nicht implementiert:**
-- [ ] `station-list-item.tsx` muss umgebaut werden: Zeilen-Tap → `onEditModules` (statt `onEdit`), separater Pencil-Button entfällt, ⋮-Menü bekommt "Station bearbeiten" (→ `onEdit`) zusätzlich zu "Löschen", Meta-Zeile bekommt Puzzle-Icon + Modulanzahl. Betrifft nur `/create/[id]`, keine Datenmodell-Änderung.
+**Neu seit Refine 2026-08-30 — implementiert (siehe Implementation Notes unten):**
+- [x] `station-list-item.tsx` umgebaut: Zeilen-Tap → `onEditModules` (statt `onEdit`), separater Pencil-Button entfällt, ⋮-Menü bekommt "Station bearbeiten" (→ `onEdit`) zusätzlich zu "Löschen", Meta-Zeile bekommt Puzzle-Icon + Modulanzahl statt MapPin-Icon, MapPin/MapPinOff-Icon wandert vor die Nummerierung im Titel.
 
 ## Decision Log
 
@@ -160,8 +161,8 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 ├── Stationsliste (sortierbar)
 │   └── StationListItem (neu, pro Station) — sortierbarer Eintrag via @dnd-kit
 │       ├── Drag-Griff (Icon, min. 44px Touch-Target)
-│       ├── Name + Radius-Anzeige
-│       ├── Positions-Status ("Position gesetzt" / "Keine Position gesetzt") + Puzzle-Icon mit Modulanzahl (2026-08-30)
+│       ├── Name + Radius-Anzeige, Positions-Icon (MapPin/MapPinOff) steht vor der Nummerierung im Titel (2026-08-30)
+│       ├── Meta-Zeile: Puzzle-Icon mit Modulanzahl bzw. "Keine Position gesetzt"-Text (2026-08-30)
 │       ├── Ganze Zeile antippbar → Modul-Editor (PROJ-8) — häufigste Aktion beim Quest-Aufbau (2026-08-30)
 │       └── Aktionen-Menü (⋮): "Station bearbeiten" (Name/Position/Radius, Pencil-Icon) / "Löschen" (2026-08-30, ersetzt den separaten Pencil-Button)
 ├── "Station hinzufügen"-Button (FAB, analog zum PROJ-6-Muster)
@@ -445,3 +446,21 @@ Zwei nutzergetriebene Styling-Änderungen ohne neue Acceptance Criteria (siehe P
 Stationsliste (`create/[id]/page.tsx`) übernimmt das Eyebrow/Titel/Meta-Zeile/Divider-Muster der Play-Mode-Stationsliste (Eyebrow „Stationen", Meta-Zeile „X Ziele · Y km"), jetzt dokumentiert in `docs/design-system.md` → "List-Header-Pattern". Reine visuelle Änderung, keine Acceptance-Criteria betroffen.
 
 **Verifikation:** `npm run build` ✓ · `npm test` ✓ (151/151) · `npm run lint` ✓ (0 Fehler, 6 vorbestehende Warnungen). E2E nicht ausgeführt (Playwright-Chromium fehlte lokal, Neuinstallation vom Nutzer abgelehnt) — stattdessen `proj-1`/`proj-7`-Spec-Dateien manuell gegen den Diff geprüft, keine betroffenen Assertions gefunden. Details siehe konsolidierter QA-Eintrag in PROJ-6.
+
+---
+
+## Implementation Notes — Bearbeiten-Einstiege getrennt & Positions-Icon verschoben (2026-08-30)
+
+Setzt den Refine vom 2026-08-30 um (siehe Decision Log): `station-list-item.tsx` geändert.
+
+**Vorher:** Zeilen-Tap → Stationsdetails-Sheet (`onEdit`); separater Pencil-Button daneben → Modul-Editor (`onEditModules`); Meta-Zeile zeigte MapPin-Icon vor der Modulanzahl.
+
+**Nachher:**
+- Ganze Zeile antippbar → `onEditModules` (Modul-Editor, PROJ-8) — häufigste Aktion beim Quest-Aufbau
+- Separater Pencil-Button entfernt; ⋮-Menü hat jetzt zwei Einträge: "Station bearbeiten" (→ `onEdit`, öffnet das Stationsdetails-Sheet aus PROJ-7) und "Löschen"
+- MapPin/MapPinOff-Icon steht jetzt vor der Nummerierung im Titel (`📍 1. Marktplatz`), nicht mehr in der Meta-Zeile
+- Meta-Zeile zeigt jetzt ein Puzzle-Icon (`lucide-react`) statt MapPin vor der Modulanzahl; bei fehlender Position weiterhin reiner Text "Keine Position gesetzt"
+
+**Test-Anpassungen:** `tests/proj-7-creator-stationen-editor.spec.ts` und `tests/proj-8-creator-modul-editor.spec.ts` — alle Stellen, die vorher per `getByText(stationName).click()` oder `getByRole("button", { name: "Module bearbeiten" })` das Stationsdetails-Sheet öffneten, nutzen jetzt das ⋮-Menü (`"Stations-Aktionen"` → `"Station bearbeiten"`); der PROJ-8-Navigationstest klickt jetzt die Zeile selbst.
+
+**Verifikation:** `npm run build` ✓ · `npm run lint` ✓ (0 Fehler, 6 vorbestehende Warnungen) · `npm test` ✓ (151/151) · E2E: volle PROJ-7- (20/20) und PROJ-8-Suite (29/29) grün auf „Mobile Safari" (Chromium-Projekt in dieser Umgebung weiterhin ohne lokal installiertes Browser-Binary, bekanntes vorbestehendes Sandbox-Problem, siehe frühere QA-Runden).
