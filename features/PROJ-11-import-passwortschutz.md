@@ -1,6 +1,6 @@
 # PROJ-11: Import — Passwortschutz
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-08-29
 **Last Updated:** 2026-08-29
 
@@ -109,12 +109,96 @@ _Keine offenen Fragen._
 <!-- Added by /architecture -->
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Passwort-Hash wird Teil des Quest-Datenmodells (`questSchema`), reist also mit der exportierten/importierten Datei mit | Der Hash muss auf jedem Gerät verfügbar sein, auf dem die Datei landet, damit dort geprüft werden kann — anders als `published`/`lastExported` (PROJ-6/9), die bewusst lokal bleiben, weil sie reinen Gerätezustand beschreiben | 2026-08-29 |
+| "Hier erstellt"- und "hier entsperrt"-Markierung bleiben rein lokal (localStorage, pro Gerät), analog zu `published`/`lastExported` | Beide Merkmale beschreiben Gerätezustand, keine Eigenschaft der Quest selbst — folgen exakt dem bereits etablierten PROJ-6/9-Muster für genau diese Art von Unterscheidung | 2026-08-29 |
+| Client-seitiges Hashing über die im Browser eingebaute Web Crypto API, kein zusätzliches Package | Kein Backend verfügbar (PRD-Vorgabe) — Hashing muss vollständig im Browser laufen; die Browser-eigene Funktion reicht für das hier benötigte Bedrohungsmodell (Abschreckung, keine Hochsicherheit), ein zusätzliches Passwort-Hashing-Package wäre unverhältnismäßig | 2026-08-29 |
+| Eine einzige, gemeinsame Zugriffsprüf-Funktion, die beiden bestehenden Creator-Einstiegspunkten (`/create/[id]` und `/create/[id]/station/[stationId]`) vorgeschaltet wird | Verhindert, dass die beiden Seiten unabhängig voneinander geprüft werden und dabei auseinanderdriften oder eine Lücke für Deep-Links entsteht | 2026-08-29 |
+| Kein neuer Dialog — das Passwort-Feld wird in den bestehenden `QuestFormDialog` (PROJ-6) integriert | Konsistent mit dem bereits etablierten "Quest bearbeiten"-Flow, kein neues UI-Muster nötig | 2026-08-29 |
+| Kein neues Backend/keine neue Datenbank | Konsistent mit der PRD-Vorgabe "Kein Backend" | 2026-08-29 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+### Komponenten-Struktur
+
+```
+"Quest bearbeiten"-Dialog (bestehend, PROJ-6 — QuestFormDialog)
+└── [NEU] Passwort-Feld mit Hinweistext
+        ├── Leer gelassen → kein Schutz (unverändertes heutiges Verhalten)
+        ├── Ausgefüllt (≥ 4 Zeichen) beim Speichern → Schutz wird aktiv, wirkt ab der nächsten Sicherung/Veröffentlichung
+        ├── Bereits gesetzt, Dialog wird erneut geöffnet → Hinweis "Passwort ist gesetzt" statt Klartext-Anzeige, mit Möglichkeit zum Ändern oder Entfernen
+        └── Geleert und gespeichert → Schutz wird vollständig entfernt
+
+/create/[id] (Stationsliste — bestehend, PROJ-7)
+└── [NEU] Zugriffsprüfung, bevor die Stationsliste gerendert wird
+        ├── Diese Quest wurde in diesem Browser selbst erstellt, ODER hat kein Passwort, ODER wurde hier bereits entsperrt
+        │       → Stationsliste wird normal angezeigt (unverändert)
+        └── Diese Quest ist importiert, hat ein Passwort, und wurde in diesem Browser noch nie entsperrt
+                → NEU: Passwort-Abfrage-Screen statt Stationsliste
+
+/create/[id]/station/[stationId] (Modul-Editor — bestehend, PROJ-8)
+└── [NEU] Dieselbe Zugriffsprüfung wie oben (schützt auch gegen direkte Deep-Links)
+```
+
+Kerngedanke: Es entsteht **keine neue Route**. Eine einzige, gemeinsame Zugriffsprüfung wird den beiden bestehenden Einstiegspunkten in den Creator-Bereich vorgeschaltet, bevor diese ihre normalen Inhalte zeigen. Der Play-Modus (`/play`, `/play/[id]`) wird von dieser Prüfung überhaupt nicht berührt.
+
+### Daten-Architektur (plain language)
+
+**Neu, Teil der geteilten Quest-Datei** (reist mit, wenn die Datei exportiert/importiert wird):
+```
+Passwort-Hash (optional) — ein irreversibler digitaler Fingerabdruck des
+Passworts. Niemals das Passwort selbst im Klartext.
+```
+
+**Neu, ausschließlich lokal im jeweiligen Browser gespeichert** (reist NICHT mit der Datei mit, wird nie exportiert):
+```
+Pro Quest, pro Gerät gemerkt:
+- "Wurde diese Quest in diesem Browser selbst angelegt?" (ja/nein)
+- "Wurde das richtige Passwort für diese Quest in diesem Browser schon einmal
+   erfolgreich eingegeben?" (ja/nein)
+```
+
+Dieses Muster ist im Projekt bereits etabliert: `published` und `lastExported` (PROJ-6/PROJ-9) sind exakt auf dieselbe Art lokale, gerätespezifische Zustände, die bewusst nicht Teil der exportierten Datei sind. Die neuen Zugriffs-Merkmale folgen demselben Prinzip.
+
+**Zugriffs-Logik (zusammengefasst):**
+```
+Creator-Zugriff auf eine Quest ist erlaubt, wenn IRGENDEINE der folgenden Bedingungen zutrifft:
+  1. Die Quest hat kein Passwort gesetzt
+  2. Dieser Browser hat die Quest selbst erstellt ("hier erstellt"-Merkmal)
+  3. Dieser Browser hat das Passwort für diese Quest bereits einmal korrekt eingegeben ("hier entsperrt"-Merkmal)
+
+Trifft keine der drei Bedingungen zu → Passwort-Abfrage wird angezeigt.
+```
+
+### Verhalten der neuen/geänderten Bausteine
+
+| Baustein | Verhalten |
+|----------|-----------|
+| Passwort-Feld im "Quest bearbeiten"-Dialog | Optionales Textfeld mit Hinweis, wofür es dient. Mindestens 4 Zeichen wenn ausgefüllt. Zeigt bei bestehendem Passwort nur einen Status-Hinweis, nie den Klartext |
+| "Hier erstellt"-Merkmal | Wird automatisch gesetzt, sobald eine Quest über "Neue Quest" in diesem Browser angelegt wird — der Ersteller selbst tut dafür nichts Zusätzliches |
+| "Hier entsperrt"-Merkmal | Wird automatisch gesetzt, sobald ein Nutzer auf einem beliebigen Gerät das korrekte Passwort einmal erfolgreich eingegeben hat |
+| Passwort-Abfrage-Screen | Erscheint anstelle der Stationsliste bzw. des Modul-Editors, wenn keine der drei Zugriffsbedingungen erfüllt ist. Zeigt bei falscher Eingabe eine Fehlermeldung, erlaubt unbegrenzte weitere Versuche |
+| Sicherung/Veröffentlichen (PROJ-9) | Unverändert in ihrem Ablauf — der Passwort-Hash ist einfach ein weiteres Feld der Quest, das automatisch mitexportiert wird, kein zusätzlicher Schritt im Export-Flow |
+
+### Wiederverwendete vs. neue Bausteine
+
+| Baustein | Status |
+|----------|--------|
+| `QuestFormDialog` (PROJ-6) | 🔧 Geändert — zusätzliches optionales Passwort-Feld |
+| `gq_quests`-Storage (Laden/Speichern) | ♻️ Wiederverwendet aus PROJ-2/6/7/8, Passwort-Hash ist einfach ein weiteres Quest-Feld |
+| Export-Flow (PROJ-9, "Sicherung"/"Veröffentlichen") | ♻️ Wiederverwendet, unverändert — kein neuer Schritt, der Hash ist bereits Teil des Quest-Objekts |
+| Import-Validierung (PROJ-2/`quest-import.ts`) | 🔧 Geändert — akzeptiert und übernimmt das neue optionale Hash-Feld |
+| `/create/[id]`-Seite (PROJ-7) | 🔧 Geändert — Zugriffsprüfung vorgeschaltet |
+| `/create/[id]/station/[stationId]`-Seite (PROJ-8) | 🔧 Geändert — dieselbe Zugriffsprüfung vorgeschaltet |
+| Gemeinsame Zugriffsprüf-Logik | 🆕 Neu |
+| Passwort-Abfrage-Screen | 🆕 Neu |
+| Lokale Speicherung der beiden Zugriffs-Merkmale | 🆕 Neu |
+
+### Dependencies
+
+Kein neues Package zwingend erforderlich. Das Hashing kann über eine bereits im Browser eingebaute Funktion (Web Crypto API) erfolgen — passend für das hier vorliegende Bedrohungsmodell (Abschreckung, keine Hochsicherheit), ohne eine zusätzliche externe Bibliothek einzuführen.
 
 ## QA Test Results
 _To be added by /qa_
