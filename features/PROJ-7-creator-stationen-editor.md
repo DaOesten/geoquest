@@ -2,7 +2,7 @@
 
 ## Status: Deployed
 **Created:** 2026-08-28
-**Last Updated:** 2026-08-28
+**Last Updated:** 2026-08-30
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — für Routing und UI-Rahmen
@@ -21,6 +21,7 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 4. Als Ersteller möchte ich einer Station einen Namen und einen Ankunftsradius geben können, damit Spieler wissen, wo sie sind, und die Ankunftserkennung zum Ort passt.
 5. Als Ersteller möchte ich die Reihenfolge meiner Stationen per Drag & Drop ändern können, damit ich die Route anpassen kann, ohne Stationen neu anzulegen.
 6. Als Ersteller möchte ich eine Station löschen können, damit ich Fehler oder nicht mehr benötigte Punkte entfernen kann.
+9. Als Ersteller möchte ich in der Stationsliste klar unterscheiden können, ob ich gerade die Station selbst (Name/Position/Radius) oder ihre Inhalte (Module) bearbeite, damit ich nicht versehentlich im falschen Dialog lande (siehe Decision Log 2026-08-30).
 7. Als Ersteller möchte ich beim Bearbeiten einer Station sehen, wo meine anderen Stationen liegen, damit ich einschätzen kann, ob die Route sinnvoll ist (z.B. nicht zwei Stationen zu nah beieinander).
 8. Als Ersteller möchte ich meinen Zwischenstand beim Bearbeiten einer Station nicht verlieren, auch wenn ich noch keine Position gesetzt habe, damit ich in Ruhe weiterarbeiten kann.
 
@@ -69,8 +70,11 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 - [ ] Angenommen die Stationsliste hat mindestens 2 Stationen, wenn der Nutzer eine Station per Drag an eine andere Position zieht, dann wird die neue Reihenfolge sofort übernommen und gespeichert
 - [ ] Angenommen eine Umsortierung wurde vorgenommen, wenn der Nutzer die Seite neu lädt, dann bleibt die neue Reihenfolge erhalten
 
-**Bearbeiten:**
-- [ ] Angenommen eine Station existiert, wenn der Nutzer sie in der Liste antippt, dann öffnet sich das Sheet mit allen vorhandenen Werten (Name, Position, Radius) vorausgefüllt
+**Bearbeiten (Einstiegspunkte überarbeitet 2026-08-30 — siehe Decision Log):**
+- [x] ~~Antippen der Stationszeile öffnet das Stationsdetails-Sheet~~ → Ersetzt: Antippen der Stationszeile führt jetzt direkt zum Modul-Editor (PROJ-8), da das während des Quest-Aufbaus die häufigste Aktion ist
+- [ ] Angenommen eine Station existiert, wenn der Nutzer die Stationszeile antippt, dann navigiert die App zum Modul-Editor dieser Station (PROJ-8) — der separate Stift-Button für Module entfällt, die ganze Zeile ist der Einstiegspunkt
+- [ ] Angenommen eine Station existiert, wenn der Nutzer im Drei-Punkte-Menü der Zeile "Station bearbeiten" auswählt, dann öffnet sich das Sheet mit allen vorhandenen Werten (Name, Position, Radius) vorausgefüllt
+- [ ] Angenommen die Stationszeile wird angezeigt, wenn sie gerendert wird, dann zeigt die Meta-Zeile neben dem Positions-Status ein Puzzle-Icon mit der Modulanzahl als visuellen Hinweis, dass die Zeile zum Modul-Editor führt
 
 **Löschen:**
 - [ ] Angenommen eine Station existiert, wenn der Nutzer die Löschen-Aktion auswählt, dann erscheint ein Bestätigungsdialog ("Station wirklich löschen? Das kann nicht rückgängig gemacht werden.")
@@ -106,6 +110,9 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 - [x] Soll der Radius-Regler in festen Schritten oder stufenlos laufen? → Gelöst in `/architecture`: feste Stufen 10/25/50/100m
 - [x] Wie genau sieht der "Deutschland-Default-Zoom" aus? → Gelöst in `/architecture`: Kartenmittelpunkt 51.1657° N, 10.4515° O (geographische Mitte Deutschlands), Zoomstufe 6
 
+**Neu seit Refine 2026-08-30 — noch nicht implementiert:**
+- [ ] `station-list-item.tsx` muss umgebaut werden: Zeilen-Tap → `onEditModules` (statt `onEdit`), separater Pencil-Button entfällt, ⋮-Menü bekommt "Station bearbeiten" (→ `onEdit`) zusätzlich zu "Löschen", Meta-Zeile bekommt Puzzle-Icon + Modulanzahl. Betrifft nur `/create/[id]`, keine Datenmodell-Änderung.
+
 ## Decision Log
 
 ### Product Decisions
@@ -120,6 +127,8 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 | Karte zeigt andere Stationen der Quest als Kontext-Pins | Hilft dem Ersteller einzuschätzen, ob die Route sinnvoll ist (z.B. Stationen zu nah beieinander), ohne dass er zwischen Stationen hin- und herwechseln muss | 2026-08-28 |
 | Kein Modul-Platzhalter-UI in PROJ-7 | Saubere Trennung von PROJ-8, analog zum bereits etablierten PROJ-6/PROJ-7-Split — vermeidet halbfertige UI-Elemente ohne Funktion | 2026-08-28 |
 | Keine UI-Sperre bei Erreichen von 20 Stationen | Die Schema-Grenze aus PROJ-2 bleibt die einzige durchgesetzte Regel (greift bei Import/Export); eine zusätzliche UI-Sperre wäre doppelte Logik ohne klaren MVP-Nutzen | 2026-08-28 |
+| Stationszeile antippen führt zu Modulen (PROJ-8), nicht mehr zu Stationsdetails; Stationsdetails wandern ins ⋮-Menü ("Station bearbeiten") | Nutzer-Feedback nach Live-Nutzung: Mit Quest-Bearbeiten (Header), Stationsdetails (Sheet) und Modul-Editor gab es zu viele gleich aussehende "Bearbeiten"-Einstiege auf einer Seite. Modul-Bearbeitung ist beim Quest-Aufbau die mit Abstand häufigste Aktion — verdient den einfachsten Zugriff (ganze Zeile antippbar). Stationsdetails (Position/Radius/Name) werden seltener geändert, nachdem eine Station einmal angelegt ist — passt gut ins sekundäre ⋮-Menü, wo auch "Löschen" bereits sitzt | 2026-08-30 |
+| Puzzle-Icon + Modulanzahl in der Meta-Zeile statt separatem Pencil-Button | Visueller Hinweis, dass die Zeile zu Modulen führt, ohne einen zusätzlichen Tap-Ziel-Button zu brauchen; Pencil-Icon ist jetzt ausschließlich im ⋮-Menü bei "Station bearbeiten" reserviert, keine doppelte Icon-Bedeutung mehr | 2026-08-30 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -152,9 +161,9 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 │   └── StationListItem (neu, pro Station) — sortierbarer Eintrag via @dnd-kit
 │       ├── Drag-Griff (Icon, min. 44px Touch-Target)
 │       ├── Name + Radius-Anzeige
-│       ├── Positions-Status ("Position gesetzt" / "Keine Position gesetzt")
-│       ├── "Module bearbeiten"-Button (führt zu PROJ-8, aktuell ohne Funktion)
-│       └── Aktionen-Menü: "Bearbeiten" / "Löschen"
+│       ├── Positions-Status ("Position gesetzt" / "Keine Position gesetzt") + Puzzle-Icon mit Modulanzahl (2026-08-30)
+│       ├── Ganze Zeile antippbar → Modul-Editor (PROJ-8) — häufigste Aktion beim Quest-Aufbau (2026-08-30)
+│       └── Aktionen-Menü (⋮): "Station bearbeiten" (Name/Position/Radius, Pencil-Icon) / "Löschen" (2026-08-30, ersetzt den separaten Pencil-Button)
 ├── "Station hinzufügen"-Button (FAB, analog zum PROJ-6-Muster)
 ├── StationEditorSheet (neu, shadcn Sheet) — für Anlegen UND Bearbeiten
 │   ├── Namensfeld
