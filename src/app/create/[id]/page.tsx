@@ -21,6 +21,7 @@ import { StationListItem } from "@/components/station-list-item";
 import { StationEditorSheet } from "@/components/station-editor-sheet";
 import { QuestFormDialog, type QuestFormValues } from "@/components/quest-form-dialog";
 import { Button } from "@/components/ui/button";
+import { haversine } from "@/lib/geo-utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,6 +38,17 @@ import { hasCreatorAccess } from "@/lib/quest-access";
 
 interface CreateQuestPageProps {
   params: Promise<{ id: string }>;
+}
+
+function totalRouteKm(stations: { lat?: number; lng?: number }[]): number {
+  let meters = 0;
+  for (let i = 1; i < stations.length; i++) {
+    const prev = stations[i - 1];
+    const curr = stations[i];
+    if (prev.lat === undefined || prev.lng === undefined || curr.lat === undefined || curr.lng === undefined) continue;
+    meters += haversine(prev.lat, prev.lng, curr.lat, curr.lng);
+  }
+  return meters / 1000;
 }
 
 export default function CreateQuestPage({ params }: CreateQuestPageProps) {
@@ -57,6 +69,7 @@ export default function CreateQuestPage({ params }: CreateQuestPageProps) {
   );
 
   const stations = useMemo(() => quest?.stations ?? [], [quest]);
+  const routeKm = useMemo(() => totalRouteKm(stations), [stations]);
 
   const handleAddStation = useCallback(() => {
     setEditorStation(null);
@@ -140,7 +153,6 @@ export default function CreateQuestPage({ params }: CreateQuestPageProps) {
       <CreatorBackdrop />
       <div className="relative" key={unlockTick}>
         <AppHeader
-          title={quest.name}
           backHref="/create"
           variant="light"
           transparent
@@ -157,6 +169,25 @@ export default function CreateQuestPage({ params }: CreateQuestPageProps) {
             )
           }
         />
+
+        <div className="px-5 pt-3">
+          <span className="text-tech text-[10px] text-gq-teal">Stationen</span>
+          <h1 className="font-display italic text-[clamp(1.8rem,8vw,2.4rem)] leading-[0.96] uppercase text-foreground mt-1">
+            {quest.name}
+          </h1>
+          <div className="flex items-center gap-2 mt-2.5 text-tech text-[10px] text-gq-grey-dark">
+            <span>
+              {stations.length} {stations.length === 1 ? "Ziel" : "Ziele"}
+            </span>
+            {routeKm > 0 && (
+              <>
+                <span>·</span>
+                <span>{routeKm.toFixed(1).replace(".", ",")} km</span>
+              </>
+            )}
+          </div>
+          <div className="h-px bg-border mt-4" />
+        </div>
 
         <CreatorAccessGate quest={quest} onUnlocked={() => setUnlockTick((t) => t + 1)}>
           {stations.length === 0 ? (

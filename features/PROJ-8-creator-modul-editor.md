@@ -428,3 +428,11 @@ Zwei nutzergetriebene Styling-Änderungen ohne neue Acceptance Criteria (siehe P
 **Kein neuer Feature-Spec-Eintrag:** Reine visuelle Anpassung an ein bereits deploytes, QA-freigegebenes Feature.
 
 **Deployment:** Mit Commits `d5ce893`/`d7565a1`/`85c6300` nach `main` gepusht und live verifiziert — siehe "Deployment — Creator-Redesign & Hover-Vereinheitlichung" in PROJ-6 für Details (kein separater Git-Tag, betrifft PROJ-6/7/8 gemeinsam).
+
+---
+
+## QA Test Results — List-Header-Pattern (2026-08-29)
+
+Modul-Liste (`create/[id]/station/[stationId]/page.tsx`) übernimmt das Eyebrow/Titel/Meta-Zeile/Divider-Muster (Eyebrow „Stationsinhalte", Meta-Zeile „X Module"), jetzt dokumentiert in `docs/design-system.md` → "List-Header-Pattern". Locked-State zeigt weiterhin „Geschützte Station" statt Stationsname (unverändert aus PROJ-11), Modulanzahl bleibt sichtbar — keine neue Informationslücke, da ohne Backend ohnehin alles im Browser-`localStorage` liegt.
+
+**Verifikation:** `npm run build` ✓ · `npm test` ✓ (151/151) · `npm run lint` ✓ (0 Fehler, 6 vorbestehende Warnungen). E2E nicht ausgeführt (Playwright-Chromium fehlte lokal, Neuinstallation vom Nutzer abgelehnt) — stattdessen `proj-1`/`proj-3`/`proj-5`/`proj-8`-Spec-Dateien manuell gegen den Diff geprüft: `proj-8:58` (`Zurück`-Link) bleibt gültig, `proj-3:228`/`proj-5:121` betreffen andere, unberührte Komponenten. Details siehe konsolidierter QA-Eintrag in PROJ-6.

@@ -945,3 +945,27 @@ Browser-Check (Playwright/WebKit) direkt gegen `https://geoquesty.vercel.app/cre
 - Sicherheits-Header (`strict-transport-security`) weiterhin aktiv, unverändert aus vorherigem Deploy (kein `next.config`-Eingriff in diesem Feature)
 
 Testdaten ausschließlich im Browser-`localStorage` angelegt, kein serverseitiger Cleanup nötig.
+
+---
+
+## QA Test Results — List-Header-Pattern (2026-08-29)
+
+**Tested:** 2026-08-29
+**Tester:** QA Engineer (AI)
+**Scope:** Reine UI-Konsistenz-Änderung — Stationsliste (`create/[id]/page.tsx`) und Modul-Liste (`create/[id]/station/[stationId]/page.tsx`) übernehmen das Eyebrow/Titel/Meta-Zeile/Divider-Muster aus der Play-Mode-Stationsliste (jetzt dokumentiert in `docs/design-system.md` → "List-Header-Pattern"). `app-header.tsx` (shared) bekam zusätzlich eine optionale `onBack`-Prop für Screens mit In-Memory-Navigation (Player-Modul-Ansicht), ohne bestehendes `backHref`-Verhalten zu ändern.
+
+**Verifikation:** `npm run build` ✓ · `npm test` ✓ (151/151) · `npm run lint` ✓ (0 Fehler, 6 vorbestehende `<img>`-Warnungen) · volle `npx playwright test`-Suite ✓ **165/165** (Chromium + Mobile Safari, nachgeholt vor dem Deploy, siehe Update unten).
+
+**Update (2026-08-29, vor Deploy):** Nutzer hat Playwright-Chromium lokal installiert; die volle E2E-Suite wurde daraufhin tatsächlich ausgeführt (nicht nur statisch geprüft) — 165/165 grün, inkl. aller 6 gefixten `proj-1-app-shell.spec.ts`-Tests. Der unten dokumentierte Vorbehalt ("E2E nicht ausgeführt") ist damit aufgelöst.
+
+**Statische Regressionsprüfung gegen bestehende E2E-Specs:**
+- Kein Test greift auf `AppHeader`'s `title`-Prop zu (die jetzt aus Stationsliste/Modul-Liste entfernt wurde) — keine Assertion bricht dadurch.
+- `proj-8-creator-modul-editor.spec.ts:58` (`getByRole("link", { name: "Zurück" })`) bleibt gültig — dieser Screen nutzt weiterhin `backHref` (Link), nicht das neue `onBack` (Button).
+- `proj-3-player-gps-navigation.spec.ts:228` (`getByLabel("Zurück zur Stationsliste")`) betrifft `navigation-screen.tsx`, nicht das geänderte `station-modules.tsx` — unberührt.
+- `proj-5-player-fortschritt-abschluss.spec.ts:121` (`getByRole("heading", { name: ... })`) betrifft `outro-screen.tsx` — unberührt.
+- **Vorbestehender Fund, behoben (2026-08-29):** `proj-1-app-shell.spec.ts` navigierte an 6 Stellen zu `/play/test-quest`, `/create/test-quest`, `/play/abc` bzw. `/create/xyz`, ohne je eine passende Quest in `localStorage` zu seeden. Seit Commit `8f02dbc` (vor dieser Session, unabhängig von den List-Header-Änderungen) liefert `/play/[id]` bzw. `/create/[id]` für eine nicht existierende Quest-ID korrekt `notFound()` (404) statt eines 500ers — dadurch fehlte in diesen 6 Tests der erwartete Header/das `data-theme`-Attribut, da die 404-Seite kein Theme setzt. Kein Feature-Bug (PROJ-10 "Vorschau/Testmodus" ist verworfen und nicht betroffen), sondern veraltete Testerwartung gegen korrigiertes 404-Verhalten. **Fix:** Alle 6 Tests seeden jetzt vorab eine minimale valide Quest in `gq_quests` (neuer `seedTestQuest()`-Helper für die vier `test-quest`-Fälle, inline für die zwei Edge-Case-Tests mit eigener ID `abc`/`xyz`), analog zum bereits etablierten `seedQuest`-Muster in `proj-7`/`proj-8`. `getQuestById`/`normalizeQuest` verlangt nur ein `id`-Feld als Pflichtangabe, der Rest hat Fallbacks — verifiziert durch Lesen von `quest-storage.ts`. `npx tsc --noEmit` und `npm test` (151/151) bestätigen keine Syntax-/Typfehler; tatsächliche Playwright-Ausführung wurde vom Nutzer für diese Session abgelehnt (Chromium-Install), daher nur statisch verifiziert, nicht live gegen den Browser bestätigt.
+
+**Locked-State-Check (PROJ-11-Interaktion):** Der neue Meta-Zeilen-Block auf der Modul-Liste zeigt die Modulanzahl auch im gesperrten Zustand — keine neue Informationslücke, da ohne Backend die komplette Quest inkl. Module ohnehin unverschlüsselt im Browser-`localStorage` liegt; `hasCreatorAccess` ist rein UI-Gate, kein Zugriffsschutz auf Daten. Stationsname bleibt korrekt hinter „Geschützte Station" verborgen (unverändertes Verhalten aus PROJ-11).
+
+**Bugs Found:** 0 neue (1 vorbestehender, s.o., in dieser Session behoben und live gegen Playwright verifiziert — 165/165 grün)
+**Production Ready:** YES — keine offenen Vorbehalte.

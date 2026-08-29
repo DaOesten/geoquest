@@ -74,8 +74,23 @@ Screen-weite Atmosphäre-Layer, kein Component im engeren Sinn — vor dem Bauen
 
 | Element | Beschreibung | Implementierung |
 |---------|-------------|------------------|
-| **Partikel-Backdrop** | Faines Teal-Grid + weicher Teal-Glow oben rechts + schwebende Teal/Lime-Punkte (`gq-float`-Keyframe, randomisierte Positionen/Timing) | `src/components/quest-list-backdrop.tsx` — bisher genutzt auf Quest-Liste (`/play`) und Stationsliste (`station-list.tsx`). Per `dynamic(..., { ssr: false })` einbinden, da Positionen randomisiert sind (SSR/Hydration-Diff sonst) |
+| **Partikel-Backdrop** | Faines Teal-Grid + weicher Teal-Glow oben rechts + schwebende Teal/Lime-Punkte (`gq-float`-Keyframe, randomisierte Positionen/Timing) | `src/components/quest-list-backdrop.tsx` — genutzt auf jeder Listen-Screen: Quest-Liste (`/play`), Stationsliste (`station-list.tsx`), Modul-Ansicht Player (`station-modules.tsx`). Per `dynamic(..., { ssr: false })` einbinden, da Positionen randomisiert sind (SSR/Hydration-Diff sonst) |
 | **Animierte Routenlinie** | Gestrichelte Lime-Linie (`gq-dash`-Keyframe), verbindet zwei Punkte als geschwungener S-Kurven-Pfad statt gerader/glatter Bezier — Motiv aus `Station_Screen.html` | Aktuell nur in `station-list.tsx` (`wavyPath`-Funktion + `RouteLine`), verbindet erste und letzte Stations-Badge. Endpunkte immer per `getBoundingClientRect` messen, nie hartkodieren — Kartenpositionen sind dynamisch |
+
+## List-Header-Pattern
+
+Standard-Header für jeden Listen-Screen (Quests, Stationen, Module) — sowohl Player (Dark) als auch Creator (Light). Immer in dieser Reihenfolge, direkt unter dem `AppHeader`:
+
+1. **Eyebrow** — kleine Kategorie-Bezeichnung, `text-tech text-[10px] text-gq-teal` (z.B. „Stationen", „Stationsinhalte")
+2. **Titel** — großer Display-Titel, `font-display italic text-[clamp(1.8rem,8vw,2.4rem)] leading-[0.96] uppercase text-foreground mt-1` (Quest-Name oder Stations-Name)
+3. **Meta-Zeile** — Kennzahlen mit `·` getrennt, `text-tech text-[10px]` in `text-gq-grey` (Dark) bzw. `text-gq-grey-dark` (Light) — z.B. „5 Ziele · 2,4 km", „3 Module", „Ziel 2 von 5"
+4. **Divider** — `h-px bg-border mt-4`
+
+Container: `px-5 pt-3`. `AppHeader` selbst bleibt `transparent` und ohne `title`-Prop — der Screen-Titel lebt im Eyebrow/Titel-Block, nicht in der Header-Bar.
+
+Referenzimplementierung: `station-list.tsx` (Player, Dark), `create/[id]/page.tsx` und `create/[id]/station/[stationId]/page.tsx` (Creator, Light), `station-modules.tsx` (Player, Dark).
+
+**Navigation im Header:** `AppHeader` unterstützt `backHref` (Link, für URL-Routen) oder `onBack` (Callback, wenn "zurück" nur In-Memory-Screen-State ändert, z.B. im Quest-Player). Nie beides gleichzeitig übergeben.
 
 ## Corner Radii
 

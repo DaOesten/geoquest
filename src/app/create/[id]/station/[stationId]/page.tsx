@@ -124,12 +124,20 @@ export default function StationModulesPage({ params }: StationModulesPageProps) 
     <>
       <CreatorBackdrop />
       <div className="relative" key={unlockTick}>
-        <AppHeader
-          title={locked ? "Geschützte Station" : station.name || "Unbenannte Station"}
-          backHref={`/create/${questId}`}
-          variant="light"
-          transparent
-        />
+        <AppHeader backHref={`/create/${questId}`} variant="light" transparent />
+
+        <div className="px-5 pt-3">
+          <span className="text-tech text-[10px] text-gq-teal">Stationsinhalte</span>
+          <h1 className="font-display italic text-[clamp(1.8rem,8vw,2.4rem)] leading-[0.96] uppercase text-foreground mt-1">
+            {locked ? "Geschützte Station" : station.name || "Unbenannte Station"}
+          </h1>
+          <div className="flex items-center gap-2 mt-2.5 text-tech text-[10px] text-gq-grey-dark">
+            <span>
+              {modules.length} {modules.length === 1 ? "Modul" : "Module"}
+            </span>
+          </div>
+          <div className="h-px bg-border mt-4" />
+        </div>
 
         <CreatorAccessGate quest={quest} onUnlocked={() => setUnlockTick((t) => t + 1)}>
           {modules.length === 0 ? (

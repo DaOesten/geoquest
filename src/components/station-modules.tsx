@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { ArrowLeft } from "lucide-react";
+import dynamic from "next/dynamic";
 import type { Station, Module } from "@/lib/quest-schema";
+import { AppHeader } from "./app-header";
 import { TextModule } from "./modules/text-module";
 import { ImageModule } from "./modules/image-module";
 import { AudioModule } from "./modules/audio-module";
@@ -10,6 +11,12 @@ import { VideoModule } from "./modules/video-module";
 import { CodeTask } from "./modules/code-task";
 import { MultipleChoiceTask } from "./modules/multiple-choice-task";
 import { SortingTask } from "./modules/sorting-task";
+
+// Randomized particle positions must never be part of the SSR/hydration diff.
+const QuestListBackdrop = dynamic(
+  () => import("./quest-list-backdrop").then((m) => m.QuestListBackdrop),
+  { ssr: false }
+);
 
 interface StationModulesProps {
   station: Station;
@@ -41,28 +48,28 @@ export function StationModules({
   const allTasksSolved = unsolvedCount === 0;
 
   return (
-    <div className="flex flex-col min-h-dvh">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-5 pt-4 pb-3">
-        <button
-          onClick={onBack}
-          className="w-10 h-10 rounded-full grid place-items-center hover:bg-gq-dark-teal transition-colors duration-fast"
-          aria-label="Zurück zur Stationsliste"
-        >
-          <ArrowLeft className="w-5 h-5 text-foreground" />
-        </button>
-        <div className="flex-1 min-w-0">
-          <h1 className="font-tech text-sm uppercase tracking-[0.08em] text-foreground truncate">
+    <div className="relative flex flex-col min-h-dvh">
+      <QuestListBackdrop />
+
+      <div className="relative">
+        <AppHeader onBack={onBack} transparent />
+
+        <div className="px-5 pt-3">
+          <span className="text-tech text-[10px] text-gq-teal">Stationsinhalte</span>
+          <h1 className="font-display italic text-[clamp(1.8rem,8vw,2.4rem)] leading-[0.96] uppercase text-foreground mt-1">
             {station.name}
           </h1>
-          <p className="font-tech text-[10px] tracking-[0.14em] text-gq-grey uppercase">
-            Ziel {stationIndex + 1} von {totalStations}
-          </p>
+          <div className="flex items-center gap-2 mt-2.5 text-tech text-[10px] text-gq-grey">
+            <span>
+              Ziel {stationIndex + 1} von {totalStations}
+            </span>
+          </div>
+          <div className="h-px bg-border mt-4" />
         </div>
       </div>
 
       {/* Module list */}
-      <div className="flex-1 px-5 pb-8 space-y-5">
+      <div className="relative flex-1 px-5 pt-4.5 pb-8 space-y-5">
         {station.modules.map((module, i) => (
           <ModuleRenderer
             key={i}
