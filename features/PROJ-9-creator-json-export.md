@@ -307,4 +307,14 @@ Siehe **BUG-5** in der PROJ-6-QA-Runde vom selben Datum (`features/PROJ-6-creato
 - **Recommendation:** Deploy-bereit, gemeinsam mit PROJ-6. Edge Case 9 im PROJ-9-Spec-Text sollte in einem künftigen `/refine` korrigiert werden (reiner Dokumentationsfehler, keine Code-Änderung nötig).
 
 ## Deployment
-_To be added by /deploy_
+
+**Production URL:** https://geoquesty.vercel.app
+**Deployed:** 2026-08-29
+**Platform:** Vercel (auto-deploy on push to main)
+**Git Tag:** v1.12.0-PROJ-9
+**Commit:** 2bb0a78
+
+Gemeinsam mit PROJ-6 deployed (derselbe Commit, siehe PROJ-6-Deployment-Abschnitt für die vollständigen Pre-/Post-Deployment-Details — beide Features teilen sich denselben Release, da PROJ-9 direkt auf dem PROJ-6-Refinement aufbaut).
+
+### Post-Deployment-Verifikation (live auf Production)
+Browser-Check (Playwright/WebKit) gegen `https://geoquesty.vercel.app/create` bestätigt: "Sicherung" und "Veröffentlichen" erscheinen korrekt im Aktionen-Menü, Touch-Target-Höhe ≥44px (BUG-5-Fix), "Nicht gesichert"-Badge sichtbar bei ungesicherter Quest. Keine Konsolenfehler.

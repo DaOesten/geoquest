@@ -919,3 +919,29 @@ Alle vier Menüpunkte (Sicherung, Veröffentlichen, Bearbeiten, Löschen) messen
 - **Security:** Pass — keine Schwachstellen gefunden, mehrere gezielte XSS-/Injection-/Tampering-Versuche liefen ins Leere
 - **Production Ready:** **YES**
 - **Recommendation:** Deploy-bereit.
+
+## Deployment — Intro/Outro-Pflichtfelder, "Bearbeiten", BUG-5-Fix (2026-08-29)
+
+**Production URL:** https://geoquesty.vercel.app
+**Deployed:** 2026-08-29
+**Platform:** Vercel (auto-deploy on push to main)
+**Git Tag:** v1.12.0-PROJ-6
+**Commit:** 2bb0a78
+
+### Pre-Deployment Checks
+- [x] `npm run build` erfolgreich
+- [x] `npm run lint` grün (0 Fehler, 6 vorbestehende `<img>`-Warnungen, unverändert)
+- [x] QA abgeschlossen und Approved (siehe QA Test Results oben)
+- [x] Keine Critical/High-Bugs (BUG-5 war Low, vor diesem Deploy behoben)
+- [x] Keine Secrets im Diff, `.env.local` weiterhin gitignored
+- [x] Alle Änderungen committed und nach `origin/main` gepusht
+
+### Post-Deployment-Verifikation (live auf Production)
+Browser-Check (Playwright/WebKit) direkt gegen `https://geoquesty.vercel.app/create`:
+- Erstellen-Dialog zeigt alle 5 Felder (Quest-Name, Intro-Text, Intro-Bild-URL, Outro-Text, Outro-Bild-URL) korrekt im Light-Theme
+- Aktionen-Menü zeigt alle 4 Einträge (Sicherung, Veröffentlichen, Bearbeiten, Löschen), Touch-Target-Höhe ≥44px bestätigt (BUG-5-Fix live sichtbar)
+- "Nicht gesichert"-Badge erscheint korrekt auf einer neu angelegten Entwurf-Karte
+- Keine Konsolenfehler während des Durchlaufs
+- Sicherheits-Header (`strict-transport-security`) weiterhin aktiv, unverändert aus vorherigem Deploy (kein `next.config`-Eingriff in diesem Feature)
+
+Testdaten ausschließlich im Browser-`localStorage` angelegt, kein serverseitiger Cleanup nötig.
