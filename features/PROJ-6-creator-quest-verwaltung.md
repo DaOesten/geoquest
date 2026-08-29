@@ -1,8 +1,8 @@
 # PROJ-6: Creator — Quest-Verwaltung
 
-## Status: Deployed
+## Status: In Progress
 **Created:** 2026-08-27
-**Last Updated:** 2026-08-28
+**Last Updated:** 2026-08-29
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — für Routing (`/create`) und UI-Rahmen
@@ -35,6 +35,8 @@ Die zentrale Verwaltungsansicht im Creator-Modus (`/create`): Nutzer sehen alle 
 - Feste Obergrenze für Quest-Anzahl (nur natürliches localStorage-Limit aus PROJ-2)
 - **"Veröffentlichen"-Aktion/UI (zurückgestellt bis PROJ-9):** Der ursprüngliche Plan sah einen expliziten "Veröffentlichen"-Schalter vor, der die Play-Sichtbarkeit steuert. Nach Nutzer-Feedback korrigiert: Play-Sichtbarkeit hängt nur noch davon ab, ob die Quest Stationen hat — nicht von einem manuellen Veröffentlichen-Schritt. Das `published`-Datenfeld und die Storage-Funktionen (`isPublished`, `publishQuest`) bleiben im Code bestehen (bereits gebaut, getestet, keine sichtbare UI-Wirkung mehr), da PROJ-9 (Export) sie voraussichtlich braucht — siehe Decision Log
 - JSON-Export selbst (PROJ-9, weiterhin nicht gebaut)
+- **Intro-/Outro-Bearbeitung von Audio/Video (nur Bild-URL, 2026-08-29):** Das Quest-Schema erlaubt für Intro/Outro auch `mediaType: "audio"/"video"`, der Erstellen/Bearbeiten-Dialog deckt bewusst nur ein optionales Bild ab (`mediaType` wird beim Speichern intern fix auf `"image"` gesetzt, kein Auswahlfeld). Kann bei Bedarf als eigenes Feature nachgezogen werden
+- **Zugriff auf den Bearbeiten-Dialog von der Stationen-/Modul-Editor-Detailseite der Module (PROJ-8) aus:** Der neue Header-Bearbeiten-Button (2026-08-29) sitzt nur auf `/create/[id]` (Stationen-Editor, PROJ-7), nicht zusätzlich auf `/create/[id]/station/[stationId]` (Modul-Editor) — dort ist der Quest-Name/Intro/Outro kontextuell nicht relevant
 
 ## Acceptance Criteria
 
@@ -44,26 +46,28 @@ Die zentrale Verwaltungsansicht im Creator-Modus (`/create`): Nutzer sehen alle 
 - [ ] Angenommen der Nutzer öffnet `/create`, wenn Quests vorhanden sind, dann werden alle Quests sortiert nach letzter Änderung (neueste zuerst) angezeigt, mit Name, Stationsanzahl und Entwurf-Badge falls zutreffend
 - [ ] Angenommen der Nutzer öffnet `/create`, wenn keine Quests vorhanden sind, dann erscheint ein Empty State mit Hinweistext, einem "Neue Quest erstellen"-Button und dem bestehenden Import-Button
 
-**Neue Quest erstellen:**
-- [ ] Angenommen der Nutzer tippt auf "Neue Quest erstellen", wenn der Dialog erscheint, dann wird nach dem Quest-Namen gefragt
-- [ ] Angenommen der Namens-Dialog ist offen, wenn der Nutzer einen gültigen Namen eingibt und bestätigt, dann wird eine neue Quest mit diesem Namen, einer neuen UUID, leerer Stationsliste und `lastModified = jetzt` gespeichert und der Nutzer wird zu `/create/[id]` navigiert
-- [ ] Angenommen der Namens-Dialog ist offen, wenn der Nutzer ein leeres Namensfeld bestätigt, dann erscheint eine Validierungsfehlermeldung und es wird keine Quest angelegt
-- [ ] Angenommen der Namens-Dialog ist offen, wenn der Nutzer abbricht, dann wird keine Quest angelegt und der Dialog schließt sich
+**Neue Quest erstellen (überarbeitet 2026-08-29 — siehe Decision Log):**
+- [ ] Angenommen der Nutzer tippt auf "Neue Quest erstellen", wenn der Dialog erscheint, dann wird nach Quest-Name, Intro-Text und Outro-Text gefragt (alle drei Pflichtfelder), sowie optional je einer Bild-URL für Intro und Outro
+- [ ] Angenommen der Erstellen-Dialog ist offen, wenn der Nutzer Name, Intro-Text und Outro-Text gültig ausfüllt und bestätigt, dann wird eine neue Quest mit diesen Werten, einer neuen UUID, leerer Stationsliste und `lastModified = jetzt` gespeichert und der Nutzer wird zu `/create/[id]` navigiert
+- [ ] Angenommen der Erstellen-Dialog ist offen, wenn der Nutzer Name, Intro-Text oder Outro-Text leer lässt und bestätigt, dann erscheint für jedes leere Pflichtfeld eine Validierungsfehlermeldung und es wird keine Quest angelegt
+- [ ] Angenommen der Erstellen-Dialog ist offen, wenn der Nutzer eine Intro- oder Outro-Bild-URL einträgt, die nicht mit `https://` beginnt, dann erscheint eine Validierungsfehlermeldung ("Nur HTTPS-URLs sind erlaubt.") und es wird keine Quest angelegt
+- [ ] Angenommen der Erstellen-Dialog ist offen, wenn der Nutzer abbricht, dann wird keine Quest angelegt und der Dialog schließt sich
 
-**Entwurf-Kennzeichnung:**
-- [ ] Angenommen eine Quest hat 0 Stationen oder unvollständige Pflichtfelder (z.B. leerer Intro-Text), wenn sie in der Liste angezeigt wird, dann erscheint ein "Entwurf"-Badge
-- [ ] Angenommen eine Quest erfüllt alle Pflichtfelder des Quest-Schemas (min. 1 Station mit min. 1 Modul, Intro-/Outro-Text vorhanden), wenn sie in der Liste angezeigt wird, dann erscheint kein "Entwurf"-Badge
-- [ ] Das "Entwurf"-Badge ist ausschließlich eine Information für die eigene Quest-Verwaltung im Creator — es hat KEINEN Einfluss darauf, ob die Quest im Play-Modus erscheint (siehe "Play-Sichtbarkeit")
+**Bearbeiten (ersetzt "Umbenennen" — überarbeitet 2026-08-29, siehe Decision Log):**
+- [ ] Angenommen eine Quest existiert, wenn der Nutzer die Bearbeiten-Aktion auf einer Quest-Karte (oder den Bearbeiten-Button im Header von `/create/[id]`) auswählt, dann öffnet sich derselbe Dialog wie beim Erstellen, mit Name, Intro-Text, Outro-Text und den Bild-URLs der Quest vorausgefüllt
+- [ ] Angenommen der Bearbeiten-Dialog ist offen, wenn der Nutzer gültige Werte bestätigt, dann werden Name, Intro-Text, Outro-Text und Bild-URLs gespeichert, `lastModified` aktualisiert und die Liste neu sortiert
+- [ ] Angenommen der Bearbeiten-Dialog ist offen, wenn der Nutzer Name, Intro-Text oder Outro-Text leert und bestätigt, dann erscheint eine Validierungsfehlermeldung und die bisherigen Werte bleiben erhalten
+
+**Entwurf-Konzept entfernt (2026-08-29 — siehe Decision Log):**
+- [x] ~~Entwurf-Kennzeichnung basierend auf Quest-Vollständigkeit (`isQuestComplete`)~~ → Entfällt vollständig. Da Intro-/Outro-Text jetzt beim Erstellen Pflichtfelder sind, ist jede in der App angelegte Quest strukturell immer vollständig — eine separate "Entwurf"-Prüfung dafür ist überflüssig. Es gibt nur noch die Unterscheidung "spielbar" (`isPlayable`, mind. 1 Station) vs. "noch nicht spielbar" (0 Stationen), sichtbar über PROJ-9s "Veröffentlichen"-Status statt eines eigenen Badges in diesem Feature
 
 **Play-Sichtbarkeit:**
 - [ ] Angenommen eine Quest hat 0 Stationen, wenn der Nutzer die Quest-Liste im Play-Modus öffnet, dann erscheint diese Quest dort NICHT (nichts zum Navigieren vorhanden)
 - [ ] Angenommen eine Quest hat mindestens 1 Station — unabhängig davon, ob sie als "Entwurf" markiert ist oder alle Pflichtfelder erfüllt —, wenn der Nutzer die Quest-Liste im Play-Modus öffnet, dann erscheint diese Quest dort und ist spielbar/testbar
 - [ ] Angenommen eine Quest wird per Datei importiert (PROJ-2), wenn sie gespeichert wird, dann ist sie sofort im Play-Modus sichtbar (unverändertes PROJ-2-Verhalten, importierte Dateien haben immer mind. 1 Station)
 
-**Umbenennen:**
-- [ ] Angenommen eine Quest existiert, wenn der Nutzer die Umbenennen-Aktion auf einer Quest-Karte auswählt, dann öffnet sich ein Dialog mit dem aktuellen Namen vorausgefüllt
-- [ ] Angenommen der Umbenennen-Dialog ist offen, wenn der Nutzer einen neuen gültigen Namen bestätigt, dann wird der Name gespeichert, `lastModified` aktualisiert und die Liste neu sortiert
-- [ ] Angenommen der Umbenennen-Dialog ist offen, wenn der Nutzer das Feld leert und bestätigt, dann erscheint eine Validierungsfehlermeldung und der alte Name bleibt erhalten
+**Umbenennen (2026-08-27, ersetzt durch "Bearbeiten" oben — siehe Decision Log 2026-08-29):**
+- [x] ~~Eigenständiger "Umbenennen"-Dialog (nur Name)~~ → Aufgegangen in "Bearbeiten" (Name + Intro + Outro in einem Dialog), da Intro/Outro jetzt untrennbar vom Namen als Pflichtfelder bei der Quest-Erstellung abgefragt werden und später gemeinsam bearbeitbar sein müssen
 
 **Löschen:**
 - [ ] Angenommen eine Quest existiert, wenn der Nutzer die Löschen-Aktion auf einer Quest-Karte auswählt, dann erscheint ein Bestätigungsdialog ("Quest wirklich löschen? Das kann nicht rückgängig gemacht werden.")
@@ -79,8 +83,10 @@ Die zentrale Verwaltungsansicht im Creator-Modus (`/create`): Nutzer sehen alle 
 6. **localStorage voll beim Anlegen einer neuen Quest:** Gleiche Fehlermeldung wie in PROJ-2 ("Speicher voll. Lösche eine Quest und versuche es erneut.")
 7. **Import-Button auf `/create`:** Bereits durch PROJ-2 abgedeckt — importierte Quests erscheinen in derselben Liste wie selbst erstellte
 8. **Frisch angelegte Quest (0 Stationen) erscheint nicht im Play-Modus:** Erwartetes Verhalten — es gibt nichts zu navigieren. Sobald der Ersteller (später in PROJ-7) die erste Station anlegt, wird die Quest automatisch im Play-Modus sichtbar, ganz ohne weiteren manuellen Schritt
-9. **Ersteller testet eine unfertige Quest (z.B. fehlender Outro-Text, nur 2 von geplanten 5 Stationen):** Ausdrücklich erwünscht — die Quest ist in der Creator-Liste weiterhin als "Entwurf" markiert, aber im Play-Modus ganz normal spielbar/testbar
+9. **Ersteller testet eine unfertige Quest (z.B. nur 2 von geplanten 5 Stationen):** Ausdrücklich erwünscht — die Quest ist im Play-Modus ganz normal spielbar/testbar, sobald sie mindestens 1 Station hat. (Überholt: der ursprüngliche Fall "fehlender Outro-Text" kann seit 2026-08-29 nicht mehr auftreten, da Outro-Text ein Pflichtfeld bei der Erstellung ist)
 10. **Zwischenstand geht nicht verloren:** Jede Quest wird sofort bei Anlage in `localStorage` gespeichert (siehe `createDraftQuest`, PROJ-2-Speichermechanismus) — unabhängig vom Vollständigkeitsstatus. Es gibt keinen Zustand, in dem eine begonnene Quest ungespeichert bliebe
+11. **Ungültige Bild-URL bei Intro/Outro (2026-08-29):** Wie bei Modul-URLs (PROJ-8) — nicht-https URL blockiert das Speichern mit Validierungsfehlermeldung, leeres Feld ist erlaubt (Bild ist optional)
+12. **Bearbeiten einer Quest, die bereits Stationen/Module hat (2026-08-29):** Name/Intro/Outro-Änderungen wirken sich nicht auf Stationen/Module aus — nur `lastModified` wird aktualisiert, die Stationsliste bleibt unverändert
 
 ## Technical Requirements
 - Speicher: Nutzt den bestehenden `gq_quests`-Storage-Layer aus PROJ-2 (kein neuer Key)
@@ -92,10 +98,12 @@ Die zentrale Verwaltungsansicht im Creator-Modus (`/create`): Nutzer sehen alle 
 - Feld `published: boolean` bleibt im Quest-Datenmodell bestehen (Default `false` für neu angelegte Quests, `true` für importierte), wird aber aktuell an keiner Stelle der UI gesetzt oder ausgewertet — reserviert für PROJ-9 (Export), siehe Decision Log
 
 ## Open Questions
-- [x] Ab welcher Kombination von Feldern gilt eine Quest exakt als "vollständig" vs. "Entwurf"? → Gelöst in `/architecture`: Eine separate Vollständigkeits-Prüfung wendet dieselben Regeln wie das Import-Schema aus PROJ-2 an (mind. 1 Station mit mind. 1 Modul, Intro-/Outro-Text vorhanden), ohne beim Speichern zu blockieren. Siehe Tech Design.
+- [x] Ab welcher Kombination von Feldern gilt eine Quest exakt als "vollständig" vs. "Entwurf"? → Gelöst in `/architecture`: Eine separate Vollständigkeits-Prüfung wendet dieselben Regeln wie das Import-Schema aus PROJ-2 an (mind. 1 Station mit mind. 1 Modul, Intro-/Outro-Text vorhanden), ohne beim Speichern zu blockieren. **Überholt (2026-08-29):** Diese Prüfung (`isQuestComplete`) entfällt komplett, siehe Decision Log — es gibt kein "Entwurf"-Konzept mehr in PROJ-6.
 - [ ] Soll es eine maximale Zeichenlänge für den Quest-Namen geben (UI-Konsistenz), oder reicht das bestehende 5-MB-Gesamtlimit aus PROJ-2?
 - [x] Wie werden bereits gespeicherte Quests ohne `published`-Feld beim ersten Laden nach diesem Update behandelt? → Gegenstandslos geworden: Play-Sichtbarkeit hängt nicht mehr von `published` ab, sondern nur noch von der Stationsanzahl (siehe Korrektur im Decision Log vom 2026-08-28). `isPublished()`/`publishQuest()` bleiben als ungenutzte, aber getestete Bausteine für PROJ-9 im Code.
-- [ ] Wie erzwingt PROJ-9 (JSON-Export, noch nicht spezifiziert) die Regel "Export setzt Veröffentlicht voraus" technisch (z.B. Export-Button deaktiviert bei unveröffentlichten Quests)? Weiterhin offen, wird bei `/write-spec PROJ-9` aufgegriffen — inklusive der Frage, WER/WAS `published` dann überhaupt setzt, da die UI dafür aktuell entfernt wurde
+- [x] Wie erzwingt PROJ-9 (JSON-Export, noch nicht spezifiziert) die Regel "Export setzt Veröffentlicht voraus" technisch? → Gegenstandslos geworden: PROJ-9 hat entschieden, dass Export ("Sicherung") immer möglich ist, unabhängig von Veröffentlicht-Status — siehe PROJ-9-Spec.
+- [x] Was passiert mit bereits bestehenden Quests (angelegt vor 2026-08-29), die kein Intro/Outro haben, wenn Intro/Outro jetzt Pflichtfelder sind? → Gelöst in diesem Refinement: Keine Migration nötig. `normalizeQuest()` (quest-storage.ts) füllt fehlende `intro`/`outro` weiterhin defensiv mit `{ text: "" }` auf (Absturzschutz bleibt bestehen). Eine Alt-Quest mit leerem Intro/Outro bleibt einfach spielbar (Play hängt nur an `isPlayable`/Stationsanzahl) — der Ersteller kann sie jederzeit über "Bearbeiten" nachträglich vervollständigen, es gibt aber keinen erzwungenen Migrationsschritt oder Blockade
+- [ ] Soll die Bild-URL-Vorschau (z.B. Thumbnail im Dialog) angezeigt werden, oder reicht das reine Text-Eingabefeld wie bei Modul-URLs in PROJ-8? Aktuell: kein Vorschau-Bild, konsistent mit dem bestehenden Muster in PROJ-8 (kann bei Bedarf in einem weiteren Refinement ergänzt werden)
 
 ## Decision Log
 
@@ -121,6 +129,13 @@ Die zentrale Verwaltungsansicht im Creator-Modus (`/create`): Nutzer sehen alle 
 | **Korrektur (2026-08-28):** Play-Sichtbarkeit hängt NICHT mehr von einem manuellen "Veröffentlichen" ab, sondern nur noch davon, ob die Quest mindestens 1 Station hat | Nutzer-Klarstellung nach der QA-Runde: Das "Entwurf"-Badge ist reine Information für die eigene Quest-Verwaltung, kein Play-Gate — der Ersteller soll seine Quest jederzeit selbst testen können, sobald es etwas zu testen gibt, auch unfertig. Ersetzt die drei Zeilen oben zum manuellen Veröffentlichen-Schalter; diese bleiben als Aufzeichnung stehen, warum der erste Ansatz gewählt und dann verworfen wurde | 2026-08-28 |
 | "Veröffentlichen"-UI (Menüpunkt, Toast, Badge-Kopplung) entfernt, `published`-Feld + Storage-Funktionen bleiben im Code | Die UI hätte aktuell keine erkennbare Wirkung mehr (Play hängt nicht mehr davon ab) — ein Button ohne Funktion wäre verwirrend. Das Datenfeld selbst bleibt, weil PROJ-9 (Export) es voraussichtlich braucht ("Export setzt Veröffentlicht voraus", siehe oben) und die Storage-Funktionen bereits gebaut + getestet sind — Wiederverwendung statt Neubau bei PROJ-9 | 2026-08-28 |
 | Zwischenstand-Speicherung explizit als eigenes Edge Case dokumentiert (nicht nur implizit vorausgesetzt) | Nutzer betonte explizit: "was nicht passieren darf" ist Datenverlust bei einer unfertigen Quest. Das war durch `createDraftQuest()` (PROJ-2-Mechanismus, sofortiges Speichern) technisch schon immer erfüllt — jetzt aber als bewusste Garantie in der Spec festgehalten, nicht nur als Nebeneffekt | 2026-08-28 |
+| **Refinement (2026-08-29):** Intro-Text, Outro-Text und optionale Intro-/Outro-Bild-URL werden Pflichtfelder direkt im "Neue Quest erstellen"-Dialog, zusammen mit dem Namen | Ausgelöst durch einen während `/frontend PROJ-9` gefundenen Bug: Es gab in der gesamten Creator-UI nie eine Stelle, um Intro-/Outro-Text einzugeben — `createDraftQuest()` setzt beide dauerhaft auf leeren Text, wodurch `isQuestComplete()` (verlangt non-empty Intro/Outro) für jede selbst erstellte Quest für immer `false` blieb. PROJ-9s "Veröffentlichen" konnte das "Entwurf"-Badge deshalb nie entfernen, selbst nach erfolgreichem Publish. Diese Lösung schließt die Lücke an der Wurzel, statt sie zu umgehen | 2026-08-29 |
+| "Entwurf"/`isQuestComplete`-Konzept komplett entfernt, nur noch `isPlayable` bleibt | Direkte Folge der Entscheidung oben: Wenn Intro/Outro-Text bei jeder Quest-Erstellung erzwungen werden, ist `questSchema` (bis auf Stationen) für jede in der App angelegte Quest automatisch erfüllt — eine separate Vollständigkeits-Prüfung/Badge dafür hat keinen Erkenntniswert mehr. Vereinfacht das Zustandsmodell von zwei auf einen Zustand, wie vom Nutzer explizit gewünscht ("dann sparen wir uns einen Zustand") | 2026-08-29 |
+| "Umbenennen" wird zu "Bearbeiten" — ein gemeinsamer Dialog für Name + Intro + Outro (+ Bild-URLs), sowohl beim Erstellen als auch bei späteren Änderungen | Da Intro/Outro jetzt untrennbar vom Namen als Pflichtfelder abgefragt werden, müssen sie später auch gemeinsam bearbeitbar sein — ein zweiter, separater Intro/Outro-Dialog wäre unnötige Fragmentierung. Ein Dialog für beide Fälle (Erstellen vorausgefüllt leer, Bearbeiten vorausgefüllt mit bestehenden Werten) statt zwei ähnlicher Komponenten | 2026-08-29 |
+| Bearbeiten-Zugang zusätzlich im Header von `/create/[id]` (Stationen-Editor), nicht nur über die Listen-Karte | Der Ersteller arbeitet die meiste Zeit auf der Detailseite (Stationen anlegen) — ein Rücksprung zur Liste nur um Name/Intro/Outro anzupassen wäre unnötige Reibung. `AppHeader` hat bereits einen `rightAction`-Slot dafür, kein struktureller Eingriff nötig | 2026-08-29 |
+| Intro-/Outro-Bild-URL nur als Bild (kein Audio/Video, kein Typ-Auswahlfeld) | Deckt den typischen Anwendungsfall (Titelbild/Abschlussbild) ab, laut PRD sind Intro/Outro "Willkommensnachricht"/"Abschlussnachricht", kein volles Medien-Modul wie in PROJ-8. `mediaType` wird beim Speichern intern fix auf `"image"` gesetzt, sobald eine URL eingetragen ist | 2026-08-29 |
+| Bild-URL-Validierung identisch zum bestehenden Muster aus PROJ-8 (nicht-https blockiert Speichern, leer ist erlaubt) | Konsistenz mit der einzigen bereits etablierten URL-Eingabe-UX in der App, kein neues Validierungsmuster nötig | 2026-08-29 |
+| Keine Migration für Alt-Quests ohne Intro/Outro nötig | `normalizeQuest()` füllt fehlende Felder bereits defensiv mit leeren Strings auf (Absturzschutz aus dem PROJ-6-Bugfix-Pass) — eine Alt-Quest bleibt einfach spielbar und lässt sich jederzeit über "Bearbeiten" nachträglich vervollständigen, ganz ohne erzwungenen Zwischenschritt | 2026-08-29 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -279,6 +294,68 @@ Die Play-Liste (PROJ-3) bekommt einen einzigen zusätzlichen Filterschritt ganz 
 ### Dependencies (Ergänzung)
 
 Keine neuen Pakete — alles läuft über bereits vorhandene Bausteine (Zod bleibt unverändert, da `published` bewusst nicht Teil des Zod-Schemas wird).
+
+---
+
+## Tech Design — Refinement: Intro/Outro als Pflichtfelder, Entwurf-Konzept entfernt (2026-08-29)
+
+Löst die in `/frontend PROJ-9` gefundene Lücke: kein UI-Weg, Intro/Outro-Text zu setzen, wodurch `isQuestComplete` nie erfüllbar war.
+
+### Komponenten-Struktur (Ergänzung)
+
+```
+QuestNameDialog → umbenannt/erweitert zu QuestFormDialog
+├── Quest-Name (Pflicht, wie bisher)
+├── Intro-Text (neu, Pflicht, Textarea)
+├── Intro-Bild-URL (neu, optional)
+├── Outro-Text (neu, Pflicht, Textarea)
+└── Outro-Bild-URL (neu, optional)
+    Verwendet für: "Neue Quest erstellen" (leer vorausgefüllt)
+                   UND "Bearbeiten" (mit bestehenden Werten vorausgefüllt, ersetzt "Umbenennen")
+
+QuestManagementCard — Aktionen-Menü
+└── "Umbenennen" → umbenannt zu "Bearbeiten", öffnet QuestFormDialog statt des alten Namens-only-Dialogs
+
+/create/[id] (Stationen-Editor, PROJ-7) — AppHeader erweitert
+└── rightAction-Slot (bereits vorhanden) → neuer Bearbeiten-Button (Pencil-Icon), öffnet denselben QuestFormDialog
+```
+
+Kein neues Badge, keine neue Seite — `isQuestComplete()`/`isDraft` und das "Entwurf"-Badge werden aus `QuestManagementCard` und `create/page.tsx` entfernt (nicht nur versteckt).
+
+### Daten-Architektur (Ergänzung)
+
+Kein neuer Speicherort. `createDraftQuest()` (quest-storage.ts) nimmt jetzt `intro`/`outro`-Werte als Parameter statt sie fix auf `{ text: "" }` zu setzen. Eine neue Storage-Funktion `updateQuestDetails(id, { name, intro, outro })` — strukturell wie `renameQuest()`, aber für alle drei Felder gemeinsam — ersetzt `renameQuest()` als Schreibpfad für den Bearbeiten-Dialog (`renameQuest()` wird entfernt, da kein Aufrufer mehr für "nur Name ändern" existiert).
+
+`isQuestComplete()` und die davon abhängige `isDraft`-Logik werden aus `create/page.tsx` und `QuestManagementCard` entfernt. `isQuestComplete()` selbst bleibt in `quest-storage.ts` bestehen (nutzt weiterhin `questSchema.safeParse`) — sie hat weiterhin einen Zweck als reine Struktur-Prüfung (z.B. für Import/Export-kompatible Vollständigkeit), hat aber ab jetzt keinen Aufrufer mehr in PROJ-6. PROJ-9 muss entsprechend geprüft werden, ob es noch auf `isQuestComplete` verweist (siehe PROJ-9-Anpassung unten).
+
+Bild-URL wird beim Speichern zu `{ text, mediaUrl, mediaType: "image" }` zusammengesetzt, wenn eine URL eingetragen ist, sonst bleibt `mediaUrl`/`mediaType` `undefined` (Textarea-Wert wird wie bisher durch `stripHtmlTags()` bereinigt).
+
+### PROJ-9-Anpassung (Folgeänderung, nicht Teil von PROJ-6 selbst)
+
+Diese Refinement macht eine kleine Anpassung an PROJ-9s bereits implementiertem Code nötig, sobald sie umgesetzt ist: `create/page.tsx`s `isDraft`-Berechnung (`!isQuestComplete(quest) || !isPublished(quest)`) wird zu `!isPublished(quest)`, da `isQuestComplete` als Bedingung entfällt. Wird direkt im Anschluss an dieses Refinement nachgezogen, siehe PROJ-9-Spec.
+
+### UI/Interaktions-Entscheidungen (Ergänzung)
+
+- Intro-/Outro-Text als mehrzeilige Textareas (wie Text-Module in PROJ-8), nicht einzeilige Inputs — beide sind laut PRD "Willkommensnachricht"/"Abschlussnachricht", typischerweise mehrere Sätze
+- Bild-URL-Validierung identisch zum bestehenden Muster in PROJ-8 (`module-editor-sheets.tsx`): Fehlermeldung "Nur HTTPS-URLs sind erlaubt." bei nicht-https, leeres Feld erlaubt
+- Kein Bild-Vorschau/Thumbnail im Dialog (konsistent mit PROJ-8s reinem Text-Eingabefeld für URLs)
+- Der Bearbeiten-Button im Header von `/create/[id]` nutzt den bestehenden `rightAction`-Slot von `AppHeader` — keine strukturelle Änderung an der Header-Komponente nötig
+
+### Wiederverwendete vs. neue Bausteine (Ergänzung)
+
+| Baustein | Status |
+|----------|--------|
+| `QuestNameDialog` | ♻️ Erweitert zu `QuestFormDialog` (Name + Intro + Outro + Bild-URLs) |
+| Bild-URL-Validierung (`stripHtmlTags`, https-Check) | ♻️ Wiederverwendet aus PROJ-8-Muster |
+| `AppHeader`'s `rightAction`-Slot | ♻️ Wiederverwendet, unverändert |
+| `isQuestComplete()` | ♻️ Bleibt in `quest-storage.ts` bestehen, aber ohne Aufrufer in PROJ-6 |
+| `renameQuest()` | ❌ Entfernt, ersetzt durch `updateQuestDetails()` |
+| `updateQuestDetails(id, { name, intro, outro })` | 🆕 Neu |
+| "Entwurf"-Badge, `isDraft`-Logik in `create/page.tsx`/`QuestManagementCard` | ❌ Entfernt |
+
+### Dependencies (Ergänzung)
+
+Keine neuen Pakete — Zod, shadcn Dialog/Textarea, Sonner bereits vorhanden.
 
 ## Implementation Notes (Frontend)
 
