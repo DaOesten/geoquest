@@ -18,7 +18,7 @@ import { StationRadiusSlider } from "@/components/station-radius-slider";
 import { useCurrentPosition } from "@/hooks/use-current-position";
 import { stripHtmlTags } from "@/lib/sanitize";
 import type { DraftStation } from "@/lib/quest-storage";
-import { GERMANY_CENTER, GERMANY_ZOOM, STATION_ZOOM } from "@/components/station-map";
+import { GERMANY_CENTER, GERMANY_ZOOM, STATION_ZOOM } from "@/lib/map-constants";
 
 // Leaflet touches `window` on import, so the map must never render on the server.
 const StationMap = dynamic(() => import("@/components/station-map").then((m) => m.StationMap), {
