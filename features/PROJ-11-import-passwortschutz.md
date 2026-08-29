@@ -1,6 +1,6 @@
 # PROJ-11: Import — Passwortschutz
 
-## Status: In Progress
+## Status: In Review
 **Created:** 2026-08-29
 **Last Updated:** 2026-08-29
 
@@ -236,7 +236,116 @@ Kein neues Package zwingend erforderlich. Das Hashing kann über eine bereits im
   - Keine Konsolen-/Seitenfehler während des gesamten Durchlaufs
 
 ## QA Test Results
-_To be added by /qa_
+
+**Tested:** 2026-08-29
+**App URL:** http://localhost:3000
+**Tester:** QA Engineer (AI)
+**Build:** `npm run build` ✓ · `npm run lint` ✓ (0 Fehler, nur vorbestehende `<img>`-Warnungen) · `npm test` ✓ (151/151)
+**Browser:** WebKit ("Mobile Safari"-Projekt, gleiches etabliertes Muster wie PROJ-3/4/5/7/8) — der gebündelte Playwright-Chromium-Headless-Shell-Download ist in dieser Sandbox nicht installiert (nur der volle Chromium-Browser), WebKit ist gecacht und funktioniert zuverlässig.
+
+### Acceptance Criteria Status
+
+#### Passwort setzen/ändern/entfernen
+- [x] Optionales Passwort-Feld mit erklärendem Hinweistext im "Quest bearbeiten"-Dialog sichtbar
+- [x] Passwort mit ≥ 4 Zeichen → Hash wird der Quest zugeordnet (verifiziert: 64-stelliger SHA-256-Hex-Hash)
+- [x] Passwort mit < 4 Zeichen → Validierungsfehlermeldung, Quest wird nicht gespeichert (Dialog bleibt offen)
+- [x] Bestehendes Passwort → "Passwort ist gesetzt" statt Klartext, mit "Ändern"-Option
+- [x] Feld leeren (nach "Ändern") und speichern → Passwortschutz vollständig entfernt
+- [ ] BUG-1: Beim **Erstellen** einer neuen Quest wird das Passwort-Feld ebenfalls angezeigt und ist ausfüllbar, aber die Eingabe wird beim Speichern still verworfen (siehe Bugs Found)
+
+#### Export/Import
+- [x] Exportierte Datei (echter "Sicherung"-Button, echter Download geprüft) enthält den Passwort-Hash, nie das Klartext-Passwort
+- [x] Vollständiger Real-World-Roundtrip verifiziert: Passwort setzen → echten Export-Button klicken → echte heruntergeladene Datei in einem zweiten Browser-Kontext über den echten Datei-Import-Dialog importieren → Creator-Zugriff ist dort gesperrt
+
+#### Zugriff durch den Ersteller selbst
+- [x] In diesem Browser über "Neue Quest" angelegte Quest wird nie nach einem Passwort gefragt, auch nachdem eines gesetzt wurde (inkl. Reload)
+- [x] Passwort der eigenen Quest ändern/entfernen erfordert keine erneute Passwort-Eingabe
+
+#### Zugriff durch Dritte (gesperrter Creator-Zugriff)
+- [x] Passwort-Abfrage erscheint sofort anstelle der Stationsliste
+- [x] Falsches Passwort → Fehlermeldung "Falsches Passwort.", Eingabefeld bleibt nutzbar, unbegrenzte Versuche verifiziert (3 aufeinanderfolgende Fehlversuche)
+- [x] Korrektes Passwort → sofortige Freischaltung (Stationsliste, "Quest bearbeiten"-Button)
+- [x] Freischaltung bleibt nach Browser-Neustart/Reload bestehen
+- [x] Direkter Deep-Link zu `/create/[id]/station/[stationId]` einer gesperrten Quest wird ebenfalls gesperrt — Modul-Inhalte sind nicht im DOM vorhanden (nicht nur visuell versteckt)
+- [ ] BUG-2: Der Stationsname wird im Header des Modul-Editors **außerhalb** der Zugriffssperre gerendert und ist dadurch bei gesperrtem Zugriff sichtbar (siehe Bugs Found)
+
+#### Play-Modus bleibt unberührt
+- [x] Gesperrte Quest ist über `/play` uneingeschränkt spielbar, keine Passwort-Abfrage
+
+#### Importierte Quest ohne Passwort
+- [x] Verhalten unverändert wie vor PROJ-11 — Creator-Zugriff frei
+
+### Edge Cases Status
+
+1. [x] Passwort vergessen + "hier erstellt"-Markierung verloren → dauerhaft gesperrt, kein Wiederherstellungsweg (Hinweistext kommuniziert das explizit beim Setzen)
+2. [x] Re-Import der eigenen Sicherungsdatei nach Verlust der Markierung → einmalige Passwort-Eingabe nötig, danach dauerhaft freigeschaltet (durch Code-Review bestätigt: `hasCreatorAccess()` unterscheidet nicht zwischen "eigener Re-Import" und "fremder Import", exakt wie spezifiziert)
+3. [x] Passwort wird nachträglich gesetzt → nur der nächste Export enthält den Hash, ältere Kopien bleiben ungeschützt (Code-Review: Hash ist ein normales Quest-Feld, kein rückwirkender Mechanismus vorhanden)
+4. [x] Zwei Quests mit demselben Passwort → Freischaltung ist an die konkrete Quest-ID gebunden (durch Unit-Test `does not grant access to a different quest just because another was created here` abgesichert)
+5. [x] Import überschreibt eine selbst erstellte Quest mit derselben ID → durch Code-Review bestätigt, bestehendes PROJ-2-Verhalten unverändert, "hier erstellt"-Markierung bleibt lokal unabhängig vom Import-Vorgang bestehen
+6. [x] Deep-Link zum Modul-Editor ohne vorherigen Besuch der Stationsliste → wird von der Sperre abgefangen (siehe AC oben) — **mit der BUG-2-Einschränkung, dass der Stationsname trotzdem im Header sichtbar ist**
+7. [x] localStorage-Manipulation zur Umgehung → bewusst nicht verhindert (Bedrohungsmodell laut Spec), kein Bug
+
+### Security Audit Results
+- [x] Authentifizierung/Autorisierung: N/A — kein Backend, kein Account-System (PRD Non-Goal), Zugriffsmodell ist bewusst client-seitiges Deterrent
+- [x] XSS: `<script>`-Payload als Passwort eingegeben → landet ausschließlich gehasht (64-stelliger Hex-String) in `localStorage`, kein Skript wird ausgeführt, kein Klartext/Payload irgendwo im DOM auffindbar
+- [x] Passwort wird nirgends im Klartext im DOM oder in einem `value`-Attribut angezeigt, auch nicht beim erneuten Öffnen des Bearbeiten-Dialogs mit bestehendem Passwort
+- [x] Gesperrter Modul-Inhalt (Fragen/Antworten) ist bei aktiver Sperre nachweislich nicht im DOM vorhanden (per `page.content()`-Prüfung, nicht nur CSS-versteckt)
+- [x] Passwort-Hash selbst ist ein SHA-256-Digest — nicht umkehrbar, kein Klartext-Leak über den Hash möglich
+- [x] Kein `dangerouslySetInnerHTML`, `eval()` oder `new Function()` in den neuen PROJ-11-Dateien
+- [x] Keine neuen Netzwerk-Calls, kein Secret-Leak — alles läuft rein client-seitig über Web Crypto API und `localStorage`
+- [x] Rate-Limiting bewusst nicht implementiert (siehe Out of Scope) — kein Fund, sondern spezifiziertes Verhalten
+
+### Regression Testing
+Volle bestehende E2E-Suite (`npx playwright test --project="Mobile Safari"`) für alle Features, deren gemeinsam genutzte Dateien PROJ-11 berührt (`QuestFormDialog`, `quest-storage.ts`, `quest-schema.ts`, `/create/[id]`, `/create/[id]/station/[stationId]`), erneut ausgeführt:
+
+| Suite | Ergebnis |
+|-------|----------|
+| PROJ-6 (Creator — Quest-Verwaltung) | 28/28 bestehen |
+| PROJ-9 (Creator — JSON-Export) | 11/11 bestehen |
+| PROJ-7 (Creator — Stationen-Editor) | vollständig grün (Teil der 49/49 gemeinsamen PROJ-7/8-Laufzeit) |
+| PROJ-8 (Creator — Modul-Editor) | vollständig grün (Teil der 49/49 gemeinsamen PROJ-7/8-Laufzeit) |
+
+**Ergebnis: Keine Regressionen durch PROJ-11.** Alle 88 vorbestehenden E2E-Tests über die vier betroffenen, bereits deployten Features bestehen unverändert.
+
+### Unit Tests (Vitest)
+Bereits im Frontend-Schritt ergänzt: `src/lib/quest-access.test.ts`, 11 Tests (Zugriffsregel, Hash-Erzeugung, Verifikation) — keine weiteren im QA-Schritt nötig, vollständige Logik-Abdeckung bereits vorhanden. Gesamte Suite weiterhin grün: 151/151.
+
+### E2E Tests (Playwright)
+Neue Datei `tests/proj-11-import-passwortschutz.spec.ts`: 17 Tests, mindestens einer pro Akzeptanzkriterien-Gruppe plus zwei dedizierte Tests, die die unten dokumentierten Bugs als aktuellen (fehlerhaften) Ist-Zustand festhalten (`Bekannte Bugs`-Describe-Block) — dienen als Regressionsschutz und müssen nach den Fixes aktualisiert werden, um das dann korrekte Verhalten zu prüfen. Alle 17 grün auf "Mobile Safari".
+
+### Bugs Found
+
+#### BUG-1: Passwort-Feld beim Erstellen einer neuen Quest ist funktionslos, aber ausfüllbar — Eingabe wird still verworfen
+- **Severity:** Medium
+- **Steps to Reproduce:**
+  1. `/create` öffnen, "Neue Quest erstellen" antippen
+  2. Name, Intro- und Outro-Text ausfüllen
+  3. Im sichtbaren, normal aussehenden Passwort-Feld ein Passwort eintragen (z.B. "geheim123")
+  4. "Erstellen" antippen
+  5. Erwartet: entweder wird das Passwort übernommen, oder das Feld ist in diesem Dialog-Modus gar nicht erst sichtbar
+  6. Tatsächlich: Die Quest wird ohne jeglichen Passwortschutz angelegt (`passwordHash` bleibt `undefined`), ohne jede Fehlermeldung oder Warnung — der Nutzer hat keinen Hinweis darauf, dass sein eingegebenes Passwort verworfen wurde
+- **Ursache:** `QuestFormDialog` wird für beide Modi ("Neue Quest erstellen" und "Quest bearbeiten") wiederverwendet und zeigt das Passwort-Feld in beiden identisch an. Der "create"-Zweig in `handleFormConfirm` (`src/app/create/page.tsx`) ruft jedoch `createDraftQuest(values.name, values.intro, values.outro)` auf — eine Funktion, die gar keinen `passwordHash`-Parameter entgegennimmt — statt `updateQuestDetails()`, das `passwordHash` verarbeitet.
+- **Impact:** Ein Ersteller, der naheliegenderweise direkt beim Anlegen ein Passwort vergeben möchte (bevor er überhaupt Inhalte erstellt hat), verliert dieses Passwort lautlos. Er bemerkt es erst, wenn jemand anderes die vermeintlich geschützte Quest unbemerkt öffnen kann — zu einem Zeitpunkt, an dem der eigentliche Schutzzweck (Lösungen geheim halten) bereits gescheitert sein könnte.
+- **Priority:** Fix before deployment (verletzt die stillschweigende Erwartung, dass ein ausgefülltes, sichtbares Formularfeld auch tatsächlich etwas bewirkt — ein klassisches "silent data loss"-Muster)
+
+#### BUG-2: Stationsname bleibt bei gesperrtem Modul-Editor-Zugriff im Header sichtbar
+- **Severity:** Medium
+- **Steps to Reproduce:**
+  1. Eine passwortgeschützte, importierte (gesperrte) Quest mit einer Station besitzen, deren Name potenziell einen Hinweis oder eine Antwort enthält (z.B. "Das Codewort lautet Banane")
+  2. Direkt die URL `/create/[id]/station/[stationId]` dieser Station aufrufen (Deep Link)
+  3. Erwartet: Der komplette Modul-Editor-Bereich inkl. Kopfzeile ist hinter der Passwort-Sperre verborgen, analog zum Verhalten auf `/create/[id]`
+  4. Tatsächlich: Der Passwort-Abfrage-Screen erscheint korrekt, aber der `AppHeader` mit dem echten Stationsnamen wird bereits **davor** (außerhalb der `CreatorAccessGate`) gerendert und bleibt sichtbar
+- **Ursache:** In `src/app/create/[id]/station/[stationId]/page.tsx` steht `<AppHeader title={station.name || "Unbenannte Station"} .../>` vor dem öffnenden `<CreatorAccessGate>`-Tag, nicht innerhalb.
+- **Impact (begrenzt):** Um diese URL überhaupt zu kennen, braucht ein Angreifer bereits die exakte `stationId` (eine UUID) — der reguläre Weg dorthin (Stationsliste antippen) ist selbst bereits gesperrt, sodass ein Spieler ohne vorherigen (ggf. berechtigten) Zugriff diese ID normalerweise nicht kennt. Das Risiko ist dadurch spürbar geringer als ein direkter Lösungs-Leak auf dem Hauptpfad, aber die Sperre ist an dieser einen Stelle nachweislich unvollständig.
+- **Priority:** Fix before deployment (Sperre soll laut Spec vollständig sein — "Angenommen eine importierte Quest ist gesperrt, ... dann greift dieselbe Passwort-Sperre wie auf `/create/[id]`" ist für den Stationsnamen aktuell nicht erfüllt)
+
+### Summary
+- **Acceptance Criteria:** 17/19 vollständig bestanden, 2 mit dokumentiertem Bug (BUG-1, BUG-2) — beide sind eng umrissene Einzelpunkte innerhalb ansonsten bestandener Kriteriengruppen, nicht ganze Gruppen ausgefallen
+- **Bugs Found:** 2 total (0 Critical, 0 High, 2 Medium, 0 Low)
+- **Security:** Pass — keine ausnutzbaren Schwachstellen gefunden, Bedrohungsmodell (Abschreckung, kein Hochsicherheitsanspruch) wird eingehalten
+- **Regression:** Pass — 88/88 vorbestehende E2E-Tests über PROJ-6/7/8/9 unverändert grün
+- **Production Ready:** NO — beide gefundenen Bugs sind Medium-Severity, aber beide verletzen den Kernzweck des Features (Passwort tatsächlich wirksam setzen können; Sperre tatsächlich vollständig). Ein Ersteller, der das naheliegendste Verhalten ausprobiert (Passwort direkt beim Anlegen setzen), erlebt eine stille Fehlfunktion — das ist für ein Sicherheits-/Datenschutz-Feature nicht akzeptabel, auch wenn kein Critical/High-Bug im klassischen Sinn vorliegt.
+- **Recommendation:** Beide Bugs vor dem Deploy beheben. BUG-1 vermutlich am einfachsten durch Übergabe von `values.passwordHash` an eine erweiterte `createDraftQuest()`-Signatur (oder einen `updateQuestDetails()`-Aufruf direkt nach dem Erstellen) zu lösen. BUG-2 durch Verschieben des `AppHeader` in den Body von `CreatorAccessGate` (mit einem reduzierten, generischen Titel für den gesperrten Zustand) oder durch Übergabe eines "safe title" an den Header, wenn gesperrt. Nach den Fixes: `/frontend` erneut aufrufen, dann `/qa` erneut, inkl. Aktualisierung der beiden `Bekannte Bugs`-E2E-Tests auf das dann korrekte Verhalten.
 
 ## Deployment
 _To be added by /deploy_
