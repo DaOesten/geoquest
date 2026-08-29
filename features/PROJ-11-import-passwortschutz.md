@@ -1,6 +1,6 @@
 # PROJ-11: Import — Passwortschutz
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-08-29
 **Last Updated:** 2026-08-29
 
@@ -364,4 +364,36 @@ Beim Beheben von BUG-2 deckte der React Compiler (`eslint-plugin-react-hooks`, `
 - Manuell im Browser (WebKit) nachverifiziert: Modul-Editor-Header zeigt "GESCHÜTZTE STATION" statt des echten Stationsnamens bei gesperrtem Zugriff, Zurück-Pfeil bleibt erreichbar
 
 ## Deployment
-_To be added by /deploy_
+
+**Production URL:** https://geoquesty.vercel.app
+**Deployed:** 2026-08-29
+**Platform:** Vercel (auto-deploy on push to main)
+**Git Tag:** v1.13.0-PROJ-11
+**Commit:** 09368fd
+
+### Pre-Deployment Checks
+- [x] `npm run build` erfolgreich
+- [x] `npm run lint` erfolgreich (0 Fehler, 6 vorbestehende `<img>`-Warnungen)
+- [x] QA-Freigabe: "Approved" / "Production Ready: YES" (beide gefundenen Medium-Bugs vor dem Deploy behoben)
+- [x] Keine Critical/High-Bugs offen
+- [x] Keine neuen Umgebungsvariablen nötig (reines Frontend-Feature, Web Crypto API + localStorage)
+- [x] Keine Secrets im Diff
+- [x] Kein Datenbank-Layer betroffen (weiterhin reines localStorage, kein Supabase-Bezug)
+- [x] Alle Commits gepusht nach `main` (6 Commits: PROJ-10-Revert + kompletter PROJ-11-Lifecycle)
+
+### Deploy-Vorgang
+`git push origin main` (Commit `09368fd`) löst den bestehenden Vercel-GitHub-Auto-Deploy aus — kein manueller `vercel --prod`-Schritt nötig, das Projekt ist bereits seit PROJ-1 verbunden.
+
+### Post-Deployment-Verifikation
+Vollständiger Real-World-Test direkt in Produktion (Playwright/WebKit, zwei getrennte Browser-Kontexte):
+- Neue Quest mit Passwort in Produktion angelegt → Passwort wurde tatsächlich gespeichert (BUG-1-Fix live bestätigt: `passwordHash` ist ein echter 64-stelliger SHA-256-Hash)
+- Erstellendes Gerät bleibt nach Reload weiterhin ungegated (eigene Quest nie gesperrt)
+- Zweiter Browser-Kontext (simuliertes Fremdgerät) mit derselben Quest → Creator-Zugriff korrekt gesperrt, Passwort-Abfrage erscheint
+- Korrektes Passwort im Fremdgerät-Kontext eingegeben → sofortige Freischaltung, "Quest bearbeiten"-Button sichtbar
+- Keine Konsolen-/Seitenfehler während des gesamten Produktions-Durchlaufs
+
+### Bekannter, nicht mit PROJ-11 zusammenhängender Befund
+Während der Post-Deployment-Verifikation wurde entdeckt, dass `/create/[id]` für eine nicht existierende Quest-ID einen Server-Error (HTTP 500) statt der erwarteten "Ziel nicht gefunden"-Seite zurückgibt — verursacht durch einen serverseitigen `ReferenceError: window is not defined` beim Rendern von `station-map.tsx` (Leaflet-Kartenkomponente über `StationEditorSheet`). **Durch Vergleich mit dem Produktionsstand direkt vor diesem Deploy (Commit `b99b0fa`, per lokalem Git-Worktree nachgestellt) bestätigt: Dieser Fehler existierte bereits vor PROJ-11 und wurde durch dieses Feature weder verursacht noch verschlimmert.** `/play/[id]` und `/create/[id]/station/[stationId]` geben für ungültige IDs weiterhin korrekt 404 zurück — nur `/create/[id]` selbst ist betroffen. Da dieser Fehler nur bei direktem Aufruf einer ungültigen/gelöschten Quest-ID auftritt (kein Bestandteil des normalen Nutzerflusses über die Quest-Liste) und nicht PROJ-11-spezifisch ist, wurde er bewusst nicht als Deployment-Blocker behandelt. Empfehlung: als eigenständigen Bug-Fix-Task nachziehen (`station-map.tsx`/`StationEditorSheet` clientseitig dynamisch laden, z.B. via `next/dynamic` mit `ssr: false`, analog zum bereits bestehenden Muster in `quest-list-backdrop.tsx`).
+
+### Bekannte offene Punkte
+Keine PROJ-11-spezifischen offenen Punkte. Siehe oben für den vorbestehenden, unabhängigen `/create/[id]`-SSR-Befund, der separat nachverfolgt werden sollte.
