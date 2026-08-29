@@ -1,6 +1,6 @@
 # PROJ-11: Import — Passwortschutz
 
-## Status: In Review
+## Status: Approved
 **Created:** 2026-08-29
 **Last Updated:** 2026-08-29
 
@@ -315,7 +315,8 @@ Neue Datei `tests/proj-11-import-passwortschutz.spec.ts`: 17 Tests, mindestens e
 
 ### Bugs Found
 
-#### BUG-1: Passwort-Feld beim Erstellen einer neuen Quest ist funktionslos, aber ausfüllbar — Eingabe wird still verworfen
+#### BUG-1 (behoben): Passwort-Feld beim Erstellen einer neuen Quest ist funktionslos, aber ausfüllbar — Eingabe wird still verworfen
+- **Status:** Fixed — `src/app/create/page.tsx`s `handleFormConfirm` übergibt im "create"-Zweig jetzt `values.passwordHash` an die neu erstellte Quest, bevor sie gespeichert wird (`saveQuest({ ...quest, passwordHash: values.passwordHash })`), statt es stillschweigend zu verwerfen
 - **Severity:** Medium
 - **Steps to Reproduce:**
   1. `/create` öffnen, "Neue Quest erstellen" antippen
@@ -328,7 +329,8 @@ Neue Datei `tests/proj-11-import-passwortschutz.spec.ts`: 17 Tests, mindestens e
 - **Impact:** Ein Ersteller, der naheliegenderweise direkt beim Anlegen ein Passwort vergeben möchte (bevor er überhaupt Inhalte erstellt hat), verliert dieses Passwort lautlos. Er bemerkt es erst, wenn jemand anderes die vermeintlich geschützte Quest unbemerkt öffnen kann — zu einem Zeitpunkt, an dem der eigentliche Schutzzweck (Lösungen geheim halten) bereits gescheitert sein könnte.
 - **Priority:** Fix before deployment (verletzt die stillschweigende Erwartung, dass ein ausgefülltes, sichtbares Formularfeld auch tatsächlich etwas bewirkt — ein klassisches "silent data loss"-Muster)
 
-#### BUG-2: Stationsname bleibt bei gesperrtem Modul-Editor-Zugriff im Header sichtbar
+#### BUG-2 (behoben): Stationsname bleibt bei gesperrtem Modul-Editor-Zugriff im Header sichtbar
+- **Status:** Fixed — `src/app/create/[id]/station/[stationId]/page.tsx` berechnet jetzt `const locked = !hasCreatorAccess(quest)` und zeigt im `AppHeader` bei gesperrtem Zugriff den generischen Titel "Geschützte Station" statt des echten Stationsnamens. Der Header selbst bleibt außerhalb der `CreatorAccessGate` (damit "Zurück" weiterhin erreichbar ist, analog zu `/create/[id]`), zeigt aber keinen Klartext-Inhalt mehr, solange gesperrt
 - **Severity:** Medium
 - **Steps to Reproduce:**
   1. Eine passwortgeschützte, importierte (gesperrte) Quest mit einer Station besitzen, deren Name potenziell einen Hinweis oder eine Antwort enthält (z.B. "Das Codewort lautet Banane")
@@ -340,12 +342,26 @@ Neue Datei `tests/proj-11-import-passwortschutz.spec.ts`: 17 Tests, mindestens e
 - **Priority:** Fix before deployment (Sperre soll laut Spec vollständig sein — "Angenommen eine importierte Quest ist gesperrt, ... dann greift dieselbe Passwort-Sperre wie auf `/create/[id]`" ist für den Stationsnamen aktuell nicht erfüllt)
 
 ### Summary
-- **Acceptance Criteria:** 17/19 vollständig bestanden, 2 mit dokumentiertem Bug (BUG-1, BUG-2) — beide sind eng umrissene Einzelpunkte innerhalb ansonsten bestandener Kriteriengruppen, nicht ganze Gruppen ausgefallen
-- **Bugs Found:** 2 total (0 Critical, 0 High, 2 Medium, 0 Low)
+- **Acceptance Criteria:** 19/19 vollständig bestanden nach den Bugfixes (ursprünglich 17/19, siehe oben)
+- **Bugs Found:** 2 total (0 Critical, 0 High, 2 Medium, 0 Low) — **beide behoben**
 - **Security:** Pass — keine ausnutzbaren Schwachstellen gefunden, Bedrohungsmodell (Abschreckung, kein Hochsicherheitsanspruch) wird eingehalten
-- **Regression:** Pass — 88/88 vorbestehende E2E-Tests über PROJ-6/7/8/9 unverändert grün
-- **Production Ready:** NO — beide gefundenen Bugs sind Medium-Severity, aber beide verletzen den Kernzweck des Features (Passwort tatsächlich wirksam setzen können; Sperre tatsächlich vollständig). Ein Ersteller, der das naheliegendste Verhalten ausprobiert (Passwort direkt beim Anlegen setzen), erlebt eine stille Fehlfunktion — das ist für ein Sicherheits-/Datenschutz-Feature nicht akzeptabel, auch wenn kein Critical/High-Bug im klassischen Sinn vorliegt.
-- **Recommendation:** Beide Bugs vor dem Deploy beheben. BUG-1 vermutlich am einfachsten durch Übergabe von `values.passwordHash` an eine erweiterte `createDraftQuest()`-Signatur (oder einen `updateQuestDetails()`-Aufruf direkt nach dem Erstellen) zu lösen. BUG-2 durch Verschieben des `AppHeader` in den Body von `CreatorAccessGate` (mit einem reduzierten, generischen Titel für den gesperrten Zustand) oder durch Übergabe eines "safe title" an den Header, wenn gesperrt. Nach den Fixes: `/frontend` erneut aufrufen, dann `/qa` erneut, inkl. Aktualisierung der beiden `Bekannte Bugs`-E2E-Tests auf das dann korrekte Verhalten.
+- **Regression:** Pass — 88/88 vorbestehende E2E-Tests über PROJ-6/7/8/9 unverändert grün, auch nach den Bugfixes erneut bestätigt
+- **Production Ready:** YES
+- **Recommendation:** Kann deployed werden.
+
+### Nachtest nach Bugfixes (2026-08-29)
+
+Beide Bugs wurden direkt im Anschluss an diese QA-Runde behoben:
+- **BUG-1:** `handleFormConfirm` (create-Zweig) übergibt jetzt `values.passwordHash` an die neu erstellte Quest.
+- **BUG-2:** `AppHeader` im Modul-Editor zeigt bei gesperrtem Zugriff "Geschützte Station" statt des echten Stationsnamens.
+
+Beim Beheben von BUG-2 deckte der React Compiler (`eslint-plugin-react-hooks`, `react-hooks/preserve-manual-memoization`) vier vorbestehende, bis dahin unbemerkte fehlende Abhängigkeiten (`setEditIndex`, `setPickedType`, `setIsPickerOpen`, `setIsEditorOpen`, `setDeleteIndex`) in `useCallback`-Aufrufen in `src/app/create/[id]/station/[stationId]/page.tsx` auf — funktional folgenlos (State-Setter sind referenzstabil), aber jetzt korrekt ergänzt, damit der Compiler die Memoization einwandfrei validieren kann.
+
+**Verifikation nach den Fixes:**
+- `npm run build` ✓ · `npm run lint` ✓ (0 Fehler, nur vorbestehende `<img>`-Warnungen) · `npm test` ✓ (151/151)
+- Die beiden zuvor als "Bekannte Bugs" markierten E2E-Tests in `tests/proj-11-import-passwortschutz.spec.ts` wurden auf das jetzt korrekte Verhalten umgestellt (`Bugfix-Regressionstests`-Block) und bestehen: Passwort bei Quest-Erstellung wird gespeichert und sperrt den erstellenden Browser weiterhin nicht selbst; Stationsname bleibt bei gesperrtem Zugriff verborgen (auch nach einem fehlgeschlagenen Entsperrversuch)
+- Volle PROJ-11-Suite (17/17), volle PROJ-6/7/8/9-Regressionssuite (88/88) erneut grün nach den Fixes
+- Manuell im Browser (WebKit) nachverifiziert: Modul-Editor-Header zeigt "GESCHÜTZTE STATION" statt des echten Stationsnamens bei gesperrtem Zugriff, Zurück-Pfeil bleibt erreichbar
 
 ## Deployment
 _To be added by /deploy_

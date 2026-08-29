@@ -261,16 +261,15 @@ test.describe("PROJ-11: Import — Passwortschutz", () => {
     });
   });
 
-  test.describe("Bekannte Bugs (siehe QA Test Results)", () => {
-    test("BUG-1: a password typed while creating a NEW quest is silently discarded, not saved", async ({ page }) => {
+  test.describe("Bugfix-Regressionstests (BUG-1/BUG-2, siehe QA Test Results)", () => {
+    test("BUG-1 fixed: a password typed while creating a NEW quest is actually saved", async ({ page }) => {
       await page.goto("/create");
       await page.getByRole("button", { name: "Neue Quest erstellen" }).click();
       await page.fill("#quest-name", "Bug Repro Quest");
       await page.fill("#intro-text", "Willkommen");
       await page.fill("#outro-text", "Geschafft");
-      // The password field IS present during creation (misleadingly, since it does nothing here).
       await expect(page.locator("#quest-password")).toBeVisible();
-      await page.fill("#quest-password", "wirdverworfen");
+      await page.fill("#quest-password", "wirdgespeichert");
       await page.getByRole("button", { name: "Erstellen" }).click();
       await page.waitForURL(/\/create\/.+/);
 
@@ -280,11 +279,14 @@ test.describe("PROJ-11: Import — Passwortschutz", () => {
         return quests.find((q: { id: string }) => q.id === id);
       }, questId);
 
-      // Documents current (buggy) behavior: expected to fail once fixed — see BUG-1 in QA Test Results.
-      expect(stored.passwordHash).toBeUndefined();
+      expect(stored.passwordHash).toMatch(/^[0-9a-f]{64}$/);
+
+      // The creating browser still must never be gated by its own new password.
+      await page.reload();
+      await expect(page.getByText("Passwort erforderlich")).not.toBeVisible();
     });
 
-    test("BUG-2: a locked module editor still shows the station's name in the header", async ({ page }) => {
+    test("BUG-2 fixed: a locked module editor no longer shows the station's name in the header", async ({ page }) => {
       const id = "77777777-0000-4000-8000-000000000001";
       const passwordHash = "30da86175279e4b43580dd7086a44e62eaf50edfc2b4620bb6600621ab020858";
       await seedQuests(page, [
@@ -311,8 +313,14 @@ test.describe("PROJ-11: Import — Passwortschutz", () => {
 
       await page.goto(`/create/${id}/station/${STATION_ID}`);
       await expect(page.getByText("Passwort erforderlich")).toBeVisible();
-      // Documents current (buggy) behavior: expected to fail once fixed — see BUG-2 in QA Test Results.
-      await expect(page.getByText("GEHEIMNISVOLLER STATIONSNAME")).toBeVisible();
+      await expect(page.getByText("GEHEIMNISVOLLER STATIONSNAME")).not.toBeVisible();
+
+      // Unlocking afterward must reveal the real station name again.
+      await page.fill('input[type="password"]', "irgendeinpasswort");
+      // Wrong password on purpose first to prove the name stays hidden through a failed attempt too.
+      await page.getByRole("button", { name: "Entsperren" }).click();
+      await expect(page.getByText("Falsches Passwort.")).toBeVisible();
+      await expect(page.getByText("GEHEIMNISVOLLER STATIONSNAME")).not.toBeVisible();
     });
   });
 });

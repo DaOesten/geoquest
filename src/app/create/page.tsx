@@ -70,7 +70,7 @@ export default function CreatePage() {
       try {
         if (formDialog.mode === "create") {
           const quest = createDraftQuest(values.name, values.intro, values.outro);
-          saveQuest(quest);
+          saveQuest({ ...quest, passwordHash: values.passwordHash });
           setFormDialog(null);
           router.push(`/create/${quest.id}`);
         } else {

@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useQuests } from "@/hooks/use-quests";
 import { deleteModule, getStationById, reorderModules, upsertModule, type DraftModule } from "@/lib/quest-storage";
+import { hasCreatorAccess } from "@/lib/quest-access";
 
 interface StationModulesPageProps {
   params: Promise<{ id: string; stationId: string }>;
@@ -62,18 +63,18 @@ export default function StationModulesPage({ params }: StationModulesPageProps) 
     setEditIndex(null);
     setPickedType(null);
     setIsPickerOpen(true);
-  }, []);
+  }, [setEditIndex, setPickedType, setIsPickerOpen]);
 
   const handlePickType = useCallback((type: ModuleType, taskType?: TaskType) => {
     setPickedType({ type, taskType });
     setIsEditorOpen(true);
-  }, []);
+  }, [setPickedType, setIsEditorOpen]);
 
   const handleEditModule = useCallback((index: number) => {
     setEditIndex(index);
     setPickedType(null);
     setIsEditorOpen(true);
-  }, []);
+  }, [setEditIndex, setPickedType, setIsEditorOpen]);
 
   const handleSaveModule = useCallback(
     (draft: DraftModule) => {
@@ -90,7 +91,7 @@ export default function StationModulesPage({ params }: StationModulesPageProps) 
     refreshQuests();
     toast.success("Modul gelöscht");
     setDeleteIndex(null);
-  }, [deleteIndex, questId, stationId, refreshQuests]);
+  }, [deleteIndex, questId, stationId, refreshQuests, setDeleteIndex]);
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
@@ -117,12 +118,18 @@ export default function StationModulesPage({ params }: StationModulesPageProps) 
 
   const editorModule = editIndex !== null ? modules[editIndex] ?? null : null;
   const deleteTargetModule = deleteIndex !== null ? modules[deleteIndex] : null;
+  const locked = !hasCreatorAccess(quest);
 
   return (
     <>
       <CreatorBackdrop />
       <div className="relative" key={unlockTick}>
-        <AppHeader title={station.name || "Unbenannte Station"} backHref={`/create/${questId}`} variant="light" transparent />
+        <AppHeader
+          title={locked ? "Geschützte Station" : station.name || "Unbenannte Station"}
+          backHref={`/create/${questId}`}
+          variant="light"
+          transparent
+        />
 
         <CreatorAccessGate quest={quest} onUnlocked={() => setUnlockTick((t) => t + 1)}>
           {modules.length === 0 ? (
