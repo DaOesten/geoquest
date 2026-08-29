@@ -111,23 +111,47 @@ export function isPlayable(quest: Quest): boolean {
 }
 
 /**
- * Not currently used anywhere (Play visibility is governed by isPlayable()
- * above, not this) — kept because PROJ-9 (Export) is expected to need a
- * "has the creator released this quest" concept. Defaults to true when the
- * field is absent so quests saved before this existed aren't affected.
+ * Whether the creator has published this quest (PROJ-9 "Veröffentlichen").
+ * Defaults to true when the field is absent so quests saved before this
+ * existed aren't affected.
  */
 export function isPublished(quest: Quest): boolean {
   return quest.published ?? true;
 }
 
-/** Not currently called anywhere — kept for PROJ-9, see isPublished() above. */
-export function publishQuest(id: string): void {
+/**
+ * Publishes a quest if it's playable (has at least one station) — the same
+ * rule that gates Play-mode visibility (PROJ-6). Returns whether publishing
+ * succeeded so the caller (PROJ-9's "Veröffentlichen" menu item) can show
+ * the right toast; a non-playable quest keeps its current `published` value.
+ */
+export function publishQuest(id: string): boolean {
   const quest = getQuestById(id);
-  if (!quest) return;
+  if (!quest || !isPlayable(quest)) return false;
   saveQuest({
     ...quest,
     published: true,
     lastModified: new Date().toISOString(),
+  });
+  return true;
+}
+
+/**
+ * Whether this device has ever downloaded a backup of the quest since its
+ * last change (PROJ-9 "Sicherung"). A quest that was never exported, or was
+ * modified after its last export, counts as not backed up.
+ */
+export function hasUnsavedChanges(quest: Quest): boolean {
+  return !quest.lastExported || quest.lastExported < quest.lastModified;
+}
+
+/** Stamps the quest as backed up on this device. Called after a successful file download (PROJ-9). */
+export function markExported(id: string): void {
+  const quest = getQuestById(id);
+  if (!quest) return;
+  saveQuest({
+    ...quest,
+    lastExported: new Date().toISOString(),
   });
 }
 

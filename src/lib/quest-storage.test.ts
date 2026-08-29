@@ -11,6 +11,8 @@ import {
   isPlayable,
   isPublished,
   publishQuest,
+  hasUnsavedChanges,
+  markExported,
   renameQuest,
   upsertStation,
   deleteStation,
@@ -216,17 +218,57 @@ describe("quest-storage", () => {
       expect(isPublished({ ...completeQuest, published: true })).toBe(true);
     });
 
-    it("publishQuest sets published to true and updates lastModified", () => {
+    it("publishQuest sets published to true, updates lastModified, and returns true when playable", () => {
       const draft = { ...completeQuest, published: false, lastModified: "2020-01-01T00:00:00.000Z" };
       saveQuest(draft);
-      publishQuest(draft.id);
+      expect(publishQuest(draft.id)).toBe(true);
       const updated = getQuestById(draft.id);
       expect(updated?.published).toBe(true);
       expect(updated?.lastModified).not.toBe("2020-01-01T00:00:00.000Z");
     });
 
-    it("publishQuest is a no-op when the quest id does not exist", () => {
-      publishQuest("does-not-exist");
+    it("publishQuest returns false and leaves published unchanged when the quest has no stations", () => {
+      const draft = createDraftQuest("Leerer Entwurf");
+      saveQuest(draft);
+      expect(publishQuest(draft.id)).toBe(false);
+      expect(getQuestById(draft.id)?.published).toBe(false);
+    });
+
+    it("publishQuest is a no-op and returns false when the quest id does not exist", () => {
+      expect(publishQuest("does-not-exist")).toBe(false);
+      expect(getAllQuests()).toEqual([]);
+    });
+  });
+
+  describe("hasUnsavedChanges / markExported", () => {
+    it("returns true when the quest has never been exported", () => {
+      const quest = { ...completeQuest };
+      // @ts-expect-error simulating a quest that was never exported
+      delete quest.lastExported;
+      expect(hasUnsavedChanges(quest)).toBe(true);
+    });
+
+    it("returns false when exported after the last modification", () => {
+      const quest = { ...completeQuest, lastModified: "2020-01-01T00:00:00.000Z", lastExported: "2020-01-02T00:00:00.000Z" };
+      expect(hasUnsavedChanges(quest)).toBe(false);
+    });
+
+    it("returns true when modified again after the last export", () => {
+      const quest = { ...completeQuest, lastModified: "2020-01-02T00:00:00.000Z", lastExported: "2020-01-01T00:00:00.000Z" };
+      expect(hasUnsavedChanges(quest)).toBe(true);
+    });
+
+    it("markExported stamps lastExported to now", () => {
+      const draft = createDraftQuest("Zu sichern");
+      saveQuest(draft);
+      markExported(draft.id);
+      const updated = getQuestById(draft.id);
+      expect(updated?.lastExported).toBeDefined();
+      expect(hasUnsavedChanges(updated!)).toBe(false);
+    });
+
+    it("markExported is a no-op when the quest id does not exist", () => {
+      markExported("does-not-exist");
       expect(getAllQuests()).toEqual([]);
     });
   });

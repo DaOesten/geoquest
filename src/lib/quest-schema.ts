@@ -110,12 +110,12 @@ export const questSchema = z.object({
 });
 
 /**
- * `published` is intentionally NOT part of questSchema: it's a local,
- * device-specific flag (has the creator released this quest to the Play
- * list on this device?), not a property of the shareable quest file — an
- * imported file doesn't carry it, and it must stay independent of
- * isQuestComplete()'s structural check. See PROJ-6 Tech Design.
+ * `published` and `lastExported` are intentionally NOT part of questSchema:
+ * both are local, device-specific fields (has the creator released this
+ * quest to the Play list on this device? when did this device last download
+ * a backup of it?), not properties of the shareable quest file — an
+ * imported file doesn't carry them. See PROJ-6/PROJ-9 Tech Design.
  */
-export type Quest = z.infer<typeof questSchema> & { published?: boolean };
+export type Quest = z.infer<typeof questSchema> & { published?: boolean; lastExported?: string };
 export type Station = z.infer<typeof stationSchema>;
 export type Module = z.infer<typeof moduleSchema>;

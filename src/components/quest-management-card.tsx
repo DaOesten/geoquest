@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { CloudOff, Download, MoreVertical, Pencil, Rocket, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,11 +13,22 @@ import type { Quest } from "@/lib/quest-schema";
 interface QuestManagementCardProps {
   quest: Quest;
   isDraft: boolean;
+  hasUnsavedChanges: boolean;
+  onExport: () => void;
+  onPublish: () => void;
   onRename: () => void;
   onDelete: () => void;
 }
 
-export function QuestManagementCard({ quest, isDraft, onRename, onDelete }: QuestManagementCardProps) {
+export function QuestManagementCard({
+  quest,
+  isDraft,
+  hasUnsavedChanges,
+  onExport,
+  onPublish,
+  onRename,
+  onDelete,
+}: QuestManagementCardProps) {
   const totalCount = quest.stations.length;
   const metaLine = `${totalCount} ${totalCount === 1 ? "Station" : "Stationen"}`;
 
@@ -36,6 +47,14 @@ export function QuestManagementCard({ quest, isDraft, onRename, onDelete }: Ques
         </DropdownMenuTrigger>
         {/* Radix portals to <body>, outside the light-themed container from create/layout.tsx — re-apply the theme here so CSS variables resolve correctly. */}
         <DropdownMenuContent align="end" data-theme="light">
+          <DropdownMenuItem onSelect={onExport}>
+            <Download className="w-4 h-4" />
+            Sicherung
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={onPublish}>
+            <Rocket className="w-4 h-4" />
+            Veröffentlichen
+          </DropdownMenuItem>
           <DropdownMenuItem onSelect={onRename}>
             <Pencil className="w-4 h-4" />
             Umbenennen
@@ -51,6 +70,12 @@ export function QuestManagementCard({ quest, isDraft, onRename, onDelete }: Ques
           {quest.name}
         </span>
         <span className="font-body text-xs text-muted-foreground">{metaLine}</span>
+        {hasUnsavedChanges && (
+          <span className="flex items-center gap-1 font-body text-xs text-muted-foreground">
+            <CloudOff className="w-3.5 h-3.5" />
+            Nicht gesichert
+          </span>
+        )}
       </Link>
     </div>
   );

@@ -23,7 +23,18 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useQuests } from "@/hooks/use-quests";
-import { createDraftQuest, deleteQuest, isQuestComplete, renameQuest, saveQuest } from "@/lib/quest-storage";
+import {
+  createDraftQuest,
+  deleteQuest,
+  hasUnsavedChanges as questHasUnsavedChanges,
+  isPublished,
+  isQuestComplete,
+  markExported,
+  publishQuest,
+  renameQuest,
+  saveQuest,
+} from "@/lib/quest-storage";
+import { exportQuest } from "@/lib/quest-export";
 import { deleteProgress } from "@/lib/quest-progress";
 import type { Quest } from "@/lib/quest-schema";
 
@@ -41,7 +52,11 @@ export default function CreatePage() {
     () =>
       [...quests]
         .sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime())
-        .map((quest) => ({ quest, isDraft: !isQuestComplete(quest) })),
+        .map((quest) => ({
+          quest,
+          isDraft: !isQuestComplete(quest) || !isPublished(quest),
+          hasUnsavedChanges: questHasUnsavedChanges(quest),
+        })),
     [quests]
   );
 
@@ -70,6 +85,38 @@ export default function CreatePage() {
       }
     },
     [nameDialog, refreshQuests, router]
+  );
+
+  const handleExport = useCallback(
+    (quest: Quest) => {
+      exportQuest(quest);
+      try {
+        markExported(quest.id);
+        refreshQuests();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Etwas ist schiefgelaufen.");
+      }
+    },
+    [refreshQuests]
+  );
+
+  const handlePublish = useCallback(
+    (quest: Quest) => {
+      exportQuest(quest);
+      try {
+        markExported(quest.id);
+        const published = publishQuest(quest.id);
+        refreshQuests();
+        if (published) {
+          toast.success("Quest veröffentlicht");
+        } else {
+          toast.error("Quest braucht mindestens 1 Station, um veröffentlicht zu werden.");
+        }
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Etwas ist schiefgelaufen.");
+      }
+    },
+    [refreshQuests]
   );
 
   const handleDeleteConfirm = useCallback(() => {
@@ -126,11 +173,14 @@ export default function CreatePage() {
                 </p>
               ) : (
                 <ul className="flex flex-col gap-3">
-                  {visibleQuests.map(({ quest, isDraft }) => (
+                  {visibleQuests.map(({ quest, isDraft, hasUnsavedChanges }) => (
                     <li key={quest.id}>
                       <QuestManagementCard
                         quest={quest}
                         isDraft={isDraft}
+                        hasUnsavedChanges={hasUnsavedChanges}
+                        onExport={() => handleExport(quest)}
+                        onPublish={() => handlePublish(quest)}
                         onRename={() => setNameDialog({ mode: "rename", quest })}
                         onDelete={() => setDeleteTarget(quest)}
                       />

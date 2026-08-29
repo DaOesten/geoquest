@@ -1,6 +1,6 @@
 # PROJ-9: Creator — JSON-Export
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-08-28
 **Last Updated:** 2026-08-29
 
@@ -213,6 +213,30 @@ Keine neuen Pakete nötig — alles läuft über bereits vorhandene Bausteine od
 - `Blob` + `URL.createObjectURL` — eingebaute Browser-API für den Datei-Download
 - Sonner/Toast — bereits verwendet
 - shadcn DropdownMenu — bereits im Aktionen-Menü verwendet
+
+## Implementation Notes (Frontend)
+
+**Date:** 2026-08-29
+
+### Neue/geänderte Dateien
+| Datei | Zweck |
+|-------|-------|
+| `src/lib/quest-export.ts` | Neu — `exportQuest()` löst den Datei-Download aus (Blob + unsichtbarer `<a download>`-Link), erzeugt den Dateinamen (`{kurz-id}-{name-slug}.json`) und entfernt `published`/`lastExported` aus dem exportierten Objekt (lokale Felder, nicht Teil des teilbaren Datei-Formats) |
+| `src/lib/quest-storage.ts` | + `hasUnsavedChanges()` (Vergleich `lastExported` vs. `lastModified`), + `markExported()` (setzt `lastExported`, symmetrisch zu `renameQuest`); `publishQuest()` prüft jetzt `isPlayable()` und gibt `boolean` zurück statt `void` |
+| `src/lib/quest-schema.ts` | `Quest`-Typ um `lastExported?: string` erweitert (Intersection-Type, außerhalb von `questSchema`, gleiches Muster wie `published`) |
+| `src/components/quest-management-card.tsx` | Zwei neue Props (`hasUnsavedChanges`, `onExport`, `onPublish`), zwei neue Menüpunkte ("Sicherung", "Veröffentlichen") oberhalb von Umbenennen/Löschen, neues "Nicht gesichert"-Badge (unabhängig vom "Entwurf"-Badge) |
+| `src/app/create/page.tsx` | `isDraft` jetzt `!isQuestComplete(quest) \|\| !isPublished(quest)` (reaktiviert die PROJ-6-Formel); neue `handleExport()`/`handlePublish()` — beide exportieren + rufen `markExported()`, `handlePublish()` prüft zusätzlich das `publishQuest()`-Ergebnis für die passende Toast-Meldung |
+| `src/lib/quest-storage.test.ts` | Erweiterte `isPublished`/`publishQuest`-Suite (neuer Fall: nicht spielbare Quest → `publishQuest` gibt `false` zurück, `published` bleibt unverändert) + neue Suite `hasUnsavedChanges`/`markExported` |
+
+### Abweichung von der Tech-Design-Skizze
+Keine — Umsetzung folgt dem Tech Design 1:1, inklusive der Entscheidung, `publishQuest()` selbst um die `isPlayable`-Prüfung zu erweitern statt eine zweite Funktion einzuführen.
+
+### Fehlerbehandlung ergänzt (Edge Case 10 der Spec)
+`handleExport`/`handlePublish` fangen jetzt Fehler von `markExported`/`publishQuest` ab (z.B. „Speicher voll") und zeigen einen Fehler-Toast — der Datei-Download selbst ist zu diesem Zeitpunkt bereits abgeschlossen (kein Datenverlust), nur die Status-Aktualisierung in `localStorage` könnte fehlschlagen, genau wie in der Spec als Edge Case beschrieben.
+
+### Verifikation
+- `npm run build` ✓ · `npm run lint` ✓ (0 Fehler, 6 vorbestehende `<img>`-Warnungen, unverändert) · `npm test` ✓ (139/139, davon 8 neu für PROJ-9: 2 für `publishQuest`'s `isPlayable`-Gate, 6 für `hasUnsavedChanges`/`markExported`)
+- Manuelle Browser-Verifikation (Playwright) konnte in dieser Session nicht abgeschlossen werden — die lokale Playwright-Chromium-Installation schlug wiederholt fehl (fehlendes `chrome-headless-shell`-Binary trotz mehrfachem `npx playwright install`). Auf Wunsch des Nutzers übersprungen. Empfehlung: manuelle Prüfung im Browser (`npm run dev` → `/create`) oder erneuter Versuch in `/qa` nachholen, bevor das Feature als "Approved" markiert wird — insbesondere der Light-Theme-Dropdown-Fix (bekanntes Muster aus PROJ-6) für die zwei neuen Menüpunkte und das visuelle Erscheinungsbild des neuen "Nicht gesichert"-Badges wurden nur durch Code-Review, nicht im Browser bestätigt.
 
 ## QA Test Results
 _To be added by /qa_
