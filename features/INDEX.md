@@ -10,6 +10,7 @@
 - **In Review** - `/qa` active, testing in progress
 - **Approved** - `/qa` passed, no critical/high bugs, ready to deploy
 - **Deployed** - `/deploy` done, live in production
+- **Verworfen** - feature was fully specced (and possibly implemented) but deliberately dropped from scope; spec kept as reference, excluded from Build Order
 
 ## Features
 
@@ -24,7 +25,7 @@
 | PROJ-7 | Creator — Stationen-Editor | P0 | PROJ-6 | Deployed | [Spec](PROJ-7-creator-stationen-editor.md) | 2026-08-23 |
 | PROJ-8 | Creator — Modul-Editor | P0 | PROJ-7 | Deployed | [Spec](PROJ-8-creator-modul-editor.md) | 2026-08-23 |
 | PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Deployed | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
-| PROJ-10 | Creator — Vorschau / Testmodus | P0 | PROJ-4, PROJ-5, PROJ-8 | Roadmap | — | 2026-08-23 |
+| PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Roadmap | — | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Roadmap | — | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | None | Roadmap | — | 2026-08-23 |
@@ -32,6 +33,8 @@
 <!-- Add features above this line -->
 
 ## Build Order
-PROJ-1 → PROJ-2 → PROJ-3 → PROJ-4 → PROJ-5 → PROJ-6 → PROJ-7 → PROJ-8 → PROJ-9 → PROJ-10 → PROJ-11 → PROJ-12 → PROJ-13
+PROJ-1 → PROJ-2 → PROJ-3 → PROJ-4 → PROJ-5 → PROJ-6 → PROJ-7 → PROJ-8 → PROJ-9 → PROJ-11 → PROJ-12 → PROJ-13
+
+_PROJ-10 (Verworfen) ist bewusst nicht Teil der Build Order — siehe Status-Spalte und Spec._
 
 ## Next Available ID: PROJ-14
