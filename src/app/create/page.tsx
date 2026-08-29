@@ -263,9 +263,15 @@ export default function CreatePage() {
           confirmLabel={formDialog?.mode === "edit" ? "Speichern" : "Erstellen"}
           initialValues={
             formDialog?.mode === "edit"
-              ? { name: formDialog.quest.name, intro: formDialog.quest.intro, outro: formDialog.quest.outro }
+              ? {
+                  name: formDialog.quest.name,
+                  intro: formDialog.quest.intro,
+                  outro: formDialog.quest.outro,
+                  passwordHash: formDialog.quest.passwordHash,
+                }
               : undefined
           }
+          hasExistingPassword={formDialog?.mode === "edit" && Boolean(formDialog.quest.passwordHash)}
           onConfirm={handleFormConfirm}
         />
 

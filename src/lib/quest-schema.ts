@@ -107,6 +107,13 @@ export const questSchema = z.object({
   intro: introOutroSchema,
   outro: introOutroSchema,
   stations: z.array(stationSchema).min(1, "Die Quest braucht mindestens eine Station.").max(20, "Maximal 20 Stationen."),
+  /**
+   * SHA-256 hash of an optional Creator-access password (PROJ-11), never the
+   * password itself. Unlike `published`/`lastExported` below, this DOES travel
+   * with the exported/imported file — the hash must be available on whichever
+   * device the file lands on so that device can verify a password against it.
+   */
+  passwordHash: z.string().optional(),
 });
 
 /**

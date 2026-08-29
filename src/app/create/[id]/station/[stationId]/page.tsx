@@ -16,6 +16,7 @@ import { Puzzle, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/app-header";
 import { CreatorBackdrop } from "@/components/creator-backdrop";
+import { CreatorAccessGate } from "@/components/creator-access-gate";
 import { ModuleListItem } from "@/components/module-list-item";
 import { ModuleTypePicker } from "@/components/module-type-picker";
 import { ModuleEditorSheet, type ModuleType, type TaskType } from "@/components/module-editor-sheets";
@@ -48,6 +49,7 @@ export default function StationModulesPage({ params }: StationModulesPageProps) 
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
+  const [unlockTick, setUnlockTick] = useState(0);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -119,84 +121,86 @@ export default function StationModulesPage({ params }: StationModulesPageProps) 
   return (
     <>
       <CreatorBackdrop />
-      <div className="relative">
+      <div className="relative" key={unlockTick}>
         <AppHeader title={station.name || "Unbenannte Station"} backHref={`/create/${questId}`} variant="light" transparent />
 
-        {modules.length === 0 ? (
-          <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-5 text-center">
-            <Puzzle className="w-12 h-12 text-gq-grey" />
-            <p className="text-tech text-xs text-gq-grey tracking-[0.12em]">Noch keine Module</p>
-            <p className="font-body text-sm text-[#5B646A] max-w-xs">
-              Füge dein erstes Modul hinzu — Text, Bild, Audio, Video oder eine Aufgabe.
-            </p>
-            <Button
+        <CreatorAccessGate quest={quest} onUnlocked={() => setUnlockTick((t) => t + 1)}>
+          {modules.length === 0 ? (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-5 text-center">
+              <Puzzle className="w-12 h-12 text-gq-grey" />
+              <p className="text-tech text-xs text-gq-grey tracking-[0.12em]">Noch keine Module</p>
+              <p className="font-body text-sm text-[#5B646A] max-w-xs">
+                Füge dein erstes Modul hinzu — Text, Bild, Audio, Video oder eine Aufgabe.
+              </p>
+              <Button
+                onClick={handleAddModule}
+                className="mt-4 rounded-pill h-11 px-6 bg-primary text-primary-foreground text-tech text-xs tracking-[0.08em] active:scale-[0.96] transition-all duration-fast ease-gq"
+              >
+                <Plus className="w-4 h-4" />
+                Modul hinzufügen
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3 px-5 py-4 pb-28">
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={modules.map((_, i) => `module-${i}`)} strategy={verticalListSortingStrategy}>
+                  <ul className="flex flex-col gap-3">
+                    {modules.map((module, index) => (
+                      <li key={`module-${index}`}>
+                        <ModuleListItem
+                          module={module}
+                          index={index}
+                          onEdit={() => handleEditModule(index)}
+                          onDelete={() => setDeleteIndex(index)}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </SortableContext>
+              </DndContext>
+            </div>
+          )}
+
+          {modules.length > 0 && (
+            <button
+              type="button"
               onClick={handleAddModule}
-              className="mt-4 rounded-pill h-11 px-6 bg-primary text-primary-foreground text-tech text-xs tracking-[0.08em] active:scale-[0.96] transition-all duration-fast ease-gq"
+              aria-label="Modul hinzufügen"
+              className="fixed bottom-6 right-5 z-40 flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg transition-all duration-base ease-gq active:scale-[0.96]"
             >
-              <Plus className="w-4 h-4" />
-              Modul hinzufügen
-            </Button>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-3 px-5 py-4 pb-28">
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={modules.map((_, i) => `module-${i}`)} strategy={verticalListSortingStrategy}>
-                <ul className="flex flex-col gap-3">
-                  {modules.map((module, index) => (
-                    <li key={`module-${index}`}>
-                      <ModuleListItem
-                        module={module}
-                        index={index}
-                        onEdit={() => handleEditModule(index)}
-                        onDelete={() => setDeleteIndex(index)}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              </SortableContext>
-            </DndContext>
-          </div>
-        )}
+              <Plus className="w-5 h-5" strokeWidth={2.5} />
+            </button>
+          )}
 
-        {modules.length > 0 && (
-          <button
-            type="button"
-            onClick={handleAddModule}
-            aria-label="Modul hinzufügen"
-            className="fixed bottom-6 right-5 z-40 flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg transition-all duration-base ease-gq active:scale-[0.96]"
-          >
-            <Plus className="w-5 h-5" strokeWidth={2.5} />
-          </button>
-        )}
+          <ModuleTypePicker open={isPickerOpen} onOpenChange={setIsPickerOpen} onPick={handlePickType} />
 
-        <ModuleTypePicker open={isPickerOpen} onOpenChange={setIsPickerOpen} onPick={handlePickType} />
+          <ModuleEditorSheet
+            open={isEditorOpen}
+            onOpenChange={setIsEditorOpen}
+            module={editorModule}
+            newModuleType={pickedType?.type ?? null}
+            newTaskType={pickedType?.taskType ?? null}
+            onSave={handleSaveModule}
+          />
 
-        <ModuleEditorSheet
-          open={isEditorOpen}
-          onOpenChange={setIsEditorOpen}
-          module={editorModule}
-          newModuleType={pickedType?.type ?? null}
-          newTaskType={pickedType?.taskType ?? null}
-          onSave={handleSaveModule}
-        />
-
-        <AlertDialog open={deleteIndex !== null} onOpenChange={(open) => !open && setDeleteIndex(null)}>
-          {/* Radix portals to <body>, outside the light-themed container from create/layout.tsx — re-apply the theme
-              and its text color here (color is otherwise inherited pre-computed from <body>'s dark default) so
-              descendants without their own explicit color class render correctly. */}
-          <AlertDialogContent data-theme="light" className="text-foreground">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Modul wirklich löschen?</AlertDialogTitle>
-              <AlertDialogDescription>
-                {deleteTargetModule ? "Dieses Modul" : "Das Modul"} wird endgültig gelöscht. Das kann nicht rückgängig gemacht werden.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteConfirm}>Löschen</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+          <AlertDialog open={deleteIndex !== null} onOpenChange={(open) => !open && setDeleteIndex(null)}>
+            {/* Radix portals to <body>, outside the light-themed container from create/layout.tsx — re-apply the theme
+                and its text color here (color is otherwise inherited pre-computed from <body>'s dark default) so
+                descendants without their own explicit color class render correctly. */}
+            <AlertDialogContent data-theme="light" className="text-foreground">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Modul wirklich löschen?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {deleteTargetModule ? "Dieses Modul" : "Das Modul"} wird endgültig gelöscht. Das kann nicht rückgängig gemacht werden.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteConfirm}>Löschen</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </CreatorAccessGate>
       </div>
     </>
   );

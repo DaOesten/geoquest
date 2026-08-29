@@ -1,6 +1,6 @@
 # PROJ-11: Import — Passwortschutz
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-08-29
 **Last Updated:** 2026-08-29
 
@@ -199,6 +199,41 @@ Trifft keine der drei Bedingungen zu → Passwort-Abfrage wird angezeigt.
 ### Dependencies
 
 Kein neues Package zwingend erforderlich. Das Hashing kann über eine bereits im Browser eingebaute Funktion (Web Crypto API) erfolgen — passend für das hier vorliegende Bedrohungsmodell (Abschreckung, keine Hochsicherheit), ohne eine zusätzliche externe Bibliothek einzuführen.
+
+## Implementation Notes (Frontend)
+
+**Date:** 2026-08-29
+
+### Neue/geänderte Dateien
+| Datei | Zweck |
+|-------|-------|
+| `src/lib/quest-access.ts` | Neu — gesamte PROJ-11-Zugriffslogik: `hasCreatorAccess()`, `markCreatedHere()`, `hashNewPassword()`/`verifyPassword()` (Web Crypto SHA-256), lokale "hier erstellt"/"hier entsperrt"-Markierungen in zwei eigenen localStorage-Keys (`gq_created_here`, `gq_unlocked_here`) |
+| `src/components/creator-access-gate.tsx` | Neu — `CreatorAccessGate`-Wrapper: rendert Kinder direkt wenn `hasCreatorAccess()` true ist, sonst den Passwort-Abfrage-Screen (unbegrenzte Versuche, Fehlermeldung bei falscher Eingabe) |
+| `src/lib/quest-schema.ts` | + optionales `passwordHash`-Feld in `questSchema` — reist mit der exportierten/importierten Datei mit (bewusst anders als `published`/`lastExported`) |
+| `src/lib/quest-storage.ts` | `createDraftQuest()` ruft jetzt `markCreatedHere()` auf; `updateQuestDetails()` akzeptiert zusätzlich `passwordHash` |
+| `src/components/quest-form-dialog.tsx` | + optionales Passwort-Feld mit Hinweistext, Mindestlänge-4-Validierung, "Passwort ist gesetzt"-Anzeige statt Klartext bei bestehendem Passwort, "Ändern"-Link zum Überschreiben; Speichern hasht ein neues Passwort asynchron über `hashNewPassword()` |
+| `src/app/create/[id]/page.tsx` | Ganzer Seiteninhalt (Stationsliste, "Quest bearbeiten"-Button, alle Dialoge) in `CreatorAccessGate` gewrappt; `AppHeader`s Zurück-Link bleibt außerhalb der Sperre immer erreichbar |
+| `src/app/create/[id]/station/[stationId]/page.tsx` | Dieselbe Sperre wie oben, deckt auch direkte Deep-Links zum Modul-Editor ab |
+
+### Neue Tests
+- `src/lib/quest-access.test.ts` — 11 Tests: Zugriffsregel (kein Passwort / hier erstellt / hier entsperrt / andere Quest bleibt gesperrt), Hash-Erzeugung (kein Klartext im Hash, unterschiedliche Passwörter → unterschiedliche Hashes), Verifikation (richtig/falsch, markiert nach Erfolg als entsperrt, Quest ohne Passwort ist immer "korrekt")
+
+### Abweichungen von der Tech-Design-Skizze
+- Keine strukturellen Abweichungen. Eine Detailentscheidung während der Umsetzung: Der "Quest bearbeiten"-Button in der Kopfzeile von `/create/[id]` wird bei gesperrtem Zugriff komplett ausgeblendet (nicht nur deaktiviert) — da das Bearbeiten-Dialog Intro-/Outro-Text und den Passwort-Status zeigen würde, was ebenfalls hinter der Sperre liegen soll.
+
+### Verifikation
+- `npm run build` ✓ · `npm run lint` ✓ (0 Fehler, nur vorbestehende `<img>`-Warnungen) · `npm test` ✓ (151/151, davon 11 neu für `quest-access.ts`)
+- Manuell im Browser (Playwright-Treiber gegen WebKit, da der gebündelte Chromium-Headless-Shell-Download in dieser Sandbox fehlt — gleiches etabliertes Muster wie PROJ-3/4/5/7/8/10) mit zwei getrennten Browser-Kontexten (simuliert zwei Geräte) vollständig durchgespielt:
+  - Kontext 1 ("Ersteller"): Neue Quest erstellt, im "Quest bearbeiten"-Dialog ein Passwort gesetzt und gespeichert
+  - Seite neu geladen (derselbe Browser) → **kein** Passwort-Prompt, Stationsliste direkt sichtbar (Ersteller-Erkennung funktioniert)
+  - "Quest bearbeiten" erneut geöffnet → zeigt "Passwort ist gesetzt" statt Klartext, mit "Ändern"-Option
+  - Quest-Objekt aus `localStorage` ausgelesen: `passwordHash` ist ein 64-stelliger SHA-256-Hex-Hash, kein Klartext-Passwort enthalten
+  - Kontext 2 ("Fremdgerät", eigener Browser-Kontext ohne "hier erstellt"-Markierung): dieselbe Quest importiert (via `localStorage`-Injektion, entspricht einem echten Datei-Import) → `/create/[id]` zeigt sofort den Passwort-Abfrage-Screen statt der Stationsliste
+  - Falsches Passwort eingegeben → Fehlermeldung "Falsches Passwort", Eingabefeld bleibt nutzbar
+  - Richtiges Passwort eingegeben → sofortige Freischaltung, Stationsliste inkl. "Quest bearbeiten"-Button sichtbar
+  - Seite neu geladen → bleibt entsperrt (kein erneuter Prompt) — "hier entsperrt"-Markierung persistiert korrekt
+  - Dritter, separater Browser-Kontext mit derselben importierten (gesperrten) Quest → `/play/[id]` zeigt **keinen** Passwort-Prompt, Play-Modus vollständig ungegated bestätigt
+  - Keine Konsolen-/Seitenfehler während des gesamten Durchlaufs
 
 ## QA Test Results
 _To be added by /qa_

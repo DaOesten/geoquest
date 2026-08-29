@@ -26,7 +26,7 @@
 | PROJ-8 | Creator — Modul-Editor | P0 | PROJ-7 | Deployed | [Spec](PROJ-8-creator-modul-editor.md) | 2026-08-23 |
 | PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Deployed | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
-| PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Architected | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
+| PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | In Progress | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Roadmap | — | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | None | Roadmap | — | 2026-08-23 |
 

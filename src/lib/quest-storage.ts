@@ -1,5 +1,6 @@
 import { questSchema, type Quest, type Station, type Module } from "./quest-schema";
 import { stripHtmlTags } from "./sanitize";
+import { markCreatedHere } from "./quest-access";
 
 const STORAGE_KEY = "gq_quests";
 
@@ -83,9 +84,11 @@ export function questExists(id: string): boolean {
  * station list, which is the only thing that still makes it a draft.
  */
 export function createDraftQuest(name: string, intro: Quest["intro"], outro: Quest["outro"]): Quest {
+  const id = crypto.randomUUID();
+  markCreatedHere(id);
   return {
     version: 1,
-    id: crypto.randomUUID(),
+    id,
     name: stripHtmlTags(name).trim(),
     lastModified: new Date().toISOString(),
     intro,
@@ -155,8 +158,15 @@ export function markExported(id: string): void {
   });
 }
 
-/** Updates a quest's name, intro and outro together — the "Bearbeiten" flow (PROJ-6). Leaves stations/modules untouched. */
-export function updateQuestDetails(id: string, details: { name: string; intro: Quest["intro"]; outro: Quest["outro"] }): void {
+/**
+ * Updates a quest's name, intro, outro and Creator-access password hash together —
+ * the "Bearbeiten" flow (PROJ-6/PROJ-11). Leaves stations/modules untouched.
+ * `passwordHash` is `undefined` to remove protection, or omitted to leave it unchanged.
+ */
+export function updateQuestDetails(
+  id: string,
+  details: { name: string; intro: Quest["intro"]; outro: Quest["outro"]; passwordHash?: string }
+): void {
   const quest = getQuestById(id);
   if (!quest) return;
   saveQuest({
@@ -164,6 +174,7 @@ export function updateQuestDetails(id: string, details: { name: string; intro: Q
     name: stripHtmlTags(details.name).trim(),
     intro: details.intro,
     outro: details.outro,
+    passwordHash: details.passwordHash,
     lastModified: new Date().toISOString(),
   });
 }
