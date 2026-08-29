@@ -1,4 +1,14 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
+
+/** A minimal but valid quest so /play/test-quest and /create/test-quest render instead of 404ing. */
+async function seedTestQuest(page: Page) {
+  await page.evaluate(() => {
+    localStorage.setItem('gq_first_visit_done', 'true')
+    localStorage.setItem('gq_quests', JSON.stringify([
+      { version: 1, id: 'test-quest', name: 'Test Quest', lastModified: '2026-01-01T00:00:00.000Z', intro: { text: '' }, outro: { text: '' }, stations: [] },
+    ]))
+  })
+}
 
 test.describe('PROJ-1: App Shell & Mode Switch', () => {
 
@@ -44,6 +54,8 @@ test.describe('PROJ-1: App Shell & Mode Switch', () => {
     })
 
     test('sub-level /play/[id] shows back arrow that navigates to /play', async ({ page }) => {
+      await page.goto('/play')
+      await seedTestQuest(page)
       await page.goto('/play/test-quest')
       const backLink = page.locator('header a[aria-label="Zurück"]')
       await expect(backLink).toBeVisible()
@@ -52,6 +64,8 @@ test.describe('PROJ-1: App Shell & Mode Switch', () => {
     })
 
     test('sub-level /create/[id] shows back arrow that navigates to /create', async ({ page }) => {
+      await page.goto('/create')
+      await seedTestQuest(page)
       await page.goto('/create/test-quest')
       const backLink = page.locator('header a[aria-label="Zurück"]')
       await expect(backLink).toBeVisible()
@@ -75,6 +89,8 @@ test.describe('PROJ-1: App Shell & Mode Switch', () => {
     })
 
     test('/play/[id] renders with dark theme', async ({ page }) => {
+      await page.goto('/play')
+      await seedTestQuest(page)
       await page.goto('/play/test-quest')
       await expect(page.locator('[data-theme="dark"]')).toBeVisible()
     })
@@ -85,6 +101,8 @@ test.describe('PROJ-1: App Shell & Mode Switch', () => {
     })
 
     test('/create/[id] renders with light theme', async ({ page }) => {
+      await page.goto('/create')
+      await seedTestQuest(page)
       await page.goto('/create/test-quest')
       await expect(page.locator('[data-theme="light"]')).toBeVisible()
     })
@@ -169,11 +187,25 @@ test.describe('PROJ-1: App Shell & Mode Switch', () => {
 
   test.describe('Edge Cases', () => {
     test('direct URL entry to /play/abc sets correct dark theme', async ({ page }) => {
+      await page.goto('/play')
+      await page.evaluate(() => {
+        localStorage.setItem('gq_first_visit_done', 'true')
+        localStorage.setItem('gq_quests', JSON.stringify([
+          { version: 1, id: 'abc', name: 'Test Quest', lastModified: '2026-01-01T00:00:00.000Z', intro: { text: '' }, outro: { text: '' }, stations: [] },
+        ]))
+      })
       await page.goto('/play/abc')
       await expect(page.locator('[data-theme="dark"]')).toBeVisible()
     })
 
     test('direct URL entry to /create/xyz sets correct light theme', async ({ page }) => {
+      await page.goto('/create')
+      await page.evaluate(() => {
+        localStorage.setItem('gq_first_visit_done', 'true')
+        localStorage.setItem('gq_quests', JSON.stringify([
+          { version: 1, id: 'xyz', name: 'Test Quest', lastModified: '2026-01-01T00:00:00.000Z', intro: { text: '' }, outro: { text: '' }, stations: [] },
+        ]))
+      })
       await page.goto('/create/xyz')
       await expect(page.locator('[data-theme="light"]')).toBeVisible()
     })
