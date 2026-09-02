@@ -752,3 +752,40 @@ Keine neuen Bugs in dieser QA-Runde. Beide während der Implementierung vom Nutz
 - **Security:** Pass — keine Schwachstellen gefunden (insb. kein XSS via Nominatim-Antwort)
 - **Production Ready:** YES
 - **Recommendation:** Deploy freigegeben.
+
+---
+
+## Deployment — Adresssuche (2026-09-02)
+
+**Production URL:** https://geoquesty.vercel.app
+**Deployed:** 2026-09-02
+**Platform:** Vercel (auto-deploy on push to main)
+**Git Tag:** v1.15.0-PROJ-7
+
+### Pre-Deployment Checks
+- [x] `npm run build` erfolgreich
+- [x] `npm run lint` erfolgreich (0 Fehler, weiterhin nur die 6 vorbestehenden `<img>`-Warnungen)
+- [x] `npm test` erfolgreich (159/159)
+- [x] QA-Freigabe: "Approved" / "Production Ready: YES"
+- [x] Keine Critical/High-Bugs offen (0 neue Bugs im QA-Durchgang)
+- [x] Keine neuen Umgebungsvariablen nötig (Nominatim benötigt keinen API-Key)
+- [x] Keine Secrets im Diff (`git show HEAD` vor dem Push geprüft — nur Doku-Text, der bestätigt, dass kein API-Key nötig ist)
+- [x] Kein Datenbank-Layer betroffen (weiterhin reines localStorage, kein Supabase-Bezug)
+- [x] Nur PROJ-7-relevante Dateien committet — im Arbeitsverzeichnis lagen zusätzlich unfertige, noch nicht QA-geprüfte PROJ-4-Styling-Änderungen (Aufgaben-Screen-Redesign), die auf Nutzerentscheidung bewusst NICHT mit deployt wurden (bleiben unstaged im Arbeitsverzeichnis für ein separates `/qa` + `/deploy`)
+- [x] Commit gepusht nach `main` (`c50fc46`)
+
+### Deploy-Vorgang
+`git push origin main` (Commit `c50fc46`) löste den bestehenden Vercel-GitHub-Auto-Deploy aus — kein manueller `vercel --prod`-Schritt nötig.
+
+### Post-Deployment-Verifikation
+Manueller End-to-End-Smoketest direkt in Produktion (Playwright/WebKit gegen `https://geoquesty.vercel.app`, Testquest per `localStorage`-Seed, **echter Live-Request an Nominatim**, kein Mock):
+- Adress-Suchfeld ist im Sheet vorhanden
+- Eingabe "Brandenburger Tor Berlin" liefert nach Debounce 3 echte Nominatim-Treffer (z.B. "Brandenburger Tor, 1, Pariser Platz, Friedrich-Wilhelm-Stadt, Mitte, Berlin, 10117, Deutschland")
+- Auswahl des ersten Treffers setzt den Kartenpin sichtbar
+- "X"-Clear-Button ist vorhanden
+- Keine Konsolenfehler während des gesamten Durchlaufs
+
+Test-Quest wurde ausschließlich im `localStorage` des Test-Browsers angelegt und dort direkt wieder entfernt — keine Bereinigung in Produktion nötig, da nichts serverseitig gespeichert wird (kein Backend bei GeoQuest).
+
+### Bekannte offene Punkte
+Keine für die Adresssuche selbst. Die im Arbeitsverzeichnis liegenden, bewusst nicht mit deployten PROJ-4-Styling-Änderungen (Aufgaben-Screen-Redesign) warten auf einen separaten `/qa`- und `/deploy`-Durchgang außerhalb dieses PROJ-7-Umfangs.
