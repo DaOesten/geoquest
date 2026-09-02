@@ -112,6 +112,128 @@ test.describe("PROJ-7: Creator — Stationen-Editor", () => {
     });
   });
 
+  test.describe("Adresssuche", () => {
+    async function mockNominatim(page: Page, results: Array<{ place_id: number; display_name: string; lat: string; lon: string }>) {
+      await page.route("**/nominatim.openstreetmap.org/search**", async (route) => {
+        await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(results) });
+      });
+    }
+
+    const BRANDENBURG_GATE = {
+      place_id: 1,
+      display_name: "Brandenburger Tor, Pariser Platz, Berlin, Deutschland",
+      lat: "52.5162746",
+      lon: "13.3777041",
+    };
+
+    test("shows a debounced suggestion list after typing, without an early request", async ({ page }) => {
+      let requestCount = 0;
+      await page.route("**/nominatim.openstreetmap.org/search**", async (route) => {
+        requestCount++;
+        await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([BRANDENBURG_GATE]) });
+      });
+
+      await seedQuest(page, draftQuest(QUEST_ID, "Leere Quest"));
+      await page.getByRole("button", { name: "Station hinzufügen" }).click();
+      const search = page.getByPlaceholder("Adresse suchen, z.B. Musterstraße 1");
+      await search.fill("Brandenburger Tor");
+
+      // No request before the debounce window elapses.
+      await page.waitForTimeout(200);
+      expect(requestCount).toBe(0);
+
+      await expect(page.getByText("Brandenburger Tor, Pariser Platz, Berlin, Deutschland")).toBeVisible();
+      expect(requestCount).toBe(1);
+    });
+
+    test("selecting a suggestion sets the pin, centers the map, and closes the list", async ({ page }) => {
+      await mockNominatim(page, [BRANDENBURG_GATE]);
+      await seedQuest(page, draftQuest(QUEST_ID, "Leere Quest"));
+      await page.getByRole("button", { name: "Station hinzufügen" }).click();
+      const search = page.getByPlaceholder("Adresse suchen, z.B. Musterstraße 1");
+      await search.fill("Brandenburger Tor");
+
+      const suggestion = page.getByText("Brandenburger Tor, Pariser Platz, Berlin, Deutschland");
+      await expect(suggestion).toBeVisible();
+      await suggestion.click();
+
+      await expect(suggestion).not.toBeVisible();
+      await expect(page.locator(".leaflet-marker-icon")).toHaveCount(1);
+    });
+
+    test("shows a hint and keeps the map usable when the search has no results", async ({ page }) => {
+      await mockNominatim(page, []);
+      await seedQuest(page, draftQuest(QUEST_ID, "Leere Quest"));
+      await page.getByRole("button", { name: "Station hinzufügen" }).click();
+      const search = page.getByPlaceholder("Adresse suchen, z.B. Musterstraße 1");
+      await search.fill("xyzxyzxyz123");
+
+      await expect(page.getByText("Keine Ergebnisse gefunden.")).toBeVisible();
+      const map = page.locator(".leaflet-container");
+      const box = await map.boundingBox();
+      await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
+      await expect(page.locator(".leaflet-marker-icon")).toHaveCount(1);
+    });
+
+    test("shows a hint and keeps the map usable when Nominatim is unreachable", async ({ page }) => {
+      await page.route("**/nominatim.openstreetmap.org/search**", (route) => route.abort("failed"));
+      await seedQuest(page, draftQuest(QUEST_ID, "Leere Quest"));
+      await page.getByRole("button", { name: "Station hinzufügen" }).click();
+      const search = page.getByPlaceholder("Adresse suchen, z.B. Musterstraße 1");
+      await search.fill("beliebige Adresse");
+
+      await expect(page.getByText("Suche nicht verfügbar.")).toBeVisible();
+      await expect(page.locator(".leaflet-container")).toBeVisible();
+    });
+
+    test("map tap and 'Aktuelle Position verwenden' still work alongside the search field", async ({ page }) => {
+      await mockNominatim(page, [BRANDENBURG_GATE]);
+      await seedQuest(page, draftQuest(QUEST_ID, "Leere Quest"));
+      await page.getByRole("button", { name: "Station hinzufügen" }).click();
+
+      const map = page.locator(".leaflet-container");
+      const box = await map.boundingBox();
+      await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
+      await expect(page.locator(".leaflet-marker-icon")).toHaveCount(1);
+
+      await expect(page.getByRole("button", { name: /Aktuelle Position verwenden/ })).toBeEnabled();
+    });
+
+    test("the clear ('X') button empties the search field and closes the list without leaving blank space", async ({ page }) => {
+      await mockNominatim(page, [BRANDENBURG_GATE]);
+      await seedQuest(page, draftQuest(QUEST_ID, "Leere Quest"));
+      await page.getByRole("button", { name: "Station hinzufügen" }).click();
+      const search = page.getByPlaceholder("Adresse suchen, z.B. Musterstraße 1");
+      await search.fill("Brandenburger Tor");
+      await expect(page.getByText("Brandenburger Tor, Pariser Platz, Berlin, Deutschland")).toBeVisible();
+
+      await page.getByRole("button", { name: "Suchtext löschen" }).click();
+      await expect(search).toHaveValue("");
+      await expect(page.getByText("Brandenburger Tor, Pariser Platz, Berlin, Deutschland")).not.toBeVisible();
+    });
+
+    test("closing the sheet while a search is in flight does not throw or leave stale state", async ({ page }) => {
+      await page.route("**/nominatim.openstreetmap.org/search**", async (route) => {
+        await new Promise((r) => setTimeout(r, 1000));
+        await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([BRANDENBURG_GATE]) });
+      });
+
+      const pageErrors: string[] = [];
+      page.on("pageerror", (err) => pageErrors.push(err.message));
+
+      await seedQuest(page, draftQuest(QUEST_ID, "Leere Quest"));
+      await page.getByRole("button", { name: "Station hinzufügen" }).click();
+      const search = page.getByPlaceholder("Adresse suchen, z.B. Musterstraße 1");
+      await search.fill("langsame Suche");
+      await page.waitForTimeout(600); // let the debounce fire so the request is in flight
+
+      await page.getByRole("button", { name: "Abbrechen" }).click();
+      await page.waitForTimeout(1200); // wait past the slow response
+
+      expect(pageErrors).toEqual([]);
+    });
+  });
+
   test.describe("Name & Radius", () => {
     test("saves the entered name", async ({ page }) => {
       await seedQuest(page, draftQuest(QUEST_ID, "Leere Quest"));

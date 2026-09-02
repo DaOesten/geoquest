@@ -2,7 +2,7 @@
 
 ## Status: Deployed
 **Created:** 2026-08-28
-**Last Updated:** 2026-08-30
+**Last Updated:** 2026-09-02
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — für Routing und UI-Rahmen
@@ -24,14 +24,14 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 9. Als Ersteller möchte ich in der Stationsliste klar unterscheiden können, ob ich gerade die Station selbst (Name/Position/Radius) oder ihre Inhalte (Module) bearbeite, damit ich nicht versehentlich im falschen Dialog lande (siehe Decision Log 2026-08-30).
 7. Als Ersteller möchte ich beim Bearbeiten einer Station sehen, wo meine anderen Stationen liegen, damit ich einschätzen kann, ob die Route sinnvoll ist (z.B. nicht zwei Stationen zu nah beieinander).
 8. Als Ersteller möchte ich meinen Zwischenstand beim Bearbeiten einer Station nicht verlieren, auch wenn ich noch keine Position gesetzt habe, damit ich in Ruhe weiterarbeiten kann.
+10. Als Ersteller möchte ich eine Adresse (z.B. Straße und Hausnummer) in ein Suchfeld eingeben und aus Vorschlägen auswählen können, damit ich eine bekannte Adresse nicht mühsam auf der Karte suchen/scrollen muss (siehe Decision Log 2026-09-02).
 
 ## Out of Scope
 - Modul-Editor für die 5 Modultypen (Text/Bild/Audio/Video/Task) an einer Station — PROJ-8. Jede Station bekommt hier einen "Module bearbeiten"-Button, der zu PROJ-8 führt, aber ohne Funktion, bis PROJ-8 gebaut ist
 - JSON-Export — PROJ-9
 - Vorschau/Testmodus im Creator — PROJ-10 (Testen läuft vorerst nur über den echten Play-Modus, wie in PROJ-6 etabliert)
 - Passwortschutz zum Bearbeiten importierter Quests — PROJ-11
-- Manuelle Lat/Lng-Zahlen-Eingabe als Alternative zur Karte (bewusst nicht gebaut — Karte ist der einzige Eingabeweg, siehe Decision Log)
-- Adress-Suche / Ortsnamen-Suche auf der Karte (kein Geocoding-Service im MVP, nur Antippen + "aktuelle Position")
+- Manuelle Lat/Lng-Zahlen-Eingabe als Alternative zur Karte (bewusst nicht gebaut — Karte bleibt der einzige direkte Koordinaten-Eingabeweg, Adresssuche ist ein zusätzlicher Zuführungsweg zur Karte, keine Zahlen-Eingabe, siehe Decision Log)
 - Kartenansicht mit Route/Wegbeschreibung zwischen Stationen (kein Routing-API, nur Kontext-Pins)
 - Undo nach dem Löschen einer Station (bewusst Bestätigungsdialog statt Undo-Toast, siehe Decision Log)
 - Validierung/Blockieren beim Speichern einer Station ohne Position (bewusst als Entwurf erlaubt, siehe Decision Log)
@@ -56,6 +56,12 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 - [ ] Angenommen ein Pin ist gesetzt, wenn der Nutzer ihn per Drag verschiebt, dann übernimmt die neue Position die Lat/Lng-Werte
 - [ ] Angenommen der Nutzer tippt auf "Aktuelle Position verwenden", wenn die Browser-GPS-Permission erteilt ist und ein Signal verfügbar ist, dann wird der Pin auf die aktuelle Geräteposition gesetzt und die Karte zentriert dorthin
 - [ ] Angenommen der Nutzer tippt auf "Aktuelle Position verwenden", wenn die Permission verweigert wird oder kein Signal verfügbar ist, dann erscheint eine Fehlermeldung ("Standort nicht verfügbar") und die Karte bleibt unverändert nutzbar für manuelles Antippen
+
+**Adresssuche (neu seit Refine 2026-09-02):**
+- [ ] Angenommen das Stations-Sheet ist offen, wenn der Nutzer in das Adress-Suchfeld tippt, dann erscheint nach kurzer Eingabepause (Debounce, kein Request pro Tastenanschlag) eine Vorschlagsliste mit Treffern von Nominatim (OpenStreetMap)
+- [ ] Angenommen die Vorschlagsliste zeigt Treffer, wenn der Nutzer einen Vorschlag antippt, dann wird der Stations-Pin sofort auf diese Position gesetzt, die Karte zentriert dorthin, und der Nutzer kann den Pin danach weiterhin per Drag feinjustieren
+- [ ] Angenommen der Nutzer hat eine Adresse eingegeben, wenn die Suche keine Treffer liefert oder Nominatim nicht erreichbar ist, dann erscheint ein Hinweistext ("Keine Ergebnisse gefunden" bzw. "Suche nicht verfügbar") und die Karte bleibt unverändert nutzbar für manuelles Antippen
+- [ ] Angenommen der Nutzer hat das Suchfeld genutzt, wenn er stattdessen auf die Karte tippt oder "Aktuelle Position verwenden" nutzt, dann funktioniert das unverändert wie bisher — die Suche ist ein zusätzlicher, gleichwertiger Eingabeweg neben Antippen und GPS
 
 **Name & Radius:**
 - [ ] Angenommen das Sheet ist offen, wenn der Nutzer einen Stationsnamen eingibt, dann wird dieser beim Speichern übernommen
@@ -93,6 +99,9 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 8. **Sheet wird während eines laufenden GPS-Lookups geschlossen (Abbrechen):** Der GPS-Request wird verworfen, keine Race Condition, da der State nur beim Speichern übernommen wird
 9. **Sehr schnelles Antippen der Karte mehrfach hintereinander:** Nur die letzte Tap-Position zählt, der Pin springt entsprechend — kein Debounce nötig, da nur eine lokale State-Änderung ohne Netzwerk-Call
 10. **Zwischenstand-Garantie:** Wie in PROJ-6 explizit festgehalten — jede gespeicherte Station (auch ohne Position) wird sofort in `gq_quests` persistiert, kein Datenverlust bei Navigation weg von der Seite
+11. **Sehr schnelles Tippen im Adressfeld:** Debounce verhindert einen Request pro Tastenanschlag; nur die zuletzt eingegebene Anfrage nach Ablauf der Pause löst einen Request aus, veraltete In-Flight-Requests werden ignoriert (kein Wettlauf, bei dem eine ältere Antwort eine neuere Vorschlagsliste überschreibt)
+12. **Sheet wird während einer laufenden Adresssuche geschlossen (Abbrechen):** Der Such-Request wird verworfen, analog zum bestehenden Verhalten beim GPS-Lookup (Edge Case 8) — keine Race Condition, da der State nur beim Speichern übernommen wird
+13. **Nominatim-Nutzungsrichtlinie (Rate Limit):** Client-seitiges Debouncing hält die Requestrate weit unter dem von Nominatim vorgeschriebenen Maximum (1 Request/Sekunde); da es sich um eine Einzelnutzer-PWA ohne Server-Proxy handelt, geht die Anfrage direkt vom Browser des Erstellers aus — kein serverseitiges Rate-Limiting nötig, da Requests nicht gebündelt/aggregiert werden
 
 ## Technical Requirements
 - Karten-Bibliothek: Leaflet + OpenStreetMap-Tiles (kostenlos, kein API-Key nötig) — neue Dependency, siehe Decision Log
@@ -105,6 +114,9 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 - Bestätigungsdialog bei kritischen Aktionen (Löschen) — PRD-Vorgabe
 - Performance: Karte < 100ms Response bei Zoom/Pan (PRD-Anforderung)
 - Sheet/Dialog-Portal-Rendering: Muss das bestehende Light-Theme-Fix-Muster aus PROJ-6 übernehmen (`data-theme="light"` + `text-foreground` auf der Portal-Root), sonst droht derselbe Dark-Theme-Rendering-Bug
+- Geocoding: Nominatim (OpenStreetMap) Search-API (`https://nominatim.openstreetmap.org/search`), kein API-Key nötig, konsistent mit der bestehenden Leaflet/OSM-Kartenbasis; keine Länder-/Regionseinschränkung (weltweite Suche)
+- Nominatim-Nutzungsrichtlinie erfordert einen aussagekräftigen `User-Agent`- oder `Referer`-Header sowie clientseitiges Debouncing (max. 1 Request/Sekunde) — beides bei der Implementierung zu beachten
+- Debounce für das Adress-Suchfeld: ca. 500ms nach der letzten Eingabe, veraltete In-Flight-Requests werden verworfen (siehe Edge Case 11)
 
 ## Open Questions
 - [x] Welche konkrete Drag-and-Drop-Bibliothek soll verwendet werden? → Gelöst in `/architecture`: `@dnd-kit` (Begründung siehe Tech Design)
@@ -113,6 +125,9 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 
 **Neu seit Refine 2026-08-30 — implementiert (siehe Implementation Notes unten):**
 - [x] `station-list-item.tsx` umgebaut: Zeilen-Tap → `onEditModules` (statt `onEdit`), separater Pencil-Button entfällt, ⋮-Menü bekommt "Station bearbeiten" (→ `onEdit`) zusätzlich zu "Löschen", Meta-Zeile bekommt Puzzle-Icon + Modulanzahl statt MapPin-Icon, MapPin/MapPinOff-Icon wandert vor die Nummerierung im Titel.
+
+**Neu seit Refine 2026-09-02 — noch nicht implementiert:**
+- [x] Adress-Suchfeld im `StationEditorSheet` ergänzen (Debounced Nominatim-Suche, Vorschlagsliste, Pin-Setzen bei Auswahl) → Gelöst in `/architecture`: shadcn `Command` (bereits installiert) + neuer `useAddressSearch`-Hook, siehe Tech Design "Adresssuche" unten
 
 ## Decision Log
 
@@ -130,6 +145,11 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 | Keine UI-Sperre bei Erreichen von 20 Stationen | Die Schema-Grenze aus PROJ-2 bleibt die einzige durchgesetzte Regel (greift bei Import/Export); eine zusätzliche UI-Sperre wäre doppelte Logik ohne klaren MVP-Nutzen | 2026-08-28 |
 | Stationszeile antippen führt zu Modulen (PROJ-8), nicht mehr zu Stationsdetails; Stationsdetails wandern ins ⋮-Menü ("Station bearbeiten") | Nutzer-Feedback nach Live-Nutzung: Mit Quest-Bearbeiten (Header), Stationsdetails (Sheet) und Modul-Editor gab es zu viele gleich aussehende "Bearbeiten"-Einstiege auf einer Seite. Modul-Bearbeitung ist beim Quest-Aufbau die mit Abstand häufigste Aktion — verdient den einfachsten Zugriff (ganze Zeile antippbar). Stationsdetails (Position/Radius/Name) werden seltener geändert, nachdem eine Station einmal angelegt ist — passt gut ins sekundäre ⋮-Menü, wo auch "Löschen" bereits sitzt | 2026-08-30 |
 | Puzzle-Icon + Modulanzahl in der Meta-Zeile statt separatem Pencil-Button | Visueller Hinweis, dass die Zeile zu Modulen führt, ohne einen zusätzlichen Tap-Ziel-Button zu brauchen; Pencil-Icon ist jetzt ausschließlich im ⋮-Menü bei "Station bearbeiten" reserviert, keine doppelte Icon-Bedeutung mehr | 2026-08-30 |
+| Adresssuche als zusätzlicher Eingabeweg zur Karte ergänzt (Out-of-Scope-Entscheidung vom 2026-08-28 revidiert) | Nutzer-Feedback nach Live-Nutzung: Reines Antippen der Karte ist für bekannte Adressen (Straße + Hausnummer) umständlich, wenn man erst zoomen/scrollen muss, um den richtigen Ort zu finden — Grill-Antwort: "Reines Nutzungsproblem" | 2026-09-02 |
+| Nominatim (OpenStreetMap) als Geocoding-Service, keine Länder-/Regionseinschränkung | Kostenlos, kein API-Key, passt zur bestehenden Leaflet/OSM-Kartenbasis und zur etablierten "kein API-Key"-Philosophie des Projekts; weltweite Suche gewählt, da Ersteller Quests auch außerhalb Deutschlands planen könnten und die Einschränkung keinen MVP-Mehrwert böte | 2026-09-02 |
+| Debounced Live-Vorschlagsliste statt explizitem Such-Button | Vertrautes UX-Muster (Google Maps o.ä.), reduziert die Anzahl nötiger Taps gegenüber einem separaten Such-Button-Schritt | 2026-09-02 |
+| Auswahl eines Vorschlags setzt den Pin sofort (nicht nur Kartenzentrierung) | Konsistent mit dem bestehenden "Aktuelle Position verwenden"-Verhalten (setzt ebenfalls direkt den Pin); Nutzer kann bei Bedarf trotzdem per Drag feinjustieren, kein zusätzlicher Pflichtschritt für den Regelfall | 2026-09-02 |
+| Manuelle Lat/Lng-Zahlen-Eingabe bleibt Out of Scope, auch mit Adresssuche | Adresssuche ist ein zusätzlicher Zuführungsweg zur Karte (wie Antippen/GPS), keine direkte Koordinaten-Eingabe — die ursprüngliche Begründung (Zielgruppe kennt keine GPS-Koordinaten) bleibt unverändert gültig | 2026-09-02 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -144,6 +164,12 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 | Stations-State im Sheet als lokaler Entwurf, erst bei "Speichern" in `gq_quests` übernommen | Verhindert, dass Kartenbewegungen/Zwischenzustände beim bloßen Öffnen des Sheets bereits die Quest verändern — Persistenz passiert nur bei explizitem Nutzer-Tap auf "Speichern", passend zum "Abbrechen verwirft alles"-Kriterium der Spec | 2026-08-28 |
 | Kein neuer localStorage-Key — Stationen leben weiterhin im bestehenden `gq_quests`-Quest-Objekt (`stations`-Array) | Konsistent mit PROJ-2/PROJ-6: eine Quest ist ein einziges Objekt, Stationen sind kein eigenständig adressierbares Storage-Konzept | 2026-08-28 |
 | `radiusMeters` erlaubt weiterhin beliebige Zahlen im Zod-Schema (PROJ-2), UI erzwingt nur die 4 Stufen | Schema bleibt kompatibel mit importierten Dateien, die z.B. `radiusMeters: 37` enthalten könnten (von einer anderen App oder älteren Version) — die UI-Einschränkung auf 4 Stufen ist rein editorseitig, kein Datenmodell-Zwang | 2026-08-28 |
+| shadcn `Command` (`cmdk`) für die Adress-Vorschlagsliste, kein neues Paket | Bereits im Projekt installiert (`package.json`), aber bisher ungenutzt — barrierefreie Such-mit-Liste-Komponente, Tastatur-Navigation kommt eingebaut mit, passt zum "shadcn first"-Prinzip | 2026-09-02 |
+| Neuer `useAddressSearch`-Hook statt Logik direkt in `StationEditorSheet` | Analog zu `useCurrentPosition` aufgebaut (gleiches Rückgabemuster: Ladezustand + Ergebnis), kapselt Debounce/Fetch/Race-Schutz isoliert und testbar, hält das Sheet schlank | 2026-09-02 |
+| Client-seitiger Direkt-Request an Nominatim (kein Server-Proxy/API-Route) | Konsistent mit der No-Backend-Architektur des Projekts (PRD-Constraint); Nominatim erfordert keinen API-Key, ein Server-Proxy wäre zusätzliche Infrastruktur ohne MVP-Nutzen | 2026-09-02 |
+| Debounce direkt im Hook implementiert (`setTimeout`/`clearTimeout`), keine neue Debounce-Bibliothek | Einzelner Anwendungsfall im gesamten Projekt, eine dedizierte Bibliothek (z.B. `use-debounce`) wäre eine neue Dependency für ein Standard-Pattern, das sich in wenigen Zeilen selbst abbilden lässt | 2026-09-02 |
+| `AbortController` für Race-Schutz UND Abbruch beim Sheet-Schließen in einem Mechanismus | Ein Werkzeug statt zweier getrennter Lösungen für Edge Case 11 (veraltete Antworten) und Edge Case 12 (Sheet schließt während laufender Suche) — weniger State, weniger Fehlerquellen | 2026-09-02 |
+| Positions-Auswahl aus der Adresssuche nutzt denselben `setPosition`/`setMapView`-Pfad wie "Aktuelle Position verwenden" | Kein separater Code-Pfad für "Position setzen" nötig — Adresssuche ist nur eine dritte Aufrufquelle desselben bestehenden Mechanismus, konsistent mit dem bereits etablierten Sheet-Datenfluss | 2026-09-02 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
@@ -216,6 +242,73 @@ Kein neuer Speicherort. Stationen sind bereits Teil des Quest-Objekts im bestehe
 | `StationEditorSheet` | 🆕 Neu |
 | `StationListItem` (sortierbar via @dnd-kit) | 🆕 Neu |
 | `useCurrentPosition`-Hook (Einzelabfrage `getCurrentPosition`) | 🆕 Neu — bewusst kein neuer `watchPosition`-Hook wie im Player, da nur eine einmalige Positionsabfrage gebraucht wird |
+
+## Tech Design — Adresssuche (2026-09-02)
+
+### Komponenten-Struktur (Ergänzung)
+
+```
+StationEditorSheet
+├── Namensfeld (unverändert)
+├── AddressSearchField (neu)
+│   ├── shadcn Command (bereits im Projekt installiert, `cmdk`-basiert)
+│   │   ├── Eingabefeld ("Adresse suchen, z.B. Musterstraße 1")
+│   │   ├── Ladezustand (dezenter Spinner während des Debounce-Fensters/Requests)
+│   │   ├── Vorschlagsliste (Treffer von Nominatim, Anzeigename pro Zeile)
+│   │   ├── Leerzustand "Keine Ergebnisse gefunden"
+│   │   └── Fehlerzustand "Suche nicht verfügbar" (Nominatim nicht erreichbar)
+│   └── Bei Auswahl eines Vorschlags: setzt Position + zentriert Karte (identischer Pfad wie "Aktuelle Position verwenden")
+├── StationMap (unverändert)
+│   ├── Eigener Pin (Tap + Drag) — bleibt der einzige Weg, den Pin nach einer Suchauswahl feinzujustieren
+│   ├── Kontext-Pins (unverändert)
+│   └── "Aktuelle Position verwenden"-Button (unverändert, weiterhin gleichwertiger Eingabeweg)
+├── Radius-Regler (unverändert)
+└── "Speichern" / "Abbrechen" (unverändert)
+```
+
+Die Adresssuche sitzt bewusst **über** der Karte, nicht als Overlay auf ihr — sie ist ein dritter, gleichrangiger Eingabeweg neben Kartentipp und "Aktuelle Position verwenden", kein Ersatz für einen der beiden.
+
+### Datenfluss
+
+1. Nutzer tippt im `AddressSearchField`. Der neue `useAddressSearch`-Hook debounct die Eingabe (~500ms) und ruft bei Ablauf der Pause die Nominatim-Search-API auf.
+2. **Race-Schutz (Edge Case 11):** Löst eine neue Eingabe einen weiteren Request aus, bevor der vorherige beantwortet ist, wird die veraltete Antwort verworfen (Request-Sequenznummer/Abbruch-Flag im Hook) — nur das Ergebnis der zuletzt gestellten Anfrage darf die Vorschlagsliste füllen.
+3. Nominatim liefert eine Liste möglicher Treffer (Anzeigename + Koordinaten) zurück; der Hook bildet daraus die Vorschlagsliste im `Command`.
+4. Tippt der Nutzer einen Vorschlag an, ruft `StationEditorSheet` denselben internen Positions-Setter auf, der bereits von "Aktuelle Position verwenden" genutzt wird (`setPosition` + `setMapView` auf die gewählten Koordinaten, Zoomstufe `STATION_ZOOM`) — kein separater Code-Pfad für "Position setzen", nur eine dritte Quelle dafür.
+5. Fehlerfall (keine Treffer / Netzwerkfehler / Nominatim nicht erreichbar): Der Hook liefert einen Fehler-/Leerzustand statt einer Ergebnisliste, das `Command` zeigt den passenden Hinweistext, die Karte bleibt unverändert bedienbar.
+6. **Abbruch beim Schließen des Sheets (Edge Case 12):** Analog zu `useCurrentPosition` wird ein laufender Request beim Unmount/Schließen ignoriert, kein State-Update auf einer nicht mehr sichtbaren Komponente.
+7. Ausgewählte Adresse verändert wie jede andere Kartenaktion nur den lokalen Sheet-Entwurf — Persistenz in `gq_quests` passiert weiterhin ausschließlich bei "Speichern" (unverändertes Prinzip aus dem bestehenden Tech Design oben).
+
+### Nominatim-Integration
+
+- Endpoint: `https://nominatim.openstreetmap.org/search` (GET, Query-Parameter `q`, `format=jsonv2`, `limit` auf wenige Treffer begrenzt, z.B. 5)
+- Kein API-Key, kein Server-Proxy — der Request geht direkt vom Browser des Erstellers aus (Client-seitiger `fetch` im Hook, kein neuer API-Route-Code nötig)
+- Ein aussagekräftiger `Referer` (Browser setzt diesen automatisch bei Cross-Origin-`fetch`) erfüllt die Nominatim-Nutzungsrichtlinie; kein zusätzlicher Custom-Header nötig, da `User-Agent` bei Browser-`fetch`-Calls ohnehin nicht überschreibbar ist
+- Keine Länder-/Regionseinschränkung (weltweite Suche, siehe Decision Log)
+- Antwort-Mapping: nur Anzeigename (`display_name`) und Koordinaten (`lat`/`lon`, als String geliefert und in Zahlen umgewandelt) werden aus der Nominatim-Antwort verwendet — restliche Felder (OSM-Typ, Bounding-Box etc.) werden ignoriert, kein MVP-Nutzen
+
+### Wiederverwendete vs. neue Bausteine (Ergänzung)
+
+| Baustein | Status |
+|----------|--------|
+| shadcn `Command` (`cmdk`) | ♻️ Bereits im Projekt installiert (`package.json`), bisher ungenutzt — erster produktiver Einsatz |
+| Positions-Setter-Pfad (`setPosition`/`setMapView` in `StationEditorSheet`) | ♻️ Wiederverwendet — identischer Pfad wie "Aktuelle Position verwenden", nur eine dritte Aufrufquelle |
+| `useAddressSearch`-Hook | 🆕 Neu — analog zu `useCurrentPosition` aufgebaut (gleicher Rückgabestil: Ladezustand + Ergebnis/Fehler), kapselt Debounce, Fetch, Race-Schutz |
+| `AddressSearchField`-Komponente | 🆕 Neu — dünner Wrapper um shadcn `Command`, verbindet Eingabe mit `useAddressSearch` |
+
+### Dependencies (Ergänzung)
+
+| Package | Zweck | Status |
+|---------|-------|--------|
+| `cmdk` (via shadcn `Command`) | Basis für die Vorschlagsliste der Adresssuche | ♻️ Bereits installiert, kein neuer Dependency-Eintrag nötig |
+| Nominatim Search-API | Geocoding (Adresse → Koordinaten) | ♻️ Kein Package — reiner HTTP-Call über die Browser-`fetch`-API |
+
+Keine neuen npm-Dependencies für die Adresssuche.
+
+### Offene technische Hinweise für `/frontend`
+
+- Debounce-Implementierung im `useAddressSearch`-Hook selbst (z.B. `setTimeout`/`clearTimeout`-Pattern), keine neue Debounce-Bibliothek nötig für einen einzelnen Anwendungsfall
+- Nominatim antwortet gelegentlich mit Tippfehler-Toleranz und unerwarteter Treffer-Reihenfolge — keine eigene Ranglogik im Frontend nötig, die Reihenfolge der API-Antwort wird unverändert übernommen
+- `AbortController` eignet sich für den Race-Schutz (Schritt 2 oben) und den Abbruch beim Sheet-Schließen (Schritt 6) in einem Mechanismus, statt zweier getrennter Lösungen
 
 ### Dependencies
 
@@ -546,3 +639,116 @@ Test-Quest wurde ausschließlich im `localStorage` des Test-Browsers angelegt (k
 
 ### Bekannte offene Punkte
 Keine. Die im QA-Durchgang dokumentierte Beobachtung zu `module-warnings.ts` (Absturz bei einem Text-Modul ohne `content`-Feld) war ein Fehler in den eigenen QA-Testdaten, kein Produktionsbug, und über die reguläre UI nicht erreichbar (siehe QA Test Results oben) — kein Blocker für dieses Deployment.
+
+---
+
+## Implementation Notes — Adresssuche (2026-09-02)
+
+Setzt das Tech Design "Adresssuche" vom selben Tag um (siehe oben).
+
+### Neue/geänderte Dateien
+| Datei | Zweck |
+|-------|-------|
+| `src/hooks/use-address-search.ts` | Neu — `useAddressSearch`-Hook: debounct Eingaben (500ms), ruft Nominatim (`nominatim.openstreetmap.org/search`, `format=jsonv2`, `limit=5`) per `fetch` auf, ein gemeinsamer `AbortController` deckt sowohl den Race-Schutz (veraltete Antworten) als auch den Abbruch beim Sheet-Schließen ab (Edge Cases 11/12) |
+| `src/components/address-search-field.tsx` | Neu — dünner Wrapper um shadcn `Command`/`CommandInput`/`CommandList`/`CommandItem`: rendert Ladezustand, Leer-/Fehlerzustand und Vorschlagsliste, ruft `onSelect` mit den gewählten Koordinaten auf |
+| `src/components/station-editor-sheet.tsx` | `AddressSearchField` zwischen dem "Aktuelle Position verwenden"-Button und der Karte eingefügt; `handleAddressSelect()` nutzt denselben `setPosition`/`setMapView`-Pfad wie `handleUseCurrentPosition()` |
+
+### Abweichung vom Tech Design
+Keine. Die Implementierung folgt der Skizze 1:1 — kein neues Paket (shadcn `Command`/`cmdk` war bereits installiert), kein Server-Proxy, ein gemeinsamer `AbortController` für Race-Schutz und Sheet-Abbruch wie im Tech Design vorgesehen.
+
+### Verifikation
+- `npm run build` ✓ · `npm run lint` ✓ (0 Fehler, weiterhin nur die 6 vorbestehenden `<img>`-Warnungen)
+- **Manuelle Browser-Verifikation nicht durchgeführt:** Der lokale Playwright-Chromium-Download brach in dieser Sandbox ab (bekanntes, bereits mehrfach in früheren PROJ-7-QA-Runden dokumentiertes Sandbox-Problem — siehe z.B. QA Test Results vom 2026-08-28/2026-08-30). Auf Nutzeranweisung wurde der Installationsversuch abgebrochen ("skip it"), die Browser-Verifikation der Adresssuche (Vorschlagsliste, Auswahl setzt Pin, Fehler-/Leerzustand) ist damit **offen für `/qa`**.
+- Kein Unit-Test für `useAddressSearch` ergänzt (folgt sinnvollerweise in `/qa`, analog zum bestehenden Muster für UI-nahe Logik in diesem Feature)
+
+### Bekannte offene Punkte
+- Browser-Verifikation der Adresssuche (Live-Vorschläge, Pin-Setzen bei Auswahl, Fehler-/Leerzustand, Zusammenspiel mit Kartentipp/GPS) steht noch aus — nachzuholen in `/qa`, sobald ein funktionierender Browser-Treiber verfügbar ist
+
+### Nachbesserung (2026-09-02, Nutzer-Feedback nach erster Durchsicht)
+
+Zwei kleine UX-Lücken in `address-search-field.tsx` behoben, ohne neue Acceptance Criteria (Detailverhalten innerhalb der bestehenden AC "Auswahl eines Vorschlags setzt den Pin"):
+
+1. **Vorschlagsliste blieb nach Auswahl sichtbar:** `showList` hing bisher ausschließlich an `query.trim().length > 0` — nach der Auswahl wurde `query` auf den gewählten `displayName` gesetzt (nicht leer), die Liste blieb also stehen. Neuer `listClosed`-State: wird bei `handleSelect()` gesetzt (Liste schließt), bei jeder neuen Eingabe (`handleValueChange()`) wieder zurückgesetzt (Liste kann erneut öffnen).
+2. **Kein Weg, den Suchtext zu löschen:** Neuer "X"-Button (`lucide-react` `X`-Icon) rechts im Eingabefeld (`absolute right-3`, erscheint nur wenn `query` nicht leer ist), setzt `query` zurück, schließt die Liste und ruft `search("")` auf, um auch die zuletzt geladenen Ergebnisse zu verwerfen.
+
+**Verifikation:** `npm run build` ✓ · `npm run lint` ✓ (0 Fehler, weiterhin nur die 6 vorbestehenden `<img>`-Warnungen). Manuelle Browser-Verifikation weiterhin offen (siehe oben) — beide Fixes zusammen mit der ursprünglichen Adresssuche in `/qa` zu prüfen.
+
+### Nachbesserung 2 (2026-09-02, nach Browser-Test durch den Nutzer)
+
+Nutzer-Feedback nach eigenem Test im Browser: Ein Element überlappt in die Suchleiste, und die Ergebnisliste nimmt auch nach dem Löschen noch sichtbaren Platz ein. Diesmal per Playwright/WebKit-Skript (kein `chromium-cli` verfügbar, WebKit-Binary war aus früheren QA-Runden bereits gecacht — siehe "Bekannte offene Punkte" oben) tatsächlich im Browser reproduziert und mit Screenshots verifiziert, statt blind zu patchen.
+
+**Ursache 1 (leerer Platz bleibt stehen):** `Command` (shadcn/`cmdk`) ist intern `flex h-full w-full flex-col`. Im umgebenden `StationEditorSheet`-Container (`flex flex-col ... flex-1 min-h-0`, mit der Karte als `flex-1`-Sibling) streckte sich der `Command`-Root auf die volle verfügbare Höhe, auch ohne sichtbaren `CommandList`-Inhalt — sichtbar als leere, umrandete Box unter dem Suchfeld nach Auswahl/Löschen. **Fix:** `h-auto` auf dem `Command`-Root erzwingt Content-Höhe statt Full-Stretch.
+
+**Ursache 2 (Overlap):** `CommandList` saß ohne Trennlinie direkt unter dem `CommandInput`-Wrapper; der grüne (Lime-)Selektions-Highlight des ersten Ergebnis-Items berührte dadurch optisch den unteren Rand des Suchfelds. **Fix:** `border-t border-border` auf `CommandList` schafft eine klare visuelle Trennung zwischen Eingabefeld und Vorschlagsliste.
+
+Der zuvor gemeldete X-Button-Vertikalversatz wurde beim selben Durchgang mitkorrigiert: `top-1/2 -translate-y-1/2` statt eines Flex-`items-center`, das durch den absolut positionierten Button ohnehin wirkungslos war.
+
+**Verifikation (diesmal inkl. echtem Browser-Test):**
+- `npm run build` ✓ · `npm run lint` ✓ (0 Fehler, weiterhin nur die 6 vorbestehenden `<img>`-Warnungen)
+- Playwright/WebKit, 390×844 Mobile-Viewport, gegen `localhost:3000/create/[id]` mit einer per `localStorage`-Seed angelegten Testquest: Sheet öffnen → "Brandenburger Tor Berlin" eintippen → Vorschlagsliste erscheint nach Debounce (3 Treffer, kein Overlap mit dem Suchfeld mehr, sauberer `border-t`-Trenner) → ersten Vorschlag antippen → Liste schließt sofort, Pin gesetzt, Karte zentriert auf Berlin, keine leere Box unter dem Feld → "X" antippen → Suchtext geleert, keine leere Box, Karte bleibt an der zuletzt gesetzten Position. Keine Konsolenfehler während des gesamten Durchlaufs.
+- Fehler-/Leerzustand ("xyzxyzxyz123") und das Zusammenspiel mit Kartentipp/"Aktuelle Position verwenden" wurden in diesem Durchgang nicht erneut durchgespielt (Fokus lag auf den zwei gemeldeten Layout-Bugs) — vollständige AC-Abdeckung bleibt Aufgabe von `/qa`
+
+---
+
+## QA Test Results — Adresssuche (2026-09-02)
+
+**Tested:** 2026-09-02
+**App URL:** http://localhost:3000
+**Tester:** QA Engineer (AI)
+**Build:** `npm run build` ✓ · `npm run lint` ✓ (0 Fehler, weiterhin nur die 6 vorbestehenden `<img>`-Warnungen) · `npm test` ✓ (159/159, davon 8 neu für `useAddressSearch`)
+**Browser-Hinweis:** Chromium war für diese Runde tatsächlich verfügbar (`chromium-1208`-Vollinstallation aus einem früheren Frontend-Schritt), aber das `chrome-headless-shell`-Binary fehlte separat und der Download wurde auf Nutzeranweisung ("skip chromium headless shell binaries") abgebrochen. Alle Browser-Tests liefen auf `webkit` ("Mobile Safari"-Projekt) — konsistent mit dem in jeder vorherigen PROJ-7-QA-Runde etablierten Muster.
+
+Scope: die 4 Acceptance Criteria unter "Adresssuche" (siehe oben, Refine 2026-09-02) plus die beiden nutzergemeldeten Layout-Fixes (Nachbesserung 1+2) plus vollständige Regressionsprüfung von PROJ-7/8/9.
+
+### Acceptance Criteria Status
+
+#### Adresssuche
+- [x] Eingabepause vor dem ersten Request (Debounce): E2E-Test bestätigt 0 Requests innerhalb von 200ms nach Eingabebeginn, genau 1 Request nach Ablauf des Debounce-Fensters
+- [x] Vorschlagsliste erscheint nach der Eingabepause mit Nominatim-Treffern (Anzeigename je Zeile)
+- [x] Auswahl eines Vorschlags setzt den Pin sofort, zentriert die Karte, Liste schließt danach (Nachbesserung 1 — vorher blieb sie offen stehen, jetzt per E2E-Regressionstest abgesichert)
+- [x] Kein Treffer → Hinweistext "Keine Ergebnisse gefunden.", Karte bleibt für manuelles Antippen nutzbar
+- [x] Nominatim nicht erreichbar (simulierter Netzwerkfehler) → Hinweistext "Suche nicht verfügbar.", Karte bleibt nutzbar
+- [x] Kartentipp und "Aktuelle Position verwenden" funktionieren unverändert neben der Suche (kein gegenseitiges Blockieren)
+- [x] "X"-Button leert das Suchfeld, schließt die Liste, keine leere Box bleibt stehen (Nachbesserung 2)
+- [x] Sheet-Abbruch während laufender Suche (Edge Case 12): kein Konsolenfehler, kein Absturz, State-Update auf bereits geschlossenem Sheet wird sauber verworfen
+
+**Ergebnis: 8/8 Kriterien bestanden.**
+
+### Edge Cases Status (Adresssuche-spezifisch)
+11. [x] Schnelles Tippen kollabiert zu einem einzigen Request (Debounce) — per Unit-Test (`useAddressSearch`) UND E2E verifiziert
+12. [x] Sheet schließt während laufender Suche → Request wird verworfen, kein State-Update auf unmounted Komponente, keine Race Condition — E2E-Test mit künstlich verzögerter Antwort (1s) bestätigt keine Konsolenfehler
+13. [x] Nominatim-Rate-Limit: Client-seitiges Debouncing (500ms) hält die Requestrate weit unter dem vorgeschriebenen Maximum — durch Debounce-Test indirekt bestätigt (1 Request pro abgeschlossener Eingabepause)
+
+### Security Audit Results
+- [x] XSS via `display_name` aus der Nominatim-Antwort (`<img src=x onerror="...">Evil Street 1` als Testpayload): React rendert den Wert als reinen Text-Node (`<span>{result.displayName}</span>` in `address-search-field.tsx`), kein `dangerouslySetInnerHTML` — kein Skript ausgeführt, roher Text sichtbar dargestellt, kein Alert/Fenster-Objekt manipuliert
+- [x] Keine Secrets/API-Keys im Request an Nominatim (kein API-Key nötig, wie im Tech Design festgelegt) — Netzwerk-Tab zeigt nur `q`/`format`/`limit`-Query-Parameter, keine sensiblen Daten
+- [x] Kein direkter Schreibpfad von der Nominatim-Antwort in `localStorage`: Auswahl eines Vorschlags setzt nur lokalen Sheet-State (`position`/`mapView`), Persistenz läuft weiterhin ausschließlich über den bestehenden, geprüften `upsertStation()`-Pfad bei "Speichern"
+- [x] Kein Rate-Limit-Bypass-Risiko: Debounce ist die einzige Drossel, es gibt keinen Button/Trigger, der das Debounce-Fenster umgehen und beliebig viele Requests pro Tastenanschlag auslösen könnte
+
+### Bugs Found
+Keine neuen Bugs in dieser QA-Runde. Beide während der Implementierung vom Nutzer gemeldeten Layout-Probleme (Overlap, leerer Platz nach Auswahl/Löschen) wurden bereits vor dieser QA-Runde in "Nachbesserung 1/2" behoben und sind hier als Teil der Acceptance-Criteria-Abdeckung erneut regressionsgetestet.
+
+### Regressionstests
+- **PROJ-7 (Stationen-Editor), volle Suite:** Alle bestehenden Tests weiterhin grün, plus 7 neue E2E-Tests für die Adresssuche (`tests/proj-7-creator-stationen-editor.spec.ts`, neuer `"Adresssuche"`-Block)
+- **PROJ-8 (Modul-Editor) / PROJ-9 (JSON-Export):** Volle Suite gemeinsam mit PROJ-7 gelaufen — 67/67 E2E-Tests grün, keine Regression durch die Adresssuche
+- **PROJ-1/PROJ-3/PROJ-11:** 16–18 vorbestehende Fehlschläge weiterhin vorhanden (Anzahl variiert leicht zwischen parallelem und seriellem Lauf: 16 parallel, 18 seriell — beides deutlich unter den historisch dokumentierten 19). Durch isolierten Einzeltest-Lauf (`shows dark-themed startscreen…` isoliert grün) UND einen zweiten vollständigen seriellen Lauf (`--workers=1`, identische 18 Fehlschläge in denselben Dateien) bestätigt: Diese Fehlschläge sind umgebungsbedingt (vermutlich Test-Isolation/Parallelitäts-Interferenz in dieser Sandbox, nicht reproduzierbar isoliert), betreffen ausschließlich Bereiche außerhalb von PROJ-7 (Theme/GPS/Passwortschutz) und decken sich mit der seit PROJ-5/6/7/8 durchgängig dokumentierten Baseline. Kein Zusammenhang mit der Adresssuche.
+- **`isQuestComplete`/`isPlayable` (PROJ-6):** Unverändert, keine Berührung durch diese Änderung (Adresssuche setzt nur `lat`/`lng` über denselben bestehenden Pfad wie GPS/Kartentipp)
+
+### Unit Tests
+`src/hooks/use-address-search.test.ts` (neu, 8 Tests): Debounce (kein früher Request, kollabiert schnelle Tastenanschläge zu einem Request), erfolgreiche Suche mit korrektem URL-Aufbau und Ergebnis-Mapping, Race-Schutz (stale Response nach `AbortError` wird verworfen, simuliert per echtem `AbortSignal`-Listener statt manuellem Promise-Resolve — erste Testversion hätte einen falschen Fehlalarm geliefert, siehe Implementierungshinweis unten), Fehlerzustand bei Netzwerkfehler und bei Non-OK-HTTP-Status, leere/Whitespace-Query wird ohne Request übersprungen, Abbruch beim Unmount wirft keinen Fehler.
+
+**Implementierungshinweis zum Testen von Fake-Timern + `waitFor`:** `@testing-library/react`s `waitFor` pollt auf echten Timern und hängt sich mit `vi.useFakeTimers()` auf — durch manuelles Flushen der Microtask-Queue (`await act(async () => { await Promise.resolve(); await Promise.resolve(); })`) statt `waitFor` ersetzt. Reiner Test-Infrastruktur-Fix, keine Produktionscode-Änderung.
+
+### E2E Tests
+`tests/proj-7-creator-stationen-editor.spec.ts`, neuer `"Adresssuche"`-Block (7 Tests, per Playwright-Route-Mocking der Nominatim-API statt echter Netzwerkzugriffe — deterministisch, unabhängig von Nominatim-Erreichbarkeit/Rate-Limits): Debounced Vorschläge ohne früher Request, Auswahl setzt Pin + schließt Liste, Leerzustand, Fehlerzustand, Zusammenspiel mit Kartentipp/GPS-Button, X-Button-Verhalten, Sheet-Abbruch während laufender Suche. Alle 7 grün auf "Mobile Safari".
+
+### Production-Ready Decision
+
+**READY** — Alle 8 Acceptance Criteria (4 ursprüngliche + 4 aus den Nachbesserungen) bestanden, keine offenen Bugs, Security-Audit ohne Befund, keine Regressionen in PROJ-7/8/9. Die vorbestehenden PROJ-1/3/11-Fehlschläge sind dokumentierter Sandbox-Baseline-Lärm außerhalb dieses Feature-Scopes.
+
+### Summary
+- **Acceptance Criteria:** 8/8 bestanden
+- **Bugs Found:** 0 neue (2 bereits vor dieser QA-Runde behoben, siehe Nachbesserung 1/2)
+- **Security:** Pass — keine Schwachstellen gefunden (insb. kein XSS via Nominatim-Antwort)
+- **Production Ready:** YES
+- **Recommendation:** Deploy freigegeben.

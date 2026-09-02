@@ -15,7 +15,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { StationRadiusSlider } from "@/components/station-radius-slider";
+import { AddressSearchField } from "@/components/address-search-field";
 import { useCurrentPosition } from "@/hooks/use-current-position";
+import type { AddressSearchResult } from "@/hooks/use-address-search";
 import { stripHtmlTags } from "@/lib/sanitize";
 import type { DraftStation } from "@/lib/quest-storage";
 import { GERMANY_CENTER, GERMANY_ZOOM, STATION_ZOOM } from "@/lib/map-constants";
@@ -86,6 +88,11 @@ export function StationEditorSheet({ open, onOpenChange, station, contextPins, o
     });
   }
 
+  function handleAddressSelect(result: AddressSearchResult) {
+    setPosition({ lat: result.lat, lng: result.lng });
+    setMapView({ center: [result.lat, result.lng], zoom: STATION_ZOOM });
+  }
+
   function handleSave() {
     const sanitizedName = stripHtmlTags(name).trim();
     onSave({
@@ -143,6 +150,7 @@ export function StationEditorSheet({ open, onOpenChange, station, contextPins, o
               {isLocating ? "Suche…" : "Aktuelle Position verwenden"}
             </Button>
           </div>
+          <AddressSearchField onSelect={handleAddressSelect} />
           <div className="relative flex-1 min-h-[220px] rounded-card overflow-hidden border border-border">
             <StationMap
               position={position}
