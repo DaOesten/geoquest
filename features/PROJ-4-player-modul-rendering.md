@@ -643,3 +643,32 @@ Keine neuen Unit-Tests nötig — die Änderung fügt keine isolierte, testbare 
 - **Security:** Pass — keine ausnutzbaren Schwachstellen gefunden, insbesondere kein neues XSS-Risiko durch die neu sichtbaren `answer`/`correctIndices`/`items`-Werte im gelösten Zustand
 - **Production Ready:** YES
 - **Recommendation:** Deploy freigegeben. Keine offenen Punkte.
+
+---
+
+## Deployment — Visuelles Redesign & persistente Lösungsanzeige (2026-09-02)
+
+**Production URL:** https://geoquesty.vercel.app
+**Deployed:** 2026-09-02
+**Platform:** Vercel (auto-deploy on push to main)
+**Commit:** 7a6f859
+**Git Tag:** v1.16.0-PROJ-4
+
+### Pre-Deployment Checks
+- [x] `npm run build` erfolgreich
+- [x] `npm run lint` erfolgreich (0 Fehler, 6 vorbestehende `<img>`-Warnungen)
+- [x] QA-Freigabe: "Production Ready: YES" (siehe QA Test Results oben)
+- [x] Keine Critical/High-Bugs offen (0 Bugs gefunden)
+- [x] Keine neuen Umgebungsvariablen nötig
+- [x] Keine Secrets im Diff (`git diff HEAD -- src/ tests/` auf Geheimnis-Muster geprüft, keine Treffer)
+- [x] Kein Datenbank-Layer betroffen (reines localStorage, kein Supabase-Bezug)
+- [x] Alle Commits gepusht nach `main`
+
+### Deploy-Vorgang
+`git push origin main` (Commit `7a6f859`) löst den bestehenden Vercel-GitHub-Auto-Deploy aus — kein manueller `vercel --prod`-Schritt nötig.
+
+### Post-Deployment-Verifikation
+Per Playwright/WebKit direkt gegen die Produktions-URL verifiziert (nicht nur lokal): Test-Quest mit einem Code-Task via `localStorage` gesät → Station geöffnet → Frage sichtbar → Antwort "4" eingegeben und geprüft → "Richtig" erscheint → Eingabefeld bleibt sichtbar, zeigt weiterhin "4", ist deaktiviert (`disabled`) — bestätigt exakt das neue, gewünschte Verhalten (Antwort bleibt sichtbar statt zu verschwinden). Keine Konsolenfehler während des Durchlaufs. Screenshot der Produktionsseite bestätigt den neuen Lime-Rahmen, das "Aufgabe"-Eyebrow-Label und den aktivierten "Station abschließen"-Button.
+
+### Bekannte offene Punkte
+Keine.
