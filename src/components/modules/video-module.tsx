@@ -13,7 +13,7 @@ export function VideoModule({ url, caption }: VideoModuleProps) {
 
   if (error) {
     return (
-      <div className="w-full aspect-video rounded-card bg-gq-dark-teal border border-border/40 flex flex-col items-center justify-center gap-2">
+      <div className="w-full aspect-video rounded-card bg-gq-dark-teal border border-border/40 shadow-card flex flex-col items-center justify-center gap-2">
         <VideoOff className="w-8 h-8 text-gq-grey" />
         <p className="font-body text-sm text-gq-grey">Video konnte nicht geladen werden</p>
       </div>
@@ -28,7 +28,7 @@ export function VideoModule({ url, caption }: VideoModuleProps) {
         playsInline
         preload="metadata"
         onError={() => setError(true)}
-        className="w-full rounded-card"
+        className="w-full rounded-card border border-border/40 shadow-card"
       />
       {caption && (
         <p className="font-body text-sm text-gq-grey mt-2 px-1">{caption}</p>

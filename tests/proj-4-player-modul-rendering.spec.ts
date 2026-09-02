@@ -317,7 +317,10 @@ test.describe("PROJ-4: Player — Modul-Rendering", () => {
       await page.getByRole("button", { name: "Prüfen" }).click();
 
       await expect(page.getByText("Richtig")).toBeVisible();
-      await expect(page.getByPlaceholder("Deine Antwort...")).not.toBeVisible();
+      const input = page.getByPlaceholder("Deine Antwort...");
+      await expect(input).toBeVisible();
+      await expect(input).toBeDisabled();
+      await expect(input).toHaveValue("4");
     });
 
     test("shows red shake feedback on a wrong answer without marking it solved", async ({ page }) => {
@@ -355,6 +358,22 @@ test.describe("PROJ-4: Player — Modul-Rendering", () => {
       await expect(page.getByText("Richtig")).toBeVisible();
     });
 
+    test("keeps the chosen option visible and checked but disables all options once solved", async ({ page }) => {
+      await seedQuest(page);
+      await seedProgress(page, { visitedStations: [ALL_STATION_IDS[2]] });
+      await openStation(page, "MC Single Station");
+
+      await page.getByRole("radio", { name: "Berlin" }).click();
+      await page.getByRole("button", { name: "Prüfen" }).click();
+      await expect(page.getByText("Richtig")).toBeVisible();
+
+      const berlin = page.getByRole("radio", { name: "Berlin" });
+      await expect(berlin).toBeVisible();
+      await expect(berlin).toBeChecked();
+      await expect(berlin).toBeDisabled();
+      await expect(page.getByRole("radio", { name: "Paris" })).toBeDisabled();
+    });
+
     test("shows red feedback on a wrong option without revealing the correct one", async ({ page }) => {
       await seedQuest(page);
       await seedProgress(page, { visitedStations: [ALL_STATION_IDS[2]] });
@@ -390,6 +409,22 @@ test.describe("PROJ-4: Player — Modul-Rendering", () => {
       await page.getByRole("button", { name: "Prüfen" }).click();
 
       await expect(page.getByText("Richtig")).toBeVisible();
+    });
+
+    test("keeps the chosen options visible and checked but disables all options once solved", async ({ page }) => {
+      await seedQuest(page);
+      await seedProgress(page, { visitedStations: [ALL_STATION_IDS[3]] });
+      await openStation(page, "MC Multi Station");
+
+      await page.getByRole("checkbox", { name: "Rot" }).click();
+      await page.getByRole("checkbox", { name: "Blau" }).click();
+      await page.getByRole("button", { name: "Prüfen" }).click();
+      await expect(page.getByText("Richtig")).toBeVisible();
+
+      await expect(page.getByRole("checkbox", { name: "Rot" })).toBeChecked();
+      await expect(page.getByRole("checkbox", { name: "Blau" })).toBeChecked();
+      await expect(page.getByRole("checkbox", { name: "Rot" })).toBeDisabled();
+      await expect(page.getByRole("checkbox", { name: "Hund" })).toBeDisabled();
     });
 
     test("shows red feedback on an incomplete/wrong selection without revealing answers", async ({ page }) => {
@@ -450,6 +485,21 @@ test.describe("PROJ-4: Player — Modul-Rendering", () => {
       await page.getByRole("button", { name: "Prüfen" }).click();
       await expect(page.getByText("Richtig")).toBeVisible();
     });
+
+    test("keeps the correct order visible but disables dragging once solved", async ({ page }) => {
+      await seedQuest(page);
+      await seedProgress(page, {
+        visitedStations: [ALL_STATION_IDS[4]],
+        solvedTasks: { [ALL_STATION_IDS[4]]: [0] },
+      });
+      await openStation(page, "Sorting Station");
+
+      await expect(page.getByText("Richtig")).toBeVisible();
+      await expect(page.getByText("Eins")).toBeVisible();
+      await expect(page.getByText("Zwei")).toBeVisible();
+      await expect(page.getByText("Drei")).toBeVisible();
+      await expect(page.locator('div[draggable="true"]')).toHaveCount(0);
+    });
   });
 
   test.describe("Fortschritt & Wiedereinstieg", () => {
@@ -462,7 +512,10 @@ test.describe("PROJ-4: Player — Modul-Rendering", () => {
       await openStation(page, "Code Station");
 
       await expect(page.getByText("Richtig")).toBeVisible();
-      await expect(page.getByPlaceholder("Deine Antwort...")).not.toBeVisible();
+      const input = page.getByPlaceholder("Deine Antwort...");
+      await expect(input).toBeVisible();
+      await expect(input).toBeDisabled();
+      await expect(input).toHaveValue("4");
     });
 
     test("tapping an already-visited station opens the module screen directly (no GPS)", async ({ page }) => {
@@ -513,12 +566,15 @@ test.describe("PROJ-4: Player — Modul-Rendering", () => {
       await expect(page.getByText("Was ist 2 + 2?")).toBeVisible();
     });
 
-    test("shows the task in its read-only solved state instead of the input field", async ({ page }) => {
+    test("shows the task in its read-only solved state, with the canonical answer visible but disabled", async ({ page }) => {
       await seedCompletedCodeStation(page);
       await page.getByRole("button", { name: /Code Station.*abgeschlossen/ }).click();
 
       await expect(page.getByText("Richtig")).toBeVisible();
-      await expect(page.getByPlaceholder("Deine Antwort...")).not.toBeVisible();
+      const input = page.getByPlaceholder("Deine Antwort...");
+      await expect(input).toBeVisible();
+      await expect(input).toBeDisabled();
+      await expect(input).toHaveValue("4");
     });
 
     test("shows a disabled 'Bereits abgeschlossen' indicator instead of the complete button", async ({ page }) => {

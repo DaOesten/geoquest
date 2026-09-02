@@ -33,6 +33,9 @@ export function SortingTask({ question, items: correctOrder, solved, onSolved }:
   const [dragOver, setDragOver] = useState<number | null>(null);
   const touchStartY = useRef(0);
   const touchItem = useRef<number | null>(null);
+  // Checking only succeeds when `items` already equals `correctOrder`, so once solved,
+  // the canonical order IS the submitted order — display it directly rather than storing it.
+  const displayItems = solved ? correctOrder : items;
 
   const handleCheck = () => {
     if (items.join(",") === correctOrder.join(",")) {
@@ -105,62 +108,69 @@ export function SortingTask({ question, items: correctOrder, solved, onSolved }:
   };
 
   const borderClass = solved
-    ? "border-gq-lime/60"
+    ? "border-2 border-gq-lime/60"
     : feedback === "wrong"
-      ? "border-red-500/60 animate-shake"
-      : "border-border/40";
+      ? "border-2 border-destructive/60 animate-shake"
+      : "border-2 border-gq-teal/30 shadow-glow";
 
   return (
-    <div className={`rounded-card bg-gq-dark-teal border ${borderClass} p-5 transition-colors duration-base`}>
-      <p className="font-body text-base leading-relaxed text-foreground mb-4">{question}</p>
+    <div className={`rounded-card bg-gq-dark-teal ${borderClass} p-5 transition-colors duration-base`}>
+      <span className="text-tech text-[10px] text-gq-grey">Aufgabe</span>
+      <p className="font-body text-base leading-relaxed text-foreground mt-1 mb-4">{question}</p>
 
-      {solved ? (
-        <div className="flex items-center gap-2 text-gq-lime">
-          <div className="w-8 h-8 rounded-full bg-gq-lime/20 grid place-items-center">
-            <Check className="w-4 h-4 text-gq-lime" />
-          </div>
-          <span className="font-tech text-sm tracking-wider uppercase">Richtig</span>
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          {displayItems.map((item, i) => (
+            <div
+              key={`${item}-${i}`}
+              draggable={!solved}
+              onDragStart={solved ? undefined : (e) => handleDragStart(e, i)}
+              onDragOver={solved ? undefined : (e) => handleDragOver(e, i)}
+              onDrop={solved ? undefined : (e) => handleDrop(e, i)}
+              onDragEnd={solved ? undefined : handleDragEnd}
+              onTouchStart={solved ? undefined : (e) => handleTouchStart(e, i)}
+              onTouchMove={solved ? undefined : handleTouchMove}
+              onTouchEnd={solved ? undefined : handleTouchEnd}
+              className={`flex items-center gap-2 min-h-[52px] px-3 py-3 rounded-[12px] border bg-gq-black/30 select-none transition-all duration-fast ${
+                solved
+                  ? "border-border/30"
+                  : "cursor-grab active:cursor-grabbing " +
+                    (dragging === i
+                      ? "opacity-50 scale-95"
+                      : dragOver === i
+                        ? "border-gq-teal/60 bg-gq-teal/5"
+                        : "border-border/30")
+              }`}
+            >
+              <GripVertical className={`w-5 h-5 shrink-0 ${solved ? "text-gq-grey/30" : "text-gq-grey"}`} />
+              <span className="font-body text-sm text-foreground">{item}</span>
+            </div>
+          ))}
         </div>
-      ) : (
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            {items.map((item, i) => (
-              <div
-                key={`${item}-${i}`}
-                draggable
-                onDragStart={(e) => handleDragStart(e, i)}
-                onDragOver={(e) => handleDragOver(e, i)}
-                onDrop={(e) => handleDrop(e, i)}
-                onDragEnd={handleDragEnd}
-                onTouchStart={(e) => handleTouchStart(e, i)}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-                className={`flex items-center gap-2 min-h-[52px] px-3 py-3 rounded-[12px] border bg-gq-black/30 cursor-grab active:cursor-grabbing select-none transition-all duration-fast ${
-                  dragging === i
-                    ? "opacity-50 scale-95"
-                    : dragOver === i
-                      ? "border-gq-teal/60 bg-gq-teal/5"
-                      : "border-border/30"
-                }`}
-              >
-                <GripVertical className="w-5 h-5 text-gq-grey shrink-0" />
-                <span className="font-body text-sm text-foreground">{item}</span>
+
+        {solved ? (
+          <div className="flex items-center gap-2 text-gq-lime">
+            <div className="w-8 h-8 rounded-full bg-gq-lime/20 grid place-items-center">
+              <Check className="w-4 h-4 text-gq-lime" />
+            </div>
+            <span className="font-tech text-sm tracking-wider uppercase">Richtig</span>
+          </div>
+        ) : (
+          <>
+            {feedback === "wrong" && (
+              <div className="rounded-md border-2 border-destructive/60 bg-destructive/10 px-3.5 py-3">
+                <p className="font-body text-sm leading-relaxed text-foreground">Leider falsch, versuch&apos;s nochmal!</p>
               </div>
-            ))}
-          </div>
-
-          {feedback === "wrong" && (
-            <p className="font-body text-sm text-red-400">Leider falsch, versuch&apos;s nochmal!</p>
-          )}
-
-          <Button
-            onClick={handleCheck}
-            className="w-full h-12 rounded-pill bg-gq-teal text-gq-black font-tech text-sm uppercase tracking-[0.1em] font-bold hover:bg-gq-teal-hover active:scale-[0.96] transition-all duration-fast"
-          >
-            Prüfen
-          </Button>
-        </div>
-      )}
+            )}
+            <Button
+              onClick={handleCheck}
+              className="w-full h-12 rounded-pill bg-gq-teal text-gq-black font-tech text-sm uppercase tracking-[0.1em] font-bold hover:bg-gq-teal-hover active:scale-[0.96] transition-all duration-fast"
+            >
+              Prüfen
+            </Button>
+          </>
+        )}
+      </div>
     </div>
   );
 }

@@ -13,7 +13,7 @@ export function ImageModule({ url, caption }: ImageModuleProps) {
 
   if (error) {
     return (
-      <div className="w-full aspect-video rounded-card bg-gq-dark-teal border border-border/40 flex flex-col items-center justify-center gap-2">
+      <div className="w-full aspect-video rounded-card bg-gq-dark-teal border border-border/40 shadow-card flex flex-col items-center justify-center gap-2">
         <ImageOff className="w-8 h-8 text-gq-grey" />
         <p className="font-body text-sm text-gq-grey">Bild konnte nicht geladen werden</p>
       </div>
@@ -27,7 +27,7 @@ export function ImageModule({ url, caption }: ImageModuleProps) {
         alt={caption ?? ""}
         loading="lazy"
         onError={() => setError(true)}
-        className="w-full rounded-card object-cover"
+        className="w-full rounded-card border border-border/40 shadow-card object-cover"
       />
       {caption && (
         <p className="font-body text-sm text-gq-grey mt-2 px-1">{caption}</p>

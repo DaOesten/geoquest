@@ -70,7 +70,7 @@ Nach der Ankunft an einer Station werden dem Spieler die Stations-Inhalte (Modul
 - [ ] Angenommen ein Code-Eingabe-Task ist vorhanden, wenn er gerendert wird, dann wird die Fragestellung, ein Textfeld und ein "Prüfen"-Button angezeigt
 - [ ] Angenommen der Spieler hat die richtige Antwort eingegeben (case-insensitive, trimmed), wenn er "Prüfen" tippt, dann erscheint grünes Feedback mit Häkchen und der Task wird als gelöst markiert
 - [ ] Angenommen der Spieler hat eine falsche Antwort eingegeben, wenn er "Prüfen" tippt, dann erscheint rotes Feedback mit Shake-Animation und "Leider falsch, versuch's nochmal!"
-- [ ] Angenommen der Task ist als gelöst markiert, wenn der Spieler den Screen sieht, dann ist das Eingabefeld deaktiviert und das Häkchen sichtbar
+- [ ] Angenommen der Task ist als gelöst markiert, wenn der Spieler den Screen sieht, dann bleibt das Eingabefeld sichtbar mit der korrekten Antwort befüllt, ist aber deaktiviert (nicht editierbar), und das Häkchen ist zusätzlich sichtbar (aktualisiert am 2026-09-02, siehe Implementation Notes)
 
 **Task: Multiple Choice (Single):**
 - [ ] Angenommen ein Multiple-Choice-Task mit einer korrekten Antwort ist vorhanden, wenn er gerendert wird, dann werden Radio-Buttons für jede Option angezeigt
@@ -110,7 +110,7 @@ Nach der Ankunft an einer Station werden dem Spieler die Stations-Inhalte (Modul
 8. **App wird während Audio/Video-Wiedergabe geschlossen:** Wiedergabe stoppt automatisch (Browser-Verhalten). Beim Wiedereinstieg startet das Medium von vorne — kein Playback-Fortschritt gespeichert.
 9. **Datenmodell-Migration (correctIndex → correctIndices):** Altes Feld `correctIndex` wird beim Laden zu `[correctIndex]` konvertiert. Neue Quests nutzen `correctIndices`.
 10. **Station ohne Tasks (nur Content-Module) ist abgeschlossen:** Ansichtsmodus funktioniert identisch — es gibt einfach keine Task-Module, die read-only dargestellt werden müssten.
-11. **Sortierungs-Task im Ansichtsmodus:** Verhält sich wie der bestehende "gelöst"-Zustand (`solved === true`) — zeigt nur "Richtig" mit Häkchen, keine Item-Liste mehr. Keine Änderung an `sorting-task.tsx` nötig, da dieser Zustand schon existiert.
+11. **Sortierungs-Task im Ansichtsmodus:** Verhält sich wie der bestehende "gelöst"-Zustand (`solved === true`) — zeigt die korrekte Reihenfolge weiterhin als Liste (Drag deaktiviert) plus "Richtig" mit Häkchen (aktualisiert am 2026-09-02, siehe Implementation Notes — ursprünglich verschwand die Item-Liste im gelösten Zustand vollständig, das wurde auf Nutzerwunsch geändert).
 
 ## Technical Requirements
 - Datenmodell-Erweiterung: `correctIndex: number` → `correctIndices: number[]` (abwärtskompatibel)
@@ -521,3 +521,125 @@ Keine neuen Bugs im getesteten Delta gefunden. 1 vorbestehender Testcode-Bug (BU
 **Tag:** v1.10.0-PROJ-4
 **Pre-Deployment-Checks:** `npm run build` erfolgreich, `npm run lint` 0 Fehler (nur vorbestehende `<img>`-Warnungen), `npx tsc --noEmit` keine neuen Fehler, `npm test` 151/151, volle E2E-Suite (`tests/proj-4-player-modul-rendering.spec.ts`) 32/32 bestanden
 **Verifiziert:** Push nach `origin/main` löste den Vercel-GitHub-Auto-Deploy aus. Direkt danach per Playwright/WebKit **live gegen die Produktions-URL** verifiziert (nicht nur lokal): Test-Quest mit einer abgeschlossenen Station in `localStorage` geseedet, Klick auf die Station in der Stationsliste öffnet den Modul-Screen (`aria-label` "... — abgeschlossen, zum Ansehen tippen" gefunden), Modul-Inhalt wird angezeigt, "Bereits abgeschlossen"-Button sichtbar. Kein Backend/keine ENV-Variablen betroffen (reines localStorage-Feature).
+
+---
+
+## Implementation Notes — Aufgaben-Screen visuelles Redesign (2026-09-02)
+
+Nutzergetriebenes visuelles Redesign der Task- und Media-Module im Player, basierend auf einem vom Nutzer bereitgestellten Mockup (`design-preparation/Aufgaben-Screen.html`, ein Claude-Design-Canvas-Export mit 3 Screen-Varianten: Code+Bild, Multiple-Choice+Video, Sortierung+Audio). Kein neuer Feature-Spec-Eintrag, da bestehende Acceptance Criteria unverändert gelten — reines Styling-Delta, keine neue Funktionalität, keine Datenmodell-Änderung.
+
+**Bewusst NICHT übernommen (Nutzerentscheidung, siehe Rückfragen vor der Umsetzung):**
+- Kein Umbau zu einem Ein-Screen-pro-Aufgabe-Flow — die bestehende Liste aller Module untereinander bleibt (Mockup zeigt einen fokussierten Single-Task-Screen, das hätte `station-modules.tsx` zu einem Multi-Step-Flow gemacht)
+- Kein neues Hint/Hinweis-Feature (Mockup hat einen Hinweis-Button-State, der ein neues Schema-Feld gebraucht hätte)
+- Multiple-Choice: bestehende Radio-/Checkbox-Circles beibehalten (nicht die Buchstaben-Badges A/B/C/D aus dem Mockup)
+- Sortierung: bestehendes Drag & Drop (Maus + Touch) beibehalten (nicht die Auf/Ab-Pfeil-Buttons aus dem Mockup)
+- Code-Aufgabe: bestehendes einzeiliges Input-Feld beibehalten (nicht die PIN-Zellen-Eingabe aus dem Mockup)
+
+**Übernommen (reines Styling):**
+- Neue "Aufgabe"-Eyebrow-Label (`text-tech text-[10px] text-gq-grey`) über der Frage in allen 3 Task-Karten (`code-task.tsx`, `multiple-choice-task.tsx`, `sorting-task.tsx`)
+- Kartenrahmen wechselt von 1px auf 2px bei "richtig"/"falsch" (`border-2 border-gq-lime/60` bzw. `border-2 border-destructive/60`), 1px im neutralen Zustand — matcht die Mockup-Kartenoptik
+- Neue geboxte Fehler-Banner (`border-2 border-destructive/60 bg-destructive/10`, abgerundet, mit Padding) ersetzen die bisherige einzeilige rote Textzeile bei falscher Antwort, in allen 3 Task-Typen
+- Media-Module (`image-module.tsx`, `video-module.tsx`, `audio-module.tsx`) bekommen `shadow-card` + Rahmen für den erhöhten "Hero-Block"-Look aus dem Mockup
+- Audio-Modul: linearer Fortschrittsbalken durch eine Waveform-Balken-Visualisierung ersetzt (deterministisch pseudo-zufällige Balkenhöhen, Lime für abgespielten Anteil, Grau für den Rest), Seek-Klick-Verhalten unverändert übernommen
+
+**Wiederverwendete Bausteine:** `shadow-card`/`shadow-glow-lime`/`border-destructive` aus dem bestehenden `tailwind.config.ts` — keine neuen Design-Tokens nötig, die Mockup-Werte (Box-Shadow, Border-Farben) waren bereits 1:1 als Utility vorhanden.
+
+**Verifikation:** `npm run lint` ✓ (0 Fehler, 6 vorbestehende `<img>`-Warnungen) · `npm run build` ✓ · `npm test` ✓ (159/159). Manuell im Browser geprüft (Playwright/WebKit, 390×844 Mobile-Viewport, Test-Quest mit allen 7 Modultypen in `localStorage` geseedet): Text-, Bild-, Video-, Audio-Modul sowie Code-, Multiple-Choice- und Sortierungs-Aufgabe visuell verifiziert; Code-Aufgabe gezielt mit falscher Antwort (rotes 2px-Banner + roter Kartenrahmen) und danach richtiger Antwort (limefarbener 2px-Kartenrahmen + Richtig-Checkmark) getestet. Keine Konsolenfehler während des gesamten Durchlaufs.
+
+---
+
+## Implementation Notes — Idle-Belebung & persistente Lösungsanzeige (2026-09-02)
+
+Zweite nutzergetriebene Iteration auf dem visuellen Redesign oben: der unbearbeitete Zustand der Task-Karten wirkte zu flach, und eine gelöste Aufgabe kollabierte bisher zu einer reinen "Richtig"-Checkmark-Zeile — die abgegebene Lösung selbst war danach nicht mehr sichtbar. Zwei Änderungen, weiterhin ohne neuen Feature-Spec-Eintrag (reines Styling-Delta, bestehende Acceptance Criteria unverändert erfüllt):
+
+**1. Idle-Belebung:** Der neutrale 1px-Graurahmen im unbearbeiteten Zustand wird durch einen Teal-Akzent ersetzt (`border-2 border-gq-teal/30 shadow-glow`, gleiche `shadow-glow`-Utility wie an anderer Stelle im Design-System) — kennzeichnet die Karte visuell als "aktiv/wartend", analog zum Lime-Rahmen im gelösten und Rot-Rahmen im falsch-Zustand. Betrifft alle 3 Task-Karten (`code-task.tsx`, `multiple-choice-task.tsx`, `sorting-task.tsx`).
+
+**2. Persistente, read-only Lösungsanzeige — ohne neue Persistenz:** Bisher zeigte der gelöste Zustand nur eine Checkmark-Zeile, die abgegebene Eingabe/Auswahl/Reihenfolge verschwand. Jetzt bleibt die Lösung sichtbar, aber gesperrt:
+- Code-Aufgabe: Input-Feld zeigt `answer` (die im Modul hinterlegte korrekte Antwort), `disabled` + `readOnly`, Checkmark-Zeile erscheint zusätzlich darunter
+- Multiple-Choice: Radio-/Checkbox-Optionen zeigen `correctIndices` als Auswahl, alle Optionen `disabled`, Checkmark-Zeile zusätzlich darunter
+- Sortierung: Items zeigen `items` (die im Modul hinterlegte korrekte Reihenfolge), Drag-Handles inaktiv (kein `draggable`, keine Drag-Handler mehr angehängt, Grip-Icon abgedunkelt), Checkmark-Zeile zusätzlich darunter
+
+**Kein neues `solvedAnswers`-Feld nötig (Design-Entscheidung nach Nutzer-Rückfrage):** Der erste Entwurf dieser Iteration fügte `QuestProgress` ein neues `solvedAnswers`-Feld hinzu, um die tatsächlich vom Spieler eingegebene/ausgewählte Antwort zu persistieren. Der Nutzer wies zurecht darauf hin, dass `handleCheck()` in allen 3 Task-Komponenten ohnehin nur dann `onSolved()` auslöst, wenn die Eingabe exakt der kanonischen Lösung entspricht (`selected` === `correctIndices`-Menge bei Multiple-Choice, `items`-Reihenfolge === `correctOrder` bei Sortierung, String-Gleichheit bei Code) — die tatsächliche Nutzereingabe ist im gelösten Zustand also immer identisch mit den bereits vorhandenen Modul-Daten (`answer`/`correctIndices`/`items`, alle schon als Props vorhanden). Eine separate Persistenz-Schicht war daher unnötige Komplexität: Die drei Task-Komponenten leiten die Anzeige jetzt rein lokal her (`solved ? <kanonischer Wert> : <lokaler State>`), kein Zugriff auf `quest-progress.ts` nötig, keine Schema-Änderung, kein Reload-Persistenz-Risiko. Der ursprüngliche Entwurf (`solvedAnswers`-Feld, `markTaskSolved()` mit viertem Parameter, `getSolvedAnswer()`) wurde vollständig zurückgebaut, bevor er committet wurde.
+
+**Reset-Verhalten (weiterhin gültig):** Die einzige Möglichkeit, eine gesperrte Lösung wieder editierbar zu machen, ist ein vollständiger Quest-Reset (bestehende `deleteProgress()`-Funktion, unverändert) — es gibt bewusst keinen "nochmal versuchen"-Button für bereits gelöste Aufgaben.
+
+**Verifikation:** `npx tsc --noEmit` ✓ (0 neue Fehler, gleiche 2 vorbestehende `@ts-expect-error`-Warnungen in `quest-storage.test.ts` wie vor dieser Änderung) · `npm run lint` ✓ (0 Fehler, 6 vorbestehende `<img>`-Warnungen) · `npm run build` ✓ · `npm test` ✓ (159/159, keine neuen Tests nötig — reine Anzeige-Ableitung aus bereits getesteten Props, kein neuer Codepfad in `quest-progress.ts`/`use-quest-progress.ts`). Manuell im Browser verifiziert (Playwright/WebKit, 390×844): Idle-Zustand aller 3 Task-Typen zeigt den neuen Teal-Glow-Rahmen; Code-Aufgabe und Multiple-Choice-Aufgabe gelöst, dann **vollständiger Seiten-Reload** durchgeführt — die kanonische Antwort ("4" bzw. "1610") erschien weiterhin korrekt, Input programmatisch als `disabled` bestätigt. Keine Konsolenfehler während des gesamten Durchlaufs.
+
+---
+
+## QA Test Results — Visuelles Redesign & persistente Lösungsanzeige (2026-09-02)
+
+**Tested:** 2026-09-02
+**App URL:** http://localhost:3000
+**Tester:** QA Engineer (AI)
+**Build:** `npx tsc --noEmit` ✓ (0 neue Fehler, 2 vorbestehende `@ts-expect-error`-Warnungen in `quest-storage.test.ts`, unverändert seit vor diesem Delta) · `npm run lint` ✓ (0 Fehler, 6 vorbestehende `<img>`-Warnungen) · `npm run build` ✓ · `npm test` ✓ (159/159)
+**Browser-Hinweis:** Auf Nutzerwunsch ("ohne chromium") ausschließlich gegen `Mobile Safari` (WebKit) getestet — der lokal gecachte Chromium-Build war zu Sessionbeginn bereits als korrupt festgestellt worden (`dlopen`-Fehler beim Framework-Laden, unvollständiger `playwright install`). Dies ist dasselbe bereits in PROJ-3/4/6/7/8 dokumentierte, wiederkehrende Sandbox-Verhalten, kein neuer Befund.
+
+Scope dieser QA-Runde: das visuelle Redesign der Task-/Media-Karten (Mockup-Angleichung) und die anschließende Iteration (Idle-Glow + persistente, gesperrte Lösungsanzeige) aus den beiden Implementation-Notes-Abschnitten oben — kein neuer Feature-Spec-Eintrag, da beide Änderungen als reines Styling-/Anzeige-Delta auf dem bereits deployten PROJ-4 dokumentiert sind. Die zugehörigen Acceptance Criteria (Zeile 73, Edge Case 11) wurden vor diesem QA-Lauf aktualisiert, um das neue, korrekte Verhalten zu beschreiben (siehe Diff).
+
+### Acceptance Criteria Status
+
+#### Task: Code-Eingabe
+- [x] Fragestellung, Textfeld und "Prüfen"-Button werden angezeigt
+- [x] Richtige Antwort (case-insensitive, trimmed) → grünes Feedback mit Häkchen, Task als gelöst markiert
+- [x] Falsche Antwort → rotes Feedback mit Shake-Animation und Fehlertext
+- [x] **Aktualisiert:** Task gelöst → Eingabefeld bleibt sichtbar, zeigt die korrekte Antwort, ist deaktiviert; Häkchen zusätzlich sichtbar (nicht mehr: Feld verschwindet)
+
+#### Task: Multiple Choice (Single & Multi)
+- [x] Radio- bzw. Checkbox-Optionen werden korrekt je nach `correctIndices.length` gerendert
+- [x] Richtige Auswahl → grünes Feedback; falsche/unvollständige Auswahl → rotes Feedback ohne Preisgabe der richtigen Optionen
+- [x] **Neu geprüft:** Nach dem Lösen bleiben die (korrekten) Optionen sichtbar und ausgewählt/angehakt, alle Optionen (auch nicht gewählte) sind deaktiviert
+
+#### Task: Sortierung
+- [x] Items werden in garantiert nicht-korrekter, zufälliger Reihenfolge mit Drag-Handles gerendert
+- [x] Falsche Reihenfolge → rotes Feedback mit Shake; korrekte Reihenfolge → grünes Feedback
+- [x] **Aktualisiert:** Nach dem Lösen bleibt die korrekte Reihenfolge als Liste sichtbar, Drag-Handles sind inaktiv (kein `draggable`, keine Drag-Listener) — nicht mehr: Liste verschwindet vollständig
+
+#### Idle-Zustand (neu)
+- [x] Alle 3 Task-Karten zeigen im unbearbeiteten Zustand einen Teal-Akzentrahmen (`border-2 border-gq-teal/30 shadow-glow`) statt des vorherigen neutralen 1px-Graurahmens
+
+#### Media-Module (Bild/Video/Audio)
+- [x] Bestehende Platzhalter-/Caption-/Fehlerverhalten unverändert funktionsfähig
+- [x] Visuelle Angleichung (Card-Shadow, Rahmen, Audio-Waveform) beeinträchtigt keine bestehende Funktionalität
+
+### Edge Cases Status
+
+- [x] Sortierungs-Task im Ansichtsmodus (abgeschlossene Station): zeigt jetzt die Item-Liste weiterhin (nicht mehr nur "Richtig") — Edge Case 11 in der Spec entsprechend aktualisiert
+- [x] Leerer Code-Eingabe-String: "Prüfen"-Button bleibt deaktiviert (unverändert, Regressionscheck bestanden)
+- [x] Reload/Wiedereinstieg nach dem Lösen: kanonische Antwort/Auswahl/Reihenfolge erscheint weiterhin korrekt und gesperrt (keine neue `solvedAnswers`-Persistenz nötig, siehe Implementation Notes — rein aus vorhandenen Modul-Props abgeleitet)
+- [x] Ansichtsmodus einer bereits abgeschlossenen Station: Task-Karten identisch zum "gelöst"-Zustand im normalen Modul-Screen, inkl. sichtbarer, gesperrter Lösung
+
+### Security Audit Results
+- [x] XSS via manipuliertem `answer`-Wert (`"><img src=x onerror=alert(1)>`), gerendert im gelösten, disabled `<input value>`: kein Alert ausgelöst, kein unescaptes `<img onerror>` im DOM — React rendert den String ausschließlich als attribut-escapten Wert, nie als Markup
+- [x] Kein neues `dangerouslySetInnerHTML` in den 6 geänderten Modul-Dateien (per Grep bestätigt) — alle neuen Anzeige-Werte (`answer`, `correctIndices`-Optionen, `items`) laufen durch dieselben, bereits vor diesem Delta sanitisierten JSX-Textknoten wie zuvor
+- [x] Keine neuen Netzwerk-Calls, keine neuen localStorage-Schreibzugriffe (die finale, vereinfachte Lösung verzichtet bewusst auf eine neue Persistenzschicht, siehe Implementation Notes)
+- [x] Radix-`disabled`-Propagation (RadioGroup/Checkbox) verhindert auch Keyboard-Interaktion im gelösten Zustand, nicht nur visuelle Deaktivierung (Standard-Radix-Garantie, stichprobenartig im DOM verifiziert)
+
+### Bugs Found
+
+Keine Bugs mit funktionaler oder sicherheitsrelevanter Auswirkung gefunden. Die 3 fehlgeschlagenen E2E-Tests waren veraltete Assertions aus einer vor diesem Delta gültigen Spec-Version (erwarteten das Verschwinden des Eingabefelds im gelösten Zustand) — kein Produktivcode-Bug, sondern eine erwartete Konsequenz der bewusst geänderten Spec. Alle 3 korrigiert, 3 weitere Tests für die neu abgedeckten MC-/Sortierungs-Verhalten ergänzt (siehe E2E Tests unten).
+
+### Regressionstests
+- **PROJ-4 volle E2E-Suite:** 35/35 grün auf Mobile Safari nach Korrektur der 3 veralteten Assertions
+- **Volle Projekt-E2E-Suite (alle Specs, Mobile Safari):** 182 grün, 17 vorbestehende Fehlschläge in PROJ-1/PROJ-3/PROJ-11 — per `git stash`-Vergleichslauf gegen den unveränderten `main`-Stand bestätigt: exakt dieselben 17 Tests schlagen bereits ohne jede Änderung dieser Session fehl. Keine neuen Regressionen. Deckt sich mit der bereits in `[[project-stale-e2e-tests]]` dokumentierten, wiederkehrenden Beobachtung.
+- **`npm test` (Vitest):** 159/159 grün, keine neuen Unit-Tests nötig (reine Anzeige-Ableitung ohne neuen Codepfad in Storage/Hooks)
+
+### Unit Tests
+Keine neuen Unit-Tests nötig — die Änderung fügt keine isolierte, testbare Logik außerhalb bereits gerenderter Komponenten hinzu (`solved ? kanonischerWert : lokalerState` ist eine reine Anzeige-Ableitung innerhalb der bestehenden, bereits über E2E abgedeckten Komponenten).
+
+### E2E Tests
+`tests/proj-4-player-modul-rendering.spec.ts` aktualisiert:
+- 3 veraltete Assertions korrigiert (Code-Task: Eingabefeld bleibt sichtbar/disabled/mit korrektem Wert statt zu verschwinden) — betrifft die Tests "marks the task solved…", "solved tasks remain solved…", "shows the task in its read-only solved state…" (letzterer umbenannt zur genauen Beschreibung des neuen Verhaltens)
+- 3 neue Tests ergänzt: MC-Single- und MC-Multi-"keeps the chosen option(s) visible and checked but disables all options once solved", Sortierung-"keeps the correct order visible but disables dragging once solved"
+- Volle Datei: 35/35 grün auf Mobile Safari
+
+### Production-Ready Decision
+
+**READY** — Keine Bugs mit funktionaler oder sicherheitsrelevanter Auswirkung gefunden. Alle betroffenen Acceptance Criteria (aktualisiert, wo nötig) bestanden, alle relevanten Edge Cases verifiziert, Security-Audit ohne Befund. Die 3 anfänglich fehlschlagenden Tests dokumentierten eine bewusst überholte Spec-Version und wurden korrigiert, kein Blocker.
+
+### Summary
+- **Acceptance Criteria:** Alle betroffenen Kriterien bestanden (3 davon mit aktualisiertem, vom Nutzer bestätigtem Verhalten)
+- **Bugs Found:** 0 (0 critical, 0 high, 0 medium, 0 low)
+- **Security:** Pass — keine ausnutzbaren Schwachstellen gefunden, insbesondere kein neues XSS-Risiko durch die neu sichtbaren `answer`/`correctIndices`/`items`-Werte im gelösten Zustand
+- **Production Ready:** YES
+- **Recommendation:** Deploy freigegeben. Keine offenen Punkte.
