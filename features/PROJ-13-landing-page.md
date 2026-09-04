@@ -1,6 +1,6 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-09-04
 **Last Updated:** 2026-09-04
 
@@ -133,7 +133,7 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] ~~Wie wird die Prompt-Vorlage synchron zu `src/lib/quest-schema.ts` gehalten?~~ → Geklärt in `/architecture`: Handgepflegter Text plus Guard-Test, der ein Beispiel-JSON gegen das echte Schema validiert
 - [x] ~~Welcher konkrete Routen-Pfad?~~ → Geklärt: zwei Seiten, `/about` (Produktvorstellung) und `/anleitung` (KI-Anleitung)
 - [x] ~~Wo genau sitzt der Einstieg aus der App heraus?~~ → Geklärt: im Creator-Empty-State, verlinkt direkt auf `/anleitung`
-- [ ] Welches Vorschaubild wird für Open Graph verwendet — bestehendes `logo-lockup.png` oder ein eigenes Sharing-Asset? (Ggf. auch `public/assets/urbanquest.png` prüfen)
+- [x] ~~Welches Vorschaubild wird für Open Graph verwendet?~~ → Geklärt im Frontend: `public/assets/urbanquest.png` (1536×1024, markengetreu), zugleich Hero-Bild auf `/about`
 - [ ] Soll die Prompt-Vorlage in mehreren Varianten angeboten werden (z.B. kürzere Version für schwächere Modelle)? Aktuell: nein, eine vollständige Vorlage.
 - [ ] Sollen die beiden Seiten zusätzlich einen Einstieg außerhalb des Creator-Empty-States bekommen (z.B. dauerhaft im Creator-Header), sobald ein Nutzer bereits Quests hat?
 
@@ -276,6 +276,44 @@ Beide Seiten bekommen eigene Titel, Beschreibungen und ein Vorschaubild, damit e
 | KI-Modelle liefern trotz klarer Anweisung fehlerhaftes JSON | Import scheitert | Troubleshooting-Abschnitt mit konkreten Lösungswegen |
 | Nutzer überspringt das Nachtragen der Koordinaten | Quest führt draußen ins Leere | Pflichtschritt prominent nach der Vorlage platziert |
 | Sehr langer Prompt schreckt ab | Nutzer bricht ab | Box fester Höhe; der Ablauf davor erklärt, dass der Text nur kopiert und nicht gelesen werden muss |
+
+## Implementation Notes (Frontend)
+
+**Umgesetzt am 2026-09-04.**
+
+### Neue Dateien
+| Datei | Zweck |
+|-------|-------|
+| `src/app/(info)/layout.tsx` | Gemeinsames Layout beider Seiten (dunkel, `max-w-[430px]`) |
+| `src/app/(info)/about/page.tsx` | Produktvorstellung, statisch prerendered |
+| `src/app/(info)/anleitung/page.tsx` | Anleitung mit Prompt-Vorlage, statisch prerendered |
+| `src/components/info-page-shell.tsx` | Gemeinsamer Rahmen: Backdrop, Header, List-Header-Pattern |
+| `src/components/prompt-copy-box.tsx` | Einzige Client-Komponente: Kopieren mit Fallback |
+| `src/lib/quest-ai-prompt.ts` | Prompt-Vorlage + Beispiel-Quest als Konstanten |
+| `src/lib/quest-ai-prompt.test.ts` | Guard-Tests (8 Stück) |
+
+### Geänderte Dateien
+- `src/app/create/page.tsx` — Link „Quest mit KI bauen" im Empty-State (einziger Eingriff in bestehende Screens)
+- `src/app/layout.tsx` — `metadataBase` ergänzt, damit Open-Graph-Bilder beim Teilen zu absoluten URLs auflösen statt zu `localhost`
+
+### Abweichungen vom Tech Design
+- **Guard-Test prüft zusätzlich die echte Import-Pipeline**, nicht nur `questSchema`. Schema-Validität allein hätte Sanitizing, Versions-Gate und Modul-Filterung übersprungen — also genau die Schritte, an denen ein Nutzer real scheitert.
+- **`urbanquest.png` als Hero- und Sharing-Bild** gewählt (1536×1024, markengetreu mit Teal/Lime und „Explore. Solve. Discover."). Damit ist die entsprechende Open Question geschlossen.
+- **Kein `AppHeader` wiederverwendet:** Die Info-Seiten brauchen dauerhaft einen „Zur App"-Button rechts; `InfoPageShell` bringt einen eigenen, schlanken Header mit gleicher Optik mit.
+
+### Verifikation
+- `npm run build` — erfolgreich, beide Seiten als **statisch** prerendered
+- `npm test` — 167 Tests grün (8 neue)
+- `npm run lint` — keine Fehler
+- Browser (WebKit, 390×844): kein horizontales Scrollen auf beiden Seiten
+- Alle Navigationspfade geprüft: `/about` ↔ `/anleitung`, „Zur App" → `/`, Creator-Empty-State → `/anleitung`
+- Startscreen `/` unverändert
+- Clipboard-Fehlerfall simuliert: Hinweis erscheint, Prompt bleibt vollständig sichtbar
+- Open-Graph-Tags beider Seiten enthalten eigenen Titel, Beschreibung und absolutes Bild
+
+### Offen für QA
+- Der Prompt wurde **nicht** mit einem echten KI-Tool durchgespielt. Das entsprechende Acceptance Criterion („KI liefert valides Quest-JSON") braucht einen manuellen Test mit ChatGPT/Claude.
+- Touch-Target-Prüfung meldet den Logo-Link im Header mit 32px. Das entspricht dem bestehenden `AppHeader` der gesamten App — bewusst konsistent belassen, ggf. app-weit separat zu klären.
 
 ## QA Test Results
 _To be added by /qa_

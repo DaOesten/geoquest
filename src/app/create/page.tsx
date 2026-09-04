@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { PenTool, Plus, Upload } from "lucide-react";
+import { PenTool, Plus, Sparkles, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { AppHeader } from "@/components/app-header";
@@ -157,6 +158,13 @@ export default function CreatePage() {
                 Neue Quest erstellen
               </Button>
               <QuestImportButton variant="light" onImportSuccess={refreshQuests} />
+              <Link
+                href="/anleitung"
+                className="flex items-center gap-2 h-11 px-4 text-tech text-[11px] tracking-[0.08em] text-primary transition-colors duration-base ease-gq hover:text-primary/70"
+              >
+                <Sparkles className="w-4 h-4" />
+                Quest mit KI bauen
+              </Link>
             </div>
           </div>
         ) : (

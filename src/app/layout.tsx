@@ -3,6 +3,13 @@ import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  // Needed so per-page Open Graph images resolve to absolute URLs when shared.
+  // Vercel injects VERCEL_PROJECT_PRODUCTION_URL; falls back to localhost in dev.
+  metadataBase: new URL(
+    process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : "http://localhost:3000"
+  ),
   title: "Geo Quest",
   description:
     "Erstelle und spiele GPS-basierte Schnitzeljagden. Navigiere. Entdecke. Löse.",
