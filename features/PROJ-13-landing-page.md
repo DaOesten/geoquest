@@ -1,6 +1,6 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-09-04
 **Last Updated:** 2026-09-05
 
@@ -431,4 +431,47 @@ Die 17 Fehlschläge (PROJ-1, PROJ-3, PROJ-11) wurden gegen Commit `5c6db64` — 
 Keine Critical- oder High-Bugs. Bug 1 und 2 sind reale Reibungspunkte im KI-Workflow, aber beide sind in der Anleitung dokumentiert, führen zu klaren Fehlermeldungen und kosten den Nutzer nur einen Korrekturzyklus. Bug 3 und 4 sind kosmetisch bzw. präventiv.
 
 ## Deployment
+
+**Production URLs:**
+- https://geoquesty.vercel.app/about
+- https://geoquesty.vercel.app/anleitung
+
+**Deployed:** 2026-09-05
+**Platform:** Vercel (auto-deploy on push to main)
+**Git Tag:** v1.17.0-PROJ-13
+**Commit:** 926bbf7
+
+### Mitdeployed: Security-Header
+
+Beim Pre-Deployment-Check fiel auf, dass `next.config.ts` leer war, obwohl `.claude/rules/security.md` Security-Header vorschreibt. Produktion lieferte bis dahin nur HSTS (von Vercel gesetzt). Ergänzt und mitdeployed:
+
+- `X-Frame-Options: DENY`
+- `X-Content-Type-Options: nosniff`
+- `Referrer-Policy: origin-when-cross-origin`
+
+Bewusst **keine CSP**: Quests binden beliebige HTTPS-Medien-URLs ein und die Karte lädt OSM-Kacheln — eine sinnvolle CSP müsste `https:` ohnehin freigeben. Vor dem Push mit der vollen E2E-Suite geprüft: 202 bestanden, unverändert gegenüber vorher; Karten-Editor (PROJ-7) explizit getestet.
+
+Das war ein vorbestehender Zustand aller bisherigen Deployments, nicht PROJ-13-spezifisch.
+
+### Post-Deployment-Verifikation (live auf Production)
+
+| Prüfung | Ergebnis |
+|---------|----------|
+| Routen `/`, `/about`, `/anleitung`, `/play`, `/create` | alle HTTP 200 |
+| Security-Header | alle vier live verifiziert (inkl. HSTS) |
+| `metadataBase` | löst korrekt auf `https://geoquesty.vercel.app` auf — geteilte Links zeigen jetzt das echte Vorschaubild statt `localhost` |
+| Open-Graph je Seite | eigene Titel, Beschreibungen, Bild abrufbar (HTTP 200, `image/png`) |
+| JSON-LD | `WebApplication` + `FAQPage` mit 4 Einträgen, Preis 0 EUR |
+| Konsolenfehler | keine (WebKit, Desktop + Mobile) |
+| Horizontales Scrollen | keines bei 1440px und 390px |
+| Navigation `/about` → `/anleitung` | funktioniert |
+| Prompt-Auslieferung | vollständig (6956 Zeichen im DOM) |
+| Troubleshooting-Accordion | aufklappbar |
+| Creator-Einstieg | sichtbar und verlinkt |
+
+### Offen nach dem Deploy
+
+- **Chromium-Test weiterhin ausstehend.** Die lokale Playwright-Chromium-Installation ist defekt; eine Neuinstallation wurde nicht durchgeführt. Verifiziert ist WebKit (Mobile Safari + Desktop-Viewports). Nachzuholen, sobald die Installation repariert ist.
+- **Reale Sharing-Vorschau** in WhatsApp/Social ist damit technisch korrekt vorbereitet (absolute Bild-URL erreichbar), aber nicht in einem echten Messenger gegengeprüft.
+- **QA-Bugs 1–4** (1 Medium, 3 Low) bleiben offen — siehe QA-Abschnitt. Keiner war deploy-blockierend.
 _To be added by /deploy_

@@ -22,7 +22,7 @@ Geo Quest ist eine Mobile-First-Web-App (PWA), die Kinder und Jugendliche (10–
 | P0 (MVP) | Quest Data Model & JSON Import | Planned |
 | P0 (MVP) | Quest Import — Passwortschutz zum Bearbeiten/Testen | Planned |
 | P0 (MVP) | PWA-Installation (Add to Homescreen) | Planned |
-| P1 | Landing Page mit App-Link & KI-Anleitung zur Quest-Erstellung | Planned |
+| P1 | Landing Page mit App-Link & KI-Anleitung zur Quest-Erstellung | Deployed |
 
 ## Produktziele
 1. Intuitive Benutzerführung für beide Modi (Creator/Player)
