@@ -317,6 +317,13 @@ Auf Nutzerwunsch wurden beide Seiten von der 430px-Begrenzung der App-Screens ge
 
 Geprüft bei 390px, 1024px, 1440px und 1920px: kein horizontales Scrollen, keine Touch-Targets unter 44px (der zuvor gemeldete 32px-Logo-Link hat jetzt eine 44px-Klickfläche).
 
+### Nachtrag: Logo, „Für wen"-Abschnitt und SEO/GEO (2026-09-05)
+
+- **Logo-Lockup auf `/about`:** neue `showLogo`-Prop im `InfoPageShell` (nur die Startseite nutzt sie, Unterseiten behalten die Pin-Marke im Header). Das PNG hat keinen Alpha-Kanal, sondern eine deckende Fast-Schwarz-Fläche — per `mix-blend-screen` verschwindet die Platte gegen den Seitenhintergrund, ohne dass ein Kasten sichtbar bleibt. Kein Glow oder Shimmer dahinter (Markenvorgabe).
+- **„Für wen" neu gefasst:** Die losen Pills sind ersetzt durch einen dreiabsätzigen Fließtext, der die Anlässe in echten Situationen beschreibt, plus eine Definitionsliste „Typische Anlässe" mit je einer Zeile Kontext. Das liest sich besser und liefert Suchmaschinen wie KI-Systemen verwertbaren Zusammenhang statt Schlagworten.
+- **SEO:** Title und Description auf die tatsächlichen Suchbegriffe umgestellt („digitale Schnitzeljagd selbst erstellen", „kostenlos & ohne Anmeldung") statt des inhaltsarmen „Was ist Geo Quest?"; `keywords` und `alternates.canonical` ergänzt.
+- **GEO (Zitierbarkeit durch KI-Systeme):** JSON-LD mit `WebApplication` (inkl. Preis 0 EUR, Zielgruppe 10–15, Feature-Liste) und `FAQPage`. Die vier FAQ-Einträge stehen als `FAQ`-Konstante an einer Stelle und werden sowohl sichtbar gerendert als auch ins JSON-LD gemappt — strukturierte Daten können so nicht vom Seiteninhalt abweichen.
+
 ### Verifikation
 - `npm run build` — erfolgreich, beide Seiten als **statisch** prerendered
 - `npm test` — 167 Tests grün (8 neue)

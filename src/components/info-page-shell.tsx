@@ -12,6 +12,8 @@ const QuestListBackdrop = dynamic(
 );
 
 interface InfoPageShellProps {
+  /** Show the brand lockup above the eyebrow (front page only — subpages keep the header mark). */
+  showLogo?: boolean;
   /** Small category label above the title. */
   eyebrow: string;
   title: React.ReactNode;
@@ -37,6 +39,7 @@ const CONTAINER = "mx-auto w-full max-w-[1100px] px-5 sm:px-8";
  * from a shared link or QR code, typically on a laptop.
  */
 export function InfoPageShell({
+  showLogo = false,
   eyebrow,
   title,
   meta,
@@ -103,6 +106,20 @@ export function InfoPageShell({
         <div className={`${CONTAINER} pt-6 sm:pt-12 lg:pt-16`}>
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-14">
             <div>
+              {showLogo && (
+                <Image
+                  src="/assets/logo-lockup.png"
+                  alt="Geo Quest"
+                  width={1039}
+                  height={543}
+                  priority
+                  sizes="(min-width: 640px) 320px, 220px"
+                  // The lockup ships on an opaque near-black plate a shade lighter
+                  // than the page. `screen` drops that plate (black is the identity
+                  // colour for the blend) while keeping the bright brush marks.
+                  className="mb-6 w-[220px] sm:w-[280px] lg:w-[320px] h-auto mix-blend-screen"
+                />
+              )}
               <p className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
                 {eyebrow}
               </p>
