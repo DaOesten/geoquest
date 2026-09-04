@@ -1,6 +1,6 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-09-04
 **Last Updated:** 2026-09-04
 
@@ -40,17 +40,26 @@ Kern der Seite ist eine **Copy-Paste-Prompt-Vorlage**: Nutzer kopieren einen fer
 
 ## Seitenaufbau
 
-Die Seite ist eine ausführliche Marketing-Seite mit anschließender Anleitung, in dieser Reihenfolge:
+Das Feature besteht aus **zwei zusammengehörenden statischen Seiten**, die gemeinsam gebaut und deployed werden. Grund für die Trennung: Sie bedienen zwei verschiedene Momente — „Was ist das?" und „Ich will jetzt eine Quest bauen". In einer Seite vereint müsste der Nutzer erst an Marketing vorbeiscrollen, bevor er zur Prompt-Vorlage kommt.
 
+### Seite 1: `/about` — Produktvorstellung
 1. **Hero** — Logo, Headline, Ein-Satz-Erklärung, primärer App-Button („Zur App")
 2. **Feature-Sektionen** — was Geo Quest kann: GPS-Navigation zu echten Orten, 5 Modultypen (Text, Bild, Audio, Video, Aufgaben), 3 Aufgabentypen (Code, Multiple-Choice, Sortieren), komplett kostenlos, kein Account nötig
 3. **Für wen / Anlässe** — Kindergeburtstag, Schulausflug, Ferienprogramm; Zielgruppe 10–15 Jahre
 4. **Abgrenzung** — kostenlos und offen, kein Abo, kein Account-Zwang, Gaming-Look statt Bildungs-Tool
-5. **KI-Anleitung** (Kernstück) — Schritt-für-Schritt mit Prompt-Vorlage und Copy-Button
-6. **Nach dem Import** — was noch angepasst werden muss (Koordinaten, Medien-URLs)
-7. **Freie Medienquellen** — kurzer Hinweis auf legal nutzbare Quellen und direkte Datei-URLs
-8. **Troubleshooting** — „Wenn der Import fehlschlägt"
-9. **Abschluss-CTA** — App-Button
+5. **Verweis auf die Anleitung** — prominenter Einstieg zu `/anleitung`
+6. **Abschluss-CTA** — App-Button
+
+### Seite 2: `/anleitung` — Quest mit KI erstellen
+1. **Kurzer Einstieg** — was hier passiert, in zwei Sätzen
+2. **Schritt-für-Schritt-Ablauf** — Prompt kopieren → in KI einfügen → JSON speichern → importieren
+3. **Prompt-Vorlage** (Kernstück) — sichtbarer, markierbarer Text mit Copy-Button
+4. **Nach dem Import** — was noch angepasst werden muss (Koordinaten, Medien-URLs)
+5. **Freie Medienquellen** — kurzer Hinweis auf legal nutzbare Quellen und direkte Datei-URLs
+6. **Troubleshooting** — „Wenn der Import fehlschlägt"
+7. **Abschluss-CTA** — zur App / zum Creator
+
+Beide Seiten verlinken wechselseitig aufeinander. Der Einstieg aus der App (Creator-Empty-State) führt direkt auf `/anleitung`, weil dort der konkrete Bedarf besteht.
 
 ## Die Prompt-Vorlage
 
@@ -71,11 +80,13 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 **Format:** Angenommen [Vorbedingung] / Wenn [Aktion] / Dann [Ergebnis]
 
 ### Seite & Navigation
-- [ ] Angenommen ein Nutzer öffnet die Landing-Page-URL direkt, wenn die Seite lädt, dann sieht er Hero, Feature-Sektionen, KI-Anleitung und Prompt-Vorlage, ohne dass die App-Daten (Quests im Browser-Speicher) benötigt werden
-- [ ] Angenommen ein Nutzer ist auf der Landing Page, wenn er den App-Button klickt, dann gelangt er zum Start-Screen der App
-- [ ] Angenommen ein Nutzer ist im Creator-Bereich der App, wenn er den Einstieg „Wie erstelle ich eine Quest?" (o.ä.) anklickt, dann gelangt er zur Landing Page
+- [ ] Angenommen ein Nutzer öffnet `/about` direkt, wenn die Seite lädt, dann sieht er Hero, Feature-Sektionen und Anlässe, ohne dass App-Daten (Quests im Browser-Speicher) benötigt werden
+- [ ] Angenommen ein Nutzer öffnet `/anleitung` direkt, wenn die Seite lädt, dann sieht er den Schritt-für-Schritt-Ablauf und die vollständige Prompt-Vorlage, ohne vorher `/about` besucht zu haben
+- [ ] Angenommen ein Nutzer ist auf `/about`, wenn er den Verweis auf die Anleitung klickt, dann gelangt er zu `/anleitung`
+- [ ] Angenommen ein Nutzer ist auf einer der beiden Seiten, wenn er den App-Button klickt, dann gelangt er zum Start-Screen der App
+- [ ] Angenommen ein Nutzer ist im Creator-Bereich und hat noch keine Quests, wenn er den Einstieg „Wie erstelle ich eine Quest?" (o.ä.) anklickt, dann gelangt er direkt zu `/anleitung`
 - [ ] Angenommen ein Nutzer öffnet die Root-Route `/`, wenn die Seite lädt, dann sieht er unverändert den bestehenden Mode-Switch-Screen aus PROJ-1
-- [ ] Angenommen ein Nutzer öffnet die Seite auf einem Mobilgerät (360–430px), wenn er scrollt, dann sind alle Inhalte lesbar, ohne horizontales Scrollen, und alle Touch-Targets sind mindestens 44px groß
+- [ ] Angenommen ein Nutzer öffnet eine der Seiten auf einem Mobilgerät (360–430px), wenn er scrollt, dann sind alle Inhalte lesbar, ohne horizontales Scrollen, und alle Touch-Targets sind mindestens 44px groß
 
 ### Prompt-Vorlage
 - [ ] Angenommen ein Nutzer ist bei der Anleitungs-Sektion, wenn er die Seite betrachtet, dann ist die vollständige Prompt-Vorlage als lesbarer Text sichtbar und manuell markierbar
@@ -95,7 +106,7 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [ ] Angenommen ein Nutzer hat eine Fehlermeldung beim Import erhalten, wenn er dem Troubleshooting folgt, dann ist beschrieben, dass er die Fehlermeldung der KI zurückgeben und um Korrektur bitten kann
 
 ### Teilen & Auffindbarkeit
-- [ ] Angenommen ein Nutzer teilt die Landing-Page-URL in einem Messenger, wenn die Vorschau generiert wird, dann erscheinen ein spezifischer Titel, eine Beschreibung und ein Vorschaubild für diese Seite (nicht die globalen App-Metadaten)
+- [ ] Angenommen ein Nutzer teilt die URL von `/about` oder `/anleitung` in einem Messenger, wenn die Vorschau generiert wird, dann erscheinen ein für die jeweilige Seite spezifischer Titel, eine Beschreibung und ein Vorschaubild (nicht die globalen App-Metadaten)
 
 ## Edge Cases
 - **Clipboard-API blockiert oder Seite nicht über HTTPS ausgeliefert** → Copy-Button schlägt fehl; Prompt bleibt sichtbar und markierbar, Hinweis auf manuelles Kopieren erscheint
@@ -119,11 +130,12 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - **Browser Support:** letzte 2 Versionen Chrome, Safari, Firefox, Edge
 
 ## Open Questions
-- [ ] Wie wird die Prompt-Vorlage synchron zu `src/lib/quest-schema.ts` gehalten, wenn sich das Schema ändert? (Manuelle Pflege mit Hinweis im Code vs. Generierung aus dem Schema — Entscheidung in `/architecture`)
-- [ ] Welcher konkrete Routen-Pfad? Vorschlag `/about`; Alternativen `/start`, `/anleitung`, `/quest-erstellen`
-- [ ] Wo genau sitzt der Einstieg aus der App heraus (Creator-Bereich, App-Header, oder Empty-State der Quest-Liste)?
-- [ ] Welches Vorschaubild wird für Open Graph verwendet — bestehendes `logo-lockup.png` oder ein eigenes Sharing-Asset?
+- [x] ~~Wie wird die Prompt-Vorlage synchron zu `src/lib/quest-schema.ts` gehalten?~~ → Geklärt in `/architecture`: Handgepflegter Text plus Guard-Test, der ein Beispiel-JSON gegen das echte Schema validiert
+- [x] ~~Welcher konkrete Routen-Pfad?~~ → Geklärt: zwei Seiten, `/about` (Produktvorstellung) und `/anleitung` (KI-Anleitung)
+- [x] ~~Wo genau sitzt der Einstieg aus der App heraus?~~ → Geklärt: im Creator-Empty-State, verlinkt direkt auf `/anleitung`
+- [ ] Welches Vorschaubild wird für Open Graph verwendet — bestehendes `logo-lockup.png` oder ein eigenes Sharing-Asset? (Ggf. auch `public/assets/urbanquest.png` prüfen)
 - [ ] Soll die Prompt-Vorlage in mehreren Varianten angeboten werden (z.B. kürzere Version für schwächere Modelle)? Aktuell: nein, eine vollständige Vorlage.
+- [ ] Sollen die beiden Seiten zusätzlich einen Einstieg außerhalb des Creator-Empty-States bekommen (z.B. dauerhaft im Creator-Header), sobald ein Nutzer bereits Quests hat?
 
 ## Decision Log
 
@@ -150,13 +162,120 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 <!-- Added by /architecture -->
 | Decision | Rationale | Date |
 |----------|-----------|------|
-| _To be added by /architecture_ | | |
+| Zwei statische Seiten (`/about`, `/anleitung`) statt einer langen Seite | Bedienen zwei verschiedene Nutzer-Momente; getrennt kommt der Ersteller ohne Marketing-Scroll direkt zur Prompt-Vorlage. Bleiben trotzdem eine Spec, weil sie zusammen gebaut und deployed werden | 2026-09-04 |
+| Serverseitig gerenderte Seiten ohne Client-State | Beide Seiten sind reiner Inhalt ohne Zugriff auf Browser-Speicher; das erlaubt echte Meta-Tags für das Teilen und die schnellste Ladezeit | 2026-09-04 |
+| Nur der Kopieren-Button ist eine Client-Komponente | Kleinstmöglicher interaktiver Teil; der Prompt-Text selbst bleibt serverseitig gerendert und damit auch ohne JavaScript lesbar | 2026-09-04 |
+| Prompt-Vorlage liegt als eigenes Text-Modul unter `src/lib/` | Trennt langen Inhalt von der Darstellung, macht ihn testbar und an einer Stelle pflegbar | 2026-09-04 |
+| Guard-Test validiert ein Beispiel-JSON gegen `questSchema` | Ändert sich das Schema, schlägt der Test fehl und erinnert daran, die Vorlage nachzuziehen — verhindert, dass die Vorlage still veraltet und Nutzer Importfehler bekommen | 2026-09-04 |
+| Dunkles Theme wie Start-Screen und Play-Bereich | Die Seiten sind die Visitenkarte nach außen; der Gaming-Look transportiert die Differenzierung gegenüber nüchternen Bildungs-Tools | 2026-09-04 |
+| Prompt in Box fester Höhe mit eigenem Scrollbereich | Prompt bleibt vollständig sichtbar und markierbar (Spec-Vorgabe), drängt aber Troubleshooting und Folgeschritte nicht ans Seitenende | 2026-09-04 |
+| Keine neuen Pakete; bestehende shadcn/ui-Komponenten (u.a. Accordion) wiederverwenden | Accordion und Button sind bereits installiert; Troubleshooting als Accordion hält die Seite kompakt | 2026-09-04 |
+| Kopieren nutzt die Browser-Zwischenablage mit Fehlerbehandlung | Die Zwischenablage kann blockiert sein; bei Fehlschlag erscheint ein Hinweis zum manuellen Markieren, der Prompt bleibt erreichbar | 2026-09-04 |
+| Einstieg zunächst nur im Creator-Empty-State | Kleinster Eingriff in bestehende Screens (PROJ-6) und genau der Moment, in dem ein Nutzer ratlos vor einer leeren Liste steht | 2026-09-04 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+### Überblick
+
+Zwei statische Inhaltsseiten, die zur bestehenden App hinzukommen. Kein Backend, keine Datenbank, keine API-Aufrufe, kein Zugriff auf den Browser-Speicher. Die Seiten funktionieren unabhängig davon, ob der Nutzer schon Quests angelegt hat.
+
+Der einzige Eingriff in bestehenden Code ist ein zusätzlicher Link im Creator-Bereich.
+
+### Seitenstruktur
+
+```
+/about  (Produktvorstellung)
++-- Ambient-Hintergrund (wiederverwendet)
++-- Header mit Logo + "Zur App"
++-- Hero: Logo, Headline, Ein-Satz-Erklärung, App-Button
++-- Feature-Sektionen (GPS, Module, Aufgabentypen, kostenlos)
++-- "Für wen / Anlässe"
++-- Abgrenzung (kein Abo, kein Account, Gaming-Look)
++-- Verweis auf die Anleitung  --------> /anleitung
++-- Abschluss-CTA (App-Button)
+
+/anleitung  (Quest mit KI erstellen)
++-- Ambient-Hintergrund (wiederverwendet)
++-- Header mit Logo + "Zur App"
++-- Kurzer Einstieg (zwei Sätze)
++-- Schritt-für-Schritt-Ablauf (4 Schritte)
++-- Prompt-Vorlage
+|   +-- Box fester Höhe, innen scrollbar, Text markierbar
+|   +-- Kopieren-Button (einzige interaktive Stelle)
++-- "Nach dem Import" (Koordinaten, Medien-URLs)
++-- Freie Medienquellen
++-- Troubleshooting (aufklappbare Einträge)
++-- Abschluss-CTA (zum Creator)
+```
+
+**Eingriff in bestehende Screens:** Im Creator-Empty-State („Noch keine Quests erstellt") kommt ein dezenter Link zu `/anleitung` hinzu — an genau der Stelle, wo ein Nutzer ohne Quest steht und nicht weiß, wie er anfangen soll.
+
+### Neue Bausteine
+
+| Baustein | Zweck |
+|----------|-------|
+| Seite `/about` | Produktvorstellung, serverseitig gerendert |
+| Seite `/anleitung` | Anleitung mit Prompt-Vorlage, serverseitig gerendert |
+| Gemeinsames Layout für beide Seiten | Dunkles Theme, Hintergrund, Breitenbegrenzung |
+| Prompt-Vorlage (Textmodul) | Der vollständige Prompt als pflegbarer Text an einer Stelle |
+| Kopieren-Baustein | Kleiner interaktiver Teil: kopiert den Prompt, zeigt Bestätigung oder Fallback-Hinweis |
+| Guard-Test | Prüft, ob ein Beispiel-JSON aus der Vorlage noch zum echten Quest-Schema passt |
+
+Wiederverwendet werden: der bestehende App-Header, die Ambient-Hintergründe aus dem Play-Bereich, Button und Accordion aus shadcn/ui sowie das bestehende Benachrichtigungs-System für die Kopier-Bestätigung.
+
+### Datenhaltung
+
+**Keine.** Beide Seiten speichern nichts und lesen nichts aus dem Browser-Speicher. Der einzige „Datensatz" ist der Prompt-Text, der fest zur Anwendung gehört und mit jedem Deployment ausgeliefert wird.
+
+Das ist bewusst so: Die Seiten müssen auch dann vollständig funktionieren, wenn jemand den Link auf einem fremden Gerät öffnet, auf dem Geo Quest nie benutzt wurde.
+
+### Wie die Prompt-Vorlage aktuell bleibt
+
+Das größte Risiko dieses Features ist unsichtbar: Ändert jemand später das Quest-Format, beschreibt die Prompt-Vorlage plötzlich ein Format, das die App nicht mehr akzeptiert. Nutzer bekommen dann Importfehler, ohne dass jemand die Ursache bemerkt.
+
+Absicherung in zwei Schritten:
+
+1. Die Vorlage enthält ein vollständiges Beispiel einer Mini-Quest.
+2. Ein automatischer Test prüft bei jedem Testlauf, ob dieses Beispiel noch dem echten Quest-Format entspricht.
+
+Ändert sich das Format, schlägt der Test fehl — mit dem klaren Hinweis, dass die Vorlage nachgezogen werden muss. Das kostet wenig und verhindert genau den Fehler, den sonst niemand bemerkt.
+
+### Umgang mit den bekannten Stolpersteinen
+
+| Stolperstein | Lösung |
+|--------------|--------|
+| KI kennt keine echten GPS-Koordinaten | Vorlage weist erkennbare Platzhalter an; Anleitung macht das Nachtragen auf der Karte zum Pflichtschritt |
+| Medien brauchen eine Pflicht-Internetadresse | Vorlage setzt erkennbare Platzhalter-Adressen, damit der Import durchläuft; Anleitung weist auf das Ersetzen hin |
+| KI erzeugt oft ungültige Kennnummern | Troubleshooting erklärt, die Fehlermeldung an die KI zurückzugeben |
+| Import akzeptiert nur Dateien, kein eingefügter Text | Anleitung beschreibt das Speichern als Datei; Import selbst bleibt unverändert |
+| Zwischenablage kann blockiert sein | Prompt ist immer sichtbar und markierbar; bei Fehlschlag erscheint ein Hinweis |
+
+### Auffindbarkeit und Teilen
+
+Beide Seiten bekommen eigene Titel, Beschreibungen und ein Vorschaubild, damit ein geteilter Link in Messengern und sozialen Netzwerken ordentlich aussieht. Da die Seiten serverseitig gerendert werden, funktioniert das ohne Zusatzaufwand — die Vorschau-Informationen stehen direkt in der Seite.
+
+### Abhängigkeiten (neue Pakete)
+
+**Keine.** Alles Nötige ist vorhanden: die Oberflächen-Bausteine (shadcn/ui) inklusive Accordion, das Benachrichtigungs-System und die Ambient-Hintergründe. Die Zwischenablage-Funktion ist eine Standard-Browserfunktion.
+
+### Was dieses Feature *nicht* anfasst
+
+- Der Quest-Import bleibt unverändert (nur Dateien, kein Textfeld)
+- Der Stationen-Editor bleibt unverändert
+- Die Startseite `/` bleibt unverändert
+- Es entstehen keine Server-Endpunkte und keine gespeicherten Daten
+
+### Risiken
+
+| Risiko | Auswirkung | Gegenmaßnahme |
+|--------|------------|---------------|
+| Vorlage veraltet nach Format-Änderung | Nutzer bekommen Importfehler | Guard-Test (siehe oben) |
+| KI-Modelle liefern trotz klarer Anweisung fehlerhaftes JSON | Import scheitert | Troubleshooting-Abschnitt mit konkreten Lösungswegen |
+| Nutzer überspringt das Nachtragen der Koordinaten | Quest führt draußen ins Leere | Pflichtschritt prominent nach der Vorlage platziert |
+| Sehr langer Prompt schreckt ab | Nutzer bricht ab | Box fester Höhe; der Ablauf davor erklärt, dass der Text nur kopiert und nicht gelesen werden muss |
 
 ## QA Test Results
 _To be added by /qa_
