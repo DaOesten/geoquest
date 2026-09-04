@@ -87,6 +87,7 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [ ] Angenommen ein Nutzer ist im Creator-Bereich und hat noch keine Quests, wenn er den Einstieg „Wie erstelle ich eine Quest?" (o.ä.) anklickt, dann gelangt er direkt zu `/anleitung`
 - [ ] Angenommen ein Nutzer öffnet die Root-Route `/`, wenn die Seite lädt, dann sieht er unverändert den bestehenden Mode-Switch-Screen aus PROJ-1
 - [ ] Angenommen ein Nutzer öffnet eine der Seiten auf einem Mobilgerät (360–430px), wenn er scrollt, dann sind alle Inhalte lesbar, ohne horizontales Scrollen, und alle Touch-Targets sind mindestens 44px groß
+- [ ] Angenommen ein Nutzer öffnet eine der Seiten am Laptop oder Desktop (ab 1024px), wenn die Seite lädt, dann nutzt das Layout die verfügbare Breite mehrspaltig, ohne dass Textzeilen überdehnen oder Inhalte in einer schmalen Handy-Spalte kleben
 
 ### Prompt-Vorlage
 - [ ] Angenommen ein Nutzer ist bei der Anleitungs-Sektion, wenn er die Seite betrachtet, dann ist die vollständige Prompt-Vorlage als lesbarer Text sichtbar und manuell markierbar
@@ -116,7 +117,7 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - **KI überschreitet Schema-Limits** (>20 Stationen, >5 Multiple-Choice-Optionen, `radiusMeters` außerhalb 10–100) → Import scheitert; Troubleshooting deckt das ab
 - **Nutzer importiert eine Quest, deren `id` bereits lokal existiert** → bestehender Überschreiben-Dialog aus PROJ-2 greift; Anleitung erwähnt diesen Fall
 - **Nutzer spielt die Quest ohne Koordinaten anzupassen** → Quest führt an Platzhalter-Orte; Anleitung stellt diesen Schritt deshalb prominent als Pflichtschritt dar
-- **Nutzer öffnet die Seite auf dem Desktop** → Layout bleibt lesbar (kein reines Mobile-Layout mit überdehnter Zeilenlänge); Creator-Nutzung am Desktop ist laut PRD ausdrücklich vorgesehen
+- **Nutzer öffnet die Seite auf dem Desktop** → eigenes mehrspaltiges Layout bis 1100px Container-Breite, Textspalten auf ~52 Zeichen begrenzt; die Seiten sind bewusst NICHT auf die 430px der App-Screens beschränkt, weil Besucher typischerweise über einen geteilten Link am Laptop ankommen
 - **JavaScript deaktiviert** → Seiteninhalt und Prompt bleiben lesbar; nur der Copy-Button funktioniert nicht
 - **Prompt-Vorlage veraltet nach einer Schema-Änderung** → siehe Open Questions; die Vorlage muss bei Änderungen an `quest-schema.ts` mitgepflegt werden
 
@@ -172,6 +173,7 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 | Keine neuen Pakete; bestehende shadcn/ui-Komponenten (u.a. Accordion) wiederverwenden | Accordion und Button sind bereits installiert; Troubleshooting als Accordion hält die Seite kompakt | 2026-09-04 |
 | Kopieren nutzt die Browser-Zwischenablage mit Fehlerbehandlung | Die Zwischenablage kann blockiert sein; bei Fehlschlag erscheint ein Hinweis zum manuellen Markieren, der Prompt bleibt erreichbar | 2026-09-04 |
 | Einstieg zunächst nur im Creator-Empty-State | Kleinster Eingriff in bestehende Screens (PROJ-6) und genau der Moment, in dem ein Nutzer ratlos vor einer leeren Liste steht | 2026-09-04 |
+| Info-Seiten nicht auf 430px begrenzt wie die App-Screens, sondern eigenes Desktop-Layout bis 1100px | Diese Seiten sind der Einstieg von außen (geteilter Link, QR-Code) und werden typischerweise am Laptop geöffnet; eine schmale Handy-Spalte auf einem 1440px-Bildschirm wirkt unfertig. Die App-Screens selbst bleiben unverändert bei 430px | 2026-09-05 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
@@ -300,6 +302,20 @@ Beide Seiten bekommen eigene Titel, Beschreibungen und ein Vorschaubild, damit e
 - **Guard-Test prüft zusätzlich die echte Import-Pipeline**, nicht nur `questSchema`. Schema-Validität allein hätte Sanitizing, Versions-Gate und Modul-Filterung übersprungen — also genau die Schritte, an denen ein Nutzer real scheitert.
 - **`urbanquest.png` als Hero- und Sharing-Bild** gewählt (1536×1024, markengetreu mit Teal/Lime und „Explore. Solve. Discover."). Damit ist die entsprechende Open Question geschlossen.
 - **Kein `AppHeader` wiederverwendet:** Die Info-Seiten brauchen dauerhaft einen „Zur App"-Button rechts; `InfoPageShell` bringt einen eigenen, schlanken Header mit gleicher Optik mit.
+
+### Nachtrag: Desktop-Layout (2026-09-05)
+
+Auf Nutzerwunsch wurden beide Seiten von der 430px-Begrenzung der App-Screens gelöst — die Zielgruppe findet diese Seiten typischerweise am Laptop oder Desktop.
+
+- **Container:** `max-w-[1100px]` mit `px-5 sm:px-8` statt `max-w-[430px]`; das `(info)`-Layout begrenzt die Breite nicht mehr selbst
+- **Header:** volle Breite mit zentriertem Inhalt, dazu Navigationslinks „Über" und „Anleitung" ab `sm` (auf Mobile ausgeblendet, damit der Header nicht überläuft)
+- **Zweispaltiger Hero:** neue `lead`- und `aside`-Props im `InfoPageShell`; ab `lg` steht der Titelblock links, rechts das Hero-Bild (`/about`) bzw. eine „Was dabei herauskommt"-Karte (`/anleitung`, sonst wäre die rechte Hälfte leer geblieben)
+- **Grids:** Feature-Cards 1→2→3 Spalten, Schritte 1→2→4 Spalten, Pflichtschritte und Medien/Troubleshooting je zweispaltig ab `lg`
+- **Typografie:** Titel skaliert bis 4rem, Fließtext bis `text-lg`; Textspalten auf `max-w-[52ch]` begrenzt, damit die Zeilen am Desktop nicht überdehnen
+- **Prompt-Box:** höher (`lg:max-h-[560px]`) und größere Schrift ab `lg`
+- **`scroll-mt-20`** auf allen Sections, damit Überschriften nicht unter dem sticky Header verschwinden
+
+Geprüft bei 390px, 1024px, 1440px und 1920px: kein horizontales Scrollen, keine Touch-Targets unter 44px (der zuvor gemeldete 32px-Logo-Link hat jetzt eine 44px-Klickfläche).
 
 ### Verifikation
 - `npm run build` — erfolgreich, beide Seiten als **statisch** prerendered

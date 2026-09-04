@@ -69,12 +69,12 @@ export function PromptCopyBox({ prompt }: PromptCopyBoxProps) {
       )}
 
       <div
-        className="mt-3 max-h-[380px] overflow-y-auto rounded-card border border-border bg-gq-dark-teal/70 p-4 shadow-card"
+        className="mt-3 max-h-[380px] lg:max-h-[560px] overflow-y-auto rounded-card border border-border bg-gq-dark-teal/70 p-4 sm:p-6 shadow-card"
         tabIndex={0}
         role="region"
         aria-label="Prompt-Vorlage zum Kopieren"
       >
-        <pre className="whitespace-pre-wrap break-words font-body text-[13px] leading-relaxed text-[#E7EAEC] select-text">
+        <pre className="whitespace-pre-wrap break-words font-body text-[13px] lg:text-sm leading-relaxed text-[#E7EAEC] select-text">
           {prompt}
         </pre>
       </div>

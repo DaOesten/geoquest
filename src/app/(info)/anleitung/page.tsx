@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AlertTriangle, ImageIcon, MapPin, PenTool } from "lucide-react";
+import {
+  AlertTriangle,
+  BookOpen,
+  FileJson,
+  ImageIcon,
+  MapPin,
+  PenTool,
+  Puzzle,
+} from "lucide-react";
 import { InfoPageShell } from "@/components/info-page-shell";
 import { PromptCopyBox } from "@/components/prompt-copy-box";
 import { QUEST_AI_PROMPT } from "@/lib/quest-ai-prompt";
@@ -23,6 +31,13 @@ export const metadata: Metadata = {
     type: "article",
   },
 };
+
+const OUTCOME = [
+  { icon: BookOpen, label: "Story mit Einstieg und Abschluss" },
+  { icon: MapPin, label: "Ziele mit Namen und Reihenfolge" },
+  { icon: Puzzle, label: "Rätsel und Aufgaben pro Ziel" },
+  { icon: FileJson, label: "Fertige Datei zum Importieren" },
+];
 
 const STEPS = [
   {
@@ -84,87 +99,107 @@ export default function AnleitungPage() {
       }
       meta="4 Schritte · ca. 15 Min"
       backHref="/about"
+      lead={
+        <p>
+          Du kopierst einen fertigen Text, fügst ihn in ChatGPT oder Claude ein
+          und bekommst eine komplette Quest zurück — mit Story, Zielen und
+          Rätseln. Die Orte auf der Karte setzt du danach selbst.
+        </p>
+      }
+      aside={
+        <div className="rounded-card border border-border bg-gq-dark-teal/70 p-6 shadow-card">
+          <p className="text-tech text-[10px] tracking-[0.12em] text-gq-teal">
+            Was dabei herauskommt
+          </p>
+          <ul className="mt-4 flex flex-col gap-3">
+            {OUTCOME.map(({ icon: Icon, label }) => (
+              <li key={label} className="flex items-center gap-3">
+                <Icon className="w-5 h-5 flex-shrink-0 text-gq-teal" />
+                <span className="font-body text-sm lg:text-[15px] leading-relaxed text-[#E7EAEC]">
+                  {label}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-5 border-t border-border pt-4 font-body text-sm leading-relaxed text-gq-grey">
+            Zwei Dinge machst du danach selbst: Ziele auf die Karte setzen und
+            Medien einsetzen.
+          </p>
+        </div>
+      }
     >
-      <p className="mt-5 font-body text-[15px] leading-relaxed text-[#E7EAEC]">
-        Du kopierst einen fertigen Text, fügst ihn in ChatGPT oder Claude ein und
-        bekommst eine komplette Quest zurück — mit Story, Zielen und Rätseln. Die
-        Orte auf der Karte setzt du danach selbst.
-      </p>
-
       {/* Schritte */}
-      <section className="mt-8">
-        <h2 className="text-tech text-[10px] tracking-[0.12em] text-gq-teal">
+      <section className="mt-12 sm:mt-16">
+        <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
           So geht es
         </h2>
-        <ol className="mt-3 flex flex-col gap-3">
+        <ol className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {STEPS.map((step, i) => (
             <li
               key={step.title}
-              className="flex gap-4 rounded-card border border-border bg-gq-dark-teal/70 p-4 shadow-card"
+              className="rounded-card border border-border bg-gq-dark-teal/70 p-5 shadow-card"
             >
-              <span className="flex-shrink-0 grid place-items-center w-8 h-8 rounded-full border border-gq-teal text-tech text-xs text-gq-teal">
+              <span className="grid place-items-center w-9 h-9 rounded-full border border-gq-teal text-tech text-xs text-gq-teal">
                 {i + 1}
               </span>
-              <div>
-                <h3 className="text-tech text-xs tracking-[0.08em] text-gq-white">
-                  {step.title}
-                </h3>
-                <p className="mt-1.5 font-body text-sm leading-relaxed text-gq-grey">
-                  {step.body}
-                </p>
-              </div>
+              <h3 className="mt-4 text-tech text-xs lg:text-[13px] tracking-[0.08em] text-gq-white">
+                {step.title}
+              </h3>
+              <p className="mt-2 font-body text-sm lg:text-[15px] leading-relaxed text-gq-grey">
+                {step.body}
+              </p>
             </li>
           ))}
         </ol>
       </section>
 
       {/* Prompt */}
-      <section className="mt-10">
-        <h2 className="text-tech text-[10px] tracking-[0.12em] text-gq-teal">
+      <section className="mt-12 sm:mt-20">
+        <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
           Schritt 1
         </h2>
-        <h3 className="mt-1 font-display italic text-[clamp(1.4rem,6vw,1.8rem)] uppercase leading-[1] text-gq-white">
+        <h3 className="mt-2 font-display italic text-[clamp(1.5rem,4vw,2.4rem)] uppercase leading-[1] text-gq-white">
           Der Prompt
         </h3>
         <PromptCopyBox prompt={QUEST_AI_PROMPT} />
       </section>
 
       {/* Nach dem Import */}
-      <section className="mt-10">
-        <h2 className="text-tech text-[10px] tracking-[0.12em] text-gq-lime">
+      <section className="mt-12 sm:mt-20">
+        <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-lime">
           Danach — nicht vergessen
         </h2>
-        <h3 className="mt-1 font-display italic text-[clamp(1.4rem,6vw,1.8rem)] uppercase leading-[1] text-gq-white">
+        <h3 className="mt-2 font-display italic text-[clamp(1.5rem,4vw,2.4rem)] uppercase leading-[1] text-gq-white">
           Zwei Pflichtschritte
         </h3>
 
-        <div className="mt-4 flex flex-col gap-3">
-          <div className="rounded-card border border-gq-lime/40 bg-gq-dark-teal/70 p-4 shadow-card">
+        <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          <div className="rounded-card border border-gq-lime/40 bg-gq-dark-teal/70 p-5 shadow-card">
             <div className="flex items-center gap-2">
               <MapPin className="w-5 h-5 text-gq-lime" />
-              <h4 className="text-tech text-xs tracking-[0.08em] text-gq-white">
+              <h4 className="text-tech text-xs lg:text-[13px] tracking-[0.08em] text-gq-white">
                 Ziele auf die Karte setzen
               </h4>
             </div>
-            <p className="mt-2 font-body text-sm leading-relaxed text-[#E7EAEC]">
+            <p className="mt-3 font-body text-sm lg:text-[15px] leading-relaxed text-[#E7EAEC]">
               Eine KI kennt keine echten GPS-Koordinaten. Alle Ziele liegen nach
               dem Import auf einem Platzhalter. Öffne die Quest im Creator, geh
               in jedes Ziel und zieh den Punkt auf der Karte an die richtige
               Stelle.
             </p>
-            <p className="mt-2 font-body text-sm leading-relaxed text-gq-lime">
+            <p className="mt-3 font-body text-sm lg:text-[15px] leading-relaxed text-gq-lime">
               Ohne diesen Schritt führt die Quest draußen ins Nichts.
             </p>
           </div>
 
-          <div className="rounded-card border border-border bg-gq-dark-teal/70 p-4 shadow-card">
+          <div className="rounded-card border border-border bg-gq-dark-teal/70 p-5 shadow-card">
             <div className="flex items-center gap-2">
               <ImageIcon className="w-5 h-5 text-gq-teal" />
-              <h4 className="text-tech text-xs tracking-[0.08em] text-gq-white">
+              <h4 className="text-tech text-xs lg:text-[13px] tracking-[0.08em] text-gq-white">
                 Medien-Adressen ersetzen
               </h4>
             </div>
-            <p className="mt-2 font-body text-sm leading-relaxed text-[#E7EAEC]">
+            <p className="mt-3 font-body text-sm lg:text-[15px] leading-relaxed text-[#E7EAEC]">
               Bilder, Audio und Video hat die KI nur vorgeschlagen — die
               Adressen sind Platzhalter und mit „BITTE-ERSETZEN“ markiert. Trag
               im Creator deine eigenen ein oder lösch die Bausteine.
@@ -173,70 +208,72 @@ export default function AnleitungPage() {
         </div>
       </section>
 
-      {/* Medienquellen */}
-      <section className="mt-10">
-        <h2 className="text-tech text-[10px] tracking-[0.12em] text-gq-teal">
-          Woher Medien nehmen
-        </h2>
-        <div className="mt-3 rounded-card border border-border bg-gq-dark-teal/70 p-4 shadow-card">
-          <p className="font-body text-sm leading-relaxed text-[#E7EAEC]">
-            Am besten eigene Fotos und Sprachaufnahmen — die passen zur Quest und
-            gehören dir. Lad sie irgendwo hoch, wo du eine direkte Adresse
-            bekommst.
-          </p>
-          <p className="mt-3 font-body text-sm leading-relaxed text-[#E7EAEC]">
-            Frei nutzbares Material findest du bei Wikimedia Commons, Pixabay
-            oder Unsplash. Achte auf die Lizenz, wenn du die Quest weitergibst.
-          </p>
-          <div className="mt-3 rounded-[12px] border border-gq-teal/30 bg-gq-teal/5 p-3">
-            <p className="font-body text-sm leading-relaxed text-gq-white">
-              <span className="text-gq-teal">Wichtig:</span> Geo Quest braucht die
-              Adresse der Datei selbst — sie endet auf .jpg, .png, .mp3 oder
-              .mp4. Der Link zur Webseite reicht nicht. Auf dem Bild rechtsklicken
-              und „Bildadresse kopieren“ wählen.
+      <div className="mt-12 sm:mt-20 grid gap-10 lg:grid-cols-2 lg:gap-14">
+        {/* Medienquellen */}
+        <section>
+          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
+            Woher Medien nehmen
+          </h2>
+          <div className="mt-4 rounded-card border border-border bg-gq-dark-teal/70 p-5 shadow-card">
+            <p className="font-body text-sm lg:text-[15px] leading-relaxed text-[#E7EAEC]">
+              Am besten eigene Fotos und Sprachaufnahmen — die passen zur Quest
+              und gehören dir. Lad sie irgendwo hoch, wo du eine direkte Adresse
+              bekommst.
             </p>
+            <p className="mt-3 font-body text-sm lg:text-[15px] leading-relaxed text-[#E7EAEC]">
+              Frei nutzbares Material findest du bei Wikimedia Commons, Pixabay
+              oder Unsplash. Achte auf die Lizenz, wenn du die Quest weitergibst.
+            </p>
+            <div className="mt-4 rounded-[12px] border border-gq-teal/30 bg-gq-teal/5 p-4">
+              <p className="font-body text-sm lg:text-[15px] leading-relaxed text-gq-white">
+                <span className="text-gq-teal">Wichtig:</span> Geo Quest braucht
+                die Adresse der Datei selbst — sie endet auf .jpg, .png, .mp3
+                oder .mp4. Der Link zur Webseite reicht nicht. Auf dem Bild
+                rechtsklicken und „Bildadresse kopieren“ wählen.
+              </p>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Troubleshooting */}
-      <section className="mt-10">
-        <h2 className="text-tech text-[10px] tracking-[0.12em] text-gq-teal">
-          Wenn etwas klemmt
-        </h2>
-        <h3 className="mt-1 flex items-center gap-2 font-display italic text-[clamp(1.4rem,6vw,1.8rem)] uppercase leading-[1] text-gq-white">
-          <AlertTriangle className="w-5 h-5 text-gq-lime" />
-          Hilfe
-        </h3>
-        <Accordion type="single" collapsible className="mt-3">
-          {TROUBLESHOOTING.map(({ question, answer }) => (
-            <AccordionItem
-              key={question}
-              value={question}
-              className="border-border"
-            >
-              <AccordionTrigger className="text-left font-body text-sm text-gq-white hover:text-gq-teal hover:no-underline">
-                {question}
-              </AccordionTrigger>
-              <AccordionContent className="font-body text-sm leading-relaxed text-gq-grey">
-                {answer}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
-      </section>
+        {/* Troubleshooting */}
+        <section>
+          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
+            Wenn etwas klemmt
+          </h2>
+          <h3 className="mt-2 flex items-center gap-2 font-display italic text-[clamp(1.5rem,4vw,2.4rem)] uppercase leading-[1] text-gq-white">
+            <AlertTriangle className="w-5 h-5 lg:w-6 lg:h-6 text-gq-lime" />
+            Hilfe
+          </h3>
+          <Accordion type="single" collapsible className="mt-4">
+            {TROUBLESHOOTING.map(({ question, answer }) => (
+              <AccordionItem
+                key={question}
+                value={question}
+                className="border-border"
+              >
+                <AccordionTrigger className="text-left font-body text-sm lg:text-[15px] text-gq-white hover:text-gq-teal hover:no-underline">
+                  {question}
+                </AccordionTrigger>
+                <AccordionContent className="font-body text-sm lg:text-[15px] leading-relaxed text-gq-grey">
+                  {answer}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </section>
+      </div>
 
       {/* Abschluss-CTA */}
-      <section className="mt-10 rounded-card border border-gq-teal/40 bg-gq-dark-teal/70 p-5 text-center shadow-card">
-        <h2 className="font-display italic text-[clamp(1.4rem,6vw,1.8rem)] uppercase leading-[1] text-gq-white">
+      <section className="mt-12 sm:mt-20 rounded-card border border-gq-teal/40 bg-gq-dark-teal/70 p-6 sm:p-10 text-center shadow-card">
+        <h2 className="font-display italic text-[clamp(1.5rem,4vw,2.4rem)] uppercase leading-[1] text-gq-white">
           Prompt kopiert?
         </h2>
-        <p className="mt-2 font-body text-sm leading-relaxed text-gq-grey">
+        <p className="mx-auto mt-3 max-w-[46ch] font-body text-sm lg:text-base leading-relaxed text-gq-grey">
           Dann rein in den Creator und die fertige Quest importieren.
         </p>
         <Link
           href="/create"
-          className="mt-4 flex items-center justify-center gap-2 h-12 rounded-pill bg-gq-teal text-gq-black text-tech text-xs tracking-[0.08em] transition-all duration-base ease-gq hover:bg-gq-teal-hover active:scale-[0.96]"
+          className="mx-auto mt-6 inline-flex items-center justify-center gap-2 h-12 px-8 rounded-pill bg-gq-teal text-gq-black text-tech text-xs tracking-[0.08em] transition-all duration-base ease-gq hover:bg-gq-teal-hover active:scale-[0.96]"
         >
           <PenTool className="w-4 h-4" />
           Zum Creator
