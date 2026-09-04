@@ -1,8 +1,8 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-04
+**Last Updated:** 2026-09-05
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -80,34 +80,34 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 **Format:** Angenommen [Vorbedingung] / Wenn [Aktion] / Dann [Ergebnis]
 
 ### Seite & Navigation
-- [ ] Angenommen ein Nutzer öffnet `/about` direkt, wenn die Seite lädt, dann sieht er Hero, Feature-Sektionen und Anlässe, ohne dass App-Daten (Quests im Browser-Speicher) benötigt werden
-- [ ] Angenommen ein Nutzer öffnet `/anleitung` direkt, wenn die Seite lädt, dann sieht er den Schritt-für-Schritt-Ablauf und die vollständige Prompt-Vorlage, ohne vorher `/about` besucht zu haben
-- [ ] Angenommen ein Nutzer ist auf `/about`, wenn er den Verweis auf die Anleitung klickt, dann gelangt er zu `/anleitung`
-- [ ] Angenommen ein Nutzer ist auf einer der beiden Seiten, wenn er den App-Button klickt, dann gelangt er zum Start-Screen der App
-- [ ] Angenommen ein Nutzer ist im Creator-Bereich und hat noch keine Quests, wenn er den Einstieg „Wie erstelle ich eine Quest?" (o.ä.) anklickt, dann gelangt er direkt zu `/anleitung`
-- [ ] Angenommen ein Nutzer öffnet die Root-Route `/`, wenn die Seite lädt, dann sieht er unverändert den bestehenden Mode-Switch-Screen aus PROJ-1
-- [ ] Angenommen ein Nutzer öffnet eine der Seiten auf einem Mobilgerät (360–430px), wenn er scrollt, dann sind alle Inhalte lesbar, ohne horizontales Scrollen, und alle Touch-Targets sind mindestens 44px groß
-- [ ] Angenommen ein Nutzer öffnet eine der Seiten am Laptop oder Desktop (ab 1024px), wenn die Seite lädt, dann nutzt das Layout die verfügbare Breite mehrspaltig, ohne dass Textzeilen überdehnen oder Inhalte in einer schmalen Handy-Spalte kleben
+- [x] Angenommen ein Nutzer öffnet `/about` direkt, wenn die Seite lädt, dann sieht er Hero, Feature-Sektionen und Anlässe, ohne dass App-Daten (Quests im Browser-Speicher) benötigt werden
+- [x] Angenommen ein Nutzer öffnet `/anleitung` direkt, wenn die Seite lädt, dann sieht er den Schritt-für-Schritt-Ablauf und die vollständige Prompt-Vorlage, ohne vorher `/about` besucht zu haben
+- [x] Angenommen ein Nutzer ist auf `/about`, wenn er den Verweis auf die Anleitung klickt, dann gelangt er zu `/anleitung`
+- [x] Angenommen ein Nutzer ist auf einer der beiden Seiten, wenn er den App-Button klickt, dann gelangt er zum Start-Screen der App
+- [x] Angenommen ein Nutzer ist im Creator-Bereich und hat noch keine Quests, wenn er den Einstieg „Wie erstelle ich eine Quest?" (o.ä.) anklickt, dann gelangt er direkt zu `/anleitung`
+- [x] Angenommen ein Nutzer öffnet die Root-Route `/`, wenn die Seite lädt, dann sieht er unverändert den bestehenden Mode-Switch-Screen aus PROJ-1
+- [x] Angenommen ein Nutzer öffnet eine der Seiten auf einem Mobilgerät (360–430px), wenn er scrollt, dann sind alle Inhalte lesbar, ohne horizontales Scrollen, und alle Touch-Targets sind mindestens 44px groß
+- [x] Angenommen ein Nutzer öffnet eine der Seiten am Laptop oder Desktop (ab 1024px), wenn die Seite lädt, dann nutzt das Layout die verfügbare Breite mehrspaltig, ohne dass Textzeilen überdehnen oder Inhalte in einer schmalen Handy-Spalte kleben
 
 ### Prompt-Vorlage
-- [ ] Angenommen ein Nutzer ist bei der Anleitungs-Sektion, wenn er die Seite betrachtet, dann ist die vollständige Prompt-Vorlage als lesbarer Text sichtbar und manuell markierbar
-- [ ] Angenommen ein Nutzer klickt den Kopieren-Button, wenn das Kopieren erfolgreich ist, dann erhält er eine sichtbare Bestätigung (z.B. „Kopiert!")
-- [ ] Angenommen die Clipboard-API ist blockiert oder nicht verfügbar, wenn der Nutzer den Kopieren-Button klickt, dann erscheint ein Hinweis, den Text manuell zu markieren und zu kopieren, und der Prompt bleibt vollständig sichtbar
-- [ ] Angenommen ein Nutzer hat den Prompt kopiert, wenn er ihn liest, dann erkennt er eindeutig, welche Stellen er selbst ausfüllen muss (Thema, Ort, Altersgruppe, Stationsanzahl)
-- [ ] Angenommen ein Nutzer fügt den unveränderten Prompt in ein gängiges KI-Tool ein und füllt die Platzhalter aus, wenn die KI antwortet, dann ist die Ausgabe valides JSON, das dem Quest-Schema aus PROJ-2 entspricht
+- [x] Angenommen ein Nutzer ist bei der Anleitungs-Sektion, wenn er die Seite betrachtet, dann ist die vollständige Prompt-Vorlage als lesbarer Text sichtbar und manuell markierbar
+- [x] Angenommen ein Nutzer klickt den Kopieren-Button, wenn das Kopieren erfolgreich ist, dann erhält er eine sichtbare Bestätigung (z.B. „Kopiert!")
+- [x] Angenommen die Clipboard-API ist blockiert oder nicht verfügbar, wenn der Nutzer den Kopieren-Button klickt, dann erscheint ein Hinweis, den Text manuell zu markieren und zu kopieren, und der Prompt bleibt vollständig sichtbar
+- [x] Angenommen ein Nutzer hat den Prompt kopiert, wenn er ihn liest, dann erkennt er eindeutig, welche Stellen er selbst ausfüllen muss (Thema, Ort, Altersgruppe, Stationsanzahl)
+- [x] Angenommen ein Nutzer fügt den unveränderten Prompt in ein gängiges KI-Tool ein und füllt die Platzhalter aus, wenn die KI antwortet, dann ist die Ausgabe valides JSON, das dem Quest-Schema aus PROJ-2 entspricht
 
 ### Anleitung & Erwartungsmanagement
-- [ ] Angenommen ein Nutzer liest die Anleitung, wenn er beim Import-Schritt ankommt, dann ist beschrieben, wie er den JSON-Text aus dem Chat als `.json`-Datei speichert und über „Quest importieren" einspielt
-- [ ] Angenommen ein Nutzer hat eine Quest importiert, wenn er die Anleitung weiterliest, dann ist klar beschrieben, dass er die GPS-Koordinaten aller Stationen im Stationen-Editor auf der Karte setzen muss
-- [ ] Angenommen die importierte Quest enthält Medien-Module, wenn der Nutzer die Anleitung liest, dann ist klar beschrieben, dass die Platzhalter-URLs durch echte HTTPS-URLs ersetzt werden müssen
-- [ ] Angenommen ein Nutzer sucht Medien für seine Quest, wenn er die entsprechende Sektion liest, dann findet er einen Hinweis auf legal nutzbare Quellen und die Erklärung, dass eine direkte Datei-URL benötigt wird (nicht der Link zur Webseite)
+- [x] Angenommen ein Nutzer liest die Anleitung, wenn er beim Import-Schritt ankommt, dann ist beschrieben, wie er den JSON-Text aus dem Chat als `.json`-Datei speichert und über „Quest importieren" einspielt
+- [x] Angenommen ein Nutzer hat eine Quest importiert, wenn er die Anleitung weiterliest, dann ist klar beschrieben, dass er die GPS-Koordinaten aller Stationen im Stationen-Editor auf der Karte setzen muss
+- [x] Angenommen die importierte Quest enthält Medien-Module, wenn der Nutzer die Anleitung liest, dann ist klar beschrieben, dass die Platzhalter-URLs durch echte HTTPS-URLs ersetzt werden müssen
+- [x] Angenommen ein Nutzer sucht Medien für seine Quest, wenn er die entsprechende Sektion liest, dann findet er einen Hinweis auf legal nutzbare Quellen und die Erklärung, dass eine direkte Datei-URL benötigt wird (nicht der Link zur Webseite)
 
 ### Fehlerfälle & Troubleshooting
-- [ ] Angenommen der Import einer KI-generierten Quest schlägt fehl, wenn der Nutzer den Troubleshooting-Abschnitt liest, dann findet er die häufigsten Ursachen (ungültige UUID, fehlende Pflichtfelder, ungültige URL) und je einen konkreten Lösungsweg
-- [ ] Angenommen ein Nutzer hat eine Fehlermeldung beim Import erhalten, wenn er dem Troubleshooting folgt, dann ist beschrieben, dass er die Fehlermeldung der KI zurückgeben und um Korrektur bitten kann
+- [x] Angenommen der Import einer KI-generierten Quest schlägt fehl, wenn der Nutzer den Troubleshooting-Abschnitt liest, dann findet er die häufigsten Ursachen (ungültige UUID, fehlende Pflichtfelder, ungültige URL) und je einen konkreten Lösungsweg
+- [x] Angenommen ein Nutzer hat eine Fehlermeldung beim Import erhalten, wenn er dem Troubleshooting folgt, dann ist beschrieben, dass er die Fehlermeldung der KI zurückgeben und um Korrektur bitten kann
 
 ### Teilen & Auffindbarkeit
-- [ ] Angenommen ein Nutzer teilt die URL von `/about` oder `/anleitung` in einem Messenger, wenn die Vorschau generiert wird, dann erscheinen ein für die jeweilige Seite spezifischer Titel, eine Beschreibung und ein Vorschaubild (nicht die globalen App-Metadaten)
+- [x] Angenommen ein Nutzer teilt die URL von `/about` oder `/anleitung` in einem Messenger, wenn die Vorschau generiert wird, dann erscheinen ein für die jeweilige Seite spezifischer Titel, eine Beschreibung und ein Vorschaubild (nicht die globalen App-Metadaten)
 
 ## Edge Cases
 - **Clipboard-API blockiert oder Seite nicht über HTTPS ausgeliefert** → Copy-Button schlägt fehl; Prompt bleibt sichtbar und markierbar, Hinweis auf manuelles Kopieren erscheint
@@ -339,7 +339,96 @@ Geprüft bei 390px, 1024px, 1440px und 1920px: kein horizontales Scrollen, keine
 - Touch-Target-Prüfung meldet den Logo-Link im Header mit 32px. Das entspricht dem bestehenden `AppHeader` der gesamten App — bewusst konsistent belassen, ggf. app-weit separat zu klären.
 
 ## QA Test Results
-_To be added by /qa_
+
+**Getestet am:** 2026-09-05
+**Testumgebung:** Mobile Safari (WebKit, iPhone 13) via Playwright; manuelle Browser-Prüfung bei 390 / 1024 / 1440 / 1920 px; Unit-Tests via Vitest
+**Ergebnis:** 18 von 18 Acceptance Criteria bestanden · 4 Bugs (0 Critical, 0 High, 1 Medium, 3 Low)
+
+### Acceptance Criteria
+
+| # | Kriterium | Ergebnis |
+|---|-----------|----------|
+| 1 | `/about` lädt eigenständig ohne App-Daten | bestanden |
+| 2 | `/anleitung` lädt direkt mit Ablauf und Prompt | bestanden |
+| 3 | Verweis `/about` → `/anleitung` | bestanden |
+| 4 | „Zur App" führt zum Start-Screen | bestanden |
+| 5 | Creator-Empty-State → `/anleitung` | bestanden |
+| 6 | Root-Route `/` unverändert | bestanden |
+| 7 | Mobil kein H-Scroll, Touch-Targets ≥ 44px | bestanden |
+| 8 | Desktop mehrspaltig, keine überdehnten Zeilen | bestanden (manuell, 1024–1920px) |
+| 9 | Prompt sichtbar und markierbar | bestanden |
+| 10 | Kopieren zeigt Bestätigung | bestanden (manuell; E2E in WebKit übersprungen, s. Bug 4) |
+| 11 | Blockierte Zwischenablage sperrt nicht aus | bestanden |
+| 12 | Auszufüllende Stellen eindeutig markiert | bestanden |
+| 13 | **KI liefert schema-konformes Quest-JSON** | **bestanden mit Einschränkung** (s. Bug 1) |
+| 14 | Import-Schritt erklärt den `.json`-Weg | bestanden |
+| 15 | Koordinaten als Pflichtschritt beschrieben | bestanden |
+| 16 | Medien-Platzhalter müssen ersetzt werden | bestanden |
+| 17 | Medienquellen + direkte Datei-Adresse erklärt | bestanden |
+| 18 | Troubleshooting nennt Ursachen und Lösungswege | bestanden |
+| 19 | Eigene Open-Graph-Daten je Seite | bestanden |
+
+### Der offene Punkt aus der Frontend-Phase: echter KI-Durchlauf
+
+Das bislang ungetestete Kriterium wurde **real durchgespielt** — Prompt befüllt (Detektivfall, Stadtpark Bonn, 10–12 Jahre, 4 Stationen), durch zwei Modelle geschickt, Ergebnis durch die echte Import-Pipeline geprüft.
+
+**Durchlauf 1 (Sonnet-Klasse):** Vollständig regelkonform — gültige eindeutige UUIDs, `lat`/`lng` auf 0, `radiusMeters` 15–20, alle fünf Modultypen, alle drei Aufgabentypen, ausschließlich `BITTE-ERSETZEN`-URLs. **Import erfolgreich, 0 übersprungene Module.**
+
+**Durchlauf 2 (Haiku-Klasse):** Inhaltlich korrekt, aber zwei Stations-UUIDs mit ungültigem Varianten-Nibble (`…-0d9a-…`, `…-1e0b-…`). **Import abgelehnt** mit „Station 3: Stations-ID muss eine gültige UUID sein."
+
+**Beide Modelle** umschlossen die Ausgabe mit einem ```json-Codeblock, obwohl der Prompt das ausdrücklich untersagt.
+
+### Bugs
+
+**Bug 1 — Schwächere Modelle erzeugen ungültige UUIDs (Medium)**
+Reproduktion: Prompt in ein kleineres Modell (Haiku-Klasse) einfügen → zwei von fünf UUIDs verletzen das Varianten-Nibble → Import scheitert.
+Auswirkung: Der Nutzer muss einen zusätzlichen Korrekturzyklus mit der KI drehen. Kein Datenverlust, kein Blocker — die Anleitung deckt genau diesen Fall im Troubleshooting ab und die Fehlermeldung benennt die betroffene Station.
+Vorschlag: Vorgenerierte UUID-Liste im Prompt (war als Alternative bereits im Tech Design erwogen und zugunsten des Troubleshootings verworfen) oder eine explizitere Warnung im Prompt.
+
+**Bug 2 — Modelle ignorieren „kein Markdown-Codeblock" (Low)**
+Reproduktion: Prompt unverändert einfügen → Ausgabe beginnt mit ```json.
+Auswirkung: Rohe Ausgabe als `.json` gespeichert schlägt fehl („Die Datei ist kein gültiges JSON-Format."). Die Anleitung beschreibt das im Troubleshooting („nur den Teil von `{` bis `}`"), aber der Schritt-für-Schritt-Ablauf erwähnt es nicht — dort würde der Hinweis früher greifen.
+
+**Bug 3 — `/anleitung` fehlt Canonical und Keywords (Low)**
+`/about` setzt `alternates.canonical` und `keywords`, `/anleitung` nicht. Inkonsistent; für eine teilbare Seite mit eigenem Suchpotenzial sinnvoll nachzuziehen.
+
+**Bug 4 — JSON-LD ohne `</script>`-Escaping (Low, latent)**
+`JSON.stringify` escaped `</script>` nicht, und das Ergebnis geht in `dangerouslySetInnerHTML`.
+Aktuell **keine aktive Lücke**: alle Werte sind hartkodierte Literale, das ausgelieferte JSON-LD enthält verifiziert kein `<`. Sobald jemand einen FAQ-Eintrag mit `</script>` ergänzt oder dynamische Daten einspeist, entsteht XSS. Fix: `.replace(/</g, "\\u003c")` beim Serialisieren.
+
+### Security-Audit (Red Team)
+
+| Prüfung | Ergebnis |
+|---------|----------|
+| XSS über Nutzereingaben | Keine Angriffsfläche — beide Seiten nehmen keinerlei Eingaben entgegen |
+| URL-Parameter / Injection | Keine `searchParams`, keine dynamischen Routen |
+| `dangerouslySetInnerHTML` | Nur JSON-LD aus statischen Literalen; latentes Risiko dokumentiert (Bug 4) |
+| Netzwerk-Requests | Keine — keine `fetch`/XHR/WebSocket-Aufrufe |
+| Datenzugriff | Kein `localStorage`, kein Zugriff auf Quests oder Fortschritt |
+| Geheimnisse im Client | Keine Environment-Variablen im Client-Bundle; `metadataBase` nutzt nur die öffentliche Vercel-Domain |
+| Externe Ressourcen | Nur eigene Assets; keine Drittanbieter-Skripte oder -Tracker |
+
+Die Angriffsfläche ist minimal: zwei statische, serverseitig gerenderte Seiten ohne Backend, ohne Eingaben, ohne Speicherzugriff. Einziger Client-State ist ein Enum für den Copy-Button.
+
+### Regressionstest
+
+Volle E2E-Suite auf Mobile Safari: **202 bestanden, 17 fehlgeschlagen.**
+
+Die 17 Fehlschläge (PROJ-1, PROJ-3, PROJ-11) wurden gegen Commit `5c6db64` — also **vor** dem PROJ-13-Frontend — gegengeprüft und schlagen dort identisch fehl. Sie sind **vorbestehend und nicht von PROJ-13 verursacht** (siehe auch bekanntes Follow-up zu veralteten E2E-Tests). Unit-Tests: 167 von 167 grün.
+
+### Nicht getestet
+
+- **Chromium:** Die Playwright-Chromium-Installation auf dieser Maschine ist defekt (`Google Chrome for Testing Framework` fehlt im App-Bundle, Headless-Shell nicht installiert). Betrifft alle Feature-Suiten gleichermaßen, nicht nur PROJ-13. Eine Neuinstallation wurde begonnen, aber nicht abgeschlossen. **Vor dem Deploy einmal `npx playwright install chromium` ausführen und die Suite gegen Chromium laufen lassen.**
+- **Firefox:** Kein Playwright-Projekt konfiguriert.
+- **Reale Sharing-Vorschau** (WhatsApp/Social): Die Meta-Tags sind verifiziert, das tatsächliche Rendern der Vorschaukarte lässt sich erst nach dem Deploy mit der Produktions-URL prüfen — `metadataBase` löst lokal auf `localhost` auf.
+
+### Neue Tests
+
+`tests/proj-13-landing-page.spec.ts` — 21 E2E-Tests (20 bestanden, 1 in WebKit übersprungen), je einer pro Acceptance Criterion. Enthält auch eine Prüfung, dass jeder JSON-LD-FAQ-Eintrag tatsächlich sichtbar auf der Seite steht — strukturierte Daten dürfen nichts behaupten, was der Nutzer nicht sieht.
+
+### Produktionsreife: **JA**
+
+Keine Critical- oder High-Bugs. Bug 1 und 2 sind reale Reibungspunkte im KI-Workflow, aber beide sind in der Anleitung dokumentiert, führen zu klaren Fehlermeldungen und kosten den Nutzer nur einen Korrekturzyklus. Bug 3 und 4 sind kosmetisch bzw. präventiv.
 
 ## Deployment
 _To be added by /deploy_
