@@ -176,7 +176,7 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] ~~Warum sind die Häufigen Fragen ausgeklappt statt als Accordion?~~ → Ursprünglich für bessere Auffindbarkeit durch KI-Systeme ausgeklappt. Annahme war falsch: Accordion-Inhalte stehen vollständig im HTML (Radix blendet sie nur per `hidden` aus) und das `FAQPage`-JSON-LD trägt die Antworten ohnehin. Zurück zum eingeklappten Accordion (2026-09-05)
 - [ ] Wann und wohin genau zeigt der Ko-fi-Link? Der Header-Button bleibt bis dahin „Zur App"; offen sind Ziel-URL, Beschriftung und ob „Zur App" dann in die Navigation rutscht
 - [ ] Braucht `/about` zusätzlich einen Footer mit Impressum/Datenschutz für Desktop-Besucher? Aktuell erreichen Desktop-Nutzer die Rechtstexte nur über die Header-Navigation
-- [ ] Welche konkreten Angaben (Name, Anschrift, Kontakt) kommen ins Impressum? Muss vor dem Deploy vom Betreiber geliefert werden — Platzhalter dürfen nicht live gehen
+- [x] ~~Welche konkreten Angaben kommen ins Impressum?~~ → Vom Betreiber geliefert und eingetragen (2026-09-05)
 
 ## Decision Log
 
@@ -606,7 +606,7 @@ Die Datenschutzerklärung beschreibt nur, was der Code tatsächlich tut — vorh
 - Visuell geprüft bei 360px, 390px und 430px
 
 ### Bekannte offene Punkte
-- **Das Impressum enthält Platzhalter** (`[Vor- und Nachname]` usw.) und darf so nicht deployed werden — die echten Angaben müssen vor `/deploy` eingetragen werden.
+- ~~Das Impressum enthält Platzhalter~~ → **Erledigt am 2026-09-05:** Angaben des Betreibers eingetragen (Daniela Oesten, Hamburg); E-Mail zusätzlich als `mailto:`-Link. Bewusst keine Spam-Verschleierung: die üblichen Tricks sind gegen heutige Crawler wirkungslos und § 5 DDG verlangt eine unmittelbar erreichbare Kontaktmöglichkeit.
 - Bug 2 (KI umschließt die Ausgabe mit einem Markdown-Codeblock) und Bug 3 (`/anleitung` ohne Canonical/Keywords) aus der QA-Runde sind weiterhin offen; beide betreffen `/anleitung` und waren nicht Teil dieses Refinements.
 - Die Rechtstexte sind fachlich nach dem tatsächlichen Verhalten der App verfasst, aber nicht juristisch geprüft.
 

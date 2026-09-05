@@ -11,15 +11,16 @@ export const metadata: Metadata = {
 /**
  * Anbieterkennzeichnung nach § 5 DDG (PROJ-13).
  *
- * TODO vor dem Deploy: Die Platzhalter unten durch die echten Angaben des
- * Betreibers ersetzen. Ein Impressum mit Platzhaltern ist schlechter als keins.
+ * Die Angaben stehen bewusst an einer Stelle: Ändert sich die Anschrift, ist
+ * hier die einzige Fundstelle. Sie sind öffentlich sichtbar — das ist der Zweck
+ * der Vorschrift, nicht ein Versehen.
  */
 const PROVIDER = {
-  name: "[Vor- und Nachname]",
-  street: "[Straße und Hausnummer]",
-  city: "[PLZ und Ort]",
+  name: "Daniela Oesten",
+  street: "Kerbelweg 5b",
+  city: "22337 Hamburg",
   country: "Deutschland",
-  email: "[E-Mail-Adresse]",
+  email: "d.oesten@googlemail.com",
 };
 
 export default function ImpressumPage() {
@@ -55,7 +56,13 @@ export default function ImpressumPage() {
             Kontakt
           </h2>
           <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-[#E7EAEC]">
-            E-Mail: {PROVIDER.email}
+            E-Mail:{" "}
+            <a
+              href={`mailto:${PROVIDER.email}`}
+              className="text-gq-teal underline underline-offset-4 transition-colors duration-base ease-gq hover:text-gq-teal-hover"
+            >
+              {PROVIDER.email}
+            </a>
           </p>
         </div>
 
