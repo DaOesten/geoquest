@@ -1,6 +1,6 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: In Progress
+## Status: In Review
 **Created:** 2026-09-04
 **Last Updated:** 2026-09-05 (Refinement umgesetzt — Frontend)
 
@@ -622,3 +622,75 @@ Auf Nutzerwunsch ergänzt; schließt die Lücke zu den Success Metrics der PRD (
 **Verifiziert:** Build erfolgreich, alle Seiten weiterhin statisch; 167 Tests grün; Lint fehlerfrei. Im Dev-Server wird erwartungsgemäß kein Insights-Skript ausgeliefert, im Produktions-Bundle ist der `/_vercel/insights`-Endpunkt enthalten. Nach dem Laden der Seite sind **keine Cookies** gesetzt (per Playwright geprüft) — die Aussage im Text ist damit belegt.
 
 **Offen:** Das Skript injiziert nur bei gesetztem `VERCEL_ENV`, also erst auf Vercel selbst. Dass tatsächlich Daten im Dashboard ankommen, lässt sich lokal nicht prüfen und muss nach dem Deploy verifiziert werden. Web Analytics muss dafür im Vercel-Projekt zusätzlich aktiviert sein.
+
+## QA Test Results — Refinement (2026-09-05, zweite Runde)
+
+**Getestet am:** 2026-09-05
+**Testumgebung:** WebKit / Mobile Safari (iPhone 13) via Playwright; Viewports 360 / 390 / 430 / 768 / 1440 px; Produktions-Build (`npm run start`); Vitest
+**Ergebnis:** 13 von 13 neuen Acceptance Criteria bestanden · 4 Bugs (0 Critical, 0 High, 3 Medium, 1 Low)
+**Produktionsreif:** **JA** — keine Critical- oder High-Bugs
+
+### Acceptance Criteria (Refinement)
+
+| # | Kriterium | Ergebnis |
+|---|-----------|----------|
+| 1 | Gleicher ruhiger Hintergrund wie `/` | bestanden (Body-Hintergrund identisch geprüft) |
+| 2 | Keine Trennlinie zum Header | bestanden (`border-bottom-width: 0px`) |
+| 3 | Keine Pin-Bildmarke im Header | bestanden (alle vier Seiten) |
+| 4 | Burger-Menu mit vier Zielen | bestanden |
+| 5 | Menu schließt bei Navigation | bestanden |
+| 6 | Escape schließt ohne zu navigieren | bestanden |
+| 7 | Fokus im Menu, `aria-expanded` am Auslöser | bestanden |
+| 8 | `/impressum` nach § 5 DDG | bestanden |
+| 9 | `/datenschutz` mit lokalen Daten, Standort, Hosting | bestanden |
+| 10 | „Für wen" gekürzt | bestanden |
+| 11 | Keine Zielgruppen-/Lesezeit-Zeile | bestanden |
+| 12 | FAQ eingeklappt | bestanden |
+| 13 | FAQ-Inhalte vollständig in HTML und JSON-LD | bestanden |
+
+### Automatisierte Tests
+- **Neu:** `tests/proj-13-info-refinement.spec.ts` — 22 Tests, alle grün
+- **Unit:** 167 Tests grün
+- **Gesamt-E2E (WebKit):** 213 bestanden, 18 fehlgeschlagen, 2 übersprungen
+
+### Security-Audit (Red Team)
+
+| Prüfung | Ergebnis |
+|---------|----------|
+| Security-Header in Produktion | X-Frame-Options DENY, X-Content-Type-Options nosniff, Referrer-Policy gesetzt |
+| JSON-LD-Escaping (Bug 4 der Vorrunde) | **geschlossen** — ausgeliefertes JSON-LD enthält kein rohes `<` |
+| XSS über URL-Parameter | nicht reflektiert, keine Injektion möglich |
+| Secrets/Keys im HTML | keine gefunden |
+| Cookies nach Seitenaufruf | **keine** — Zusage der Datenschutzerklärung belegt |
+| localStorage auf Info-Seiten | leer |
+| `noindex` auf Rechtstexten | gesetzt (`noindex, follow`) |
+| Externe Requests | Google Fonts (siehe Bug 1), Vercel Insights |
+
+### Bugs
+
+**Bug 1 — Google Fonts fehlen in der Datenschutzerklärung (Medium)**
+Reproduktion: `/about` laden, Netzwerk-Requests beobachten → Anfragen an `fonts.googleapis.com` und `fonts.gstatic.com`.
+Ursache: `src/app/globals.css:1` importiert die Schriften direkt von Google; es liegen keine lokalen Font-Dateien unter `public/`.
+Auswirkung: Die IP-Adresse jedes Besuchers wird an Google übertragen. Die neue Datenschutzerklärung erwähnt das nicht — sie ist damit unvollständig, obwohl sie externe Einbindungen (Karten, Medien) sonst sauber auflistet. In Deutschland ist genau diese Konstellation abgemahnt worden (LG München I, 3 O 17493/20).
+Hinweis: Betrifft die gesamte App, nicht nur dieses Refinement. Zwei Lösungswege: Schriften lokal ausliefern (behebt die Ursache, entfernt die Drittübertragung ganz) **oder** einen Abschnitt in der Datenschutzerklärung ergänzen (behebt nur die Unvollständigkeit). Empfehlung: lokal ausliefern.
+
+**Bug 2 — Schließen-Button im Burger-Menu ist 16×16px (Medium)**
+Reproduktion: Menu auf Mobilgerät öffnen, Schließen-Kreuz oben rechts messen → 16×16px statt der geforderten 44px.
+Ursache: stammt aus der unveränderten shadcn/ui-`Sheet`-Komponente.
+Auswirkung: verstößt gegen die PRD-Vorgabe „min. 44px Touch-Targets". Entschärft dadurch, dass Escape, Tippen daneben und jeder Menüeintrag das Menu ebenfalls schließen — der Nutzer sitzt nicht fest.
+
+**Bug 3 — Bestehender PROJ-13-Test veraltet nach dem Refinement (Medium)**
+Reproduktion: `npm run test:e2e` → `tests/proj-13-landing-page.spec.ts:9` schlägt fehl, erwartet die Überschrift „Typische Anlässe".
+Ursache: Die Überschrift entfiel beim Kürzen des „Für wen"-Abschnitts; der bestehende Regressionstest wurde nicht mitgezogen.
+Auswirkung: Kein Produktfehler — die Seite verhält sich korrekt. Aber die Suite ist rot, was künftige echte Regressionen verdeckt. Muss nachgezogen werden.
+
+**Bug 4 — Rechtstexte sprechen von „wir" bei einer Einzelperson (Low)**
+Impressum und Datenschutz formulieren durchgehend „wir"/„uns", obwohl als Anbieter eine natürliche Person eingetragen ist. Rechtlich unbedenklich, wirkt bei einem erkennbaren Privatprojekt aber unstimmig. Rein kosmetisch.
+
+### Bekannte Vorbelastungen (nicht durch dieses Refinement verursacht)
+- 17 der 18 E2E-Fehlschläge betreffen PROJ-1, PROJ-3 und PROJ-11 auf Mobile Safari und bestanden bereits vorher (siehe separates Follow-up).
+- Bug 2 und Bug 3 der ersten QA-Runde (`/anleitung`: Markdown-Codeblock im KI-Output, fehlende Canonical/Keywords) sind weiterhin offen, beide Low.
+
+### Nicht abgedeckt
+- **Cross-Browser auf Chromium und Firefox.** Die Binaries fehlen auf diesem Rechner, die Installation wurde nicht durchgeführt. Getestet wurde ausschließlich WebKit (Safari-Engine). Chrome- und Firefox-spezifische Abweichungen — insbesondere beim Sheet-Fokusverhalten — sind damit ungeprüft.
+- **Realer Datenfluss zu Vercel Analytics.** Lokal wird ein Insights-Request abgesetzt; ob im Dashboard Zahlen ankommen, ist erst nach dem Deploy verifizierbar.
