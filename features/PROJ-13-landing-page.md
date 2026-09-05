@@ -1,8 +1,8 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Deployed
+## Status: In Progress
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-05 (Refinement umgesetzt — Frontend)
+**Last Updated:** 2026-09-05 (Refinement 2: Zurückpfeile & Footer)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -71,6 +71,18 @@ Der Header trägt keine Trennlinie zum Seiteninhalt und keine Bildmarke links. R
 
 Der Aktions-Button rechts außen zeigt vorerst weiterhin „Zur App" und führt auf `/`. Er ist als Platzhalter für einen späteren Ko-fi-Unterstützungslink vorgesehen (siehe Open Questions) — die Position bleibt, das Ziel ändert sich später.
 
+**Zurückpfeil:** Jede Unterseite trägt links im Header einen Zurückpfeil nach `/about`. Bisher hatte nur `/anleitung` einen; `/impressum` und `/datenschutz` gingen leer aus, obwohl der Rahmen das bereits konnte.
+
+### Footer (Nachtrag Refinement 2)
+
+Alle Info-Seiten bekommen einen gemeinsamen Footer mit:
+- **Kontakt** — Name des Anbieters und die E-Mail-Adresse als `mailto:`-Link
+- **Rechtslinks** — Impressum und Datenschutz
+
+Die vollständige Anschrift bleibt bewusst dem Impressum vorbehalten und wird nicht auf jeder Seite wiederholt.
+
+Mit dem Footer verlassen die Rechtslinks die Textlink-Reihe im Desktop-Header — dort stehen dann nur noch „Anleitung" und der Aktions-Button. Im mobilen Burger-Menü bleiben alle vier Ziele erhalten, damit auf dem Handy niemand erst bis zum Seitenende scrollen muss.
+
 ### Seite 2: `/anleitung` — Quest mit KI erstellen
 1. **Kurzer Einstieg** — was hier passiert, in zwei Sätzen
 2. **Schritt-für-Schritt-Ablauf** — Prompt kopieren → in KI einfügen → JSON speichern → importieren
@@ -125,6 +137,16 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] Angenommen ein Nutzer erreicht die Häufigen Fragen auf `/about`, wenn die Seite geladen ist, dann sind alle Antworten eingeklappt; erst ein Klick auf eine Frage öffnet die zugehörige Antwort
 - [x] Angenommen ein KI-System oder Crawler wertet `/about` aus, wenn die Fragen eingeklappt sind, dann sind alle vier Frage-Antwort-Paare weiterhin sowohl im HTML als auch im `FAQPage`-JSON-LD vollständig enthalten
 
+### Zurückpfeil & Footer (Refinement 2, 2026-09-05)
+- [ ] Angenommen ein Nutzer ist auf `/impressum` oder `/datenschutz`, wenn er den Header betrachtet, dann sieht er links einen Zurückpfeil wie auf `/anleitung`
+- [ ] Angenommen ein Nutzer klickt den Zurückpfeil auf einer der beiden Rechtsseiten, dann gelangt er nach `/about`
+- [ ] Angenommen ein Nutzer scrollt auf einer beliebigen Info-Seite ans Ende, dann findet er einen Footer mit Anbietername, E-Mail-Adresse sowie Links zu Impressum und Datenschutz
+- [ ] Angenommen ein Nutzer klickt die E-Mail-Adresse im Footer, dann öffnet sich sein Mail-Programm mit der Adresse als Empfänger
+- [ ] Angenommen ein Nutzer betrachtet den Footer, dann steht dort **keine** Postanschrift — diese bleibt dem Impressum vorbehalten
+- [ ] Angenommen ein Nutzer öffnet eine Info-Seite am Desktop, wenn er die Header-Zeile betrachtet, dann stehen dort keine Links mehr zu Impressum und Datenschutz
+- [ ] Angenommen ein Nutzer öffnet das Burger-Menü auf dem Handy, dann sind weiterhin alle vier Ziele (App, Anleitung, Impressum, Datenschutz) enthalten
+- [ ] Angenommen ein Nutzer betrachtet den Footer auf einem Mobilgerät (360–430px), dann sind alle Links mindestens 44px hoch antippbar und nichts läuft über den Rand
+
 ### Prompt-Vorlage
 - [x] Angenommen ein Nutzer ist bei der Anleitungs-Sektion, wenn er die Seite betrachtet, dann ist die vollständige Prompt-Vorlage als lesbarer Text sichtbar und manuell markierbar
 - [x] Angenommen ein Nutzer klickt den Kopieren-Button, wenn das Kopieren erfolgreich ist, dann erhält er eine sichtbare Bestätigung (z.B. „Kopiert!")
@@ -175,7 +197,7 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [ ] Sollen die beiden Seiten zusätzlich einen Einstieg außerhalb des Creator-Empty-States bekommen (z.B. dauerhaft im Creator-Header), sobald ein Nutzer bereits Quests hat?
 - [x] ~~Warum sind die Häufigen Fragen ausgeklappt statt als Accordion?~~ → Ursprünglich für bessere Auffindbarkeit durch KI-Systeme ausgeklappt. Annahme war falsch: Accordion-Inhalte stehen vollständig im HTML (Radix blendet sie nur per `hidden` aus) und das `FAQPage`-JSON-LD trägt die Antworten ohnehin. Zurück zum eingeklappten Accordion (2026-09-05)
 - [ ] Wann und wohin genau zeigt der Ko-fi-Link? Der Header-Button bleibt bis dahin „Zur App"; offen sind Ziel-URL, Beschriftung und ob „Zur App" dann in die Navigation rutscht
-- [ ] Braucht `/about` zusätzlich einen Footer mit Impressum/Datenschutz für Desktop-Besucher? Aktuell erreichen Desktop-Nutzer die Rechtstexte nur über die Header-Navigation
+- [x] ~~Braucht `/about` zusätzlich einen Footer mit Impressum/Datenschutz für Desktop-Besucher?~~ → Ja, entschieden am 2026-09-05: Footer auf allen Info-Seiten mit Kontakt und Rechtslinks; die Links verlassen dafür den Desktop-Header
 - [x] ~~Welche konkreten Angaben kommen ins Impressum?~~ → Vom Betreiber geliefert und eingetragen (2026-09-05)
 
 ## Decision Log
@@ -206,6 +228,10 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 | „Für wen" wird auf einen Satz plus vier Kurzzeilen eingedampft | Die drei Fließtext-Absätze waren für die Zitierbarkeit durch KI-Systeme geschrieben, nicht für Leser. Auf einer Seite, die in Sekunden überzeugen muss, ist das die falsche Priorität — der GEO-Nutzen war spekulativ, die Lesehürde war real | 2026-09-05 |
 | Meta-Zeile „Für Ersteller · ca. 2 Min Lesezeit" entfällt | Lesezeit-Angaben gehören zu Artikeln, nicht zu einer Produktseite; die Zielgruppe steht bereits im ersten Satz darunter | 2026-09-05 |
 | Häufige Fragen kehren zum eingeklappten Accordion zurück | Ausgeklappt wurden sie für vermuteten GEO-Vorteil — der existiert nicht: Accordion-Inhalte stehen vollständig im HTML und im `FAQPage`-JSON-LD. Eingeklappt bleibt die Seite überschaubar und der Abschluss-CTA in Reichweite | 2026-09-05 |
+| Footer mit Kontakt und Rechtslinks auf allen Info-Seiten | Rechtstexte gehören konventionell in den Fuß, nicht in die Kopfzeile; dort konkurrierten sie mit den inhaltlichen Zielen. Besucher suchen Impressum und Datenschutz zuerst unten | 2026-09-05 |
+| Footer zeigt Name und E-Mail, aber keine Anschrift | Die Postanschrift auf jeder Seite zu wiederholen, streut die Privatadresse des Betreibers unnötig breit; für die Impressumspflicht genügt die verlinkte Seite | 2026-09-05 |
+| Zurückpfeil führt fest nach `/about`, nicht über die Browser-History | Vorhersagbares Ziel und konsistent mit `/anleitung`; ein History-basierter Pfeil verhält sich je nach Herkunft anders und läuft bei direktem Aufruf ins Leere | 2026-09-05 |
+| Rechtslinks bleiben trotz Footer im Burger-Menü | Auf dem Handy müsste man sonst durch die ganze Seite scrollen, um ans Impressum zu kommen. Die Doppelung kostet nichts und erspart die Suche | 2026-09-05 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -227,6 +253,8 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 | Menu nutzt die bereits installierte shadcn/ui-Komponente (Sheet oder DropdownMenu) statt Eigenbau | Fokus-Falle, Escape-Handling und `aria-expanded` sind dort gelöst; ein Eigenbau würde genau diese Details verlieren. Kein neues Paket | 2026-09-05 |
 | Häufige Fragen nutzen das bereits installierte Accordion | Gleiche Komponente wie das Troubleshooting auf `/anleitung`; die Antworten bleiben im DOM, das JSON-LD wird weiterhin aus derselben `FAQ`-Konstante erzeugt | 2026-09-05 |
 | `/impressum` und `/datenschutz` liegen in derselben `(info)`-Route-Gruppe | Sie teilen Rahmen, Hintergrund und Navigation mit `/about` und `/anleitung`; nur `robots: noindex` unterscheidet ihre Metadaten | 2026-09-05 |
+| Footer wird Teil von `InfoPageShell`, keine eigene Einbindung je Seite | Der Rahmen liefert bereits Header und Container; ein Footer pro Seite einzeln einzuhängen wäre vier Mal derselbe Code und würde beim nächsten Seitenzuwachs vergessen | 2026-09-05 |
+| Anbieterdaten wandern in ein gemeinsames Modul unter `src/lib/` | Name und E-Mail stehen dann sowohl im Impressum als auch im Footer aus einer Quelle; heute liegen sie als `PROVIDER`-Konstante nur in der Impressum-Seite und würden beim Ändern auseinanderlaufen | 2026-09-05 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
@@ -751,3 +779,28 @@ Impressum und Datenschutz formulieren durchgehend „wir"/„uns", obwohl als An
 Web Analytics ist im Vercel-Projekt aktiviert — der Endpunkt `/_vercel/insights/script.js` liefert ein gültiges Skript (HTTP 200, 1,5 KB gzip), und im Browser existieren `window.va` und `window.vaq`. Die Komponente läuft also.
 
 **Es ließ sich jedoch kein abgesetztes Analytics-Beacon beobachten.** Getestet wurde mit headless WebKit ohne echte Nutzerinteraktion; plausibel ist, dass der Pageview unter diesen Bedingungen nicht ausgelöst oder verzögert gesendet wird. Ob tatsächlich Daten ankommen, ist **im Vercel-Dashboard zu prüfen**, idealerweise nach einem Besuch mit einem echten Gerät. Sollten nach ein bis zwei Tagen keine Zahlen erscheinen, ist die Ursache dort zu suchen — im ausgelieferten Code ist die Einbindung nachweislich vorhanden.
+
+---
+
+## Refinement 2 (2026-09-05) — Zurückpfeile & Footer
+
+Nach dem Deploy aufgefallen. Zwei Punkte, beide klein, aber beide echte Lücken.
+
+### Zu bauen (`/frontend`)
+
+**Zurückpfeile**
+1. `/impressum` und `/datenschutz` setzen `backHref="/about"` — die Prop existiert in `InfoPageShell` bereits und wird von `/anleitung` genutzt, die beiden neuen Seiten hatten sie schlicht nicht gesetzt
+
+**Footer**
+2. Gemeinsamer Footer in `InfoPageShell`, damit er auf allen vier Seiten erscheint
+3. Inhalt: Anbietername, E-Mail als `mailto:`-Link, Links zu Impressum und Datenschutz
+4. **Keine** Postanschrift im Footer
+5. Anbieterdaten (Name, E-Mail) aus der Impressum-Seite in ein gemeinsames Modul ziehen, damit Footer und Impressum dieselbe Quelle nutzen
+6. Impressum und Datenschutz aus der Desktop-Textlinkreihe im Header entfernen; „Anleitung" bleibt
+7. Burger-Menü behält alle vier Ziele
+
+### Bleibt unangetastet
+Burger-Menü-Mechanik, FAQ-Accordion, die gekürzten Inhalte, selbst-gehostete Schriften, Analytics und die Rechtstexte selbst.
+
+### Hinweis
+Der 16px-Schließen-Button im Sheet (Bug 2 der letzten QA-Runde) bleibt weiterhin bewusst offen. Kommt beim Footer-Bau eine app-weite Touch-Target-Runde in Frage, wäre das der Moment.
