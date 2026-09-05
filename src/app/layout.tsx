@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -32,6 +33,10 @@ export default function RootLayout({
       <body className="min-h-dvh">
         {children}
         <Toaster />
+        {/* Reichweitenmessung ohne Cookies und ohne Geräte-Kennung — lädt nur in
+            Produktion. Siehe /datenschutz; wird das hier entfernt oder gegen ein
+            anderes Werkzeug getauscht, muss der Text dort mitgezogen werden. */}
+        <Analytics />
       </body>
     </html>
   );

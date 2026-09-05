@@ -34,7 +34,7 @@ Geo Quest ist eine Mobile-First-Web-App (PWA), die Kinder und Jugendliche (10–
 ## Success Metrics
 - App funktioniert zuverlässig auf mobilen Geräten (iOS Safari, Android Chrome)
 - Mindestens eine vollständige Quest erstellt und von anderen gespielt
-- Nutzungszahlen sichtbar via Vercel Analytics (Page Views, Sessions)
+- Nutzungszahlen sichtbar via Vercel Analytics (Page Views, Sessions) — eingebunden am 2026-09-05, cookiefrei; im Vercel-Projekt zu aktivieren
 
 ## Constraints
 - Solo-Entwickler mit AI-Unterstützung

@@ -596,7 +596,7 @@ Die Datenschutzerklärung beschreibt nur, was der Code tatsächlich tut — vorh
 - `localStorage` für Quests und Fortschritt (`src/lib/quest-storage.ts`, `quest-progress.ts`)
 - Geolocation ausschließlich clientseitig (`src/hooks/use-geolocation.ts`), keine Übertragung
 - Kartenkacheln von `tile.openstreetmap.org` (`src/components/station-map.tsx`) — namentlich genannt
-- **Kein Analyse-Werkzeug installiert.** Vercel Analytics ist nicht als Abhängigkeit vorhanden; der Text behauptet daher keine Reichweitenmessung, sondern nennt nur die Server-Protokolle des Hostings. Wird später ein Analysedienst eingebunden, muss der Text mitwachsen.
+- **Reichweitenmessung:** Zum Zeitpunkt des Refinements war kein Analyse-Werkzeug installiert, der Text nannte daher nur die Server-Protokolle. Direkt im Anschluss wurde Vercel Web Analytics ergänzt — siehe Nachtrag unten.
 
 ### Verifikation
 - `npm run build` — erfolgreich; alle vier Info-Seiten (`/about`, `/anleitung`, `/impressum`, `/datenschutz`) statisch prerendered
@@ -609,3 +609,16 @@ Die Datenschutzerklärung beschreibt nur, was der Code tatsächlich tut — vorh
 - **Das Impressum enthält Platzhalter** (`[Vor- und Nachname]` usw.) und darf so nicht deployed werden — die echten Angaben müssen vor `/deploy` eingetragen werden.
 - Bug 2 (KI umschließt die Ausgabe mit einem Markdown-Codeblock) und Bug 3 (`/anleitung` ohne Canonical/Keywords) aus der QA-Runde sind weiterhin offen; beide betreffen `/anleitung` und waren nicht Teil dieses Refinements.
 - Die Rechtstexte sind fachlich nach dem tatsächlichen Verhalten der App verfasst, aber nicht juristisch geprüft.
+
+### Nachtrag: Vercel Web Analytics (2026-09-05)
+
+Auf Nutzerwunsch ergänzt; schließt die Lücke zu den Success Metrics der PRD („Nutzungszahlen sichtbar via Vercel Analytics"), die bis dahin unerfüllt waren.
+
+- `@vercel/analytics` (2.0.1) installiert, `<Analytics />` aus `@vercel/analytics/next` in `src/app/layout.tsx` eingebunden
+- Datenschutzerklärung um den Abschnitt **Reichweitenmessung** erweitert: erhobene Angaben, keine Cookies, keine Kennungen, kein geräteübergreifendes Profil, Rechtsgrundlage Art. 6 Abs. 1 lit. f DSGVO
+- Überschrift „Keine Konten, keine Werbung, kein Tracking" zu „… keine Profile" korrigiert und der Absatz nachgezogen — die absolute Aussage stimmte mit aktiver Messung nicht mehr
+- Meta-Description der Seite („kurz gefasst: gar nicht") entsprechend korrigiert
+
+**Verifiziert:** Build erfolgreich, alle Seiten weiterhin statisch; 167 Tests grün; Lint fehlerfrei. Im Dev-Server wird erwartungsgemäß kein Insights-Skript ausgeliefert, im Produktions-Bundle ist der `/_vercel/insights`-Endpunkt enthalten. Nach dem Laden der Seite sind **keine Cookies** gesetzt (per Playwright geprüft) — die Aussage im Text ist damit belegt.
+
+**Offen:** Das Skript injiziert nur bei gesetztem `VERCEL_ENV`, also erst auf Vercel selbst. Dass tatsächlich Daten im Dashboard ankommen, lässt sich lokal nicht prüfen und muss nach dem Deploy verifiziert werden. Web Analytics muss dafür im Vercel-Projekt zusätzlich aktiviert sein.

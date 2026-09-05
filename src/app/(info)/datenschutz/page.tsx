@@ -4,7 +4,8 @@ import { InfoPageShell } from "@/components/info-page-shell";
 
 export const metadata: Metadata = {
   title: "Datenschutz",
-  description: "Wie Geo Quest mit Daten umgeht — kurz gefasst: gar nicht.",
+  description:
+    "Wie Geo Quest mit Daten umgeht: keine Konten, keine Cookies, Quests und Standort bleiben auf dem Gerät.",
   robots: { index: false, follow: true },
 };
 
@@ -12,9 +13,10 @@ export const metadata: Metadata = {
  * Datenschutzerklärung (PROJ-13).
  *
  * Beschreibt bewusst nur das, was die App tatsächlich tut: kein Backend, keine
- * Konten, keine Analyse-Werkzeuge. Wird später ein Analysedienst eingebunden,
- * muss dieser Text mitwachsen — sonst beschreibt er etwas anderes als die
- * Realität.
+ * Konten, keine Cookies. Die Reichweitenmessung entspricht dem `<Analytics />`
+ * in `src/app/layout.tsx` — wird die entfernt oder gegen ein anderes Werkzeug
+ * getauscht, muss der Abschnitt hier mitgezogen werden, sonst beschreibt der
+ * Text etwas anderes als die Realität.
  */
 export default function DatenschutzPage() {
   return (
@@ -98,6 +100,33 @@ export default function DatenschutzPage() {
 
         <div>
           <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
+            Reichweitenmessung
+          </h2>
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-gq-grey">
+            Wir nutzen Vercel Web Analytics, um zu sehen, wie oft die Seiten
+            aufgerufen werden und über welche Wege Besucher hierher finden.
+            Erfasst werden dabei nur zusammengefasste Angaben: die aufgerufene
+            Seite, die verweisende Seite, ungefähre Herkunft auf Länderebene
+            sowie Gerätetyp, Betriebssystem und Browser.
+          </p>
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-gq-grey">
+            Dabei werden <strong className="font-medium text-gq-white">keine
+            Cookies gesetzt</strong> und keine Kennungen auf deinem Gerät
+            gespeichert. Es wird kein geräteübergreifendes Profil gebildet, und
+            einzelne Besucher lassen sich für uns nicht wiedererkennen oder
+            identifizieren. Deine IP-Adresse wird von Vercel zur Auswertung nur
+            kurzzeitig verarbeitet und nicht gespeichert.
+          </p>
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-gq-grey">
+            Rechtsgrundlage ist unser berechtigtes Interesse an einer
+            statistischen Auswertung der Nutzung nach Art. 6 Abs. 1 lit. f DSGVO.
+            Inhalte deiner Quests, dein Spielfortschritt und deine Standortdaten
+            sind davon nicht betroffen — sie verlassen dein Gerät nicht.
+          </p>
+        </div>
+
+        <div>
+          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
             Karten
           </h2>
           <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-gq-grey">
@@ -125,15 +154,16 @@ export default function DatenschutzPage() {
 
         <div>
           <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
-            Keine Konten, keine Werbung, kein Tracking
+            Keine Konten, keine Werbung, keine Profile
           </h2>
           <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-gq-grey">
             Es gibt keine Registrierung und keine E-Mail-Abfrage. Wir setzen
-            keine Werbe- oder Analyse-Cookies, binden keine sozialen Netzwerke
-            ein und geben keine Daten zu Werbezwecken weiter. Der lokale
-            Speicher deines Browsers wird ausschließlich für deine eigenen Quests
-            und deinen Spielfortschritt genutzt — dafür ist keine Einwilligung
-            erforderlich, weil die Daten dein Gerät nicht verlassen.
+            keinerlei Cookies — weder für Werbung noch für die Reichweitenmessung
+            —, binden keine sozialen Netzwerke ein und geben keine Daten zu
+            Werbezwecken weiter. Über einzelne Besucher wird kein Profil gebildet.
+            Der lokale Speicher deines Browsers wird ausschließlich für deine
+            eigenen Quests und deinen Spielfortschritt genutzt — dafür ist keine
+            Einwilligung erforderlich, weil die Daten dein Gerät nicht verlassen.
           </p>
         </div>
 
