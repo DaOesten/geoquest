@@ -57,9 +57,11 @@ const config: Config = {
         },
       },
       fontFamily: {
-        display: ['"Anton"', '"Bebas Neue"', "Impact", "sans-serif"],
-        tech: ['"Orbitron"', '"Rubik"', "sans-serif"],
-        body: ['"Rubik"', '"Helvetica Neue"', "sans-serif"],
+        // Die Variablen liefert next/font in src/app/layout.tsx (selbst-gehostet).
+        // Die Fallback-Kette steckt bereits in der Variablen — hier nicht wiederholen.
+        display: ["var(--font-display)"],
+        tech: ["var(--font-tech)"],
+        body: ["var(--font-body)"],
       },
       borderRadius: {
         lg: "var(--radius)",

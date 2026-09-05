@@ -141,6 +141,18 @@ export default function DatenschutzPage() {
 
         <div>
           <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
+            Schriftarten
+          </h2>
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-gq-grey">
+            Die verwendeten Schriften werden von unserem eigenen Server
+            ausgeliefert und nicht von einem Anbieter wie Google Fonts nachgeladen.
+            Beim Aufruf der Seite wird deshalb keine Verbindung zu Google
+            aufgebaut und keine IP-Adresse dorthin übertragen.
+          </p>
+        </div>
+
+        <div>
+          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
             Medien in Quests
           </h2>
           <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-gq-grey">

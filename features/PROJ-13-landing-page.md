@@ -1,6 +1,6 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: In Review
+## Status: Approved
 **Created:** 2026-09-04
 **Last Updated:** 2026-09-05 (Refinement umgesetzt — Frontend)
 
@@ -627,7 +627,7 @@ Auf Nutzerwunsch ergänzt; schließt die Lücke zu den Success Metrics der PRD (
 
 **Getestet am:** 2026-09-05
 **Testumgebung:** WebKit / Mobile Safari (iPhone 13) via Playwright; Viewports 360 / 390 / 430 / 768 / 1440 px; Produktions-Build (`npm run start`); Vitest
-**Ergebnis:** 13 von 13 neuen Acceptance Criteria bestanden · 4 Bugs (0 Critical, 0 High, 3 Medium, 1 Low)
+**Ergebnis:** 13 von 13 neuen Acceptance Criteria bestanden · 4 Bugs gefunden (0 Critical, 0 High, 3 Medium, 1 Low) — 2 behoben, 2 bewusst offen gelassen
 **Produktionsreif:** **JA** — keine Critical- oder High-Bugs
 
 ### Acceptance Criteria (Refinement)
@@ -668,24 +668,29 @@ Auf Nutzerwunsch ergänzt; schließt die Lücke zu den Success Metrics der PRD (
 
 ### Bugs
 
-**Bug 1 — Google Fonts fehlen in der Datenschutzerklärung (Medium)**
+**Bug 1 — Google Fonts fehlen in der Datenschutzerklärung (Medium) — BEHOBEN am 2026-09-05**
 Reproduktion: `/about` laden, Netzwerk-Requests beobachten → Anfragen an `fonts.googleapis.com` und `fonts.gstatic.com`.
 Ursache: `src/app/globals.css:1` importiert die Schriften direkt von Google; es liegen keine lokalen Font-Dateien unter `public/`.
 Auswirkung: Die IP-Adresse jedes Besuchers wird an Google übertragen. Die neue Datenschutzerklärung erwähnt das nicht — sie ist damit unvollständig, obwohl sie externe Einbindungen (Karten, Medien) sonst sauber auflistet. In Deutschland ist genau diese Konstellation abgemahnt worden (LG München I, 3 O 17493/20).
-Hinweis: Betrifft die gesamte App, nicht nur dieses Refinement. Zwei Lösungswege: Schriften lokal ausliefern (behebt die Ursache, entfernt die Drittübertragung ganz) **oder** einen Abschnitt in der Datenschutzerklärung ergänzen (behebt nur die Unvollständigkeit). Empfehlung: lokal ausliefern.
+Hinweis: Betrifft die gesamte App, nicht nur dieses Refinement.
+**Behebung (Ursache, nicht Symptom):** Schriften auf `next/font/google` umgestellt — sie werden zur Build-Zeit heruntergeladen und von der eigenen Domain ausgeliefert. Der `@import` von `fonts.googleapis.com` in `globals.css` ist entfallen, Tailwind und CSS greifen auf die von `next/font` gesetzten Variablen zu. Gewichte dabei auf die tatsächlich genutzten (400–700) begrenzt; 300 und 900 waren ungenutzt.
+**Verifiziert:** 10 `.woff2`-Dateien liegen im Build unter `.next/static/media/`, keine Google-Referenz im Build-Output, und beim Laden von `/`, `/about`, `/impressum` und `/datenschutz` gehen **0 externe Requests** hinaus (vorher 4). Schriftbild unverändert (visuell geprüft). Die Datenschutzerklärung hat einen Abschnitt „Schriftarten", der die Selbst-Auslieferung ausdrücklich zusichert.
 
 **Bug 2 — Schließen-Button im Burger-Menu ist 16×16px (Medium)**
 Reproduktion: Menu auf Mobilgerät öffnen, Schließen-Kreuz oben rechts messen → 16×16px statt der geforderten 44px.
 Ursache: stammt aus der unveränderten shadcn/ui-`Sheet`-Komponente.
 Auswirkung: verstößt gegen die PRD-Vorgabe „min. 44px Touch-Targets". Entschärft dadurch, dass Escape, Tippen daneben und jeder Menüeintrag das Menu ebenfalls schließen — der Nutzer sitzt nicht fest.
+**Entscheidung (2026-09-05):** Bleibt bewusst unverändert und wird als bekannt dokumentiert. Der Vorschlag, `sheet.tsx` global auf 44px zu heben (was auch den Modul-Editor aus PROJ-8 mit erfasst hätte), wurde abgelehnt. Bei einer künftigen app-weiten Touch-Target-Runde mit zu berücksichtigen.
 
-**Bug 3 — Bestehender PROJ-13-Test veraltet nach dem Refinement (Medium)**
+**Bug 3 — Bestehender PROJ-13-Test veraltet nach dem Refinement (Medium) — BEHOBEN am 2026-09-05**
 Reproduktion: `npm run test:e2e` → `tests/proj-13-landing-page.spec.ts:9` schlägt fehl, erwartet die Überschrift „Typische Anlässe".
 Ursache: Die Überschrift entfiel beim Kürzen des „Für wen"-Abschnitts; der bestehende Regressionstest wurde nicht mitgezogen.
-Auswirkung: Kein Produktfehler — die Seite verhält sich korrekt. Aber die Suite ist rot, was künftige echte Regressionen verdeckt. Muss nachgezogen werden.
+Auswirkung: Kein Produktfehler — die Seite verhält sich korrekt. Aber die Suite ist rot, was künftige echte Regressionen verdeckt.
+**Behebung:** Assertion auf den tatsächlichen Inhalt der gekürzten Fassung umgestellt (Zielgruppen-Satz plus Anlass-Definitionsliste), mit Kommentar auf das Refinement-Datum.
 
 **Bug 4 — Rechtstexte sprechen von „wir" bei einer Einzelperson (Low)**
 Impressum und Datenschutz formulieren durchgehend „wir"/„uns", obwohl als Anbieter eine natürliche Person eingetragen ist. Rechtlich unbedenklich, wirkt bei einem erkennbaren Privatprojekt aber unstimmig. Rein kosmetisch.
+**Entscheidung (2026-09-05):** Bleibt bei „wir" — bewusst so gewählt, kein Handlungsbedarf.
 
 ### Bekannte Vorbelastungen (nicht durch dieses Refinement verursacht)
 - 17 der 18 E2E-Fehlschläge betreffen PROJ-1, PROJ-3 und PROJ-11 auf Mobile Safari und bestanden bereits vorher (siehe separates Follow-up).
@@ -694,3 +699,20 @@ Impressum und Datenschutz formulieren durchgehend „wir"/„uns", obwohl als An
 ### Nicht abgedeckt
 - **Cross-Browser auf Chromium und Firefox.** Die Binaries fehlen auf diesem Rechner, die Installation wurde nicht durchgeführt. Getestet wurde ausschließlich WebKit (Safari-Engine). Chrome- und Firefox-spezifische Abweichungen — insbesondere beim Sheet-Fokusverhalten — sind damit ungeprüft.
 - **Realer Datenfluss zu Vercel Analytics.** Lokal wird ein Insights-Request abgesetzt; ob im Dashboard Zahlen ankommen, ist erst nach dem Deploy verifizierbar.
+
+### Nachtrag: Bug-Behebung und Nachtest (2026-09-05)
+
+| Bug | Schwere | Status |
+|-----|---------|--------|
+| 1 — Google Fonts nicht ausgewiesen | Medium | **Behoben** — Schriften selbst-gehostet, 0 externe Requests |
+| 2 — Schließen-Button 16px | Medium | Bewusst offen (Nutzerentscheidung), entschärft durch Escape/Tippen daneben/Menüeinträge |
+| 3 — Veralteter PROJ-13-Test | Medium | **Behoben** — Assertion nachgezogen |
+| 4 — „wir" bei Einzelperson | Low | Bewusst offen (Nutzerentscheidung) |
+
+**Nachtest nach den Änderungen:**
+- E2E (WebKit): **236 bestanden**, 17 fehlgeschlagen, 2 übersprungen — die 17 sind ausschließlich die bekannten Vorbelastungen aus PROJ-1/3/11; der PROJ-13-Fehlschlag ist weg (vorher 213/18)
+- Unit: 167 Tests grün · Lint: 0 Fehler · Build erfolgreich
+- Netzwerk: 0 externe Requests über alle vier Info-Seiten und `/` hinweg (vorher 4 an Google)
+- Schriftbild visuell unverändert
+
+**Produktionsreif: JA.** Keine Critical- oder High-Bugs; die beiden verbleibenden Medium/Low-Punkte sind bewusst getroffene Entscheidungen, keine ungelösten Fehler.

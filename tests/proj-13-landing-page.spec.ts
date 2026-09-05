@@ -13,7 +13,12 @@ test.describe("Seite & Navigation", () => {
     await expect(page.getByRole("heading", { name: "Was drin steckt" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Navigation zu echten Orten" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Für wen" })).toBeVisible();
-    await expect(page.getByText("Typische Anlässe")).toBeVisible();
+    // Seit dem Refinement (2026-09-05): ein Satz zur Zielgruppe statt der
+    // früheren Fließtext-Absätze, Anlässe als Definitionsliste ohne Zwischentitel.
+    await expect(page.getByText(/Kein technisches Vorwissen nötig/)).toBeVisible();
+    await expect(
+      page.getByRole("term").filter({ hasText: "Kindergeburtstag" })
+    ).toBeVisible();
   });
 
   test("/anleitung lädt direkt mit Ablauf und vollständiger Prompt-Vorlage", async ({ page }) => {

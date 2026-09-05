@@ -1,7 +1,41 @@
 import type { Metadata, Viewport } from "next";
+import { Anton, Orbitron, Rubik } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
+
+/**
+ * Schriften werden zur Build-Zeit heruntergeladen und von der eigenen Domain
+ * ausgeliefert — es geht zur Laufzeit KEINE Anfrage an Google, und damit auch
+ * keine Besucher-IP. Vorher lud `globals.css` sie per @import direkt von
+ * fonts.googleapis.com; siehe /datenschutz, das diese Drittübertragung nicht
+ * auswies.
+ *
+ * Gewichte bewusst auf die tatsächlich genutzten begrenzt (400–700).
+ */
+const anton = Anton({
+  subsets: ["latin"],
+  weight: "400",
+  display: "swap",
+  variable: "--font-display",
+  fallback: ["Bebas Neue", "Impact", "sans-serif"],
+});
+
+const orbitron = Orbitron({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-tech",
+  fallback: ["Rubik", "sans-serif"],
+});
+
+const rubik = Rubik({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-body",
+  fallback: ["Helvetica Neue", "sans-serif"],
+});
 
 export const metadata: Metadata = {
   // Needed so per-page Open Graph images resolve to absolute URLs when shared.
@@ -29,7 +63,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="de" data-theme="dark">
+    <html
+      lang="de"
+      data-theme="dark"
+      className={`${anton.variable} ${orbitron.variable} ${rubik.variable}`}
+    >
       <body className="min-h-dvh">
         {children}
         <Toaster />

@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Anton&family=Orbitron:wght@400;500;600;700;900&family=Rubik:wght@300;400;500;600;700&display=swap');
+/* Schriften kommen selbst-gehostet aus next/font (siehe src/app/layout.tsx) —
+   bewusst kein @import von fonts.googleapis.com, das die Besucher-IP an Google
+   uebertragen wuerde. */
 
 @tailwind base;
 @tailwind components;
@@ -65,14 +67,14 @@
 
 @layer utilities {
   .text-display {
-    font-family: "Anton", "Bebas Neue", Impact, sans-serif;
+    font-family: var(--font-display);
     text-transform: uppercase;
     font-style: italic;
     letter-spacing: 0.01em;
   }
 
   .text-tech {
-    font-family: "Orbitron", "Rubik", sans-serif;
+    font-family: var(--font-tech);
     text-transform: uppercase;
     font-weight: 700;
     letter-spacing: 0.08em;
