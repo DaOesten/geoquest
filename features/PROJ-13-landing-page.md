@@ -1,6 +1,6 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-09-04
 **Last Updated:** 2026-09-05 (Refinement 2 umgesetzt — Frontend)
 
@@ -838,3 +838,50 @@ Alle sieben Punkte umgesetzt.
 - Desktop-Header trägt nur noch „Anleitung" und „Zur App"; Burger-Menü behält alle vier Ziele (geprüft)
 - Footer-Links messen 44px Höhe (E-Mail, Impressum, Datenschutz)
 - Footer enthält weder „Kerbelweg" noch „22337" — Anschrift bleibt dem Impressum vorbehalten
+
+## QA Test Results — Refinement 2 (2026-09-05, dritte Runde)
+
+**Getestet am:** 2026-09-05
+**Testumgebung:** WebKit / Mobile Safari (iPhone 13) via Playwright; Viewports 360 / 390 / 430 / 1440 px; Produktions-Build (`npm run start`)
+**Ergebnis:** 8 von 8 neuen Acceptance Criteria bestanden · 1 Bug (0 Critical, 0 High, 0 Medium, 1 Low)
+**Produktionsreif:** **JA**
+
+### Acceptance Criteria (Refinement 2)
+
+| # | Kriterium | Ergebnis |
+|---|-----------|----------|
+| 1 | Zurückpfeil auf `/impressum` und `/datenschutz` | bestanden — sichtbar, 44×44px |
+| 2 | Pfeil führt nach `/about` | bestanden (beide Seiten) |
+| 3 | Footer mit Name, E-Mail und Rechtslinks | bestanden (alle vier Info-Seiten) |
+| 4 | E-Mail als `mailto:`-Link | bestanden — `mailto:d.oesten@googlemail.com` |
+| 5 | Keine Postanschrift im Footer | bestanden — weder „Kerbelweg" noch „22337" auf einer der Seiten |
+| 6 | Desktop-Header ohne Impressum/Datenschutz | bestanden — nur noch „Anleitung" und „Zur App" |
+| 7 | Burger-Menü behält alle vier Ziele | bestanden |
+| 8 | Footer-Links ≥ 44px, kein H-Scroll | bestanden bei 360, 390 und 430px (alle Links exakt 44px, Overflow 0px) |
+
+### Weitere Prüfungen
+
+| Prüfung | Ergebnis |
+|---------|----------|
+| Footer auf den App-Screens (`/`, `/play`, `/create`) | **nicht vorhanden** — korrekt, der Footer gehört nur zu den Info-Seiten |
+| Semantik | `<footer>`-Element mit `<nav>` darin, genau ein `<h1>` je Seite |
+| Kontrast im Footer (WCAG AA) | 7,30:1 bis 10,65:1 — deutlich über 4,5:1 |
+| Externe Requests | **0** über alle vier Seiten |
+| Cookies | **keine** |
+| Konsolenfehler | keine |
+| `mailto:`-Ziel | sauber, keine Header-Injection möglich |
+| E2E-Suite | 29 Tests in `proj-13-info-refinement.spec.ts` grün; gesamt 243 bestanden |
+
+### Bugs
+
+**Bug 1 — Navigationslinks verweisen auf die aktuelle Seite (Low)**
+Reproduktion: `/impressum` öffnen → der Footer enthält einen Link auf `/impressum`. Ebenso auf `/datenschutz`, und im Header verlinkt „Anleitung" auf `/anleitung`, wenn man bereits dort ist.
+Auswirkung: Kosmetisch. Ein Klick lädt dieselbe Seite neu; Screenreader kündigen einen Link an, der nirgendwohin führt. Üblich ist, den aktuellen Eintrag zu markieren (`aria-current="page"`) und optisch hervorzuheben statt zu verlinken.
+**Vorbestehend, keine Regression:** Der Selbstverweis bei „Anleitung" existierte nachweislich schon vor diesem Refinement (per `git stash` gegengeprüft); der Footer dehnt das Muster lediglich auf die Rechtsseiten aus.
+
+### Anmerkung zur Testmethodik
+Eine erste Prüfung meldete den `mailto:`-Link als potenziell unsicher. Ursache war ein fehlerhafter Regex in der Prüfroutine (Zeichenklasse `[\r\n%0a%0d]` matcht u.a. das Zeichen „a", das in „googlemail" vorkommt), nicht der Link. Nachkontrolle mit korrektem Muster: unauffällig.
+
+### Nicht abgedeckt
+- **Chromium und Firefox** — die Browser-Binaries fehlen auf diesem Rechner; getestet wurde ausschließlich WebKit.
+- Die 17 bekannten E2E-Fehlschläge in PROJ-1/3/11 bestehen unverändert fort. Sie sind analysiert (unspezifische Selektoren, fehlende Geolocation-Berechtigung im Test-Setup, Groß-/Kleinschreibung) und **keine Produktfehler**, verdecken aber künftige echte Regressionen. Eigenes Aufräum-Ticket empfohlen.
