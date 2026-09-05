@@ -1,6 +1,6 @@
 # PROJ-1: App Shell & Mode Switch
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-08-23
 **Last Updated:** 2026-09-05
 
@@ -363,6 +363,105 @@ Umgesetzt in drei Dateien, keine neue Komponente, keine Änderung der `ModeCard`
 ### E2E Tests
 
 E2E-Testsuite geschrieben in `tests/proj-1-app-shell.spec.ts` (23 Tests). Playwright-Browser müssen einmalig installiert werden: `npx playwright install chromium`. Danach: `npm run test:e2e`.
+
+## QA Test Results — Startscreen-Verfeinerung (2026-09-05)
+
+**Tester:** AI QA (Claude)
+**Scope:** die 10 neuen Acceptance Criteria der Verfeinerung (Logo-Link, Card-Abstand, ruhender Glow) + Regression
+**Build:** `npm run build` ✓ | **Lint:** 0 Fehler, 6 Warnings (alle vorbestehend, `<img>`-Hinweise in nicht berührten Dateien) | **Unit:** 167/167 ✓
+
+### Testumgebung — Einschränkung
+
+Die Chromium-Installation von Playwright ist auf dieser Maschine **defekt**: `chromium-1208` enthält die App-Hülle, aber das Framework-Binary fehlt (`dlopen ... Google Chrome for Testing Framework (no such file)`), und `chromium_headless_shell-1208` fehlt ganz. Alle 23 Chromium-Tests scheitern dadurch schon beim Browser-Start, nicht an der App. Reparatur wäre `npx playwright install chromium` — auf ausdrücklichen Wunsch nicht ausgeführt.
+
+Getestet wurde daher auf **WebKit**, das intakt ist und für das Zielgerät (iPhone Safari) ohnehin die aussagekräftigere Engine ist:
+- **Mobile Safari (iPhone 13)** — das Zielgerät
+- **Desktop Safari (1280×720)** — via temporärer Config, deckt Hover/Focus ab
+
+Chrome und Firefox sind damit **ungetestet**. Vor dem Deploy sollte der Startscreen dort einmal manuell angesehen werden (rein visuell — die Logik ist engine-unabhängig).
+
+### Acceptance Criteria
+
+| # | Kriterium | Mobile Safari | Desktop Safari |
+|---|-----------|---------------|----------------|
+| 1 | Tap auf Logo → `/about` | ✅ Pass | ✅ Pass |
+| 2 | Logo hat Fokus-Ring + Accessible Name | ✅ Pass | ✅ Pass |
+| 3 | Beide Cards tragen dauerhaft Glow in Akzentfarbe (Touch, kein Hover) | ✅ Pass | ✅ Pass |
+| 4 | Glow pulsiert langsam und zeitversetzt | ✅ Pass | ✅ Pass |
+| 5 | `prefers-reduced-motion`: Glow bleibt, Animation aus | ✅ Pass | ✅ Pass |
+| 6 | Hover/Focus verstärkt den Glow gegenüber Ruhezustand | — (kein Hover auf Touch) | ✅ Pass |
+| 7 | 360×640: alles ohne Scrollen sichtbar | ✅ Pass | ✅ Pass |
+
+**Ergebnis: 7/7 bestanden** (Kriterium 6 auf Touch systembedingt nicht anwendbar und dort übersprungen).
+
+### Edge Cases
+
+| # | Edge Case | Status | Nachweis |
+|---|-----------|--------|----------|
+| 6 | Logo-Tap kollidiert nicht mit oberer Card | ✅ Pass | Link überragt das Bild um ≤ 8px, Unterkante liegt über der Card-Oberkante |
+| 7 | Glow überstrahlt den Card-Text nicht | ✅ Pass | Titel 16.10:1, Beschreibung 6.61:1 auf `#0F2429` — beide über WCAG AA (4.5:1). Der Glow ist ein **äußerer** `box-shadow` ohne `inset`; im Browser gemessen bleibt die Card-Hintergrundfarbe über den gesamten Animationszyklus konstant `rgb(15, 36, 41)` |
+| 8 | Keine spürbare Dauerlast | ✅ Pass | Animiert wird ausschließlich `box-shadow`; kein Layout/Reflow, keine JS-Animation |
+
+### Regressionstest
+
+Vergleich gegen `efcdc83` (Stand vor der Implementierung), gleiche Umgebung:
+
+| Lauf | Ergebnis |
+|------|----------|
+| Vorher (nur Alt-Specs) | 202 passed, **17 failed** |
+| Nachher (inkl. neuer Spec) | 214 passed, **17 failed** |
+
+**Identische Fehlerzahl, identische Tests — keine Regression durch diese Änderung.**
+
+### Bugs
+
+**Keine neuen Bugs gefunden.**
+
+Zwei Testfehlschläge während der QA stellten sich als Test-Artefakte heraus, nicht als Produktfehler — beide im Browser gegengeprüft:
+
+| Beobachtung | Befund |
+|-------------|--------|
+| `prefers-reduced-motion` schien wirkungslos (Animation lief weiter) | Kein Produktfehler: `test.use({ reducedMotion })` greift auf dieser WebKit-Version nicht, `matchMedia` meldete `false`. Mit `page.emulateMedia()` ist die Media Query aktiv und beide Animationen stehen korrekt auf `none`, während die Glows erhalten bleiben. Test entsprechend umgestellt |
+| Fokus-Ring des Logos schien transparent | Kein Produktfehler: WebKit unterdrückt die Focus-Darstellung, wenn das Testfenster keine OS-Fokussierung hat — im Einzellauf mit Fensterfokus malt der Ring korrekt `rgba(0, 224, 209, 0.45) 0 0 0 5px` auf dunklem Offset. Test prüft jetzt den aufgelösten Ring statt des gemalten `box-shadow` |
+
+### Vorbestehende Fehlschläge (nicht Teil dieser Änderung)
+
+17 Fehlschläge auf Mobile Safari, unverändert vor und nach der Änderung:
+
+| Spec | Anzahl | Ursache |
+|------|--------|---------|
+| `proj-1-app-shell.spec.ts` | 9 | Veraltete Selektoren: `getByText('Deine Quests')` trifft auch den Erststart-Dialog-Text (Strict-Mode-Violation); `locator('[data-theme="dark"]')` trifft `<html>` **und** den Layout-`<div>`; `aria-label="Zurück"` existiert so nicht mehr |
+| `proj-3-player-gps-navigation.spec.ts` | 7 | Vorbestehend |
+| `proj-11-import-passwortschutz.spec.ts` | 1 | Vorbestehend |
+
+Die App verhält sich in allen Fällen korrekt — die Tests sind veraltet. Das deckt sich mit dem bekannten Follow-up zu veralteten E2E-Tests und bleibt bewusst außerhalb dieser Änderung.
+
+### Security Audit
+
+| Check | Ergebnis |
+|-------|----------|
+| XSS (`dangerouslySetInnerHTML`, `innerHTML`, `eval`) | ✅ Keine Vektoren in den geänderten Dateien |
+| Nutzergesteuerte URLs | ✅ Alle drei `href` sind statische interne Routen (`/about`, `/play`, `/create`) |
+| `target="_blank"` ohne `rel` (Reverse Tabnabbing) | ✅ Nicht vorhanden |
+| Exponierte Secrets | ✅ Keine |
+| Neue Angriffsfläche | ✅ Keine — die Änderung ist reines Styling plus ein interner Link |
+
+### Neue E2E-Tests
+
+`tests/proj-1-startscreen-refinement.spec.ts` — 13 Tests, bewusst als eigene Datei statt Erweiterung der alten Spec, damit die neue Suite nicht in deren veralteten Selektoren hängen bleibt.
+
+| Umgebung | Ergebnis |
+|----------|----------|
+| Desktop Safari | 13 passed |
+| Mobile Safari | 12 passed, 1 skipped (Hover-Test, auf Touch nicht anwendbar) |
+
+### Production-Ready-Entscheidung
+
+**READY** — keine Critical- oder High-Bugs, keine Regression, alle Acceptance Criteria bestanden.
+
+Zwei Punkte zur Kenntnis, beide nicht blockierend:
+1. **Chrome/Firefox visuell ungeprüft** (Chromium-Installation defekt). Der Glow nutzt nur `box-shadow` und `@keyframes` — überall unterstützt; ein kurzer Blick vor dem Deploy genügt.
+2. **Der Glow ist Geschmackssache.** Automatisiert ist verifiziert, *dass* er läuft, korrekt versetzt ist und den Kontrast nicht bricht — ob er auf dem Gerät gefällt, ist eine Designentscheidung. Der Fallback (nur Teal-Card atmet, Lime statisch) steht in der Tech-Design-Sektion.
 
 ## Deployment
 
