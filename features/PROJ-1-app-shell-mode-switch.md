@@ -2,10 +2,11 @@
 
 ## Status: Deployed
 **Created:** 2026-08-23
-**Last Updated:** 2026-08-23
+**Last Updated:** 2026-09-05
 
 ## Dependencies
 - None (PROJ-1 ist das Fundament)
+- Verweis-Ziel (keine Code-Abhängigkeit): Das Logo auf dem Startscreen verlinkt auf `/about` (PROJ-13). Fehlt PROJ-13, ist nur dieser eine Link tot — der Startscreen funktioniert unverändert.
 
 ## Summary
 Der Rahmen der gesamten App: Startscreen mit Modus-Auswahl, Header mit kontextabhängiger Navigation, automatisches Theme-Switching, URL-basiertes Routing, Erststart-Dialog und 404-Seite.
@@ -16,6 +17,7 @@ Der Rahmen der gesamten App: Startscreen mit Modus-Auswahl, Header mit kontextab
 3. Als Nutzer möchte ich den Browser-Zurück-Button nutzen können, damit die App sich wie eine normale Webseite verhält.
 4. Als neuer Nutzer möchte ich beim ersten Start über die lokale Datenspeicherung informiert werden, damit ich weiß, dass meine Daten bei Browser-Löschung verloren gehen.
 5. Als Nutzer möchte ich bei einer ungültigen URL eine hilfreiche Seite sehen, damit ich zurück zur App finde.
+6. Als neuer Nutzer, der die App zum ersten Mal über einen geteilten Link öffnet, möchte ich über das Geo-Quest-Logo erfahren können, was diese App überhaupt ist, damit ich mich nicht blind zwischen zwei Modi entscheiden muss.
 
 ## Out of Scope
 - Quest-Listen-Inhalte innerhalb der Modi (PROJ-2, PROJ-3, PROJ-6)
@@ -33,6 +35,13 @@ Der Rahmen der gesamten App: Startscreen mit Modus-Auswahl, Header mit kontextab
 - [ ] Angenommen die App wird geöffnet, wenn der Nutzer `/` aufruft, dann wird der Startscreen im Dark Theme mit Logo und zwei Mode-Cards ("Play" / "Create") angezeigt
 - [ ] Angenommen der Startscreen ist sichtbar, wenn der Nutzer auf die "Play"-Card tippt, dann wird er zu `/play` navigiert und das Dark Theme bleibt aktiv
 - [ ] Angenommen der Startscreen ist sichtbar, wenn der Nutzer auf die "Create"-Card tippt, dann wird er zu `/create` navigiert und das Theme wechselt zu Light
+- [ ] Angenommen der Startscreen ist sichtbar, wenn der Nutzer auf das Geo-Quest-Logo tippt, dann wird er zur Landing Page `/about` (PROJ-13) navigiert
+- [ ] Angenommen der Nutzer navigiert per Tastatur, wenn das Logo den Fokus erhält, dann ist ein sichtbarer Fokus-Ring vorhanden und das Element ist als Link mit dem Accessible Name "Geo Quest — Was ist das?" ausgezeichnet
+- [ ] Angenommen der Startscreen ist auf einem Touch-Gerät sichtbar (kein Hover verfügbar), wenn die Seite geladen ist, dann tragen beide Mode-Cards dauerhaft einen sichtbaren Glow in ihrer Akzentfarbe — Teal für "Deine Quests", Lime für "Quest Creator"
+- [ ] Angenommen beide Mode-Cards sind sichtbar, wenn die Seite geladen ist, dann pulsiert der Glow beider Cards langsam und zeitversetzt zueinander (kein Gleichtakt)
+- [ ] Angenommen der Nutzer hat `prefers-reduced-motion: reduce` gesetzt, wenn der Startscreen lädt, dann ist der Glow statisch sichtbar, aber es findet keine Pulsier-Animation statt
+- [ ] Angenommen eine Mode-Card trägt den ruhenden Glow, wenn der Nutzer sie per Hover oder Tastatur-Fokus anspricht, dann verstärkt sich der Glow deutlich gegenüber dem Ruhezustand
+- [ ] Angenommen der Startscreen wird auf einem 360×640-Gerät angezeigt, wenn die Seite lädt, dann sind Logo, Headline und beide Mode-Cards trotz des vergrößerten Card-Abstands ohne Scrollen sichtbar
 
 **Header & Navigation:**
 - [ ] Angenommen der Nutzer befindet sich auf der Top-Level-Ansicht eines Modus (`/play` oder `/create`), wenn er auf das Pin-Mark-Logo links im Header tippt, dann wird er zum Startscreen (`/`) navigiert
@@ -59,6 +68,9 @@ Der Rahmen der gesamten App: Startscreen mit Modus-Auswahl, Header mit kontextab
 3. **localStorage nicht verfügbar:** (z.B. Inkognito-Modus in manchen Browsern) → Erststart-Dialog bei jedem Besuch zeigen, keine Fehlermeldung
 4. **Zurück vom Startscreen:** Browser-Zurück auf dem Startscreen → verlässt die App (normales Browser-Verhalten)
 5. **Schnelles Mode-Wechseln:** Nutzer tippt Play → sofort Home → Create → Kein Zustandsproblem, jede Route ist eigenständig
+6. **Logo-Tap vs. Card-Tap:** Das Logo liegt oberhalb der Cards; sein Tap-Ziel darf nicht so groß werden, dass es versehentlich statt der oberen Card getroffen wird. Tap-Fläche bleibt auf das Logo-Bild begrenzt (min. 44px Höhe erfüllt es bereits).
+7. **Glow vs. Lesbarkeit:** Der ruhende Glow darf den Card-Text nicht überstrahlen — der Kontrast von Titel (`gq-white`) und Beschreibung (`#A0A7AD`) auf `#0F2429` muss WCAG AA (4.5:1) erfüllen, auch im hellsten Moment der Puls-Animation.
+8. **Glow auf schwachen Geräten:** Die Animation läuft dauerhaft auf dem Startscreen. Sie darf nur `box-shadow`/`opacity` bewegen (kompositor-freundlich) und keine spürbare Akku- oder Scroll-Last erzeugen.
 
 ## URL-Struktur
 
@@ -72,7 +84,8 @@ Der Rahmen der gesamten App: Startscreen mit Modus-Auswahl, Header mit kontextab
 
 ## Open Questions
 - [ ] Exakter rechtlicher Text für den Datenschutzhinweis (ggf. mit Impressum/Datenschutz-Link)
-- [ ] Soll der Startscreen später eine dezente Background-Animation erhalten? (wurde im Interview erwähnt, aber nicht spezifiziert)
+- [x] Soll der Startscreen später eine dezente Background-Animation erhalten? → Ja, aber nicht als Backdrop: die Bewegung sitzt im ruhenden Glow der beiden Mode-Cards (langsames, versetztes Pulsieren). Ein zusätzlicher Partikel-Backdrop wie auf den Listen-Screens bleibt Out of Scope, damit der Startscreen ruhig bleibt (2026-09-05)
+- [ ] Braucht das Logo auf `/` eine sichtbare Beschriftung ("Was ist Geo Quest?"), falls sich zeigt, dass Nutzer den Link nicht finden? Zunächst bewusst ohne — erst nach Beobachtung entscheiden
 
 ## Decision Log
 
@@ -87,6 +100,12 @@ Der Rahmen der gesamten App: Startscreen mit Modus-Auswahl, Header mit kontextab
 | Erststart-Dialog im App Shell (nicht PWA) | Muss auch ohne PWA-Installation erscheinen | 2026-08-23 |
 | Dark Theme für Startscreen | Brand-Default, Gaming-Look, Mehrheit der Nutzer geht zuerst auf Play | 2026-08-23 |
 | "Play" / "Create" statt "Quest Game" / "Quest Creator" | Kürzer, aktiver, mehr Action-Feeling für die Zielgruppe | 2026-08-23 |
+| Logo auf `/` verlinkt auf `/about` | Der Startscreen erklärt sich Erstbesuchern nicht selbst — er zwingt sofort zur Modus-Wahl. Das Logo ist der konventionelle Ort für "Was ist das?" und war bisher als einziges Element tot. Gegenrichtung existiert bereits ("Zur App" auf `/about` → `/`) | 2026-09-05 |
+| Logo bleibt ohne sichtbaren Link-Hinweis (kein Unterstrich, kein Chevron) | Das Lockup ist ein Markenelement; zusätzliche Chrome würde es entwerten. Der Link ist ein Bonus-Pfad, kein Hauptweg — die zwei Mode-Cards bleiben die primäre Entscheidung | 2026-09-05 |
+| Glow der Mode-Cards wird vom Hover- zum Dauerzustand | Zielgerät ist das Handy, dort gibt es kein Hover — der bereits gebaute Effekt war auf Mobile faktisch unsichtbar. Der Glow ist Teil des Gaming-Looks aus dem PRD, nicht nur Interaktions-Feedback | 2026-09-05 |
+| Glow pulsiert langsam und zeitversetzt statt statisch | Ein statischer Glow liest sich als Rahmen, ein atmender als "lebendig"/Game. Der Versatz verhindert, dass die beiden Cards wie ein einziger blinkender Block wirken | 2026-09-05 |
+| Kein Partikel-Backdrop auf dem Startscreen | Die Listen-Screens nutzen ihn bereits; auf `/` würde er mit dem Card-Glow um Aufmerksamkeit konkurrieren. Startscreen bleibt der ruhigste Screen der App | 2026-09-05 |
+| Card-Abstand von 12px auf 20px erhöht | Die beiden Modi sind eine echte Verzweigung, keine Liste — mehr Luft macht sie zu zwei getrennten Entscheidungen und gibt dem Glow Raum, ohne dass sich die Halos überlappen | 2026-09-05 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -100,6 +119,10 @@ Der Rahmen der gesamten App: Startscreen mit Modus-Auswahl, Header mit kontextab
 | Brush-Stroke-Button als eigene Komponente | Nicht durch shadcn abbildbar — Brand-spezifisches Element mit SVG | 2026-08-23 |
 | shadcn Dialog für Erststart-Hinweis | Bereits installiert, accessible, responsive | 2026-08-23 |
 | Lucide Icons via lucide-react | Im Design-System definiert, Tree-Shakeable | 2026-08-23 |
+| Glow als CSS-Keyframe auf `box-shadow`, nicht als JS-Animation | Läuft dauerhaft auf dem Startscreen; CSS-Animation bleibt ohne Main-Thread-Last und ist per Media Query abschaltbar | 2026-09-05 |
+| `prefers-reduced-motion: reduce` schaltet nur die Animation ab, nicht den Glow | Der Glow trägt die Farbcodierung der beiden Modi (Teal/Lime) — er ist Information, die Bewegung ist Dekoration | 2026-09-05 |
+| Versatz über `animation-delay` statt zweier Keyframe-Sets | Ein Keyframe, zwei Delays — weniger CSS, gleiches Ergebnis | 2026-09-05 |
+| Ruhe- und Hover-Glow als getrennte Stufen derselben Farbe | Der bestehende `card-glow-teal`/`-lime` bleibt der verstärkte Hover-/Focus-Zustand; die neue Ruhestufe liegt darunter, damit Interaktion weiterhin spürbar ist | 2026-09-05 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
@@ -202,6 +225,40 @@ src/app/
 |---------|-------|
 | `lucide-react` | Icon-Set (Zurück-Pfeil, Home etc.) |
 | `next/font` (built-in) | Google Fonts optimiert laden |
+
+### Startscreen-Verfeinerung (2026-09-05)
+
+Betroffene Dateien: `src/app/page.tsx`, `src/components/mode-card.tsx`, `src/app/globals.css`.
+
+**1. Logo als Link auf `/about`**
+
+Das `next/image`-Logo in `src/app/page.tsx` wird in einen `next/link` auf `/about` gewrappt. Kein visueller Zusatz im Ruhezustand (Markenvorgabe: kein Glow, kein Shimmer hinter dem Lockup). Der Link braucht:
+- einen Accessible Name (das `alt` des Bildes reicht nicht aus, um das Ziel zu erklären) — z.B. `aria-label="Geo Quest — Was ist das?"`
+- einen `focus-visible`-Ring für Tastatur-Navigation
+- ein dezentes Press-Feedback (leichtes `scale`/`opacity`), damit der Tap sich quittiert anfühlt
+- eine Tap-Fläche, die das Bild nicht wesentlich überragt (siehe Edge Case 6)
+
+**2. Card-Abstand**
+
+`flex flex-col gap-3` → `gap-5` im Mode-Cards-Container von `src/app/page.tsx` (12px → 20px). Bleibt im 4px-Raster des Design-Systems.
+
+**3. Ruhender, atmender Glow**
+
+Bestehend in `globals.css`: `card-glow-teal` / `card-glow-lime` — diese bleiben unverändert als **verstärkter** Hover-/Focus-Zustand.
+
+Neu ergänzt wird eine **Ruhestufe** darunter, deutlich schwächer als der Hover-Zustand (Richtwert: rund die Hälfte der Alpha-Werte), plus ein gemeinsamer Keyframe, der die Glow-Intensität langsam zwischen Ruhestufe und einem leicht helleren Punkt bewegen lässt:
+
+| Aspekt | Vorgabe |
+|--------|---------|
+| Dauer | ~4s, `ease-in-out`, `infinite` |
+| Versatz | Teal-Card ohne Delay, Lime-Card ca. 2s `animation-delay` (Gegentakt) |
+| Animierte Eigenschaft | ausschließlich `box-shadow` / `opacity` — kein `width`, `top`, `filter` |
+| Amplitude | subtil; im hellsten Moment darf der Text-Kontrast WCAG AA nicht unterschreiten |
+| Reduced Motion | `@media (prefers-reduced-motion: reduce)` setzt `animation: none`, der ruhende Glow bleibt sichtbar |
+
+Der Farbwert folgt der `accent`-Prop der `ModeCard` (`teal` → `#00E0D1`, `lime` → `#C6FF00`) — die Komponenten-API ändert sich nicht.
+
+**Alternative, falls die Halos sich optisch stören:** Statt zweier permanent leuchtender Cards nur die obere (Teal/Play) atmen zu lassen und der unteren einen statischen Lime-Glow zu geben — das lenkt zum Haupt-Einstieg. Erst bauen, dann am Gerät bewerten.
 
 ## QA Test Results
 
