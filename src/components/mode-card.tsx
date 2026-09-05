@@ -23,13 +23,14 @@ export function ModeCard({
     <Link
       href={href}
       className={cn(
-        "group block min-w-0 overflow-hidden text-left p-4 rounded-[16px] bg-[#0F2429] outline-none",
-        "border-2 border-[rgba(160,167,173,0.22)] shadow-[0_10px_24px_rgba(0,0,0,.45)]",
+        "group block min-w-0 overflow-hidden text-left p-4 rounded-[16px] bg-[#0F2429] outline-none border-2",
         "transition-all duration-[180ms] [transition-timing-function:cubic-bezier(.16,.84,.44,1)]",
         "hover:-translate-y-0.5 focus-visible:-translate-y-0.5",
+        // Ruhender, atmender Glow — auf Touch-Geraeten der einzige sichtbare
+        // Zustand. Hover/Focus stoppt das Atmen und setzt den starken Glow.
         isTeal
-          ? "hover:card-glow-teal focus-visible:card-glow-teal"
-          : "hover:card-glow-lime focus-visible:card-glow-lime"
+          ? "card-glow-rest-teal hover:animate-none focus-visible:animate-none hover:card-glow-teal focus-visible:card-glow-teal"
+          : "card-glow-rest-lime hover:animate-none focus-visible:animate-none hover:card-glow-lime focus-visible:card-glow-lime"
       )}
     >
       <span

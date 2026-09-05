@@ -1,6 +1,6 @@
 # PROJ-1: App Shell & Mode Switch
 
-## Status: Deployed
+## Status: In Progress
 **Created:** 2026-08-23
 **Last Updated:** 2026-09-05
 
@@ -86,6 +86,7 @@ Der Rahmen der gesamten App: Startscreen mit Modus-Auswahl, Header mit kontextab
 - [ ] Exakter rechtlicher Text für den Datenschutzhinweis (ggf. mit Impressum/Datenschutz-Link)
 - [x] Soll der Startscreen später eine dezente Background-Animation erhalten? → Ja, aber nicht als Backdrop: die Bewegung sitzt im ruhenden Glow der beiden Mode-Cards (langsames, versetztes Pulsieren). Ein zusätzlicher Partikel-Backdrop wie auf den Listen-Screens bleibt Out of Scope, damit der Startscreen ruhig bleibt (2026-09-05)
 - [ ] Braucht das Logo auf `/` eine sichtbare Beschriftung ("Was ist Geo Quest?"), falls sich zeigt, dass Nutzer den Link nicht finden? Zunächst bewusst ohne — erst nach Beobachtung entscheiden
+- [ ] `docs/design-system.md` sagt unter Motion "keine Ambient-Loops", während sowohl der Partikel-Backdrop als auch jetzt der Card-Glow genau das tun. Regel präzisieren oder streichen?
 
 ## Decision Log
 
@@ -259,6 +260,22 @@ Neu ergänzt wird eine **Ruhestufe** darunter, deutlich schwächer als der Hover
 Der Farbwert folgt der `accent`-Prop der `ModeCard` (`teal` → `#00E0D1`, `lime` → `#C6FF00`) — die Komponenten-API ändert sich nicht.
 
 **Alternative, falls die Halos sich optisch stören:** Statt zweier permanent leuchtender Cards nur die obere (Teal/Play) atmen zu lassen und der unteren einen statischen Lime-Glow zu geben — das lenkt zum Haupt-Einstieg. Erst bauen, dann am Gerät bewerten.
+
+#### Implementierung (2026-09-05)
+
+Umgesetzt in drei Dateien, keine neue Komponente, keine Änderung der `ModeCard`-API:
+
+| Datei | Änderung |
+|-------|----------|
+| `src/app/globals.css` | Neue Utilities `.card-glow-rest-teal` / `.card-glow-rest-lime` (Ruhestufe, ca. halbe Alpha-Werte des Hover-Zustands) + Keyframes `gq-breathe-teal` / `gq-breathe-lime` (4s, `cubic-bezier(.37,0,.63,1)`, infinite) + `@media (prefers-reduced-motion: reduce)`-Block |
+| `src/components/mode-card.tsx` | Statischer Border/Shadow ersetzt durch die Ruhestufe; `hover:animate-none focus-visible:animate-none` stoppt das Atmen, bevor der starke `card-glow-*` greift |
+| `src/app/page.tsx` | Logo in `next/link` auf `/about` gewrappt (`aria-label`, `focus-visible`-Ring, `active:scale-[0.97]`); Card-Container `gap-3` → `gap-5` |
+
+**Versatz:** über `animation-delay: -2s` auf der Lime-Card. Negativ statt positiv, damit die Karte sofort mitten im Zyklus startet — bei positivem Delay hätte sie die ersten 2s stillgestanden und wäre erst danach eingestiegen.
+
+**Verifizierte Kaskade** (im gebauten CSS geprüft, nicht angenommen): Die Hover-Regeln stehen im Output nach den Ruhe-Regeln, gewinnen also bei gleicher Spezifität per Quellreihenfolge — sowohl `animate-none` als auch der verstärkte Glow. Der `prefers-reduced-motion`-Block steht ebenfalls nach den Ruhe-Regeln und setzt `animation: none`, ohne den Glow zu entfernen.
+
+**Konflikt mit dem Design-System:** `docs/design-system.md` (Abschnitt Motion) verbietet ausdrücklich "keine Ambient-Loops". Ein dauerhaft atmender Glow ist genau das. Die Regel ist allerdings bereits durch `quest-list-backdrop.tsx` gebrochen, das auf drei Screens eine `gq-float`-Endlosschleife fährt. Entscheidung wurde bewusst zugunsten der Nutzeranforderung getroffen — die Design-System-Regel sollte entweder auf "keine Ambient-Loops außer markierten Akzenten" präzisiert oder gestrichen werden (siehe Open Questions).
 
 ## QA Test Results
 
