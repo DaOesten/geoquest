@@ -1,6 +1,6 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-09-04
 **Last Updated:** 2026-09-05 (Refinement umgesetzt — Frontend)
 
@@ -716,3 +716,38 @@ Impressum und Datenschutz formulieren durchgehend „wir"/„uns", obwohl als An
 - Schriftbild visuell unverändert
 
 **Produktionsreif: JA.** Keine Critical- oder High-Bugs; die beiden verbleibenden Medium/Low-Punkte sind bewusst getroffene Entscheidungen, keine ungelösten Fehler.
+
+## Deployment — Refinement (2026-09-05)
+
+**Production URL:** https://geoquesty.vercel.app
+**Deployed:** 2026-09-05
+**Commit:** `b6d3bc4`
+**Neue Routen:** `/impressum`, `/datenschutz`
+
+### Pre-Deployment
+| Prüfung | Ergebnis |
+|---------|----------|
+| `npm run build` | erfolgreich, alle Info-Seiten statisch prerendered |
+| `npm run lint` | 0 Fehler (6 vorbestehende Warnungen) |
+| `npm test` | 167 Tests grün |
+| QA-Freigabe | Approved, keine Critical/High-Bugs |
+| Secrets im Repo | keine — nur `.env.local.example` getrackt |
+
+### Post-Deployment-Verifikation (live geprüft)
+| Prüfung | Ergebnis |
+|---------|----------|
+| `/impressum`, `/datenschutz` | HTTP 200, korrekte Inhalte |
+| Impressum-Angaben | echte Daten, **keine Platzhalter** live |
+| `noindex` auf Rechtstexten | `noindex, follow` gesetzt |
+| Security-Header | X-Frame-Options DENY, nosniff, Referrer-Policy, HSTS (preload) |
+| **Externe Requests** | **0** über `/`, `/about`, `/anleitung`, `/impressum`, `/datenschutz` |
+| Google Fonts | 0 Referenzen — Selbst-Auslieferung greift in Produktion |
+| Cookies | **keine** — Zusage der Datenschutzerklärung live belegt |
+| Konsolenfehler | keine |
+| Burger-Menu | alle vier Links vorhanden und funktionsfähig |
+| FAQ | eingeklappt wie spezifiziert |
+
+### Offener Punkt: Vercel Analytics
+Web Analytics ist im Vercel-Projekt aktiviert — der Endpunkt `/_vercel/insights/script.js` liefert ein gültiges Skript (HTTP 200, 1,5 KB gzip), und im Browser existieren `window.va` und `window.vaq`. Die Komponente läuft also.
+
+**Es ließ sich jedoch kein abgesetztes Analytics-Beacon beobachten.** Getestet wurde mit headless WebKit ohne echte Nutzerinteraktion; plausibel ist, dass der Pageview unter diesen Bedingungen nicht ausgelöst oder verzögert gesendet wird. Ob tatsächlich Daten ankommen, ist **im Vercel-Dashboard zu prüfen**, idealerweise nach einem Besuch mit einem echten Gerät. Sollten nach ein bis zwei Tagen keine Zahlen erscheinen, ist die Ursache dort zu suchen — im ausgelieferten Code ist die Einbindung nachweislich vorhanden.
