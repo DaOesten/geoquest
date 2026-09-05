@@ -170,8 +170,10 @@ test.describe("Rechtstexte", () => {
     await expect(page.getByText(/§ 5 Digitale-Dienste-Gesetz/)).toBeVisible();
     await expect(page.getByRole("heading", { name: "Anbieter" })).toBeVisible();
 
-    // Kontakt muss unmittelbar erreichbar sein (§ 5 DDG), also ein echter mailto-Link.
-    const mail = page.locator('a[href^="mailto:"]');
+    // Kontakt muss unmittelbar erreichbar sein (§ 5 DDG), also ein echter
+    // mailto-Link. Auf `main` eingegrenzt: seit Refinement 2 steht derselbe
+    // Link zusätzlich im Footer.
+    const mail = page.getByRole("main").locator('a[href^="mailto:"]');
     await expect(mail).toBeVisible();
 
     // Keine Platzhalter dürfen je live gehen.
@@ -254,5 +256,79 @@ test.describe("Responsive", () => {
         page.getByRole("navigation").getByRole("link", { name: label, exact: true })
       ).toBeVisible();
     }
+  });
+});
+
+test.describe("Zurückpfeil & Footer (Refinement 2)", () => {
+  for (const path of ["/impressum", "/datenschutz"]) {
+    test(`${path} hat einen Zurückpfeil nach /about`, async ({ page }) => {
+      await page.goto(path);
+      const arrow = page.getByRole("link", { name: "Zurück" });
+      await expect(arrow).toBeVisible();
+      await arrow.click();
+      await expect(page).toHaveURL(/\/about$/);
+    });
+  }
+
+  test("Footer zeigt Kontakt und Rechtslinks auf allen Info-Seiten", async ({
+    page,
+  }) => {
+    for (const path of INFO_PAGES) {
+      await page.goto(path);
+      const footer = page.getByRole("contentinfo");
+      await expect(footer, path).toBeVisible();
+      await expect(footer.getByText("Daniela Oesten")).toBeVisible();
+      await expect(footer.locator('a[href^="mailto:"]')).toBeVisible();
+      await expect(
+        footer.getByRole("link", { name: "Impressum", exact: true })
+      ).toBeVisible();
+      await expect(
+        footer.getByRole("link", { name: "Datenschutz", exact: true })
+      ).toBeVisible();
+    }
+  });
+
+  test("Footer nennt keine Postanschrift — die bleibt dem Impressum vorbehalten", async ({
+    page,
+  }) => {
+    await page.goto("/about");
+    const footer = await page.getByRole("contentinfo").innerText();
+    expect(footer).not.toContain("Kerbelweg");
+    expect(footer).not.toContain("22337");
+  });
+
+  test("Desktop-Header führt Impressum und Datenschutz nicht mehr", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/about");
+    const nav = page.locator("header nav");
+    await expect(nav.getByRole("link", { name: "Impressum" })).toHaveCount(0);
+    await expect(nav.getByRole("link", { name: "Datenschutz" })).toHaveCount(0);
+    await expect(nav.getByRole("link", { name: "Anleitung" })).toBeVisible();
+  });
+
+  test("Burger-Menü behält alle vier Ziele", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/about");
+    await page.getByRole("button", { name: "Menü öffnen" }).click();
+    const menu = page.getByRole("dialog");
+    for (const label of ["App", "Anleitung", "Impressum", "Datenschutz"]) {
+      await expect(menu.getByRole("link", { name: label, exact: true })).toBeVisible();
+    }
+  });
+
+  test("Footer-Links erfüllen die 44px-Mindesthöhe", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/about");
+    const footer = page.getByRole("contentinfo");
+    for (const name of ["Impressum", "Datenschutz"]) {
+      const box = await footer
+        .getByRole("link", { name, exact: true })
+        .boundingBox();
+      expect(box!.height, name).toBeGreaterThanOrEqual(44);
+    }
+    const mail = await footer.locator('a[href^="mailto:"]').boundingBox();
+    expect(mail!.height).toBeGreaterThanOrEqual(44);
   });
 });

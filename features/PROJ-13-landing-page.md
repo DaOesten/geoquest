@@ -2,7 +2,7 @@
 
 ## Status: In Progress
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-05 (Refinement 2: Zurückpfeile & Footer)
+**Last Updated:** 2026-09-05 (Refinement 2 umgesetzt — Frontend)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -138,14 +138,14 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] Angenommen ein KI-System oder Crawler wertet `/about` aus, wenn die Fragen eingeklappt sind, dann sind alle vier Frage-Antwort-Paare weiterhin sowohl im HTML als auch im `FAQPage`-JSON-LD vollständig enthalten
 
 ### Zurückpfeil & Footer (Refinement 2, 2026-09-05)
-- [ ] Angenommen ein Nutzer ist auf `/impressum` oder `/datenschutz`, wenn er den Header betrachtet, dann sieht er links einen Zurückpfeil wie auf `/anleitung`
-- [ ] Angenommen ein Nutzer klickt den Zurückpfeil auf einer der beiden Rechtsseiten, dann gelangt er nach `/about`
-- [ ] Angenommen ein Nutzer scrollt auf einer beliebigen Info-Seite ans Ende, dann findet er einen Footer mit Anbietername, E-Mail-Adresse sowie Links zu Impressum und Datenschutz
-- [ ] Angenommen ein Nutzer klickt die E-Mail-Adresse im Footer, dann öffnet sich sein Mail-Programm mit der Adresse als Empfänger
-- [ ] Angenommen ein Nutzer betrachtet den Footer, dann steht dort **keine** Postanschrift — diese bleibt dem Impressum vorbehalten
-- [ ] Angenommen ein Nutzer öffnet eine Info-Seite am Desktop, wenn er die Header-Zeile betrachtet, dann stehen dort keine Links mehr zu Impressum und Datenschutz
-- [ ] Angenommen ein Nutzer öffnet das Burger-Menü auf dem Handy, dann sind weiterhin alle vier Ziele (App, Anleitung, Impressum, Datenschutz) enthalten
-- [ ] Angenommen ein Nutzer betrachtet den Footer auf einem Mobilgerät (360–430px), dann sind alle Links mindestens 44px hoch antippbar und nichts läuft über den Rand
+- [x] Angenommen ein Nutzer ist auf `/impressum` oder `/datenschutz`, wenn er den Header betrachtet, dann sieht er links einen Zurückpfeil wie auf `/anleitung`
+- [x] Angenommen ein Nutzer klickt den Zurückpfeil auf einer der beiden Rechtsseiten, dann gelangt er nach `/about`
+- [x] Angenommen ein Nutzer scrollt auf einer beliebigen Info-Seite ans Ende, dann findet er einen Footer mit Anbietername, E-Mail-Adresse sowie Links zu Impressum und Datenschutz
+- [x] Angenommen ein Nutzer klickt die E-Mail-Adresse im Footer, dann öffnet sich sein Mail-Programm mit der Adresse als Empfänger
+- [x] Angenommen ein Nutzer betrachtet den Footer, dann steht dort **keine** Postanschrift — diese bleibt dem Impressum vorbehalten
+- [x] Angenommen ein Nutzer öffnet eine Info-Seite am Desktop, wenn er die Header-Zeile betrachtet, dann stehen dort keine Links mehr zu Impressum und Datenschutz
+- [x] Angenommen ein Nutzer öffnet das Burger-Menü auf dem Handy, dann sind weiterhin alle vier Ziele (App, Anleitung, Impressum, Datenschutz) enthalten
+- [x] Angenommen ein Nutzer betrachtet den Footer auf einem Mobilgerät (360–430px), dann sind alle Links mindestens 44px hoch antippbar und nichts läuft über den Rand
 
 ### Prompt-Vorlage
 - [x] Angenommen ein Nutzer ist bei der Anleitungs-Sektion, wenn er die Seite betrachtet, dann ist die vollständige Prompt-Vorlage als lesbarer Text sichtbar und manuell markierbar
@@ -804,3 +804,37 @@ Burger-Menü-Mechanik, FAQ-Accordion, die gekürzten Inhalte, selbst-gehostete S
 
 ### Hinweis
 Der 16px-Schließen-Button im Sheet (Bug 2 der letzten QA-Runde) bleibt weiterhin bewusst offen. Kommt beim Footer-Bau eine app-weite Touch-Target-Runde in Frage, wäre das der Moment.
+
+## Implementation Notes (Frontend — Refinement 2, 2026-09-05)
+
+Alle sieben Punkte umgesetzt.
+
+### Neue Dateien
+| Datei | Zweck |
+|-------|-------|
+| `src/lib/provider.ts` | Anbieterangaben als gemeinsame Quelle für Impressum und Footer |
+| `src/components/info-footer.tsx` | Footer mit Kontakt und Rechtslinks |
+
+### Geänderte Dateien
+- `src/components/info-page-shell.tsx` — Footer eingebunden, Desktop-Textlinkreihe auf `HEADER_NAV_LINKS` umgestellt
+- `src/lib/info-nav.ts` — `HEADER_NAV_LINKS` ergänzt (Teilmenge für den Header); `INFO_NAV_LINKS` bleibt unverändert die Quelle des Burger-Menüs
+- `src/app/(info)/impressum/page.tsx` — `backHref="/about"`, `PROVIDER` aus dem gemeinsamen Modul statt lokaler Konstante
+- `src/app/(info)/datenschutz/page.tsx` — `backHref="/about"`
+- `tests/proj-13-info-refinement.spec.ts` — 7 neue Tests
+
+### Befunde und Abweichungen
+
+**Die Zurückpfeile waren kein neues Feature.** `InfoPageShell` unterstützt `backHref` seit dem ersten Bau, `/anleitung` nutzt es. Bei den beiden Rechtsseiten war die Prop schlicht nicht gesetzt — zwei Zeilen, kein neuer Code.
+
+**Footer optisch abgesetzt.** Erste Fassung lag auf demselben `bg-gq-black` wie der Inhalt und wirkte dadurch wie ein weiterer Absatz statt wie ein Seitenfuß. Jetzt mit `bg-gq-dark-teal/25` und Oberkante — eigener Bereich, ohne vom Inhalt abzulenken.
+
+**Bestehender Test wurde durch den Footer mehrdeutig.** Die Prüfung „Impressum hat einen `mailto:`-Link" fand nach dem Einbau zwei Treffer (Impressum-Text und Footer) und schlug mit einer Strict-Mode-Verletzung fehl. Auf `main` eingegrenzt, da die Prüfung dem Kontakt-Abschnitt der Seite gilt, nicht dem Footer. Kein Produktfehler.
+
+### Verifikation
+- `npm run build` — erfolgreich, alle vier Info-Seiten weiterhin statisch prerendered
+- `npm run lint` — 0 Fehler · `npm test` — 167 Tests grün
+- E2E (WebKit): **243 bestanden** (vorher 236), 17 fehlgeschlagen — ausschließlich die bekannten Vorbelastungen aus PROJ-1/3/11, keine neue Regression
+- Zurückpfeile auf `/impressum`, `/datenschutz` und `/anleitung` führen jeweils nach `/about` (geprüft)
+- Desktop-Header trägt nur noch „Anleitung" und „Zur App"; Burger-Menü behält alle vier Ziele (geprüft)
+- Footer-Links messen 44px Höhe (E-Mail, Impressum, Datenschutz)
+- Footer enthält weder „Kerbelweg" noch „22337" — Anschrift bleibt dem Impressum vorbehalten

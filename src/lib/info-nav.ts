@@ -15,3 +15,15 @@ export const INFO_NAV_LINKS = [
   { href: "/impressum", label: "Impressum" },
   { href: "/datenschutz", label: "Datenschutz" },
 ] as const;
+
+/**
+ * Die Teilmenge, die als Textlinks in der Desktop-Header-Zeile steht.
+ *
+ * „App" deckt bereits der Aktions-Button rechts außen ab; Impressum und
+ * Datenschutz stehen im Footer, wo Besucher Rechtstexte zuerst suchen. Im
+ * Burger-Menu bleiben dagegen alle vier Ziele — auf dem Handy müsste man sonst
+ * für das Impressum durch die ganze Seite scrollen.
+ */
+export const HEADER_NAV_LINKS = INFO_NAV_LINKS.filter(
+  ({ href }) => href === "/anleitung"
+);

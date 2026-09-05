@@ -2,7 +2,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import { InfoNavMenu } from "@/components/info-nav-menu";
-import { INFO_NAV_LINKS } from "@/lib/info-nav";
+import { InfoFooter } from "@/components/info-footer";
+import { HEADER_NAV_LINKS } from "@/lib/info-nav";
 
 interface InfoPageShellProps {
   /** Show the brand lockup above the eyebrow (front page only — subpages go without). */
@@ -62,17 +63,17 @@ export function InfoPageShell({
           )}
 
           <nav className="ml-auto flex items-center gap-1 sm:gap-2">
-            {INFO_NAV_LINKS.filter(({ href }) => href !== "/").map(
-              ({ href, label }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className="hidden sm:flex items-center h-11 px-4 rounded-pill text-tech text-[11px] tracking-[0.08em] text-gq-grey transition-colors duration-base ease-gq hover:text-gq-teal"
-                >
-                  {label}
-                </Link>
-              )
-            )}
+            {/* Impressum und Datenschutz stehen im Footer — hier nur die
+                inhaltlichen Ziele. Im Burger-Menu bleiben alle vier. */}
+            {HEADER_NAV_LINKS.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className="hidden sm:flex items-center h-11 px-4 rounded-pill text-tech text-[11px] tracking-[0.08em] text-gq-grey transition-colors duration-base ease-gq hover:text-gq-teal"
+              >
+                {label}
+              </Link>
+            ))}
 
             {/* Reserved for a Ko-fi support link later — the slot stays, the target changes. */}
             <Link
@@ -131,10 +132,12 @@ export function InfoPageShell({
         </div>
 
         {/* Sections set scroll-margin so anchored headings clear the sticky header. */}
-        <div className={`${CONTAINER} pb-20 sm:pb-28 [&_section]:scroll-mt-20`}>
+        <div className={`${CONTAINER} pb-16 sm:pb-24 [&_section]:scroll-mt-20`}>
           {children}
         </div>
       </main>
+
+      <InfoFooter />
     </>
   );
 }

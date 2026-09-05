@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { InfoPageShell } from "@/components/info-page-shell";
+import { PROVIDER } from "@/lib/provider";
 
 export const metadata: Metadata = {
   title: "Impressum",
@@ -8,24 +9,10 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
 };
 
-/**
- * Anbieterkennzeichnung nach § 5 DDG (PROJ-13).
- *
- * Die Angaben stehen bewusst an einer Stelle: Ändert sich die Anschrift, ist
- * hier die einzige Fundstelle. Sie sind öffentlich sichtbar — das ist der Zweck
- * der Vorschrift, nicht ein Versehen.
- */
-const PROVIDER = {
-  name: "Daniela Oesten",
-  street: "Kerbelweg 5b",
-  city: "22337 Hamburg",
-  country: "Deutschland",
-  email: "d.oesten@googlemail.com",
-};
-
 export default function ImpressumPage() {
   return (
     <InfoPageShell
+      backHref="/about"
       eyebrow="Rechtliches"
       title="Impressum"
       lead={

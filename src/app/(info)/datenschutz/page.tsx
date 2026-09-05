@@ -21,6 +21,7 @@ export const metadata: Metadata = {
 export default function DatenschutzPage() {
   return (
     <InfoPageShell
+      backHref="/about"
       eyebrow="Rechtliches"
       title="Datenschutz"
       lead={
