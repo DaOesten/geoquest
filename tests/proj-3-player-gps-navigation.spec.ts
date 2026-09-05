@@ -2,14 +2,14 @@ import { test, expect, type Page } from "@playwright/test";
 
 const TEST_QUEST = {
   version: 1,
-  id: "test-quest-e2e",
+  id: "a1111111-1111-4111-8111-111111111111",
   name: "E2E Test Quest",
   lastModified: "2026-08-24T00:00:00.000Z",
   intro: { text: "Willkommen zur Test-Quest!\nViel Spass beim Spielen." },
   outro: { text: "Geschafft!" },
   stations: [
     {
-      id: "station-1",
+      id: "b1111111-1111-4111-8111-111111111111",
       name: "Erste Station",
       lat: 53.61,
       lng: 10.04,
@@ -17,7 +17,7 @@ const TEST_QUEST = {
       modules: [{ type: "text", content: "Station 1 Text" }],
     },
     {
-      id: "station-2",
+      id: "b2222222-2222-4222-8222-222222222222",
       name: "Zweite Station",
       lat: 53.62,
       lng: 10.05,
@@ -25,7 +25,7 @@ const TEST_QUEST = {
       modules: [{ type: "text", content: "Station 2 Text" }],
     },
     {
-      id: "station-3",
+      id: "b3333333-3333-4333-8333-333333333333",
       name: "Dritte Station",
       lat: 53.63,
       lng: 10.06,
@@ -91,13 +91,20 @@ test.describe("PROJ-3: Player — GPS-Navigation", () => {
   });
 
   test.describe("Station List", () => {
+    test.beforeEach(async ({ context }) => {
+      // Ohne Freigabe blendet der Player zuerst den Berechtigungs-Screen ein,
+      // unabhängig vom gespeicherten Fortschritt.
+      await context.grantPermissions(["geolocation"]);
+      await context.setGeolocation({ latitude: 53.61, longitude: 10.04 });
+    });
+
     test("all station names visible including locked ones", async ({ page }) => {
       await seedQuest(page);
       await page.evaluate(
         ({ id }) => {
           localStorage.setItem(
             `gq_progress_${id}`,
-            JSON.stringify({ visitedStations: [], currentScreen: "stations", lastStationIndex: 0 })
+            JSON.stringify({ visitedStations: [], completedStations: [], solvedTasks: {}, currentScreen: "stations", lastStationIndex: 0 })
           );
         },
         { id: TEST_QUEST.id }
@@ -115,7 +122,7 @@ test.describe("PROJ-3: Player — GPS-Navigation", () => {
         ({ id }) => {
           localStorage.setItem(
             `gq_progress_${id}`,
-            JSON.stringify({ visitedStations: [], currentScreen: "stations", lastStationIndex: 0 })
+            JSON.stringify({ visitedStations: [], completedStations: [], solvedTasks: {}, currentScreen: "stations", lastStationIndex: 0 })
           );
         },
         { id: TEST_QUEST.id }
@@ -134,7 +141,7 @@ test.describe("PROJ-3: Player — GPS-Navigation", () => {
         ({ id }) => {
           localStorage.setItem(
             `gq_progress_${id}`,
-            JSON.stringify({ visitedStations: ["station-1"], completedStations: [], currentScreen: "stations", lastStationIndex: 1 })
+            JSON.stringify({ visitedStations: ["b1111111-1111-4111-8111-111111111111"], completedStations: [], currentScreen: "stations", lastStationIndex: 1 })
           );
         },
         { id: TEST_QUEST.id }
@@ -151,7 +158,7 @@ test.describe("PROJ-3: Player — GPS-Navigation", () => {
         ({ id }) => {
           localStorage.setItem(
             `gq_progress_${id}`,
-            JSON.stringify({ visitedStations: ["station-1"], completedStations: ["station-1"], currentScreen: "stations", lastStationIndex: 1 })
+            JSON.stringify({ visitedStations: ["b1111111-1111-4111-8111-111111111111"], completedStations: ["b1111111-1111-4111-8111-111111111111"], currentScreen: "stations", lastStationIndex: 1 })
           );
         },
         { id: TEST_QUEST.id }
@@ -171,7 +178,7 @@ test.describe("PROJ-3: Player — GPS-Navigation", () => {
         ({ id }) => {
           localStorage.setItem(
             `gq_progress_${id}`,
-            JSON.stringify({ visitedStations: ["station-1"], completedStations: ["station-1"], currentScreen: "stations", lastStationIndex: 1 })
+            JSON.stringify({ visitedStations: ["b1111111-1111-4111-8111-111111111111"], completedStations: ["b1111111-1111-4111-8111-111111111111"], currentScreen: "stations", lastStationIndex: 1 })
           );
         },
         { id: TEST_QUEST.id }
@@ -187,13 +194,20 @@ test.describe("PROJ-3: Player — GPS-Navigation", () => {
   });
 
   test.describe("Navigation Screen", () => {
+    test.beforeEach(async ({ context }) => {
+      // Ohne Freigabe blendet der Player zuerst den Berechtigungs-Screen ein,
+      // unabhängig vom gespeicherten Fortschritt.
+      await context.grantPermissions(["geolocation"]);
+      await context.setGeolocation({ latitude: 53.61, longitude: 10.04 });
+    });
+
     test("shows direction arrow and distance when navigating", async ({ page }) => {
       await seedQuest(page);
       await page.evaluate(
         ({ id }) => {
           localStorage.setItem(
             `gq_progress_${id}`,
-            JSON.stringify({ visitedStations: [], currentScreen: "stations", lastStationIndex: 0 })
+            JSON.stringify({ visitedStations: [], completedStations: [], solvedTasks: {}, currentScreen: "stations", lastStationIndex: 0 })
           );
         },
         { id: TEST_QUEST.id }
@@ -215,7 +229,7 @@ test.describe("PROJ-3: Player — GPS-Navigation", () => {
         ({ id }) => {
           localStorage.setItem(
             `gq_progress_${id}`,
-            JSON.stringify({ visitedStations: [], currentScreen: "stations", lastStationIndex: 0 })
+            JSON.stringify({ visitedStations: [], completedStations: [], solvedTasks: {}, currentScreen: "stations", lastStationIndex: 0 })
           );
         },
         { id: TEST_QUEST.id }
@@ -231,13 +245,20 @@ test.describe("PROJ-3: Player — GPS-Navigation", () => {
   });
 
   test.describe("Arrival", () => {
+    test.beforeEach(async ({ context }) => {
+      // Ohne Freigabe blendet der Player zuerst den Berechtigungs-Screen ein,
+      // unabhängig vom gespeicherten Fortschritt.
+      await context.grantPermissions(["geolocation"]);
+      await context.setGeolocation({ latitude: 53.61, longitude: 10.04 });
+    });
+
     test("shows arrival overlay when within station radius", async ({ page }) => {
       await seedQuest(page);
       await page.evaluate(
         ({ id }) => {
           localStorage.setItem(
             `gq_progress_${id}`,
-            JSON.stringify({ visitedStations: [], currentScreen: "stations", lastStationIndex: 0 })
+            JSON.stringify({ visitedStations: [], completedStations: [], solvedTasks: {}, currentScreen: "stations", lastStationIndex: 0 })
           );
         },
         { id: TEST_QUEST.id }
@@ -260,7 +281,7 @@ test.describe("PROJ-3: Player — GPS-Navigation", () => {
         ({ id }) => {
           localStorage.setItem(
             `gq_progress_${id}`,
-            JSON.stringify({ visitedStations: [], currentScreen: "stations", lastStationIndex: 0 })
+            JSON.stringify({ visitedStations: [], completedStations: [], solvedTasks: {}, currentScreen: "stations", lastStationIndex: 0 })
           );
         },
         { id: TEST_QUEST.id }
@@ -284,7 +305,7 @@ test.describe("PROJ-3: Player — GPS-Navigation", () => {
         ({ id }) => {
           localStorage.setItem(
             `gq_progress_${id}`,
-            JSON.stringify({ visitedStations: ["station-1"], currentScreen: "stations", lastStationIndex: 1 })
+            JSON.stringify({ visitedStations: ["b1111111-1111-4111-8111-111111111111"], completedStations: [], solvedTasks: {}, currentScreen: "stations", lastStationIndex: 1 })
           );
         },
         { id: TEST_QUEST.id }

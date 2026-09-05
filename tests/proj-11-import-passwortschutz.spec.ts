@@ -199,7 +199,9 @@ test.describe("PROJ-11: Import — Passwortschutz", () => {
 
       await page.goto(`/create/${id}`);
       await expect(page.getByText("Passwort erforderlich")).toBeVisible();
-      await expect(page.getByText("STATIONEN")).not.toBeVisible();
+      // Auf die Stationen selbst prüfen, nicht auf das Wort „Stationen": das
+      // steht als Eyebrow im Header und ist auch im gesperrten Zustand da.
+      await expect(page.getByText("Station 1")).toHaveCount(0);
     });
 
     test("shows an error and stays usable after a wrong password, with unlimited attempts", async ({ page }) => {
