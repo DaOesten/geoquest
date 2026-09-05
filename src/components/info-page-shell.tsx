@@ -1,23 +1,16 @@
-"use client";
-
 import Link from "next/link";
 import Image from "next/image";
-import dynamic from "next/dynamic";
 import { ArrowLeft } from "lucide-react";
-
-// Randomized particle positions must never be part of the SSR/hydration diff.
-const QuestListBackdrop = dynamic(
-  () => import("@/components/quest-list-backdrop").then((m) => m.QuestListBackdrop),
-  { ssr: false }
-);
+import { InfoNavMenu } from "@/components/info-nav-menu";
+import { INFO_NAV_LINKS } from "@/lib/info-nav";
 
 interface InfoPageShellProps {
-  /** Show the brand lockup above the eyebrow (front page only — subpages keep the header mark). */
+  /** Show the brand lockup above the eyebrow (front page only — subpages go without). */
   showLogo?: boolean;
   /** Small category label above the title. */
   eyebrow: string;
   title: React.ReactNode;
-  /** Meta line under the title, e.g. reading time or a one-line summary. */
+  /** Meta line under the title, e.g. a one-line summary. */
   meta?: string;
   /** Intro copy next to the title on desktop, below it on mobile. */
   lead?: React.ReactNode;
@@ -31,9 +24,14 @@ interface InfoPageShellProps {
 const CONTAINER = "mx-auto w-full max-w-[1100px] px-5 sm:px-8";
 
 /**
- * Shared frame for the two static info pages (/about, /anleitung, PROJ-13).
- * Dark theme like the player side — these pages are the outward-facing front
- * door, so they carry the gaming look rather than the creator's light theme.
+ * Shared frame for the static info pages (/about, /anleitung, /impressum,
+ * /datenschutz — PROJ-13). Dark theme like the player side: these pages are the
+ * outward-facing front door, so they carry the gaming look rather than the
+ * creator's light theme.
+ *
+ * The background is the same flat `bg-gq-black` as the start screen `/` — no
+ * grid, glow or particles. On a text page that ambient layer competes with the
+ * content, and `/` is the reference for how the brand introduces itself.
  *
  * Unlike the app screens these are NOT capped at 430px: visitors arrive here
  * from a shared link or QR code, typically on a laptop.
@@ -50,11 +48,10 @@ export function InfoPageShell({
 }: InfoPageShellProps) {
   return (
     <>
-      <QuestListBackdrop />
-
-      <header className="sticky top-0 z-50 border-b border-border/40 bg-gq-black/70 backdrop-blur-sm">
+      {/* No border under the header — it would cut the page into two blocks. */}
+      <header className="sticky top-0 z-50 bg-gq-black/70 backdrop-blur-sm">
         <div className={`${CONTAINER} flex h-14 items-center gap-3 sm:h-16`}>
-          {backHref ? (
+          {backHref && (
             <Link
               href={backHref}
               className="flex-shrink-0 flex items-center justify-center w-11 h-11 -ml-2 rounded-full transition-colors duration-base ease-gq hover:bg-gq-teal/10 active:scale-[0.96]"
@@ -62,41 +59,30 @@ export function InfoPageShell({
             >
               <ArrowLeft className="w-5 h-5 text-gq-teal" />
             </Link>
-          ) : (
-            <Link
-              href="/"
-              className="flex-shrink-0 flex items-center justify-center w-11 h-11 -ml-2 rounded-full transition-colors duration-base ease-gq hover:bg-gq-teal/10"
-              aria-label="Zurück zum Start"
-            >
-              <Image
-                src="/assets/mark-pin.jpg"
-                alt="Geo Quest"
-                width={32}
-                height={32}
-                className="rounded-full"
-              />
-            </Link>
           )}
 
           <nav className="ml-auto flex items-center gap-1 sm:gap-2">
-            <Link
-              href="/about"
-              className="hidden sm:flex items-center h-11 px-4 rounded-pill text-tech text-[11px] tracking-[0.08em] text-gq-grey transition-colors duration-base ease-gq hover:text-gq-teal"
-            >
-              Über
-            </Link>
-            <Link
-              href="/anleitung"
-              className="hidden sm:flex items-center h-11 px-4 rounded-pill text-tech text-[11px] tracking-[0.08em] text-gq-grey transition-colors duration-base ease-gq hover:text-gq-teal"
-            >
-              Anleitung
-            </Link>
+            {INFO_NAV_LINKS.filter(({ href }) => href !== "/").map(
+              ({ href, label }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="hidden sm:flex items-center h-11 px-4 rounded-pill text-tech text-[11px] tracking-[0.08em] text-gq-grey transition-colors duration-base ease-gq hover:text-gq-teal"
+                >
+                  {label}
+                </Link>
+              )
+            )}
+
+            {/* Reserved for a Ko-fi support link later — the slot stays, the target changes. */}
             <Link
               href="/"
               className="flex items-center h-11 px-5 rounded-pill border border-gq-teal text-gq-teal text-tech text-[11px] tracking-[0.08em] transition-all duration-base ease-gq hover:bg-gq-teal/10 active:scale-[0.96]"
             >
               Zur App
             </Link>
+
+            <InfoNavMenu />
           </nav>
         </div>
       </header>
@@ -114,10 +100,10 @@ export function InfoPageShell({
                   height={543}
                   priority
                   sizes="(min-width: 640px) 320px, 220px"
-                  // The lockup ships on an opaque near-black plate a shade lighter
-                  // than the page. `screen` drops that plate (black is the identity
-                  // colour for the blend) while keeping the bright brush marks.
-                  className="mb-6 w-[220px] sm:w-[280px] lg:w-[320px] h-auto mix-blend-screen"
+                  // The lockup has no alpha channel — it ships on an opaque
+                  // near-black plate. Rendered plain, exactly as the start
+                  // screen does it, so both entry points look identical.
+                  className="mb-6 w-[220px] sm:w-[280px] lg:w-[320px] h-auto"
                 />
               )}
               <p className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">

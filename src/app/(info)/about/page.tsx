@@ -11,6 +11,12 @@ import {
   Wallet,
 } from "lucide-react";
 import { InfoPageShell } from "@/components/info-page-shell";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 const DESCRIPTION =
   "Digitale Schnitzeljagd selbst erstellen — kostenlos, ohne Anmeldung. Geo Quest ist eine GPS-Rallye-App für Kindergeburtstag, Schulausflug und Ferienprogramm, für Kinder von 10 bis 15 Jahren.";
@@ -57,22 +63,10 @@ const FEATURES = [
 ];
 
 const OCCASIONS = [
-  {
-    title: "Kindergeburtstag",
-    body: "Sechs bis zehn Kinder, eine Route durch die Nachbarschaft, am Ziel wartet die Torte.",
-  },
-  {
-    title: "Schulausflug",
-    body: "Stationen zur Stadtgeschichte oder zum Thema der letzten Unterrichtsreihe.",
-  },
-  {
-    title: "Ferienprogramm",
-    body: "Eine Rallye über das Gelände, die eine Gruppe auch ohne Betreuung schafft.",
-  },
-  {
-    title: "Jugendgruppe & Verein",
-    body: "Kennenlern-Tour am ersten Zeltlagertag oder Stadtrallye am Gruppenwochenende.",
-  },
+  { title: "Kindergeburtstag", body: "Route durch die Nachbarschaft" },
+  { title: "Schulausflug", body: "Stationen zur Stadtgeschichte" },
+  { title: "Ferienprogramm", body: "Rallye über das Gelände" },
+  { title: "Jugendgruppe & Verein", body: "Kennenlern-Tour im Zeltlager" },
 ];
 
 const DIFFERENCES = [
@@ -164,7 +158,6 @@ export default function AboutPage() {
           <span className="text-gq-teal">das Spielfeld.</span>
         </>
       }
-      meta="Für Ersteller · ca. 2 Min Lesezeit"
       lead={
         <>
           <p>
@@ -234,60 +227,28 @@ export default function AboutPage() {
         <h3 className="mt-2 font-display italic text-[clamp(1.5rem,4vw,2.4rem)] uppercase leading-[1] text-gq-white">
           Eltern, Lehrer, Jugendleiter.
         </h3>
+        <p className="mt-3 max-w-[52ch] font-body text-sm lg:text-base leading-relaxed text-[#E7EAEC]">
+          Kein technisches Vorwissen nötig — wer eine Runde durch den Park kennt,
+          hat in einer halben Stunde eine fertige Schnitzeljagd.
+        </p>
 
-        <div className="mt-6 grid gap-8 lg:grid-cols-2 lg:gap-14">
-          <div className="max-w-[62ch] font-body text-sm lg:text-base leading-relaxed text-[#E7EAEC] space-y-4">
-            <p>
-              Du brauchst kein technisches Vorwissen und keine Erfahrung mit
-              Apps. Wer eine Runde durch den Park kennt und sich ein paar Rätsel
-              ausdenken kann, hat in einer halben Stunde eine fertige
-              Schnitzeljagd — am Laptop im Browser, ohne Installation.
-            </p>
-            <p>
-              Am häufigsten entstehen Quests für den{" "}
-              <strong className="font-medium text-gq-white">
-                Kindergeburtstag
-              </strong>
-              , wenn acht Zehnjährige beschäftigt werden wollen und die
-              klassische Schatzsuche mit Zettelchen langsam ausgedient hat. Im
-              Unterricht wird daraus ein{" "}
-              <strong className="font-medium text-gq-white">Schulausflug</strong>{" "}
-              mit Stationen zur Stadtgeschichte, im{" "}
-              <strong className="font-medium text-gq-white">
-                Ferienprogramm
-              </strong>{" "}
-              eine Rallye über das ganze Gelände.
-            </p>
-            <p>
-              Auch{" "}
-              <strong className="font-medium text-gq-white">
-                Jugendgruppen und Vereine
-              </strong>{" "}
-              nutzen Geo Quest, etwa für Kennenlern-Touren am ersten Zeltlagertag
-              oder als Stadtrallye beim Gruppenwochenende. Und weil eine fertige
-              Quest eine einzelne Datei ist, kannst du sie weitergeben — an
-              andere Eltern, an die Parallelklasse, an die Nachbargruppe.
-            </p>
-          </div>
-
-          <div className="rounded-card border border-border bg-gq-dark-teal/70 p-5 lg:p-6 shadow-card">
-            <p className="text-tech text-[10px] tracking-[0.12em] text-gq-teal">
-              Typische Anlässe
-            </p>
-            <dl className="mt-4 divide-y divide-border">
-              {OCCASIONS.map(({ title, body }) => (
-                <div key={title} className="py-3 first:pt-0 last:pb-0">
-                  <dt className="text-tech text-xs tracking-[0.08em] text-gq-white">
-                    {title}
-                  </dt>
-                  <dd className="mt-1.5 font-body text-sm leading-relaxed text-gq-grey">
-                    {body}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        </div>
+        {/* Single column below 400px: "Kindergeburtstag" doesn't fit a half-width
+            card at a readable size. Two-up from there, four across on desktop. */}
+        <dl className="mt-6 grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 sm:gap-4 lg:grid-cols-4">
+          {OCCASIONS.map(({ title, body }) => (
+            <div
+              key={title}
+              className="rounded-card border border-border bg-gq-dark-teal/70 p-4 shadow-card"
+            >
+              <dt className="text-tech text-[11px] tracking-[0.04em] sm:text-xs sm:tracking-[0.08em] text-gq-white">
+                {title}
+              </dt>
+              <dd className="mt-1.5 font-body text-[13px] sm:text-sm leading-relaxed text-gq-grey">
+                {body}
+              </dd>
+            </div>
+          ))}
+        </dl>
       </section>
 
       {/* Abgrenzung */}
@@ -315,31 +276,37 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* FAQ — mirrors the JSON-LD below so structured data matches visible content */}
+      {/* FAQ — mirrors the JSON-LD below so structured data matches visible content.
+          Collapsed by default: Radix keeps the answers in the DOM (hidden only via
+          attribute), so crawlers and AI systems still read them in full. */}
       <section className="mt-12 sm:mt-20">
         <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
           Häufige Fragen
         </h2>
-        <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+        <Accordion type="single" collapsible className="mt-4 max-w-[70ch]">
           {FAQ.map(({ question, answer }) => (
-            <div
+            <AccordionItem
               key={question}
-              className="rounded-card border border-border bg-gq-dark-teal/70 p-5 shadow-card"
+              value={question}
+              className="border-border"
             >
-              <dt className="font-display italic text-lg uppercase leading-tight text-gq-white">
+              <AccordionTrigger className="text-left font-display italic text-lg uppercase leading-tight text-gq-white hover:text-gq-teal hover:no-underline">
                 {question}
-              </dt>
-              <dd className="mt-2 font-body text-sm lg:text-[15px] leading-relaxed text-gq-grey">
+              </AccordionTrigger>
+              <AccordionContent className="font-body text-sm lg:text-[15px] leading-relaxed text-gq-grey">
                 {answer}
-              </dd>
-            </div>
+              </AccordionContent>
+            </AccordionItem>
           ))}
-        </dl>
+        </Accordion>
       </section>
 
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+        dangerouslySetInnerHTML={{
+          // `</script>` inside a value would otherwise close this tag early.
+          __html: JSON.stringify(JSON_LD).replace(/</g, "\\u003c"),
+        }}
       />
 
       {/* Abschluss-CTA */}

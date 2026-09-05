@@ -2,7 +2,7 @@
 
 ## Status: In Progress
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-05 (Refinement: Info-Seiten-Navigation, Rechtstexte, gekürzte Inhalte)
+**Last Updated:** 2026-09-05 (Refinement umgesetzt — Frontend)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -111,19 +111,19 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] Angenommen ein Nutzer öffnet eine der Seiten am Laptop oder Desktop (ab 1024px), wenn die Seite lädt, dann nutzt das Layout die verfügbare Breite mehrspaltig, ohne dass Textzeilen überdehnen oder Inhalte in einer schmalen Handy-Spalte kleben
 
 ### Navigation & Erscheinungsbild (Refinement 2026-09-05)
-- [ ] Angenommen ein Nutzer öffnet `/about`, wenn er die Seite mit dem Start-Screen `/` vergleicht, dann hat sie denselben ruhigen Hintergrund — keine Rasterlinien, kein Glow, keine animierten Partikel
-- [ ] Angenommen ein Nutzer betrachtet den Header einer Info-Seite, wenn er zum Inhalt darunter schaut, dann gibt es keine sichtbare Trennlinie zwischen Header und Seiteninhalt
-- [ ] Angenommen ein Nutzer betrachtet den Header einer Info-Seite, wenn er nach links schaut, dann steht dort keine Pin-Bildmarke mehr
-- [ ] Angenommen ein Nutzer öffnet eine Info-Seite auf einem Mobilgerät (unter 640px), wenn er das Burger-Menu antippt, dann öffnet sich eine Navigation mit den vier Einträgen App, Anleitung, Impressum und Datenschutz
-- [ ] Angenommen das Burger-Menu ist offen, wenn der Nutzer einen Eintrag antippt, dann schließt sich das Menu und er landet auf der gewählten Seite
-- [ ] Angenommen das Burger-Menu ist offen, wenn der Nutzer die Escape-Taste drückt oder neben das Menu tippt, dann schließt es sich, ohne zu navigieren
-- [ ] Angenommen ein Nutzer bedient die Seite mit der Tastatur, wenn er das Burger-Menu öffnet, dann liegt der Fokus im Menu und der Auslöser meldet seinen Zustand (`aria-expanded`) an Screenreader
-- [ ] Angenommen ein Nutzer öffnet `/impressum`, wenn die Seite lädt, dann sieht er die Anbieterkennzeichnung nach § 5 DDG im gleichen Rahmen wie die übrigen Info-Seiten
-- [ ] Angenommen ein Nutzer öffnet `/datenschutz`, wenn die Seite lädt, dann findet er beschrieben, dass Quests und Standortdaten das Gerät nicht verlassen, sowie Angaben zu Hosting und Reichweitenmessung
-- [ ] Angenommen ein Nutzer ist auf `/about`, wenn er den Bereich „Für wen" liest, dann besteht dieser aus einem einzelnen Satz zur Zielgruppe und vier Anlässen mit je einer Kurzzeile — nicht aus mehreren Fließtext-Absätzen
-- [ ] Angenommen ein Nutzer betrachtet den Titelblock von `/about`, wenn er unter die Überschrift schaut, dann steht dort kein Hinweis auf Zielgruppe oder Lesezeit
-- [ ] Angenommen ein Nutzer erreicht die Häufigen Fragen auf `/about`, wenn die Seite geladen ist, dann sind alle Antworten eingeklappt; erst ein Klick auf eine Frage öffnet die zugehörige Antwort
-- [ ] Angenommen ein KI-System oder Crawler wertet `/about` aus, wenn die Fragen eingeklappt sind, dann sind alle vier Frage-Antwort-Paare weiterhin sowohl im HTML als auch im `FAQPage`-JSON-LD vollständig enthalten
+- [x] Angenommen ein Nutzer öffnet `/about`, wenn er die Seite mit dem Start-Screen `/` vergleicht, dann hat sie denselben ruhigen Hintergrund — keine Rasterlinien, kein Glow, keine animierten Partikel
+- [x] Angenommen ein Nutzer betrachtet den Header einer Info-Seite, wenn er zum Inhalt darunter schaut, dann gibt es keine sichtbare Trennlinie zwischen Header und Seiteninhalt
+- [x] Angenommen ein Nutzer betrachtet den Header einer Info-Seite, wenn er nach links schaut, dann steht dort keine Pin-Bildmarke mehr
+- [x] Angenommen ein Nutzer öffnet eine Info-Seite auf einem Mobilgerät (unter 640px), wenn er das Burger-Menu antippt, dann öffnet sich eine Navigation mit den vier Einträgen App, Anleitung, Impressum und Datenschutz
+- [x] Angenommen das Burger-Menu ist offen, wenn der Nutzer einen Eintrag antippt, dann schließt sich das Menu und er landet auf der gewählten Seite
+- [x] Angenommen das Burger-Menu ist offen, wenn der Nutzer die Escape-Taste drückt oder neben das Menu tippt, dann schließt es sich, ohne zu navigieren
+- [x] Angenommen ein Nutzer bedient die Seite mit der Tastatur, wenn er das Burger-Menu öffnet, dann liegt der Fokus im Menu und der Auslöser meldet seinen Zustand (`aria-expanded`) an Screenreader
+- [x] Angenommen ein Nutzer öffnet `/impressum`, wenn die Seite lädt, dann sieht er die Anbieterkennzeichnung nach § 5 DDG im gleichen Rahmen wie die übrigen Info-Seiten
+- [x] Angenommen ein Nutzer öffnet `/datenschutz`, wenn die Seite lädt, dann findet er beschrieben, dass Quests und Standortdaten das Gerät nicht verlassen, sowie Angaben zu Hosting und Reichweitenmessung
+- [x] Angenommen ein Nutzer ist auf `/about`, wenn er den Bereich „Für wen" liest, dann besteht dieser aus einem einzelnen Satz zur Zielgruppe und vier Anlässen mit je einer Kurzzeile — nicht aus mehreren Fließtext-Absätzen
+- [x] Angenommen ein Nutzer betrachtet den Titelblock von `/about`, wenn er unter die Überschrift schaut, dann steht dort kein Hinweis auf Zielgruppe oder Lesezeit
+- [x] Angenommen ein Nutzer erreicht die Häufigen Fragen auf `/about`, wenn die Seite geladen ist, dann sind alle Antworten eingeklappt; erst ein Klick auf eine Frage öffnet die zugehörige Antwort
+- [x] Angenommen ein KI-System oder Crawler wertet `/about` aus, wenn die Fragen eingeklappt sind, dann sind alle vier Frage-Antwort-Paare weiterhin sowohl im HTML als auch im `FAQPage`-JSON-LD vollständig enthalten
 
 ### Prompt-Vorlage
 - [x] Angenommen ein Nutzer ist bei der Anleitungs-Sektion, wenn er die Seite betrachtet, dann ist die vollständige Prompt-Vorlage als lesbarer Text sichtbar und manuell markierbar
@@ -562,3 +562,50 @@ Das Impressum braucht echte Angaben vom Betreiber. Platzhalter dürfen nicht liv
 
 ### Offene QA-Punkte aus der letzten Runde
 Bug 2 (Modelle setzen einen Markdown-Codeblock um die Ausgabe), Bug 3 (`/anleitung` ohne Canonical/Keywords) und Bug 4 (JSON-LD ohne `</script>`-Escaping) sind weiterhin offen und sollten in derselben Runde mitlaufen, da Bug 4 dieselbe Datei betrifft wie Punkt 8.
+
+## Implementation Notes (Frontend — Refinement 2026-09-05)
+
+Alle elf Punkte des Refinements sind umgesetzt.
+
+### Neue Dateien
+| Datei | Zweck |
+|-------|-------|
+| `src/components/info-nav-menu.tsx` | Burger-Menu (einzige Client-Komponente im Rahmen) |
+| `src/lib/info-nav.ts` | Die vier Navigationsziele als gemeinsame Konstante |
+| `src/app/(info)/impressum/page.tsx` | Anbieterkennzeichnung nach § 5 DDG |
+| `src/app/(info)/datenschutz/page.tsx` | Datenschutzerklärung |
+
+### Geänderte Dateien
+- `src/components/info-page-shell.tsx` — Backdrop, Trennlinie und Pin-Marke entfernt; Burger-Menu und geteilte Navigations-Konstante eingebunden
+- `src/app/(info)/about/page.tsx` — Meta-Zeile entfernt, „Für wen" gekürzt, FAQ als eingeklapptes Accordion, JSON-LD-Escaping
+
+### Abweichungen und Funde
+
+**`InfoPageShell` ist keine Client-Komponente mehr.** Der Backdrop war mit `ssr: false` eingebunden und damit der einzige Grund für `"use client"`. Ohne ihn rendert der gesamte Rahmen serverseitig; nur das Menu ist noch Client-Code.
+
+**Navigations-Konstante liegt in `src/lib/`, nicht in der Menu-Datei.** Erster Versuch war ein Export aus `info-nav-menu.tsx`. Der Build brach beim Prerendering von `/about` ab (`INFO_NAV_LINKS.filter is not a function`): Ein Wert, den eine Server-Komponente aus einem `"use client"`-Modul importiert, kommt als Referenz-Proxy an, nicht als Array. Die Konstante liegt deshalb in einem eigenen, neutralen Modul, das beide Seiten importieren.
+
+**`mix-blend-screen` beim Logo-Lockup entfernt.** Der Trick war gegen den animierten Backdrop abgestimmt; auf dem flachen `bg-gq-black` verschwand die Platte nicht mehr, sondern wurde als sichtbarer Kasten deutlich. Das PNG hat nachweislich keinen Alpha-Kanal (`sips`: `samplesPerPixel: 3, hasAlpha: no`), die Platte ist also nicht wegzurechnen. Das Lockup wird jetzt schlicht gerendert — exakt wie auf `/`, was dem Ziel „gleicher Hintergrund wie die Homepage" entspricht.
+
+**Anlass-Karten unter 400px einspaltig.** Zweispaltig ab `min-[400px]`; bei 360px stößt „Kindergeburtstag" sonst an den Kartenrand, und weiteres Verkleinern der Tech-Schrift ginge auf Kosten der Lesbarkeit.
+
+**Bug 4 aus der QA-Runde miterledigt:** Das JSON-LD wird jetzt mit `.replace(/</g, "\u003c")` serialisiert, bevor es in `dangerouslySetInnerHTML` geht.
+
+### Inhaltliche Grundlage der Rechtstexte
+Die Datenschutzerklärung beschreibt nur, was der Code tatsächlich tut — vorher im Code geprüft:
+- `localStorage` für Quests und Fortschritt (`src/lib/quest-storage.ts`, `quest-progress.ts`)
+- Geolocation ausschließlich clientseitig (`src/hooks/use-geolocation.ts`), keine Übertragung
+- Kartenkacheln von `tile.openstreetmap.org` (`src/components/station-map.tsx`) — namentlich genannt
+- **Kein Analyse-Werkzeug installiert.** Vercel Analytics ist nicht als Abhängigkeit vorhanden; der Text behauptet daher keine Reichweitenmessung, sondern nennt nur die Server-Protokolle des Hostings. Wird später ein Analysedienst eingebunden, muss der Text mitwachsen.
+
+### Verifikation
+- `npm run build` — erfolgreich; alle vier Info-Seiten (`/about`, `/anleitung`, `/impressum`, `/datenschutz`) statisch prerendered
+- `npm test` — 167 Tests grün
+- `npm run lint` — 0 Fehler (6 vorbestehende Warnungen in unbeteiligten Dateien)
+- Playwright (WebKit, iPhone 13), 6 Prüfungen grün: Burger-Menu mit allen vier Links inkl. Schließen bei Navigation, Escape schließt ohne zu navigieren, FAQ eingeklappt bei vollständigem Inhalt in HTML und JSON-LD, kein Backdrop/Trennlinie/Pin-Marke, Rechtstexte mit `noindex`, kein horizontales Scrollen auf allen vier Seiten
+- Visuell geprüft bei 360px, 390px und 430px
+
+### Bekannte offene Punkte
+- **Das Impressum enthält Platzhalter** (`[Vor- und Nachname]` usw.) und darf so nicht deployed werden — die echten Angaben müssen vor `/deploy` eingetragen werden.
+- Bug 2 (KI umschließt die Ausgabe mit einem Markdown-Codeblock) und Bug 3 (`/anleitung` ohne Canonical/Keywords) aus der QA-Runde sind weiterhin offen; beide betreffen `/anleitung` und waren nicht Teil dieses Refinements.
+- Die Rechtstexte sind fachlich nach dem tatsächlichen Verhalten der App verfasst, aber nicht juristisch geprüft.
