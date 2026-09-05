@@ -1,6 +1,6 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-09-04
 **Last Updated:** 2026-09-05 (Refinement 2 umgesetzt — Frontend)
 
@@ -885,3 +885,35 @@ Eine erste Prüfung meldete den `mailto:`-Link als potenziell unsicher. Ursache 
 ### Nicht abgedeckt
 - **Chromium und Firefox** — die Browser-Binaries fehlen auf diesem Rechner; getestet wurde ausschließlich WebKit.
 - Die 17 bekannten E2E-Fehlschläge in PROJ-1/3/11 bestehen unverändert fort. Sie sind analysiert (unspezifische Selektoren, fehlende Geolocation-Berechtigung im Test-Setup, Groß-/Kleinschreibung) und **keine Produktfehler**, verdecken aber künftige echte Regressionen. Eigenes Aufräum-Ticket empfohlen.
+
+## Deployment — Refinement 2 (2026-09-05)
+
+**Production URL:** https://geoquesty.vercel.app
+**Deployed:** 2026-09-05
+**Commit:** `a75fc41`
+
+### Pre-Deployment
+Build erfolgreich (alle Info-Seiten statisch), Lint 0 Fehler, 167 Unit-Tests grün, QA-Freigabe erteilt, keine Secrets im Repo.
+
+### Post-Deployment-Verifikation (live geprüft)
+| Prüfung | Ergebnis |
+|---------|----------|
+| Alle fünf Routen | HTTP 200 |
+| Zurückpfeile `/impressum`, `/datenschutz`, `/anleitung` | vorhanden, führen nach `/about` |
+| Footer | auf allen Info-Seiten, mit Name, E-Mail und Rechtslinks |
+| Postanschrift | nur auf `/impressum`, nicht im Footer |
+| Desktop-Header | nur „Anleitung" und „Zur App" sichtbar |
+| Burger-Menü | alle vier Ziele |
+| Footer-Touch-Targets | 44px |
+| Security-Header | X-Frame-Options DENY, nosniff, Referrer-Policy, HSTS preload |
+| `noindex` auf Rechtstexten | gesetzt |
+| Externe Requests / Cookies / Konsolenfehler | keine |
+
+### Anmerkung zur Deploy-Prüfung
+Eine erste Live-Kontrolle meldete den Deploy nach 10 Sekunden als fertig — das war ein Fehlalarm: Der Suchbegriff „Zurück" kommt auch im alten Build vor. Die Gegenprobe zeigte, dass noch die Vorversion ausgeliefert wurde (kein Footer, Rechtslinks im Header). Mit einem Marker, den nur der neue Build enthält, war der Deploy nach rund 40 Sekunden tatsächlich live. Lehre für künftige Deploys: Auf ein Merkmal prüfen, das ausschließlich in der neuen Fassung existiert.
+
+### Weiterhin offen
+- 17 E2E-Fehlschläge in PROJ-1/3/11 — analysiert, keine Produktfehler, eigenes Aufräum-Ticket empfohlen
+- Bug: Navigationslinks verweisen auf die aktuelle Seite (Low, vorbestehend)
+- Bug: 16px-Schließen-Button im Sheet (Medium, bewusst offen gelassen)
+- Vercel Analytics: Datenfluss im Dashboard zu prüfen
