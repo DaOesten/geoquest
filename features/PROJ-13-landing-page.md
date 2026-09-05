@@ -1,8 +1,8 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Deployed
+## Status: In Progress
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-05
+**Last Updated:** 2026-09-05 (Refinement: Info-Seiten-Navigation, Rechtstexte, gekürzte Inhalte)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -37,18 +37,39 @@ Kern der Seite ist eine **Copy-Paste-Prompt-Vorlage**: Nutzer kopieren einen fer
 - **Mehrsprachigkeit** — Seite ist ausschließlich deutsch, wie die gesamte App
 - **Quest-Bibliothek / Beispiel-Quests zum Download** — laut PRD Non-Goal (keine zentrale Quest-Bibliothek)
 - **Änderung der Root-Route `/`** — der bestehende Mode-Switch bleibt unangetastet
+- **Ko-fi-Anbindung** — der Aktions-Button im Header bleibt vorerst „Zur App"; der Wechsel auf einen Unterstützungslink ist bewusst vertagt (siehe Open Questions)
+- **Rechtsberatung / juristische Prüfung der Texte** — Impressum und Datenschutzerklärung entstehen als sachlich korrekte Beschreibung der tatsächlichen Verarbeitung, ersetzen aber keine anwaltliche Prüfung
+- **Cookie-Banner / Consent-Management** — die App setzt keine einwilligungspflichtigen Cookies; falls sich das durch ein späteres Tool ändert, ist das ein eigenes Feature
+- **Burger-Menu in den App-Screens** — das Menu gehört zu den Info-Seiten; `/`, `/play` und `/create` bleiben unverändert
 
 ## Seitenaufbau
 
 Das Feature besteht aus **zwei zusammengehörenden statischen Seiten**, die gemeinsam gebaut und deployed werden. Grund für die Trennung: Sie bedienen zwei verschiedene Momente — „Was ist das?" und „Ich will jetzt eine Quest bauen". In einer Seite vereint müsste der Nutzer erst an Marketing vorbeiscrollen, bevor er zur Prompt-Vorlage kommt.
 
 ### Seite 1: `/about` — Produktvorstellung
-1. **Hero** — Logo, Headline, Ein-Satz-Erklärung, primärer App-Button („Zur App")
+1. **Hero** — Logo-Lockup, Headline, Ein-Satz-Erklärung, primärer App-Button („Zur App")
 2. **Feature-Sektionen** — was Geo Quest kann: GPS-Navigation zu echten Orten, 5 Modultypen (Text, Bild, Audio, Video, Aufgaben), 3 Aufgabentypen (Code, Multiple-Choice, Sortieren), komplett kostenlos, kein Account nötig
-3. **Für wen / Anlässe** — Kindergeburtstag, Schulausflug, Ferienprogramm; Zielgruppe 10–15 Jahre
+3. **Für wen / Anlässe** — ein Satz zur Zielgruppe plus vier Anlässe mit je einer Kurzzeile
 4. **Abgrenzung** — kostenlos und offen, kein Abo, kein Account-Zwang, Gaming-Look statt Bildungs-Tool
-5. **Verweis auf die Anleitung** — prominenter Einstieg zu `/anleitung`
-6. **Abschluss-CTA** — App-Button
+5. **Häufige Fragen** — aufklappbares Accordion, standardmäßig zu
+6. **Verweis auf die Anleitung** — prominenter Einstieg zu `/anleitung`
+7. **Abschluss-CTA** — App-Button
+
+### Seite 3: `/impressum` und Seite 4: `/datenschutz` — Rechtstexte
+Zwei schlanke Textseiten im gleichen Rahmen wie `/about` und `/anleitung`. Sie existieren, weil das Burger-Menu sie verlinkt und weil eine öffentlich geteilte Seite in Deutschland eine Anbieterkennzeichnung braucht.
+
+- **`/impressum`** — Anbieterkennzeichnung nach § 5 DDG: Name, Anschrift, Kontakt, Verantwortlicher für den Inhalt
+- **`/datenschutz`** — Datenschutzerklärung passend zur tatsächlichen Verarbeitung: keine Accounts, keine Server-Speicherung von Quests (alles im Browser), Standortdaten verlassen das Gerät nicht, Hosting bei Vercel, Reichweitenmessung via Vercel Analytics, externe Medien-URLs in Quests
+
+Beide Seiten werden von Suchmaschinen nicht indexiert (`robots: noindex`) und tauchen nicht in der Desktop-Hauptnavigation auf — nur im Burger-Menu und optional im Footer.
+
+### Navigation (alle Info-Seiten)
+Der Header trägt keine Trennlinie zum Seiteninhalt und keine Bildmarke links. Rechts stehen:
+
+- **Desktop (ab `sm`)** — Textlinks „Anleitung", „Impressum", „Datenschutz" plus der Aktions-Button rechts außen
+- **Mobile (unter `sm`)** — der Aktions-Button plus ein **Burger-Menu** mit den Links App, Anleitung, Impressum, Datenschutz
+
+Der Aktions-Button rechts außen zeigt vorerst weiterhin „Zur App" und führt auf `/`. Er ist als Platzhalter für einen späteren Ko-fi-Unterstützungslink vorgesehen (siehe Open Questions) — die Position bleibt, das Ziel ändert sich später.
 
 ### Seite 2: `/anleitung` — Quest mit KI erstellen
 1. **Kurzer Einstieg** — was hier passiert, in zwei Sätzen
@@ -88,6 +109,21 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] Angenommen ein Nutzer öffnet die Root-Route `/`, wenn die Seite lädt, dann sieht er unverändert den bestehenden Mode-Switch-Screen aus PROJ-1
 - [x] Angenommen ein Nutzer öffnet eine der Seiten auf einem Mobilgerät (360–430px), wenn er scrollt, dann sind alle Inhalte lesbar, ohne horizontales Scrollen, und alle Touch-Targets sind mindestens 44px groß
 - [x] Angenommen ein Nutzer öffnet eine der Seiten am Laptop oder Desktop (ab 1024px), wenn die Seite lädt, dann nutzt das Layout die verfügbare Breite mehrspaltig, ohne dass Textzeilen überdehnen oder Inhalte in einer schmalen Handy-Spalte kleben
+
+### Navigation & Erscheinungsbild (Refinement 2026-09-05)
+- [ ] Angenommen ein Nutzer öffnet `/about`, wenn er die Seite mit dem Start-Screen `/` vergleicht, dann hat sie denselben ruhigen Hintergrund — keine Rasterlinien, kein Glow, keine animierten Partikel
+- [ ] Angenommen ein Nutzer betrachtet den Header einer Info-Seite, wenn er zum Inhalt darunter schaut, dann gibt es keine sichtbare Trennlinie zwischen Header und Seiteninhalt
+- [ ] Angenommen ein Nutzer betrachtet den Header einer Info-Seite, wenn er nach links schaut, dann steht dort keine Pin-Bildmarke mehr
+- [ ] Angenommen ein Nutzer öffnet eine Info-Seite auf einem Mobilgerät (unter 640px), wenn er das Burger-Menu antippt, dann öffnet sich eine Navigation mit den vier Einträgen App, Anleitung, Impressum und Datenschutz
+- [ ] Angenommen das Burger-Menu ist offen, wenn der Nutzer einen Eintrag antippt, dann schließt sich das Menu und er landet auf der gewählten Seite
+- [ ] Angenommen das Burger-Menu ist offen, wenn der Nutzer die Escape-Taste drückt oder neben das Menu tippt, dann schließt es sich, ohne zu navigieren
+- [ ] Angenommen ein Nutzer bedient die Seite mit der Tastatur, wenn er das Burger-Menu öffnet, dann liegt der Fokus im Menu und der Auslöser meldet seinen Zustand (`aria-expanded`) an Screenreader
+- [ ] Angenommen ein Nutzer öffnet `/impressum`, wenn die Seite lädt, dann sieht er die Anbieterkennzeichnung nach § 5 DDG im gleichen Rahmen wie die übrigen Info-Seiten
+- [ ] Angenommen ein Nutzer öffnet `/datenschutz`, wenn die Seite lädt, dann findet er beschrieben, dass Quests und Standortdaten das Gerät nicht verlassen, sowie Angaben zu Hosting und Reichweitenmessung
+- [ ] Angenommen ein Nutzer ist auf `/about`, wenn er den Bereich „Für wen" liest, dann besteht dieser aus einem einzelnen Satz zur Zielgruppe und vier Anlässen mit je einer Kurzzeile — nicht aus mehreren Fließtext-Absätzen
+- [ ] Angenommen ein Nutzer betrachtet den Titelblock von `/about`, wenn er unter die Überschrift schaut, dann steht dort kein Hinweis auf Zielgruppe oder Lesezeit
+- [ ] Angenommen ein Nutzer erreicht die Häufigen Fragen auf `/about`, wenn die Seite geladen ist, dann sind alle Antworten eingeklappt; erst ein Klick auf eine Frage öffnet die zugehörige Antwort
+- [ ] Angenommen ein KI-System oder Crawler wertet `/about` aus, wenn die Fragen eingeklappt sind, dann sind alle vier Frage-Antwort-Paare weiterhin sowohl im HTML als auch im `FAQPage`-JSON-LD vollständig enthalten
 
 ### Prompt-Vorlage
 - [x] Angenommen ein Nutzer ist bei der Anleitungs-Sektion, wenn er die Seite betrachtet, dann ist die vollständige Prompt-Vorlage als lesbarer Text sichtbar und manuell markierbar
@@ -137,6 +173,10 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] ~~Welches Vorschaubild wird für Open Graph verwendet?~~ → Geklärt im Frontend: `public/assets/urbanquest.png` (1536×1024, markengetreu), zugleich Hero-Bild auf `/about`
 - [ ] Soll die Prompt-Vorlage in mehreren Varianten angeboten werden (z.B. kürzere Version für schwächere Modelle)? Aktuell: nein, eine vollständige Vorlage.
 - [ ] Sollen die beiden Seiten zusätzlich einen Einstieg außerhalb des Creator-Empty-States bekommen (z.B. dauerhaft im Creator-Header), sobald ein Nutzer bereits Quests hat?
+- [x] ~~Warum sind die Häufigen Fragen ausgeklappt statt als Accordion?~~ → Ursprünglich für bessere Auffindbarkeit durch KI-Systeme ausgeklappt. Annahme war falsch: Accordion-Inhalte stehen vollständig im HTML (Radix blendet sie nur per `hidden` aus) und das `FAQPage`-JSON-LD trägt die Antworten ohnehin. Zurück zum eingeklappten Accordion (2026-09-05)
+- [ ] Wann und wohin genau zeigt der Ko-fi-Link? Der Header-Button bleibt bis dahin „Zur App"; offen sind Ziel-URL, Beschriftung und ob „Zur App" dann in die Navigation rutscht
+- [ ] Braucht `/about` zusätzlich einen Footer mit Impressum/Datenschutz für Desktop-Besucher? Aktuell erreichen Desktop-Nutzer die Rechtstexte nur über die Header-Navigation
+- [ ] Welche konkreten Angaben (Name, Anschrift, Kontakt) kommen ins Impressum? Muss vor dem Deploy vom Betreiber geliefert werden — Platzhalter dürfen nicht live gehen
 
 ## Decision Log
 
@@ -158,6 +198,14 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 | Prompt ist immer sichtbar, Copy-Button ist optionaler Komfort | Clipboard-API kann blockiert sein; der Nutzer darf nie vom Prompt ausgesperrt werden | 2026-09-04 |
 | Einstieg zur Seite aus der App heraus, nicht prominent auf `/` | Der reduzierte Start-Screen aus PROJ-1 bleibt unangetastet; im Creator-Kontext ist die Anleitung relevanter | 2026-09-04 |
 | Open Graph / SEO-Metadaten sind Teil des Scopes | Die Seite ist zum Teilen gedacht; ohne eigene Metadaten sieht der geteilte Link unbrauchbar aus | 2026-09-04 |
+| Info-Seiten bekommen denselben ruhigen Hintergrund wie der Start-Screen `/` | Der animierte Backdrop (Raster, Glow, Partikel) konkurriert auf einer Textseite mit dem Inhalt. `/` ist die Referenz für den Marken-Erstkontakt, und die Info-Seiten sind derselbe Erstkontakt für Besucher von außen | 2026-09-05 |
+| Keine Trennlinie zwischen Header und Inhalt, keine Bildmarke im Header | Die Linie zerschneidet die Seite optisch in zwei Blöcke; die Pin-Marke doppelt auf `/about` das Logo-Lockup im Hero und ist auf den Unterseiten kein nötiger Wiedererkennungsanker | 2026-09-05 |
+| Burger-Menu auf Mobile statt versteckter Navigation | Mit Impressum und Datenschutz sind es vier Ziele — zu viele für eine Header-Zeile auf 360px. Bisher waren „Über" und „Anleitung" auf Mobile schlicht ausgeblendet, die Seiten also vom Handy aus nicht erreichbar | 2026-09-05 |
+| Impressum und Datenschutz werden jetzt mitgebaut, nicht vertagt | Ein Menüpunkt, der ins 404 läuft, ist schlechter als gar keiner; dazu braucht eine öffentlich geteilte Seite in Deutschland ohnehin eine Anbieterkennzeichnung | 2026-09-05 |
+| Header-Button bleibt „Zur App", Ko-fi wird vertagt | Der Platz ist reserviert, aber ein Unterstützungslink ohne fertiges Ko-fi-Profil wäre ein toter Link. Position bleibt, Ziel wechselt später | 2026-09-05 |
+| „Für wen" wird auf einen Satz plus vier Kurzzeilen eingedampft | Die drei Fließtext-Absätze waren für die Zitierbarkeit durch KI-Systeme geschrieben, nicht für Leser. Auf einer Seite, die in Sekunden überzeugen muss, ist das die falsche Priorität — der GEO-Nutzen war spekulativ, die Lesehürde war real | 2026-09-05 |
+| Meta-Zeile „Für Ersteller · ca. 2 Min Lesezeit" entfällt | Lesezeit-Angaben gehören zu Artikeln, nicht zu einer Produktseite; die Zielgruppe steht bereits im ersten Satz darunter | 2026-09-05 |
+| Häufige Fragen kehren zum eingeklappten Accordion zurück | Ausgeklappt wurden sie für vermuteten GEO-Vorteil — der existiert nicht: Accordion-Inhalte stehen vollständig im HTML und im `FAQPage`-JSON-LD. Eingeklappt bleibt die Seite überschaubar und der Abschluss-CTA in Reichweite | 2026-09-05 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -174,6 +222,11 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 | Kopieren nutzt die Browser-Zwischenablage mit Fehlerbehandlung | Die Zwischenablage kann blockiert sein; bei Fehlschlag erscheint ein Hinweis zum manuellen Markieren, der Prompt bleibt erreichbar | 2026-09-04 |
 | Einstieg zunächst nur im Creator-Empty-State | Kleinster Eingriff in bestehende Screens (PROJ-6) und genau der Moment, in dem ein Nutzer ratlos vor einer leeren Liste steht | 2026-09-04 |
 | Info-Seiten nicht auf 430px begrenzt wie die App-Screens, sondern eigenes Desktop-Layout bis 1100px | Diese Seiten sind der Einstieg von außen (geteilter Link, QR-Code) und werden typischerweise am Laptop geöffnet; eine schmale Handy-Spalte auf einem 1440px-Bildschirm wirkt unfertig. Die App-Screens selbst bleiben unverändert bei 430px | 2026-09-05 |
+| `QuestListBackdrop` entfällt auf den Info-Seiten | Damit fällt zugleich die einzige Client-Komponente im Seitenrahmen weg (die Partikel brauchten `ssr: false` wegen Hydration); der Rahmen wird bis auf das Menu wieder serverseitig gerendert | 2026-09-05 |
+| Burger-Menu als kleine, eigene Client-Komponente im Header | Nur der Menü-Zustand braucht JavaScript. Der Rest des Headers und alle Links bleiben statisches HTML, damit die Navigation auch ohne JS erreichbar ist | 2026-09-05 |
+| Menu nutzt die bereits installierte shadcn/ui-Komponente (Sheet oder DropdownMenu) statt Eigenbau | Fokus-Falle, Escape-Handling und `aria-expanded` sind dort gelöst; ein Eigenbau würde genau diese Details verlieren. Kein neues Paket | 2026-09-05 |
+| Häufige Fragen nutzen das bereits installierte Accordion | Gleiche Komponente wie das Troubleshooting auf `/anleitung`; die Antworten bleiben im DOM, das JSON-LD wird weiterhin aus derselben `FAQ`-Konstante erzeugt | 2026-09-05 |
+| `/impressum` und `/datenschutz` liegen in derselben `(info)`-Route-Gruppe | Sie teilen Rahmen, Hintergrund und Navigation mit `/about` und `/anleitung`; nur `robots: noindex` unterscheidet ihre Metadaten | 2026-09-05 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
@@ -475,3 +528,37 @@ Das war ein vorbestehender Zustand aller bisherigen Deployments, nicht PROJ-13-s
 - **Reale Sharing-Vorschau** in WhatsApp/Social ist damit technisch korrekt vorbereitet (absolute Bild-URL erreichbar), aber nicht in einem echten Messenger gegengeprüft.
 - **QA-Bugs 1–4** (1 Medium, 3 Low) bleiben offen — siehe QA-Abschnitt. Keiner war deploy-blockierend.
 _To be added by /deploy_
+
+---
+
+## Refinement 2026-09-05 — Was sich ändert
+
+Die Seiten sind live, dieses Refinement korrigiert Erscheinungsbild und Navigation. Auslöser waren zwei Rückmeldungen: der Rahmen wirkte gegenüber dem Start-Screen fremd, und mehrere Textabschnitte waren für Maschinen optimiert statt für Leser.
+
+### Zu bauen (`/frontend`)
+
+**Rahmen (`InfoPageShell`) — betrifft alle Info-Seiten**
+1. `QuestListBackdrop` entfernen — die Seiten liegen auf demselben ruhigen `bg-gq-black` wie `/`
+2. Trennlinie unter dem Header entfernen
+3. Pin-Bildmarke links im Header entfernen
+4. Burger-Menu unter `sm` mit App, Anleitung, Impressum, Datenschutz; ab `sm` dieselben Links als Textlinks
+5. Aktions-Button rechts bleibt „Zur App" → `/`
+
+**`/about`**
+6. Meta-Zeile „Für Ersteller · ca. 2 Min Lesezeit" streichen
+7. „Für wen" kürzen: ein Satz zur Zielgruppe, vier Anlässe mit je einer Kurzzeile — die drei Fließtext-Absätze entfallen
+8. Häufige Fragen wieder als eingeklapptes Accordion; `FAQ`-Konstante und JSON-LD bleiben unverändert die eine Quelle
+
+**Neue Seiten**
+9. `/impressum` — Anbieterkennzeichnung nach § 5 DDG
+10. `/datenschutz` — lokale Datenhaltung, Standortdaten, Hosting, Reichweitenmessung
+11. Beide mit `robots: noindex`, im gleichen Rahmen, nur über Menu/Footer erreichbar
+
+### Bleibt unangetastet
+Prompt-Vorlage, Guard-Tests, `/anleitung`-Inhalte, Desktop-Layout bis 1100px, Open-Graph-Metadaten, der Creator-Empty-State-Link und die Root-Route `/`.
+
+### Vor dem Deploy zu klären
+Das Impressum braucht echte Angaben vom Betreiber. Platzhalter dürfen nicht live gehen — siehe Open Questions.
+
+### Offene QA-Punkte aus der letzten Runde
+Bug 2 (Modelle setzen einen Markdown-Codeblock um die Ausgabe), Bug 3 (`/anleitung` ohne Canonical/Keywords) und Bug 4 (JSON-LD ohne `</script>`-Escaping) sind weiterhin offen und sollten in derselben Runde mitlaufen, da Bug 4 dieselbe Datei betrifft wie Punkt 8.
