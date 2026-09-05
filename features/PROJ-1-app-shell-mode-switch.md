@@ -1,6 +1,6 @@
 # PROJ-1: App Shell & Mode Switch
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-08-23
 **Last Updated:** 2026-09-05
 
@@ -469,6 +469,27 @@ Zwei Punkte zur Kenntnis, beide nicht blockierend:
 **Deployed:** 2026-08-23
 **Platform:** Vercel (auto-deploy on push to main)
 **Git Tag:** v1.0.0-PROJ-1
+
+### Redeploy: Startscreen-Verfeinerung (2026-09-05)
+
+**Deployed:** 2026-09-05
+**Production URL:** https://geoquesty.vercel.app
+**Git Tag:** v1.18.0-PROJ-1
+
+Logo auf `/` verlinkt jetzt auf die Landing Page `/about` (mit `aria-label`, Fokus-Ring und Press-Feedback, ohne sichtbare Link-Chrome). Card-Abstand von 12px auf 20px erhöht. Der Glow der Mode-Cards ist vom reinen Hover-Zustand zu einem dauerhaften, langsam atmenden Ruhezustand geworden — auf Touch-Geräten war der bestehende Effekt vorher faktisch unsichtbar. Die Lime-Card läuft per `animation-delay: -2s` im Gegentakt zur Teal-Card. `prefers-reduced-motion` schaltet nur die Bewegung ab, nicht den Glow.
+
+**Verifikation in Produktion** (Mobile-Safari-Profil gegen die Live-URL):
+
+| Prüfung | Ergebnis |
+|---------|----------|
+| `/`, `/about`, `/play`, `/create` | alle HTTP 200 |
+| Animationen aktiv | `gq-breathe-teal` / `gq-breathe-lime` |
+| Versatz wirksam | Teal und Lime wurden an unterschiedlichen Punkten des Zyklus gemessen (0.16/0.13 vs. 0.26/0.22) — der Gegentakt ist in den Werten sichtbar |
+| Card-Abstand | exakt 20px |
+| Logo-Navigation | `/` → `/about` funktioniert |
+| Browser-Konsole | keine Fehler |
+
+**Offen:** Chrome und Firefox wurden nicht getestet — die lokale Chromium-Installation von Playwright ist defekt (siehe QA-Abschnitt). Der Effekt nutzt ausschließlich `box-shadow` und `@keyframes` und ist damit überall unterstützt, ein visueller Blick steht aber noch aus.
 
 ### Redeploy: Transparenter Header über Partikel-Backdrop (2026-08-28)
 
