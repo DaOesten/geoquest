@@ -685,3 +685,147 @@ Vier Punkte aus der ersten Durchsicht im Browser:
 | Impressum/Datenschutz waren noch dunkel | Kein Fehler dieser Umsetzung — Light Mode für die Rechtstexte war in diesem Gespräch nie vereinbart, der Spec hielt Dark ausdrücklich fest. Nach Rückfrage umgesetzt | Siehe PROJ-13 |
 
 Die Korrektur am Zurück-Pfeil ändert eine Aussage der ursprünglichen Spec: „auf den Top-Level-Ansichten bleibt die linke Seite leer" war falsch gedacht. Das zugehörige Acceptance Criterion wurde entsprechend umgeschrieben, nicht nur ergänzt.
+
+---
+
+## QA Test Results — App-weite Navigation (2026-09-06)
+
+**Getestet:** PROJ-1 (Navigation & Kopfzeile), PROJ-7 (Quest-Stift), PROJ-13 (Info-Seiten & Light-Theme)
+**Umgebung:** System-Chrome + WebKit (Safari-Engine) über Playwright; iPhone-13-Viewport plus 375/768/1440px
+**Automatisiert:** 167 Unit-Tests, 267 E2E-Tests, 72 gezielte QA-Prüfungen
+
+### Zusammenfassung
+
+| | |
+|---|---|
+| Acceptance Criteria geprüft | 72 |
+| Bestanden | 68 |
+| Fehlgeschlagen | 3 (ein Befund doppelt gezählt, weil auf zwei Screens gemessen) |
+| Nicht anwendbar | 1 (`/about` ohne Zurück-Pfeil — by design) |
+| Regression (E2E) | 267/267 grün |
+| Unit-Tests | 167/167 grün |
+| Security-Audit | keine Befunde |
+| **Production-Ready** | **NEIN** — 1 High (Kontrast), 1 Medium (Touch-Target) |
+
+### Acceptance Criteria im Detail
+
+**Kopfzeile & Menü — bestanden**
+
+| Prüfung | Ergebnis |
+|---------|----------|
+| Burger auf allen 8 Screens sichtbar | ✅ Pass |
+| Zurück-Pfeil auf allen App-Screens + 3 Info-Unterseiten | ✅ Pass |
+| Keine Pin-Bildmarke mehr in irgendeiner Kopfzeile | ✅ Pass (0 Treffer) |
+| Drei Gruppen: App / Info / Rechtliches | ✅ Pass |
+| Sechs Links mit korrekten Zielen | ✅ Pass |
+| Sechs unterscheidbare Icons | ✅ Pass (gamepad2, pencil, info, book-open, scroll-text, shield-check) |
+| Menü schließt beim Antippen eines Links | ✅ Pass |
+| Escape schließt ohne zu navigieren | ✅ Pass |
+| Klick neben das Menü schließt | ✅ Pass |
+| `aria-expanded` meldet Zustand | ✅ Pass (false/true) |
+| Fokus liegt nach dem Öffnen im Menü | ✅ Pass |
+| Fokus-Falle hält (12× Tab) | ✅ Pass |
+| Sichtbarer Fokus-Ring | ✅ Pass (`outline: auto 1px`) |
+| Aktiver Eintrag markiert | ✅ Pass (`/play`, `/create`, `/impressum`) |
+| Aktiv-Markierung auf Unterrouten | ✅ Pass (`/create/[id]` → „Create") |
+| Menü trägt Theme des Screens | ✅ Pass (dark `rgb(10,14,15)` / light `rgb(246,248,249)`) |
+| Burger-Trigger ≥44px | ✅ Pass (44×44) |
+
+**Scroll-Verhalten — bestanden**
+
+| Prüfung | Ergebnis |
+|---------|----------|
+| `/play` nicht sticky | ✅ Pass (Header `y: 0 → -300`) |
+| `/about` sticky | ✅ Pass (`y: 0 → 0`) |
+| `/impressum` sticky | ✅ Pass (`y: 0 → 0`) |
+
+**PROJ-7 Quest-Stift — bestanden**
+
+| Prüfung | Ergebnis |
+|---------|----------|
+| Stift neben dem Quest-Titel | ✅ Pass |
+| Stift ≥44px | ✅ Pass (44×44) |
+| Stift nicht mehr in der Kopfzeile | ✅ Pass |
+| Stift öffnet den Quest-Dialog | ✅ Pass |
+
+**PROJ-13 Light-Theme — teilweise**
+
+| Prüfung | Ergebnis |
+|---------|----------|
+| `/impressum`, `/datenschutz` im Light-Theme | ✅ Pass |
+| `/about`, `/anleitung` bleiben dark | ✅ Pass |
+| Menü-Link-Kontrast (beide Themes) | ✅ Pass (18.21:1 / 19.40:1) |
+| Schließen-X sichtbar (beide Themes) | ✅ Pass (7.16:1 / 9.61:1) |
+| Gruppen-Label-Kontrast im Light-Theme | ❌ **BUG-1** |
+| Aktiv-Markierung-Kontrast im Light-Theme | ❌ **BUG-1** |
+
+### Bugs
+
+#### BUG-1 (High): Menü-Texte verfehlen im Light-Theme den WCAG-AA-Kontrast
+
+- **Wo:** `src/components/app-nav-menu.tsx:83` (Gruppen-Labels) und `:100`/`:106` (aktiver Eintrag)
+- **Betrifft:** jedes geöffnete Menü im Creator (`/create`, `/create/*`) sowie auf `/impressum` und `/datenschutz`
+- **Messung** (Panel-Grund `#F6F8F9`):
+
+  | Element | Farbe | Ist | Soll |
+  |---------|-------|-----|------|
+  | Gruppen-Label „APP/INFO/RECHTLICHES" | `text-gq-grey` `#A0A7AD` | **2.29:1** | ≥4.5:1 |
+  | Aktiver Eintrag + Icon | `text-gq-teal` `#00E0D1` | **1.57:1** | ≥4.5:1 |
+
+- **Ursache:** Beide Klassen sind feste Hex-Werte aus der Marken-Palette, die nicht aufs Theme reagieren. Auf dem dunklen Grund sind sie einwandfrei (7.97:1 bzw. 11.62:1) — der Wechsel aufs helle Panel wurde bei der Umsetzung nicht nachgemessen.
+- **Reproduktion:** `/create` öffnen → Burger antippen → Gruppen-Überschriften und den teal markierten „Create"-Eintrag betrachten.
+- **Auswirkung:** Verstößt gegen die PRD-Vorgabe „WCAG AA Kontrast (4.5:1)". Die Aktiv-Markierung ist mit 1.57:1 praktisch nicht erkennbar — genau die Information, die dem Nutzer sagt, wo er ist.
+- **Hinweis für die Behebung:** Das Design-System hält passende Token bereit — `text-muted-foreground` ergibt 5.30:1 (light) / 7.97:1 (dark), `text-primary` ergibt 4.54:1 (light) / 11.62:1 (dark). Beide erfüllen AA in **beiden** Themes, ohne die Marke zu verlassen.
+- **Severity: High** — dokumentierte Barrierefreiheits-Anforderung aus dem PRD verfehlt, betrifft die Orientierung im Menü.
+
+#### BUG-2 (Medium): Schließen-X des Sheets ist 16×16px statt 44×44px
+
+- **Wo:** `src/components/ui/sheet.tsx:76` (`SheetPrimitive.Close`)
+- **Messung:** 16×16px — Design-System und PRD verlangen mindestens 44px.
+- **Vorbestehend, nicht durch diese Änderung verursacht:** Die Regel stammt aus der shadcn-Standardkomponente und betrifft **alle** Sheets der App (`station-editor-sheet.tsx`, `module-editor-sheets.tsx`, `module-type-picker.tsx`, `app-nav-menu.tsx`). Das neue Menü macht sie nur sichtbarer, weil es der am häufigsten geöffnete Sheet ist.
+- **Abmilderung:** Escape und Tippen neben das Menü schließen zuverlässig (beides geprüft) — es ist keine Sackgasse.
+- **Auswirkung:** Für die Zielgruppe (10–15 Jahre, Handy, in Bewegung draußen) ist ein 16px-Ziel schwer zu treffen.
+- **Severity: Medium** — Workarounds existieren, aber die Vorgabe ist verfehlt.
+
+### Nicht als Bug gewertet
+
+- **`/about` hat keinen Zurück-Pfeil.** Die Seite ist die Wurzel des Info-Bereichs; die drei Unterseiten verweisen mit `backHref="/about"` auf sie zurück. Ihr Ausgang ist der „Zur App"-Button. Die Formulierung „Zurück-Pfeil auf **jedem** Screen" in den Implementation Notes ist entsprechend zu eng — der Pfeil steht auf jedem Screen, der ein übergeordnetes Ziel hat.
+
+### Edge Cases
+
+| Fall | Ergebnis |
+|------|----------|
+| Menü über der Leaflet-Karte (Stationen-Editor) | ✅ `z-[1100]` liegt über Leaflets gemessenen 1000 |
+| Menü bei offenem, modalem Stationen-Editor | ✅ Nicht erreichbar — korrektes Modal-Verhalten, kein Defekt |
+| Modus-Wechsel während laufender Quest | ✅ Fortschritt in localStorage bleibt erhalten |
+| Langer Quest-Name neben dem Stift | ✅ Titel bricht um, Stift behält 44px und erste Zeile |
+| Ungültige Quest-ID | ✅ Sauberer 404 („Ziel nicht gefunden") |
+| Kein horizontales Scrollen | ✅ 375/768/1440px, Chrome + WebKit |
+| Menü-Panel-Overflow | ✅ Keiner auf allen Breiten |
+
+### Cross-Browser & Responsive
+
+| Engine | 375px | 768px | 1440px |
+|--------|-------|-------|--------|
+| Chrome (System) | ✅ | ✅ | ✅ |
+| WebKit (Safari-Engine) | ✅ | ✅ | ✅ |
+| Firefox | ⚠️ **nicht getestet** — nicht auf dem Rechner installiert, und der Download der Playwright-Browser wurde bewusst abgelehnt |
+
+Die Umsetzung nutzt ausschließlich Flexbox, CSS-Variablen und Radix-Primitives — nichts davon ist Engine-spezifisch. Ein Firefox-Blick bleibt trotzdem offen.
+
+### Security-Audit (Red Team)
+
+| Test | Ergebnis |
+|------|----------|
+| XSS über Quest-Namen im neuen Titel-Block (`<img onerror>`) | ✅ Als Text gerendert, kein Skript ausgeführt |
+| XSS über Stationsnamen (`<script>`) | ✅ Neutralisiert |
+| Menü-Links auf `javascript:`/externe Ziele | ✅ Alle sechs relativ und statisch |
+| Secrets im Client-Bundle | ✅ Keine gefunden |
+| localStorage-Inhalt | ✅ Nur `gq_first_visit_done`, `gq_quests` — keine Geheimnisse |
+| Ungültige Quest-ID (Info-Leak) | ✅ Generischer 404, keine internen Details |
+
+Die Navigation führt keine Nutzereingaben und keine dynamischen Ziele — die Angriffsfläche der Änderung ist entsprechend klein.
+
+### Production-Ready: NEIN
+
+BUG-1 (High) muss vor dem Deployment behoben werden — er verfehlt eine ausdrückliche PRD-Anforderung und macht die Aktiv-Markierung im Creator unsichtbar. BUG-2 (Medium, vorbestehend) sollte mit, kann aber getrennt behandelt werden.

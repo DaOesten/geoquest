@@ -974,3 +974,31 @@ Drei E2E-Tests in `tests/proj-13-info-refinement.spec.ts` prüften das alte Verh
 Die Akzentfarben (Teal für Eyebrows und Links) bleiben laut Design-System in beiden Themes identisch — nur Grund und Textfarbe wechseln.
 
 Im Browser gemessen: `/impressum` und `/datenschutz` → `bg rgb(246,248,249)`, `/about` und `/anleitung` → `bg rgb(10,14,15)`. Footer: `rgba(10,14,15,0.04)` auf hell, `rgba(255,255,255,0.04)` auf dunkel; Links in beiden Fällen Teal. Ein E2E-Test in `proj-13-info-refinement.spec.ts` hält die Aufteilung fest.
+
+---
+
+## QA Test Results — Refinement 3 & Light-Theme (2026-09-06)
+
+Geprüft im Rahmen des app-weiten Navigations-QA; die vollständigen Ergebnisse stehen in [PROJ-1](PROJ-1-app-shell-mode-switch.md#qa-test-results--app-weite-navigation-2026-09-06).
+
+| Acceptance Criterion | Ergebnis |
+|----------------------|----------|
+| Gemeinsames Menü mit sechs Zielen in drei Gruppen | ✅ Pass |
+| Desktop-Zeile („Anleitung" + „Zur App") bleibt neben dem Burger | ✅ Pass (1440px) |
+| Burger auch ab `sm` sichtbar | ✅ Pass |
+| Direktsprung Info-Seite → Play/Create | ✅ Pass |
+| Aktiver Eintrag auf `/impressum` markiert | ✅ Pass |
+| Sticky-Header der Info-Seiten bleibt sticky | ✅ Pass (`y: 0 → 0` bei `scrollY=300`) |
+| Escape / Klick daneben / Fokus-Falle / `aria-expanded` | ✅ Pass |
+| `/impressum` + `/datenschutz` im Light-Theme | ✅ Pass (`rgb(246,248,249)`) |
+| `/about` + `/anleitung` bleiben dark | ✅ Pass (`rgb(10,14,15)`) |
+| Footer folgt dem Theme der Seite | ✅ Pass (`rgba(10,14,15,.04)` hell / `rgba(255,255,255,.04)` dunkel) |
+| Kein horizontales Scrollen | ✅ Pass (375/768/1440px, Chrome + WebKit) |
+
+### Befund
+
+**BUG-1 (High)** aus PROJ-1 trifft auch die beiden neuen hellen Seiten: Öffnet man dort das Burger-Menü, liegen Gruppen-Labels bei 2.29:1 und die Aktiv-Markierung bei 1.57:1 — beide unter der PRD-Vorgabe von 4.5:1. Der Seiteninhalt selbst ist einwandfrei (dunkler Text auf hellem Grund); betroffen ist nur das Menü-Overlay.
+
+**`/about` ohne Zurück-Pfeil** ist kein Bug: Die Seite ist die Wurzel des Info-Bereichs, ihre drei Unterseiten zeigen mit `backHref="/about"` auf sie zurück, und ihr Ausgang ist der „Zur App"-Button.
+
+**Status: In Review** — bleibt offen, bis BUG-1 behoben ist.

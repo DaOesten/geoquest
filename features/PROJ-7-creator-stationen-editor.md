@@ -821,3 +821,23 @@ Details der Umsetzung:
 - **Tap-Ziel** bleibt 44×44px (`w-11 h-11`); `-mr-2` zieht die optische Kante an den 20px-Screen-Gutter, ohne die Fläche zu verkleinern
 
 Im Browser verifiziert (iPhone-13-Viewport): Kopfzeile trägt links den Zurück-Pfeil und rechts nur noch das Burger-Menu; der Stift steht neben „RÄTSEL AM FLUSS" und öffnet den Bearbeiten-Dialog.
+
+---
+
+## QA Test Results — Quest-Bearbeiten-Stift (2026-09-06)
+
+Geprüft im Rahmen des app-weiten Navigations-QA; die vollständigen Ergebnisse stehen in [PROJ-1](PROJ-1-app-shell-mode-switch.md#qa-test-results--app-weite-navigation-2026-09-06).
+
+| Acceptance Criterion | Ergebnis |
+|----------------------|----------|
+| Stift steht neben dem Quest-Namen im Titel-Block | ✅ Pass |
+| Stift öffnet denselben `QuestFormDialog` wie zuvor | ✅ Pass |
+| Stift nicht mehr in der Kopfzeile | ✅ Pass |
+| Tap-Ziel ≥44px | ✅ Pass (44×44) |
+| Langer Quest-Name: Titel bricht um, Stift bleibt auf erster Zeile | ✅ Pass |
+| Kopfzeile trägt links Zurück-Pfeil, rechts nur das Burger-Menu | ✅ Pass |
+| Regression: PROJ-7-E2E-Suite | ✅ 267/267 grün (Gesamt-Suite) |
+
+**Keine Bugs in PROJ-7.** Die beiden offenen Befunde (Kontrast im Light-Theme, 16px-Schließen-X) liegen in gemeinsam genutzten Komponenten und sind in PROJ-1 dokumentiert. BUG-2 betrifft allerdings auch `station-editor-sheet.tsx` und `module-editor-sheets.tsx` dieses Features.
+
+**Status: Approved** — sobald BUG-1/BUG-2 in den gemeinsamen Komponenten behoben sind, ist hier nichts weiter zu tun.

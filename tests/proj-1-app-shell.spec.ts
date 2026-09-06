@@ -125,6 +125,43 @@ test.describe('PROJ-1: App Shell & Mode Switch', () => {
       ).toHaveAttribute('aria-current', 'page')
     })
 
+    // BUG-1 (QA 2026-09-06): Im Light-Theme lagen Gruppen-Labels bei 2.29:1 und
+    // die Aktiv-Markierung bei 1.57:1 — das PRD verlangt WCAG AA (4.5:1).
+    // Ursache waren feste Marken-Hex-Werte, die nicht aufs Theme reagieren.
+    test('menu text meets WCAG AA contrast in both themes', async ({ page }) => {
+      const luminance = ([r, g, b]: number[]) => {
+        const f = (c: number) => {
+          const v = c / 255
+          return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+        }
+        return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
+      }
+      const parse = (s: string) => (s.match(/\d+(\.\d+)?/g) || []).slice(0, 3).map(Number)
+      const ratio = (fg: string, bg: string) => {
+        const [a, b] = [luminance(parse(fg)), luminance(parse(bg))]
+        return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)
+      }
+
+      // /create trägt das Light-Theme, /play das Dark-Theme.
+      for (const path of ['/create', '/play']) {
+        await page.goto(path)
+        await page.getByRole('button', { name: 'Menü öffnen' }).click()
+        const sample = await page.evaluate(() => {
+          const d = document.querySelector('[role="dialog"]')!
+          const active = d.querySelector('[aria-current="page"]')!
+          const group = d.querySelector('nav > div > p')!
+          return {
+            bg: getComputedStyle(d).backgroundColor,
+            group: getComputedStyle(group).color,
+            active: getComputedStyle(active).color,
+          }
+        })
+        expect(ratio(sample.group, sample.bg), `Gruppen-Label auf ${path}`).toBeGreaterThanOrEqual(4.5)
+        expect(ratio(sample.active, sample.bg), `Aktiv-Markierung auf ${path}`).toBeGreaterThanOrEqual(4.5)
+        await page.keyboard.press('Escape')
+      }
+    })
+
     test('header is not sticky on the app screens', async ({ page }) => {
       await page.goto('/play')
       const position = await page

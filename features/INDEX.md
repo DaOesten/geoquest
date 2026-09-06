@@ -16,19 +16,19 @@
 
 | ID | Feature | Priority | Dependencies | Status | Spec | Created |
 |----|---------|----------|--------------|--------|------|---------|
-| PROJ-1 | App Shell & Mode Switch | P0 | None | In Progress | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
+| PROJ-1 | App Shell & Mode Switch | P0 | None | In Review | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
 | PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | In Progress | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
 | PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
-| PROJ-7 | Creator — Stationen-Editor | P0 | PROJ-6 | In Progress | [Spec](PROJ-7-creator-stationen-editor.md) | 2026-08-23 |
+| PROJ-7 | Creator — Stationen-Editor | P0 | PROJ-6 | Approved | [Spec](PROJ-7-creator-stationen-editor.md) | 2026-08-23 |
 | PROJ-8 | Creator — Modul-Editor | P0 | PROJ-7 | Deployed | [Spec](PROJ-8-creator-modul-editor.md) | 2026-08-23 |
 | PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Deployed | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Roadmap | — | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | In Review | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 
 <!-- Add features above this line -->
 
@@ -38,12 +38,12 @@ PROJ-1 → PROJ-2 → PROJ-3 → PROJ-4 → PROJ-5 → PROJ-6 → PROJ-7 → PRO
 _PROJ-10 (Verworfen) ist bewusst nicht Teil der Build Order — siehe Status-Spalte und Spec._
 
 ## Laufende Änderung: App-weite Navigation (2026-09-06)
-Ein Refinement über drei Specs hinweg — **Frontend umgesetzt**, QA steht aus:
+Ein Refinement über drei Specs hinweg — **QA abgeschlossen 2026-09-06: 1 High + 1 Medium offen**, siehe QA-Abschnitt in PROJ-1:
 - **PROJ-1** trägt das Modell: Burger-Menu (App / Info / Rechtliches) auf allen Screens, Zurück-Pfeil links, keine Pin-Bildmarke mehr, kein Sticky-Header auf Play/Create
 - **PROJ-7** verlegt den Quest-Bearbeiten-Stift aus der Kopfzeile neben den Quest-Titel, weil dort jetzt das Menu sitzt
 - **PROJ-13** gibt sein Info-Seiten-Menu an PROJ-1 ab und bindet stattdessen die gemeinsame Komponente ein
 
-Gebaut am 2026-09-06 in einem Zug (PROJ-1 Komponente + Anpassungen in PROJ-7/PROJ-13). Nächster Schritt: `/qa`.
+Gebaut am 2026-09-06. QA: 267/267 E2E und 167/167 Unit grün, Security ohne Befund — aber BUG-1 (Menü-Kontrast im Light-Theme, High) blockiert das Deployment. PROJ-7 ist bereits **Approved**, PROJ-1 und PROJ-13 bleiben **In Review**. Nächster Schritt: `/frontend` für BUG-1.
 
 ## Offenes Refinement: GPS- & Kompass-Ausfallmodi (2026-09-06)
 **PROJ-3** war deployed und ist zurück auf In Progress — eine Testquest zeigte einen Richtungspfeil, der sich auf dem iPhone nicht bewegte. Die Analyse legte drei stille Ausfallmodi offen, die die Spec bisher nicht kannte:
