@@ -29,7 +29,7 @@ interface AppHeaderProps {
  */
 export function AppHeader({ title, backHref, onBack, transparent = false }: AppHeaderProps) {
   const backButtonClassName =
-    "flex-shrink-0 flex items-center justify-center w-11 h-11 -ml-2 rounded-full transition-colors duration-base ease-gq hover:bg-gq-teal/10 active:scale-[0.96]";
+    "flex-shrink-0 flex items-center justify-center w-11 h-11 -ml-2 rounded-full transition-colors duration-base ease-gq hover:bg-primary/10 active:scale-[0.96]";
 
   return (
     <header
@@ -40,11 +40,11 @@ export function AppHeader({ title, backHref, onBack, transparent = false }: AppH
     >
       {onBack ? (
         <button type="button" onClick={onBack} className={backButtonClassName} aria-label="Zurück">
-          <ArrowLeft className="w-5 h-5 text-gq-teal" />
+          <ArrowLeft className="w-5 h-5 text-primary" />
         </button>
       ) : backHref ? (
         <Link href={backHref} className={backButtonClassName} aria-label="Zurück">
-          <ArrowLeft className="w-5 h-5 text-gq-teal" />
+          <ArrowLeft className="w-5 h-5 text-primary" />
         </Link>
       ) : null}
 

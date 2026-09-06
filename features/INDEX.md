@@ -16,7 +16,7 @@
 
 | ID | Feature | Priority | Dependencies | Status | Spec | Created |
 |----|---------|----------|--------------|--------|------|---------|
-| PROJ-1 | App Shell & Mode Switch | P0 | None | In Review | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
+| PROJ-1 | App Shell & Mode Switch | P0 | None | Approved | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
 | PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | In Progress | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Roadmap | — | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | In Review | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | Approved | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 
 <!-- Add features above this line -->
 
@@ -38,12 +38,12 @@ PROJ-1 → PROJ-2 → PROJ-3 → PROJ-4 → PROJ-5 → PROJ-6 → PROJ-7 → PRO
 _PROJ-10 (Verworfen) ist bewusst nicht Teil der Build Order — siehe Status-Spalte und Spec._
 
 ## Laufende Änderung: App-weite Navigation (2026-09-06)
-Ein Refinement über drei Specs hinweg — **QA abgeschlossen 2026-09-06: 1 High + 1 Medium offen**, siehe QA-Abschnitt in PROJ-1:
+Ein Refinement über drei Specs hinweg — **QA bestanden, BUG-1 behoben** (2026-09-06):
 - **PROJ-1** trägt das Modell: Burger-Menu (App / Info / Rechtliches) auf allen Screens, Zurück-Pfeil links, keine Pin-Bildmarke mehr, kein Sticky-Header auf Play/Create
 - **PROJ-7** verlegt den Quest-Bearbeiten-Stift aus der Kopfzeile neben den Quest-Titel, weil dort jetzt das Menu sitzt
 - **PROJ-13** gibt sein Info-Seiten-Menu an PROJ-1 ab und bindet stattdessen die gemeinsame Komponente ein
 
-Gebaut am 2026-09-06. QA: 267/267 E2E und 167/167 Unit grün, Security ohne Befund — aber BUG-1 (Menü-Kontrast im Light-Theme, High) blockiert das Deployment. PROJ-7 ist bereits **Approved**, PROJ-1 und PROJ-13 bleiben **In Review**. Nächster Schritt: `/frontend` für BUG-1.
+Gebaut und QA-geprüft am 2026-09-06. BUG-1 (Menü-Kontrast im Light-Theme) wurde per Token-Tausch behoben und ist durch zwei E2E-Kontrasttests abgesichert. Alle drei Features sind **Approved**. Offen bleiben zwei vorbestehende, nicht blockierende Befunde: BUG-2 (16px-Schließen-X in allen Sheets) und BUG-3 (Kontrast auf den Creator-Screens) — beide in PROJ-1 dokumentiert. Nächster Schritt: `/deploy`.
 
 ## Offenes Refinement: GPS- & Kompass-Ausfallmodi (2026-09-06)
 **PROJ-3** war deployed und ist zurück auf In Progress — eine Testquest zeigte einen Richtungspfeil, der sich auf dem iPhone nicht bewegte. Die Analyse legte drei stille Ausfallmodi offen, die die Spec bisher nicht kannte:

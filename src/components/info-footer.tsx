@@ -19,7 +19,7 @@ export function InfoFooter() {
       <div className="mx-auto w-full max-w-[1100px] px-5 sm:px-8 py-8 sm:py-10">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-tech text-[10px] tracking-[0.12em] text-gq-teal">
+            <p className="text-tech text-[10px] tracking-[0.12em] text-primary">
               Kontakt
             </p>
             <p className="mt-2 font-body text-sm leading-relaxed text-muted-foreground">
@@ -27,25 +27,25 @@ export function InfoFooter() {
             </p>
             <a
               href={`mailto:${PROVIDER.email}`}
-              className="inline-flex items-center min-h-11 -my-1 font-body text-sm text-gq-teal underline underline-offset-4 transition-colors duration-base ease-gq hover:text-gq-teal-hover"
+              className="inline-flex items-center min-h-11 -my-1 font-body text-sm text-primary underline underline-offset-4 transition-colors duration-base ease-gq hover:text-primary/80"
             >
               {PROVIDER.email}
             </a>
           </div>
 
           <nav className="flex flex-col">
-            <p className="text-tech text-[10px] tracking-[0.12em] text-gq-teal">
+            <p className="text-tech text-[10px] tracking-[0.12em] text-primary">
               Rechtliches
             </p>
             <Link
               href="/impressum"
-              className="inline-flex items-center min-h-11 -my-1 font-body text-sm text-muted-foreground transition-colors duration-base ease-gq hover:text-gq-teal"
+              className="inline-flex items-center min-h-11 -my-1 font-body text-sm text-muted-foreground transition-colors duration-base ease-gq hover:text-primary"
             >
               Impressum
             </Link>
             <Link
               href="/datenschutz"
-              className="inline-flex items-center min-h-11 -my-1 font-body text-sm text-muted-foreground transition-colors duration-base ease-gq hover:text-gq-teal"
+              className="inline-flex items-center min-h-11 -my-1 font-body text-sm text-muted-foreground transition-colors duration-base ease-gq hover:text-primary"
             >
               Datenschutz
             </Link>

@@ -27,7 +27,17 @@
 **Dark/Light Mode:**
 - Player Mode = Dark Theme (Standard)
 - Creator Mode = Light Theme (`[data-theme="light"]`)
-- Akzentfarben (Teal, Lime) ändern sich NICHT zwischen Themes
+- Akzentfarben (Teal, Lime) bleiben als *Marke* dieselben — der konkrete Farbwert wird im Light Theme aber abgedunkelt, sonst reicht der Kontrast nicht
+
+**Regel: In UI-Code die Tokens verwenden, nicht die Hex-Klassen.**
+
+| Zweck | Klasse | Dark | Light |
+|-------|--------|------|-------|
+| Akzent (Aktiv-Zustand, Icons, Links) | `text-primary` | 11.60:1 | 4.54:1 |
+| Metadaten, Labels, inaktive Icons | `text-muted-foreground` | 8.02:1 | 5.30:1 |
+| Fließtext | `text-foreground` | 19.40:1 | 18.21:1 |
+
+`text-gq-teal` (#00E0D1) und `text-gq-grey` (#A0A7AD) sind feste Hex-Werte und reagieren **nicht** auf das Theme. Auf hellem Grund fallen sie auf 1.57:1 bzw. 2.29:1 und verfehlen damit die WCAG-AA-Vorgabe des PRD (4.5:1) deutlich — das war BUG-1 im QA vom 2026-09-06. Sie gehören nur dorthin, wo der Grund garantiert dunkel bleibt (z.B. Player-Screens); alles, was in beiden Themes läuft, nutzt die Tokens.
 
 ## Typografie
 

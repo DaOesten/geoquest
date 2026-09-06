@@ -25,7 +25,7 @@ export default function ImpressumPage() {
     >
       <section className="mt-10 sm:mt-14 max-w-[62ch] space-y-8">
         <div>
-          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
+          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-primary">
             Anbieter
           </h2>
           <address className="mt-3 font-body text-sm lg:text-base not-italic leading-relaxed text-foreground/90">
@@ -40,14 +40,14 @@ export default function ImpressumPage() {
         </div>
 
         <div>
-          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
+          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-primary">
             Kontakt
           </h2>
           <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-foreground/90">
             E-Mail:{" "}
             <a
               href={`mailto:${PROVIDER.email}`}
-              className="text-gq-teal underline underline-offset-4 transition-colors duration-base ease-gq hover:text-gq-teal-hover"
+              className="text-primary underline underline-offset-4 transition-colors duration-base ease-gq hover:text-primary/80"
             >
               {PROVIDER.email}
             </a>
@@ -55,7 +55,7 @@ export default function ImpressumPage() {
         </div>
 
         <div>
-          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
+          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-primary">
             Verantwortlich für den Inhalt
           </h2>
           <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-foreground/90">
@@ -64,7 +64,7 @@ export default function ImpressumPage() {
         </div>
 
         <div>
-          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
+          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-primary">
             Haftung für Inhalte
           </h2>
           <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
@@ -77,7 +77,7 @@ export default function ImpressumPage() {
         </div>
 
         <div>
-          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
+          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-primary">
             Inhalte von Quests
           </h2>
           <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
@@ -91,7 +91,7 @@ export default function ImpressumPage() {
         </div>
 
         <div>
-          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
+          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-primary">
             Haftung für Links
           </h2>
           <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
@@ -103,7 +103,7 @@ export default function ImpressumPage() {
         </div>
 
         <div>
-          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
+          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-primary">
             Sicherheit im Freien
           </h2>
           <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">

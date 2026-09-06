@@ -27,6 +27,16 @@ import { APP_NAV_GROUPS } from "@/lib/app-nav";
  * Erbt Theme-Farben über die CSS-Variablen (`bg-background`, `text-foreground`,
  * `border-border`) statt fester Hex-Werte: derselbe Code trägt im Player das
  * Dark- und im Creator das Light-Theme, ohne aus dem Screen auszubrechen.
+ *
+ * Das gilt seit BUG-1 (QA 2026-09-06) auch für Akzent und Metadaten: `gq-teal`
+ * und `gq-grey` sind feste Marken-Hex-Werte und reagieren nicht aufs Theme —
+ * auf dem hellen Panel fielen sie auf 1.57:1 bzw. 2.29:1 und verfehlten damit
+ * die WCAG-AA-Vorgabe des PRD (4.5:1). `text-primary` und
+ * `text-muted-foreground` tragen dieselbe Gestaltungsabsicht, wechseln aber mit
+ * dem Theme mit und erfüllen AA in beiden:
+ *
+ *   primary          dark 11.60:1 · light 4.54:1
+ *   muted-foreground dark  8.02:1 · light 5.30:1
  */
 export function AppNavMenu() {
   const [open, setOpen] = useState(false);
@@ -56,7 +66,7 @@ export function AppNavMenu() {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
         ref={readTheme}
-        className="flex items-center justify-center w-11 h-11 rounded-full text-gq-teal transition-colors duration-base ease-gq hover:bg-gq-teal/10 active:scale-[0.96]"
+        className="flex items-center justify-center w-11 h-11 rounded-full text-primary transition-colors duration-base ease-gq hover:bg-primary/10 active:scale-[0.96]"
         aria-label="Menü öffnen"
       >
         <Menu className="w-6 h-6" />
@@ -72,7 +82,7 @@ export function AppNavMenu() {
         overlayClassName="z-[1100]"
       >
         <SheetHeader className="text-left">
-          <SheetTitle className="text-tech text-[11px] tracking-[0.12em] text-gq-teal">
+          <SheetTitle className="text-tech text-[11px] tracking-[0.12em] text-primary">
             Navigation
           </SheetTitle>
         </SheetHeader>
@@ -80,7 +90,7 @@ export function AppNavMenu() {
         <nav className="mt-7 flex flex-col gap-7">
           {APP_NAV_GROUPS.map((group) => (
             <div key={group.title}>
-              <p className="text-tech text-[10px] tracking-[0.12em] text-gq-grey uppercase">
+              <p className="text-tech text-[10px] tracking-[0.12em] text-muted-foreground uppercase">
                 {group.title}
               </p>
 
@@ -96,14 +106,14 @@ export function AppNavMenu() {
                       onClick={() => setOpen(false)}
                       aria-current={isActive ? "page" : undefined}
                       className={
-                        "flex items-center gap-3 h-12 border-b border-border/60 font-display italic text-xl uppercase transition-colors duration-base ease-gq hover:text-gq-teal active:text-gq-teal " +
-                        (isActive ? "text-gq-teal" : "text-foreground")
+                        "flex items-center gap-3 h-12 border-b border-border/60 font-display italic text-xl uppercase transition-colors duration-base ease-gq hover:text-primary active:text-primary " +
+                        (isActive ? "text-primary" : "text-foreground")
                       }
                     >
                       <Icon
                         className={
                           "w-[18px] h-[18px] flex-shrink-0 " +
-                          (isActive ? "text-gq-teal" : "text-gq-grey")
+                          (isActive ? "text-primary" : "text-muted-foreground")
                         }
                       />
                       {label}

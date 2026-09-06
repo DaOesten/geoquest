@@ -35,14 +35,14 @@ export default function DatenschutzPage() {
     >
       <section className="mt-10 sm:mt-14 max-w-[62ch] space-y-8">
         <div>
-          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
+          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-primary">
             Verantwortlicher
           </h2>
           <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-foreground/90">
             Verantwortlich im Sinne der Datenschutz-Grundverordnung ist der im{" "}
             <Link
               href="/impressum"
-              className="text-gq-teal underline underline-offset-4 transition-colors duration-base ease-gq hover:text-gq-teal-hover"
+              className="text-primary underline underline-offset-4 transition-colors duration-base ease-gq hover:text-primary/80"
             >
               Impressum
             </Link>{" "}
@@ -51,7 +51,7 @@ export default function DatenschutzPage() {
         </div>
 
         <div>
-          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
+          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-primary">
             Quests und Spielfortschritt
           </h2>
           <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
@@ -68,7 +68,7 @@ export default function DatenschutzPage() {
         </div>
 
         <div>
-          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
+          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-primary">
             Standortdaten
           </h2>
           <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
@@ -87,7 +87,7 @@ export default function DatenschutzPage() {
         </div>
 
         <div>
-          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
+          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-primary">
             Hosting und Server-Protokolle
           </h2>
           <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
@@ -101,7 +101,7 @@ export default function DatenschutzPage() {
         </div>
 
         <div>
-          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
+          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-primary">
             Reichweitenmessung
           </h2>
           <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
@@ -128,7 +128,7 @@ export default function DatenschutzPage() {
         </div>
 
         <div>
-          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
+          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-primary">
             Karten
           </h2>
           <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
@@ -142,7 +142,7 @@ export default function DatenschutzPage() {
         </div>
 
         <div>
-          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
+          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-primary">
             Schriftarten
           </h2>
           <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
@@ -154,7 +154,7 @@ export default function DatenschutzPage() {
         </div>
 
         <div>
-          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
+          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-primary">
             Medien in Quests
           </h2>
           <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
@@ -167,7 +167,7 @@ export default function DatenschutzPage() {
         </div>
 
         <div>
-          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
+          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-primary">
             Keine Konten, keine Werbung, keine Profile
           </h2>
           <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
@@ -182,7 +182,7 @@ export default function DatenschutzPage() {
         </div>
 
         <div>
-          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
+          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-primary">
             Deine Rechte
           </h2>
           <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
@@ -197,7 +197,7 @@ export default function DatenschutzPage() {
         </div>
 
         <div>
-          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
+          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-primary">
             Kinder und Jugendliche
           </h2>
           <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">

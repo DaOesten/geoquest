@@ -705,7 +705,7 @@ Die Korrektur am Zurück-Pfeil ändert eine Aussage der ursprünglichen Spec: �
 | Regression (E2E) | 267/267 grün |
 | Unit-Tests | 167/167 grün |
 | Security-Audit | keine Befunde |
-| **Production-Ready** | **NEIN** — 1 High (Kontrast), 1 Medium (Touch-Target) |
+| **Production-Ready** | **NEIN** zum QA-Zeitpunkt — 1 High (Kontrast), 1 Medium (Touch-Target). BUG-1 wurde am selben Tag behoben (siehe Bugfix-Pass unten), BUG-2 bleibt offen |
 
 ### Acceptance Criteria im Detail
 
@@ -761,7 +761,7 @@ Die Korrektur am Zurück-Pfeil ändert eine Aussage der ursprünglichen Spec: �
 
 ### Bugs
 
-#### BUG-1 (High): Menü-Texte verfehlen im Light-Theme den WCAG-AA-Kontrast
+#### BUG-1 (High): Menü-Texte verfehlen im Light-Theme den WCAG-AA-Kontrast — ✅ BEHOBEN 2026-09-06
 
 - **Wo:** `src/components/app-nav-menu.tsx:83` (Gruppen-Labels) und `:100`/`:106` (aktiver Eintrag)
 - **Betrifft:** jedes geöffnete Menü im Creator (`/create`, `/create/*`) sowie auf `/impressum` und `/datenschutz`
@@ -778,7 +778,7 @@ Die Korrektur am Zurück-Pfeil ändert eine Aussage der ursprünglichen Spec: �
 - **Hinweis für die Behebung:** Das Design-System hält passende Token bereit — `text-muted-foreground` ergibt 5.30:1 (light) / 7.97:1 (dark), `text-primary` ergibt 4.54:1 (light) / 11.62:1 (dark). Beide erfüllen AA in **beiden** Themes, ohne die Marke zu verlassen.
 - **Severity: High** — dokumentierte Barrierefreiheits-Anforderung aus dem PRD verfehlt, betrifft die Orientierung im Menü.
 
-#### BUG-2 (Medium): Schließen-X des Sheets ist 16×16px statt 44×44px
+#### BUG-2 (Medium): Schließen-X des Sheets ist 16×16px statt 44×44px — ⏳ OFFEN
 
 - **Wo:** `src/components/ui/sheet.tsx:76` (`SheetPrimitive.Close`)
 - **Messung:** 16×16px — Design-System und PRD verlangen mindestens 44px.
@@ -826,6 +826,59 @@ Die Umsetzung nutzt ausschließlich Flexbox, CSS-Variablen und Radix-Primitives 
 
 Die Navigation führt keine Nutzereingaben und keine dynamischen Ziele — die Angriffsfläche der Änderung ist entsprechend klein.
 
-### Production-Ready: NEIN
+### Production-Ready: NEIN (Stand des QA-Laufs)
 
 BUG-1 (High) muss vor dem Deployment behoben werden — er verfehlt eine ausdrückliche PRD-Anforderung und macht die Aktiv-Markierung im Creator unsichtbar. BUG-2 (Medium, vorbestehend) sollte mit, kann aber getrennt behandelt werden.
+
+> **Nachtrag 2026-09-06:** BUG-1 ist behoben und durch zwei E2E-Kontrasttests abgesichert — siehe „Bugfix-Pass" unten. Damit ist der Stand **Production-Ready**; BUG-2 und das dabei neu gefundene BUG-3 bleiben als nicht blockierende, vorbestehende Befunde offen.
+
+---
+
+## Bugfix-Pass — BUG-1: WCAG-AA-Kontrast im Light-Theme (2026-09-06)
+
+**Behoben.** Ursache waren feste Marken-Hex-Werte (`text-gq-teal`, `text-gq-grey`), die nicht auf das Theme reagieren. Ersetzt durch die Tokens `text-primary` und `text-muted-foreground`, die dieselbe Gestaltungsabsicht tragen, ihren Farbwert aber mit dem Theme wechseln.
+
+| Element | Vorher (light) | Nachher (light) | Nachher (dark) |
+|---------|----------------|-----------------|----------------|
+| Gruppen-Label „APP/INFO/RECHTLICHES" | 2.29:1 ❌ | **5.30:1** ✅ | 8.02:1 ✅ |
+| Aktiver Eintrag + Icon | 1.57:1 ❌ | **4.54:1** ✅ | 11.60:1 ✅ |
+| Inaktives Icon (non-text, min. 3:1) | 2.29:1 ❌ | **5.30:1** ✅ | 8.02:1 ✅ |
+| Inaktiver Link (Referenz, unverändert) | 18.21:1 ✅ | 18.21:1 ✅ | 19.40:1 ✅ |
+
+### Über den gemeldeten Befund hinaus
+
+Beim Nachmessen zeigte sich, dass dieselbe Ursache weitere Stellen betrifft, die das QA nicht erfasst hatte — es hatte nur *innerhalb* des geöffneten Menüs gemessen:
+
+| Fundstelle | Problem | Behebung |
+|------------|---------|----------|
+| Burger-Icon selbst (`app-nav-menu.tsx`) | `gq-teal` auf dem hellen Creator-Grund: **1.41:1** — und das ist das Bedienelement, das die Navigation überhaupt öffnet | `text-primary` |
+| Zurück-Pfeile (`app-header.tsx`, `info-page-shell.tsx`) | gleiche Farbe, gleiches Problem auf allen hellen Screens | `text-primary` |
+| Abschnitts-Überschriften und Inline-Links in `/impressum` und `/datenschutz` | 22 Vorkommen `gq-teal` auf dem seit 2026-09-06 hellen Grund | `text-primary` (jetzt 4.54:1) |
+| Eyebrow, „Zur App"-Button, Desktop-Hover in `info-page-shell.tsx` | dito, seit der Rahmen beide Themes bedient | `text-primary` |
+| `info-footer.tsx` | Überschriften und E-Mail-Link | `text-primary` |
+
+Der Burger-Trigger mit 1.41:1 war der gravierendere der beiden Befunde: schlechter als der gemeldete Wert und an einem Bedienelement statt an einem Label. Er entging dem QA, weil dessen Sonde erst nach dem Öffnen des Menüs gemessen hat.
+
+### Geänderte Dateien
+
+`src/components/app-nav-menu.tsx`, `src/components/app-header.tsx`, `src/components/info-page-shell.tsx`, `src/components/info-footer.tsx`, `src/app/(info)/impressum/page.tsx`, `src/app/(info)/datenschutz/page.tsx`, `docs/design-system.md`
+
+### Verifikation
+
+Alle 24 Kontrastmessungen bestanden (Menü-Inhalt, Kopfzeilen-Bedienelemente und Rechtstexte, je in beiden Themes). Der zuvor rot stehende E2E-Test `menu text meets WCAG AA contrast in both themes` ist grün. Das Dark-Theme ist visuell unverändert — der Token-Tausch wirkt sich dort nicht aus, weil `--primary` im Dark-Theme demselben Teal entspricht.
+
+`docs/design-system.md` hält die Regel jetzt fest: In UI-Code, der in beiden Themes läuft, gehören die Tokens verwendet, nicht die Hex-Klassen.
+
+### Nicht Teil dieses Passes
+
+**BUG-2 (Medium, vorbestehend)** — das 16×16px-Schließen-X der shadcn-Sheets bleibt offen. Es betrifft alle vier Sheets der App und wird bewusst getrennt behandelt, statt das Deployment der Navigation aufzuhalten.
+
+**BUG-3 (neu gefunden, Medium, vorbestehend)** — dieselbe Ursache trifft Inhalte der Creator-Screens, die es schon vor diesem Refinement gab. Auf dem hellen Creator-Grund (`#F4F7F8`):
+
+| Element | Klasse | Kontrast |
+|---------|--------|----------|
+| Eyebrow „Stationen" / „Stationsinhalte" | `text-gq-teal` | **1.55:1** ❌ |
+| Empty-State-Text und -Icon („Noch keine Stationen") | `text-gq-grey` | **2.26:1** ❌ |
+| Meta-Zeile („1 Ziel · 0,4 km") | `text-gq-grey-dark` | 5.61:1 ✅ |
+
+Betrifft `src/app/create/page.tsx`, `src/app/create/[id]/page.tsx` und `src/app/create/[id]/station/[stationId]/page.tsx`. Bewusst **nicht** in diesem Pass behoben: Diese Stellen sind seit PROJ-6/7/8 deployed, standen nicht im QA-Bericht und gehören nicht zur Navigation. Der Fix wäre derselbe Token-Tausch — sinnvollerweise in einem eigenen Durchgang über die Creator-Screens, mit eigenem QA.

@@ -70,10 +70,10 @@ export function InfoPageShell({
           {backHref && (
             <Link
               href={backHref}
-              className="flex-shrink-0 flex items-center justify-center w-11 h-11 -ml-2 rounded-full transition-colors duration-base ease-gq hover:bg-gq-teal/10 active:scale-[0.96]"
+              className="flex-shrink-0 flex items-center justify-center w-11 h-11 -ml-2 rounded-full transition-colors duration-base ease-gq hover:bg-primary/10 active:scale-[0.96]"
               aria-label="Zurück"
             >
-              <ArrowLeft className="w-5 h-5 text-gq-teal" />
+              <ArrowLeft className="w-5 h-5 text-primary" />
             </Link>
           )}
 
@@ -84,7 +84,7 @@ export function InfoPageShell({
               <Link
                 key={href}
                 href={href}
-                className="hidden sm:flex items-center h-11 px-4 rounded-pill text-tech text-[11px] tracking-[0.08em] text-muted-foreground transition-colors duration-base ease-gq hover:text-gq-teal"
+                className="hidden sm:flex items-center h-11 px-4 rounded-pill text-tech text-[11px] tracking-[0.08em] text-muted-foreground transition-colors duration-base ease-gq hover:text-primary"
               >
                 {label}
               </Link>
@@ -93,7 +93,7 @@ export function InfoPageShell({
             {/* Reserved for a Ko-fi support link later — the slot stays, the target changes. */}
             <Link
               href="/"
-              className="flex items-center h-11 px-5 rounded-pill border border-gq-teal text-gq-teal text-tech text-[11px] tracking-[0.08em] transition-all duration-base ease-gq hover:bg-gq-teal/10 active:scale-[0.96]"
+              className="flex items-center h-11 px-5 rounded-pill border border-primary text-primary text-tech text-[11px] tracking-[0.08em] transition-all duration-base ease-gq hover:bg-primary/10 active:scale-[0.96]"
             >
               Zur App
             </Link>
@@ -126,7 +126,7 @@ export function InfoPageShell({
                   className="mb-6 w-[220px] sm:w-[280px] lg:w-[320px] h-auto"
                 />
               )}
-              <p className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
+              <p className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-primary">
                 {eyebrow}
               </p>
               <h1 className="font-display italic text-[clamp(2rem,7vw,4rem)] leading-[0.94] uppercase text-foreground mt-2">

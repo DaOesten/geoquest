@@ -1001,4 +1001,4 @@ Geprüft im Rahmen des app-weiten Navigations-QA; die vollständigen Ergebnisse 
 
 **`/about` ohne Zurück-Pfeil** ist kein Bug: Die Seite ist die Wurzel des Info-Bereichs, ihre drei Unterseiten zeigen mit `backHref="/about"` auf sie zurück, und ihr Ausgang ist der „Zur App"-Button.
 
-**Status: In Review** — bleibt offen, bis BUG-1 behoben ist.
+**Status: Approved** — BUG-1 wurde am 2026-09-06 behoben (Token-Tausch, siehe Bugfix-Pass in PROJ-1). Die Rechtstexte bekamen dabei zusätzlich ihre 22 fest verdrahteten `gq-teal`-Vorkommen auf `text-primary` umgestellt; Überschriften und Inline-Links liegen jetzt bei 4.54:1 statt 1.55:1.

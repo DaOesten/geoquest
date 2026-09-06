@@ -162,6 +162,47 @@ test.describe('PROJ-1: App Shell & Mode Switch', () => {
       }
     })
 
+    // Der Burger lag im Creator bei 1.41:1 — schlechter als der gemeldete
+    // Befund und an einem Bedienelement. Fiel beim ersten QA durch, weil dort
+    // nur INNERHALB des geöffneten Menüs gemessen wurde.
+    test('header controls meet non-text contrast (3:1) in both themes', async ({ page }) => {
+      const luminance = ([r, g, b]: number[]) => {
+        const f = (c: number) => {
+          const v = c / 255
+          return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+        }
+        return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
+      }
+      const parse = (s: string) => (s.match(/\d+(\.\d+)?/g) || []).slice(0, 3).map(Number)
+      const ratio = (fg: string, bg: string) => {
+        const [a, b] = [luminance(parse(fg)), luminance(parse(bg))]
+        return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)
+      }
+
+      for (const path of ['/create', '/play']) {
+        await page.goto(path)
+        const sample = await page.evaluate(() => {
+          // Die Fläche HINTER dem Element suchen — das Element selbst ist
+          // transparent, sonst misst man die Farbe gegen sich selbst.
+          const behind = (el: Element): string => {
+            let n = el.parentElement
+            while (n) {
+              const c = getComputedStyle(n).backgroundColor
+              if (c && !/rgba\(0, 0, 0, 0\)|transparent/.test(c)) return c
+              n = n.parentElement
+            }
+            return getComputedStyle(document.body).backgroundColor
+          }
+          const burger = document.querySelector('[aria-label="Menü öffnen"]')!
+          return {
+            icon: getComputedStyle(burger.querySelector('svg')!).color,
+            bg: behind(burger),
+          }
+        })
+        expect(ratio(sample.icon, sample.bg), `Burger-Icon auf ${path}`).toBeGreaterThanOrEqual(3)
+      }
+    })
+
     test('header is not sticky on the app screens', async ({ page }) => {
       await page.goto('/play')
       const position = await page
