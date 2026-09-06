@@ -311,6 +311,107 @@ test.describe("PROJ-7: Creator — Stationen-Editor", () => {
     });
   });
 
+  // The map's min-height used to win against flex-1 inside a non-scrolling SheetContent,
+  // pushing the footer out of view and making the sheet unusable on small phones
+  // (PROJ-7 refine 2026-09-06). 360x640 is the spec's reference viewport.
+  test.describe("Sheet-Layout auf kleinen Bildschirmen", () => {
+    const SMALL_VIEWPORT = { width: 360, height: 640 };
+
+    async function openSheetOnSmallScreen(page: Page) {
+      await page.setViewportSize(SMALL_VIEWPORT);
+      await seedQuest(page, draftQuest(QUEST_ID, "Leere Quest"));
+      await page.getByRole("button", { name: "Station hinzufügen" }).click();
+      await expect(page.getByLabel("Stationsname")).toBeVisible();
+    }
+
+    test("keeps both footer buttons inside the viewport without scrolling", async ({ page }) => {
+      await openSheetOnSmallScreen(page);
+
+      for (const label of ["Abbrechen", "Speichern"]) {
+        const button = page.getByRole("button", { name: label });
+        await expect(button).toBeVisible();
+        const box = (await button.boundingBox())!;
+        // A button flush against the viewport edge sits under the home indicator on a real
+        // phone, so require the design system's 14px safe-area gutter below it.
+        expect(box.y + box.height).toBeLessThanOrEqual(SMALL_VIEWPORT.height - 14);
+        expect(box.height).toBeGreaterThanOrEqual(44);
+      }
+    });
+
+    test("lays the footer buttons out side by side rather than stacking them", async ({ page }) => {
+      await openSheetOnSmallScreen(page);
+
+      const cancel = (await page.getByRole("button", { name: "Abbrechen" }).boundingBox())!;
+      const save = (await page.getByRole("button", { name: "Speichern" }).boundingBox())!;
+      expect(cancel.y).toBeCloseTo(save.y, 0);
+    });
+
+    test("the map does not overlap the save button", async ({ page }) => {
+      await openSheetOnSmallScreen(page);
+      await page.locator(".leaflet-container").waitFor();
+
+      // The map may extend past the scroll container's edge — it is clipped there, not drawn
+      // over the footer. What matters is that no *visible* map pixel reaches the save button.
+      const scrollerBox = (await page.locator("div.overflow-y-auto").first().boundingBox())!;
+      const mapBox = (await page.locator(".leaflet-container").boundingBox())!;
+      const saveBox = (await page.getByRole("button", { name: "Speichern" }).boundingBox())!;
+
+      const visibleMapBottom = Math.min(mapBox.y + mapBox.height, scrollerBox.y + scrollerBox.height);
+      expect(visibleMapBottom).toBeLessThanOrEqual(saveBox.y);
+    });
+
+    test("saving works end to end on a small screen", async ({ page }) => {
+      await openSheetOnSmallScreen(page);
+      await page.getByLabel("Stationsname").fill("Kleines Display");
+      await page.getByRole("button", { name: "Speichern" }).click();
+
+      await expect(page.getByLabel("Stationsname")).not.toBeVisible();
+      await expect(page.getByText("Kleines Display")).toBeVisible();
+    });
+
+    test("scrolls the middle band while the title and buttons stay put", async ({ page }) => {
+      await openSheetOnSmallScreen(page);
+
+      const title = page.getByText("Station hinzufügen", { exact: true }).last();
+      const save = page.getByRole("button", { name: "Speichern" });
+      const titleBefore = (await title.boundingBox())!;
+      const saveBefore = (await save.boundingBox())!;
+
+      const scroller = page.locator("div.overflow-y-auto").first();
+      const scrolled = await scroller.evaluate((el) => {
+        el.scrollTop = el.scrollHeight;
+        return el.scrollTop > 0;
+      });
+      expect(scrolled).toBe(true);
+
+      expect((await title.boundingBox())!.y).toBeCloseTo(titleBefore.y, 0);
+      expect((await save.boundingBox())!.y).toBeCloseTo(saveBefore.y, 0);
+    });
+
+    test("keeps the map usable rather than shrinking it away", async ({ page }) => {
+      await openSheetOnSmallScreen(page);
+      await page.locator(".leaflet-container").waitFor();
+
+      // min-h-[220px] lives on the bordered wrapper around the map, so measure that.
+      const wrapperHeight = await page
+        .locator(".leaflet-container")
+        .evaluate((el) => el.parentElement!.getBoundingClientRect().height);
+      expect(wrapperHeight).toBeGreaterThanOrEqual(220);
+    });
+
+    test("leaves the sheet unscrolled on a large screen", async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await seedQuest(page, draftQuest(QUEST_ID, "Leere Quest"));
+      await page.getByRole("button", { name: "Station hinzufügen" }).click();
+      await expect(page.getByLabel("Stationsname")).toBeVisible();
+
+      const scroller = page.locator("div.overflow-y-auto").first();
+      const overflows = await scroller.evaluate((el) => el.scrollHeight > el.clientHeight + 1);
+      expect(overflows).toBe(false);
+      await expect(page.getByRole("button", { name: "Speichern" })).toBeVisible();
+    });
+  });
+
   test.describe("Reihenfolge (Drag & Drop)", () => {
     test("persists a new station order after a drag, surviving reload", async ({ page }) => {
       await seedQuest(

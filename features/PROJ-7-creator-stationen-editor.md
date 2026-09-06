@@ -1,7 +1,7 @@
 # PROJ-7: Creator — Stationen-Editor
 
 ## Status: In Progress
-_Deployed; das Refinement vom 2026-09-06 (Quest-Bearbeiten-Einstieg neben dem Titel) ist gebaut und im Browser verifiziert — QA steht aus. Zusätzlich offen: BUG — auf kleinen Handys überlagert die Karte im Stations-Sheet den "Speichern"-Button (Refine 2026-09-06, siehe Acceptance Criteria "Sheet-Layout auf kleinen Bildschirmen", Edge Cases 14–16 und Decision Log)._
+_Zwei Änderungen warten auf QA: (1) Quest-Bearbeiten-Einstieg neben dem Titel (2026-09-06, gebaut und im Browser verifiziert), (2) Sheet-Layout auf kleinen Bildschirmen — Karte überlagerte den "Speichern"-Button, behoben am 2026-09-06 mit fixiertem Header/Footer und scrollender Mitte, 7 neue E2E-Tests, Gesamtsuite 280/280 grün. Beide sind noch nicht deployed._
 **Created:** 2026-08-28
 **Last Updated:** 2026-09-06
 
@@ -152,9 +152,10 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 **Neu seit Refine 2026-09-02 — noch nicht implementiert:**
 - [x] Adress-Suchfeld im `StationEditorSheet` ergänzen (Debounced Nominatim-Suche, Vorschlagsliste, Pin-Setzen bei Auswahl) → Gelöst in `/architecture`: shadcn `Command` (bereits installiert) + neuer `useAddressSearch`-Hook, siehe Tech Design "Adresssuche" unten
 
-**Neu seit Refine 2026-09-06 (Sheet-Layout) — noch nicht implementiert:**
-- [ ] `StationEditorSheet` auf dreiteiliges Layout umbauen: `SheetContent` behält `h-[92dvh] flex flex-col`, verliert aber die Gefahr des Überlaufs; `SheetHeader` und `SheetFooter` bekommen `shrink-0`, der Block dazwischen (Name, Position/GPS, Adresssuche, Karte, Radius) wandert in einen eigenen `flex-1 min-h-0 overflow-y-auto`-Container
-- [ ] Auf 360×640 px verifizieren, dass beide Footer-Buttons ohne Scrollen sichtbar sind und die Karte weiterhin mindestens 220px hoch bleibt
+**Neu seit Refine 2026-09-06 (Sheet-Layout) — implementiert (siehe Implementation Notes unten):**
+- [x] `StationEditorSheet` auf dreiteiliges Layout umbauen → Umgesetzt wie skizziert: `SheetContent` bekam zusätzlich `gap-0 overflow-hidden`, Header/Footer `shrink-0`, dazwischen ein `flex-1 min-h-0 overflow-y-auto`-Container (2026-09-06)
+- [x] Auf 360×640 px verifizieren → Bestätigt per Screenshot und 7 neuen E2E-Tests: beide Buttons sichtbar mit 14px Safe-Area, Karten-Wrapper exakt 220px (2026-09-06)
+- [x] Footer-Buttons nebeneinander statt gestapelt → Zusätzlich nötig geworden: shadcns `SheetFooter`-Default `flex-col-reverse` kostete auf 640px Höhe zu viel Platz und schob "Abbrechen" unter den Bildschirmrand (2026-09-06)
 
 **Neu seit Refine 2026-09-06 — noch nicht implementiert:**
 - [ ] `AppHeader`-Aufruf in `src/app/create/[id]/page.tsx` verliert die `rightAction`-Prop; der Stift-Button zieht in den Titel-Block darunter (neben `{quest.name}`), Sichtbarkeit weiterhin an `!locked` gekoppelt
@@ -878,3 +879,43 @@ Geprüft im Rahmen des app-weiten Navigations-QA; die vollständigen Ergebnisse 
 Live verifiziert: Der Stift steht neben dem Quest-Titel und nicht mehr in der Kopfzeile; dort sitzt links der Zurück-Pfeil und rechts das Burger-Menu. Vollständige Deployment-Details in [PROJ-1](PROJ-1-app-shell-mode-switch.md#deployment--app-weite-navigation-2026-09-06).
 
 **Hinweis:** BUG-2 (16×16px-Schließen-X) betrifft auch `station-editor-sheet.tsx` und `module-editor-sheets.tsx` dieses Features und bleibt offen.
+
+---
+
+## Implementation Notes (Frontend) — Sheet-Layout auf kleinen Bildschirmen (2026-09-06)
+
+**Umgesetzt:** Der in der Refine-Sitzung vom 2026-09-06 spezifizierte Fix — die Karte überlagerte auf kleinen Handys den "Speichern"-Button.
+
+### Geänderte Dateien
+- `src/components/station-editor-sheet.tsx` — dreiteiliges Layout, Footer-Umbau
+- `tests/proj-7-creator-stationen-editor.spec.ts` — 7 neue E2E-Tests (`Sheet-Layout auf kleinen Bildschirmen`)
+
+### Was geändert wurde
+1. **`SheetContent`**: `gap-4` → `gap-0`, zusätzlich `overflow-hidden`. Der Abstand wandert in den Scroll-Container, damit die fixierten Ränder nicht doppelt umbrechen; `overflow-hidden` stellt sicher, dass niemals der Sheet selbst scrollt.
+2. **`SheetHeader`**: `shrink-0 pb-4` — bleibt fixiert oben.
+3. **Neuer Scroll-Container**: `flex-1 min-h-0 overflow-y-auto flex flex-col gap-4` umschließt Namensfeld, Positions-Zeile, Adresssuche, Karte und Radius-Slider. `min-h-0` ist der entscheidende Teil — ohne ihn weigert sich ein Flex-Child, unter seine Inhaltsgröße zu schrumpfen, und genau das verursachte den ursprünglichen Überlauf.
+4. **`SheetFooter`**: `shrink-0 flex-row gap-2 pt-4 pb-[14px]`, beide Buttons `flex-1`.
+
+### Abweichung von der Spec-Skizze
+Die Spec sah nur den dreiteiligen Aufbau vor. Beim Screenshot-Test auf 360×640 zeigte sich ein zweiter, in der Analyse übersehener Punkt: shadcns `SheetFooter` ist auf Mobile `flex-col-reverse`, stapelt also die beiden 44px-Buttons plus Abstand (~96px). Das passte zwar rechnerisch in den Viewport, drückte "Abbrechen" aber bündig an die Unterkante — auf einem echten iPhone läge er unter dem Home-Indicator. Gelöst mit `flex-row` (eine Zeile, ~44px statt ~96px) und `pb-[14px]`, der im Design System vorgeschriebenen Safe-Area für die fixierte Bottom-Action (`docs/design-system.md`, "Primary Action unten fest (12px Gutter, 14px Safe-Area)").
+
+Damit erfüllt das Sheet jetzt auch die beiden bereits dokumentierten Layout-Regeln des Design Systems, die es vorher verletzte: "Primary Action unten fest" und "Mitte scrollt".
+
+### Zwei Testfehlschläge, die keine Produktfehler waren
+Die erste Testrunde meldete zwei Fehler, beide in meinen Assertions, nicht im Fix:
+- **"Karte überlappt Speichern"**: Die Karte ragt tatsächlich über die Unterkante des Scroll-Containers hinaus — sie wird dort aber *abgeschnitten*, nicht über den Footer gezeichnet. `boundingBox()` kennt kein Clipping. Assertion vergleicht jetzt die *sichtbare* Kartenfläche (Schnittmenge mit dem Scroll-Container) gegen den Button.
+- **"Karte mindestens 220px"**: Gemessen wurden 218px. `min-h-[220px]` sitzt auf dem Wrapper mit `border`, das innere `.leaflet-container` ist durch die 1px-Rahmen je Seite genau 2px kleiner. Assertion misst jetzt den Wrapper, der die Regel trägt.
+
+### Verifikation
+- `npm run build` — kompiliert fehlerfrei
+- `npm run lint` — 0 Errors (6 vorbestehende `<img>`-Warnungen, keine in berührten Dateien)
+- `npm test` — 177/177 Unit-Tests grün
+- `npx playwright test --project="Mobile Safari"` — **280 passed, 2 skipped, 0 failed** (Gesamtsuite)
+- PROJ-7-Suite: 34 Tests (vorher 27), alle grün
+- PROJ-6/PROJ-8-Nachbarsuites: 57/57 grün — der Layout-Umbau hat keine Nebenwirkungen
+- Screenshot auf 360×640 geprüft: beide Buttons nebeneinander vollständig sichtbar, Karte 220px, Radius-Slider als Scroll-Andeutung angeschnitten
+
+### Bekannte offene Punkte
+- Chromium-/Android-Abdeckung fehlt weiterhin (Browser-Binary lokal nicht lauffähig) — betrifft das ganze Projekt, nicht diese Änderung
+- Der Modul-Editor (PROJ-8) behält bewusst sein `overflow-y-auto` auf dem gesamten `SheetContent`; sein Footer scrollt also mit. Bewusste Scope-Entscheidung aus der Refine-Sitzung, siehe Decision Log
+- Verhalten bei geöffneter Bildschirmtastatur (Edge Case 16) ist konstruktiv abgedeckt, aber nicht automatisiert getestet — Playwright emuliert keine mobile Tastatur; für `/qa` auf einem echten Gerät vorgemerkt

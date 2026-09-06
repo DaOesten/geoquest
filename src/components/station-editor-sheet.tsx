@@ -113,68 +113,76 @@ export function StationEditorSheet({ open, onOpenChange, station, contextPins, o
       <SheetContent
         side="bottom"
         data-theme="light"
-        className="text-foreground h-[92dvh] max-w-none sm:max-w-none flex flex-col gap-4 rounded-t-card"
+        className="text-foreground h-[92dvh] max-w-none sm:max-w-none flex flex-col gap-0 overflow-hidden rounded-t-card"
       >
-        <SheetHeader>
+        <SheetHeader className="shrink-0 pb-4">
           <SheetTitle className="font-display italic text-2xl uppercase text-foreground">
             {station ? "Station bearbeiten" : "Station hinzufügen"}
           </SheetTitle>
         </SheetHeader>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="station-name" className="text-tech text-[10px] tracking-[0.1em]">
-            Stationsname
-          </Label>
-          <Input
-            id="station-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="z.B. Der alte Brunnen"
-            autoFocus
-            maxLength={200}
-          />
-        </div>
-
-        <div className="flex flex-col gap-2 flex-1 min-h-0">
-          <div className="flex items-center justify-between">
-            <Label className="text-tech text-[10px] tracking-[0.1em]">Position</Label>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleUseCurrentPosition}
-              disabled={isLocating}
-              className="rounded-pill h-11 text-tech text-[10px] tracking-[0.08em]"
-            >
-              <Crosshair className="w-4 h-4" />
-              {isLocating ? "Suche…" : "Aktuelle Position verwenden"}
-            </Button>
-          </div>
-          <AddressSearchField onSelect={handleAddressSelect} />
-          <div className="relative flex-1 min-h-[220px] rounded-card overflow-hidden border border-border">
-            <StationMap
-              position={position}
-              contextPins={contextPins}
-              center={mapView.center}
-              zoom={mapView.zoom}
-              onPositionChange={(lat, lng) => setPosition({ lat, lng })}
+        {/* Only this middle band scrolls; header and footer stay put, so "Speichern" is reachable
+            on every viewport height instead of being pushed out by the map's min-height
+            (PROJ-7 refine 2026-09-06). The map keeps a usable size — the content scrolls instead. */}
+        <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="station-name" className="text-tech text-[10px] tracking-[0.1em]">
+              Stationsname
+            </Label>
+            <Input
+              id="station-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="z.B. Der alte Brunnen"
+              autoFocus
+              maxLength={200}
             />
           </div>
-          {!position && (
-            <p className="font-body text-xs text-muted-foreground flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-              Tippe auf die Karte, um die Station zu platzieren.
-            </p>
-          )}
+
+          <div className="flex flex-col gap-2 flex-1 min-h-0">
+            <div className="flex items-center justify-between">
+              <Label className="text-tech text-[10px] tracking-[0.1em]">Position</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleUseCurrentPosition}
+                disabled={isLocating}
+                className="rounded-pill h-11 text-tech text-[10px] tracking-[0.08em]"
+              >
+                <Crosshair className="w-4 h-4" />
+                {isLocating ? "Suche…" : "Aktuelle Position verwenden"}
+              </Button>
+            </div>
+            <AddressSearchField onSelect={handleAddressSelect} />
+            <div className="relative flex-1 min-h-[220px] rounded-card overflow-hidden border border-border">
+              <StationMap
+                position={position}
+                contextPins={contextPins}
+                center={mapView.center}
+                zoom={mapView.zoom}
+                onPositionChange={(lat, lng) => setPosition({ lat, lng })}
+              />
+            </div>
+            {!position && (
+              <p className="font-body text-xs text-muted-foreground flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                Tippe auf die Karte, um die Station zu platzieren.
+              </p>
+            )}
+          </div>
+
+          <StationRadiusSlider value={radiusMeters} onChange={setRadiusMeters} />
         </div>
 
-        <StationRadiusSlider value={radiusMeters} onChange={setRadiusMeters} />
-
-        <SheetFooter className="mt-2">
+        {/* SheetFooter defaults to flex-col-reverse on mobile — two stacked 44px buttons cost
+            height that a 360x640 screen cannot spare. Side by side keeps it to one row, and
+            pb-[14px] is the design system's safe-area gutter for a fixed bottom action. */}
+        <SheetFooter className="shrink-0 flex-row gap-2 pt-4 pb-[14px]">
           <Button
             type="button"
             variant="outline"
-            className="rounded-pill h-11 text-tech text-xs tracking-[0.08em]"
+            className="flex-1 rounded-pill h-11 text-tech text-xs tracking-[0.08em]"
             onClick={() => onOpenChange(false)}
           >
             Abbrechen
@@ -182,7 +190,7 @@ export function StationEditorSheet({ open, onOpenChange, station, contextPins, o
           <Button
             type="button"
             onClick={handleSave}
-            className="rounded-pill h-11 bg-primary text-primary-foreground text-tech text-xs tracking-[0.08em] active:scale-[0.96] transition-all duration-fast ease-gq"
+            className="flex-1 rounded-pill h-11 bg-primary text-primary-foreground text-tech text-xs tracking-[0.08em] active:scale-[0.96] transition-all duration-fast ease-gq"
           >
             Speichern
           </Button>
