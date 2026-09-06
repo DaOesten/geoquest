@@ -4,7 +4,7 @@
 **Created:** 2026-08-23
 **Last Updated:** 2026-09-06
 
-> **Offenes Refinement (2026-09-06):** Zwei stille Ausfallmodi ergänzt — GPS-Fix bleibt trotz erteilter Permission aus, und der Richtungspfeil hat keine Richtung. Beides ist deployed noch nicht abgedeckt. Siehe Abschnitte "Permission-Flow", "Richtungsanzeige ohne Heading" und Edge Cases 9–12.
+> **Refinement (2026-09-06) — Frontend umgesetzt, QA steht aus:** Zwei stille Ausfallmodi ergänzt — GPS-Fix bleibt trotz erteilter Permission aus, und der Richtungspfeil hat keine Richtung. Siehe Abschnitte "Permission-Flow", "Richtungsanzeige ohne Heading", Edge Cases 9–12 und die Implementation Notes vom 2026-09-06.
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — für Routing und UI-Rahmen
@@ -383,6 +383,51 @@ Keine neuen Packages erforderlich. Alle genutzten APIs:
 - Gesperrte Stationen an die Vorlage angeglichen: keine `opacity`-Abdunkelung mehr, stattdessen helleres Grau (`#C4CACE`) fuer Name/Nummer, sichtbarerer Badge-Rand, Lock-Icon ohne Kreis-Hintergrund — bleibt erkennbar deaktiviert, aber lesbar.
 - Neue Subtitles: "Aktiv" (aktuelle Station), "Gesperrt" (gesperrte Stationen) — ergaenzend zum bestehenden "Abgeschlossen".
 - Stacking-Fallstrick: Routenlinie braucht `position: relative` **mit explizitem** `z-index` (`z-0`) auf dem Listen-Container, sonst erzeugt der Container keinen eigenen Stacking-Context und die Linie mit `-z-10` faellt hinter den gesamten Seitenhintergrund (unsichtbar).
+
+### Nachtraegliche Ergaenzung: GPS- und Kompass-Ausfallmodi (2026-09-06)
+
+Umsetzung des Refinements vom selben Tag. Ausloeser war eine Testquest, in der
+sich der Richtungspfeil auf dem iPhone nicht bewegte.
+
+**`use-geolocation.ts`**
+- Neue Permission-States `no-fix` und `insecure-context`, neuer Signal-State `searching`
+- Error-Handler wertet jetzt alle `GeolocationPositionError`-Codes aus. `POSITION_UNAVAILABLE`
+  und `TIMEOUT` fuehren vor dem ersten Fix in `no-fix` statt verschluckt zu werden
+- Neuer 15s-Timer (`FIRST_FIX_TIMEOUT_MS`) fuer den Fall, dass `watchPosition` gar nichts
+  meldet — drinnen der Normalfall
+- `window.isSecureContext`-Pruefung vor dem Watch: ohne HTTPS gibt es eine technische
+  Meldung statt der falschen Diagnose "Geraet unterstuetzt kein GPS"
+- Nach einem erfolgreichen Fix loest ein Fehler kein `no-fix` mehr aus — dafuer bleibt
+  der bestehende 30s-Signalverlust zustaendig
+- `retry()` verlaesst den `no-fix`-Zustand, sonst bliebe der Screen haengen
+
+**`use-device-orientation.ts`**
+- Neues Feld `canRequestPermission` (nur iOS, Permission noch `prompt`)
+
+**`permission-screen.tsx`**
+- Suchzustand ("Suche GPS-Signal…", pulsierendes Icon) und Kein-Fix-Zustand
+  ("Gehe nach draussen") mit eigenen Icons (`SatelliteDish`, `ShieldAlert`)
+- Neue optionale Prop `signalState`
+
+**`direction-arrow.tsx` / `globals.css`**
+- Neue Prop `directionUnknown`: grauer, gedimmter Pfeil ohne Glow, langsame
+  Suchdrehung (`gq-seek`-Keyframe) statt fixer Rotation 0
+
+**`navigation-screen.tsx`**
+- `headingSource` unterscheidet `compass` / `movement` / `none`
+- Bei ausstehender iOS-Sensorfreigabe erscheint ein "Kompass aktivieren"-Button
+  statt des Hinweises "Laufe ein paar Schritte" (der dort nicht hilft)
+- Hinweistext von 9px `text-tech` auf `text-sm font-body` angehoben
+
+**Tests:** `src/hooks/use-geolocation.test.ts` neu (10 Tests) — deckt Suchzustand,
+15s-Timeout, Error-Code-Mapping, Abgrenzung zu `denied`, Retry und `insecure-context` ab.
+
+**Verifiziert:** 177 Unit-Tests gruen, Production-Build ok, E2E-Suite 267/267 gruen
+(Mobile Safari). Die neuen Zustaende zusaetzlich im Browser gegen die echte UI
+geprueft (Suchzustand, Kein-Fix, `POSITION_UNAVAILABLE`, richtungsloser Pfeil mit
+weiterhin sichtbarer Entfernung).
+
+**Offen:** Chromium-Binary lokal nicht installiert, daher nur WebKit-Abdeckung.
 
 ## QA Test Results
 

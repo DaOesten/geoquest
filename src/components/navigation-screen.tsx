@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { WifiOff, RotateCcw, Check } from "lucide-react";
+import { WifiOff, RotateCcw, Check, Compass } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { Button } from "@/components/ui/button";
 import { DirectionArrow } from "./direction-arrow";
@@ -61,6 +61,7 @@ export function NavigationScreen({
   let arrowRotation = 0;
   let isNear = false;
   let compassAvailable = false;
+  let headingSource: "compass" | "movement" | "none" = "none";
 
   if (position) {
     distance = Math.round(haversine(position.lat, position.lng, station.lat, station.lng));
@@ -73,9 +74,17 @@ export function NavigationScreen({
       deviceHeading = headingFromPositions(prevPos.lat, prevPos.lng, position.lat, position.lng);
     }
 
+    if (!compassAvailable && prevPos) {
+      headingSource = deviceHeading !== null ? "movement" : "none";
+    } else if (compassAvailable) {
+      headingSource = "compass";
+    }
+
     arrowRotation = deviceHeading !== null ? (targetBearing - deviceHeading + 360) % 360 : 0;
     isNear = distance <= 50;
   }
+
+  const directionUnknown = position !== null && headingSource === "none";
 
   // Arrival detection — "adjust state during render" pattern
   if (!arrived && distance !== null && distance <= station.radiusMeters) {
@@ -132,7 +141,11 @@ export function NavigationScreen({
 
       {/* Compass area */}
       <div className="flex-1 flex flex-col items-center justify-center gap-5 px-5">
-        <DirectionArrow rotation={arrowRotation} isNear={isNear} />
+        <DirectionArrow
+          rotation={arrowRotation}
+          isNear={isNear}
+          directionUnknown={directionUnknown}
+        />
 
         <div className="text-center">
           <div className={`font-display italic text-[64px] leading-none ${COLOR_MAP[distanceColor]}`}>
@@ -144,10 +157,24 @@ export function NavigationScreen({
           </div>
         </div>
 
-        {!compassAvailable && position && (
-          <p className="text-tech text-[9px] tracking-[0.12em] text-gq-grey text-center max-w-[200px]">
-            Laufe ein paar Schritte, damit der Pfeil die Richtung findet.
-          </p>
+        {/* Bis 2026-09-06 stand hier nur ein 9px-grauer Hinweis — auf iOS mit
+            ausstehender Sensorfreigabe war er sogar der falsche Rat, weil Laufen
+            das Problem nicht löst (Edge Case 10). */}
+        {!compassAvailable && position && orientation.canRequestPermission ? (
+          <Button
+            onClick={() => orientation.requestPermission()}
+            className="rounded-pill bg-gq-teal text-gq-black font-tech text-xs uppercase tracking-[0.08em] px-6 h-11 hover:bg-gq-teal-hover active:scale-[0.96] transition-all duration-fast ease-gq"
+          >
+            <Compass className="w-4 h-4 mr-2" />
+            Kompass aktivieren
+          </Button>
+        ) : (
+          !compassAvailable &&
+          position && (
+            <p className="font-body text-sm text-gq-grey text-center max-w-[240px]">
+              Laufe ein paar Schritte, damit der Pfeil die Richtung findet.
+            </p>
+          )
         )}
 
         {orientation.needsCalibration && (

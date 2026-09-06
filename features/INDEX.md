@@ -51,6 +51,6 @@ Gebaut, QA-geprüft und deployt am 2026-09-06 — live auf https://geoquesty.ver
 - **Pfeil ohne Heading zeigt Rotation 0** — von "geradeaus" nicht unterscheidbar
 - **iOS-Sensorfreigabe beim Wiedereinstieg übersprungen** — Kompass bleibt die ganze Session stumm (wahrscheinlichste Ursache des Testbefunds)
 
-Spec ist aktualisiert (Acceptance Criteria, Edge Cases 9–12, Technical Requirements, Decision Log). Nächster Schritt: `/frontend` — **erst nach QA des laufenden Navigations-Umbaus**, weil beide `navigation-screen.tsx` anfassen.
+Spec ist aktualisiert (Acceptance Criteria, Edge Cases 9–12, Technical Requirements, Decision Log). **Frontend umgesetzt am 2026-09-06** (nach Deploy des Navigations-Umbaus, daher kein Konflikt in `navigation-screen.tsx`): neue Zustände `no-fix`/`insecure-context`/`searching`, richtungsloser Pfeil, "Kompass aktivieren"-Button für iOS. 10 neue Unit-Tests. Nächster Schritt: `/qa`.
 
 ## Next Available ID: PROJ-14

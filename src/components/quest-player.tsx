@@ -122,6 +122,7 @@ export function QuestPlayer({ quest }: QuestPlayerProps) {
       return (
         <PermissionScreen
           permissionState={geo.permission}
+          signalState={geo.signal}
           onRequest={handlePermissionRequest}
         />
       );

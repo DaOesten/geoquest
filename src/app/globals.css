@@ -137,6 +137,13 @@
   100% { transform: scale(1); opacity: 1; }
 }
 
+/* Richtungsloser Pfeil: langsame Suchdrehung. Muss sich klar von einer
+   echten Peilung unterscheiden, damit niemand ihr folgt (PROJ-3, Edge Case 11). */
+@keyframes gq-seek {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 @keyframes gq-shake {
   0%, 100% { transform: translateX(0); }
   15% { transform: translateX(-4px); }

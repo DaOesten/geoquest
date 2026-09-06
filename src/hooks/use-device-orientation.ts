@@ -9,6 +9,13 @@ export interface UseDeviceOrientationReturn {
   heading: number | null;
   needsCalibration: boolean;
   requestPermission: () => Promise<void>;
+  /**
+   * True, wenn die Sensorfreigabe auf iOS noch aussteht und per Nutzergeste
+   * nachgeholt werden kann. Beim Wiedereinstieg über gespeicherten Fortschritt
+   * überspringt der Spieler den Permission-Screen — bis 2026-09-06 blieb der
+   * Kompass dann die ganze Session stumm, ohne Hinweis (Edge Case 10).
+   */
+  canRequestPermission: boolean;
 }
 
 function isIOS(): boolean {
@@ -83,7 +90,13 @@ export function useDeviceOrientation(): UseDeviceOrientationReturn {
     };
   }, [addListener, handleOrientation]);
 
-  return { permission, heading, needsCalibration, requestPermission };
+  return {
+    permission,
+    heading,
+    needsCalibration,
+    requestPermission,
+    canRequestPermission: permission === "prompt" && isIOS(),
+  };
 }
 
 declare global {
