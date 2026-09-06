@@ -1,7 +1,7 @@
 # PROJ-7: Creator — Stationen-Editor
 
 ## Status: In Progress
-_Deployed; das Refinement vom 2026-09-06 (Quest-Bearbeiten-Einstieg neben dem Titel) ist gebaut und im Browser verifiziert — QA steht aus._
+_Deployed; das Refinement vom 2026-09-06 (Quest-Bearbeiten-Einstieg neben dem Titel) ist gebaut und im Browser verifiziert — QA steht aus. Zusätzlich offen: BUG — auf kleinen Handys überlagert die Karte im Stations-Sheet den "Speichern"-Button (Refine 2026-09-06, siehe Acceptance Criteria "Sheet-Layout auf kleinen Bildschirmen", Edge Cases 14–16 und Decision Log)._
 **Created:** 2026-08-28
 **Last Updated:** 2026-09-06
 
@@ -26,6 +26,7 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 7. Als Ersteller möchte ich beim Bearbeiten einer Station sehen, wo meine anderen Stationen liegen, damit ich einschätzen kann, ob die Route sinnvoll ist (z.B. nicht zwei Stationen zu nah beieinander).
 8. Als Ersteller möchte ich meinen Zwischenstand beim Bearbeiten einer Station nicht verlieren, auch wenn ich noch keine Position gesetzt habe, damit ich in Ruhe weiterarbeiten kann.
 10. Als Ersteller möchte ich eine Adresse (z.B. Straße und Hausnummer) in ein Suchfeld eingeben und aus Vorschlägen auswählen können, damit ich eine bekannte Adresse nicht mühsam auf der Karte suchen/scrollen muss (siehe Decision Log 2026-09-02).
+11. Als Ersteller möchte ich eine Station auch auf einem kleinen Handy speichern oder abbrechen können, ohne dass die Karte die Buttons verdeckt, damit ich meine Eingaben nicht verliere und den Dialog nicht neu starten muss (siehe Decision Log 2026-09-06).
 
 ## Out of Scope
 - Modul-Editor für die 5 Modultypen (Text/Bild/Audio/Video/Task) an einer Station — PROJ-8. Jede Station bekommt hier einen "Module bearbeiten"-Button, der zu PROJ-8 führt, aber ohne Funktion, bis PROJ-8 gebaut ist
@@ -67,6 +68,13 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 **Name & Radius:**
 - [ ] Angenommen das Sheet ist offen, wenn der Nutzer einen Stationsnamen eingibt, dann wird dieser beim Speichern übernommen
 - [ ] Angenommen das Sheet ist offen, wenn der Nutzer den Radius-Regler bewegt, dann wird der Wert im Bereich 10–100m auf den nächsten sinnvollen Schritt begrenzt
+
+**Sheet-Layout auf kleinen Bildschirmen (neu seit Refine 2026-09-06):**
+- [ ] Angenommen der Nutzer öffnet das Stations-Sheet auf einem Gerät mit kleiner Viewport-Höhe (Referenz: 360×640 px), wenn das Sheet vollständig geöffnet ist, dann sind "Abbrechen" und "Speichern" ohne jede Scroll-Bewegung sichtbar und antippbar, und die Karte überlagert sie nicht
+- [ ] Angenommen der Sheet-Inhalt ist höher als der verfügbare Platz, wenn der Nutzer im mittleren Bereich (Name, Adresssuche, Karte, Radius) scrollt, dann bleiben die Titelzeile oben und die Button-Zeile unten unverändert an ihrer Position stehen
+- [ ] Angenommen der Nutzer scrollt den mittleren Bereich, wenn er mit dem Finger über die Karte streicht, dann verschiebt das die Karte (Pan) und scrollt nicht den Sheet-Inhalt — der Bereich um die Karte herum bleibt der Weg zum Scrollen
+- [ ] Angenommen das Sheet ist offen und der Nutzer tippt in das Namens- oder Adressfeld, wenn die Bildschirmtastatur aufgeht und die nutzbare Höhe schrumpft, dann bleiben "Abbrechen" und "Speichern" erreichbar (ggf. nach Schließen der Tastatur), ohne dass Inhalt unerreichbar aus dem Sheet herausgedrückt wird
+- [ ] Angenommen der Nutzer öffnet das Sheet auf einem großen Bildschirm (Desktop/Tablet), wenn der Inhalt vollständig hineinpasst, dann sieht das Sheet unverändert aus wie bisher — kein sichtbarer Scrollbalken, keine geänderte Kartengröße
 
 **Speichern (Entwurfsprinzip):**
 - [ ] Angenommen das Sheet ist offen und der Nutzer hat nur einen Namen eingegeben, aber keine Position gesetzt, wenn er auf "Speichern" tippt, dann wird die Station trotzdem gespeichert (mit `lat`/`lng` als `null`/nicht gesetzt) und das Sheet schließt sich
@@ -111,6 +119,9 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 11. **Sehr schnelles Tippen im Adressfeld:** Debounce verhindert einen Request pro Tastenanschlag; nur die zuletzt eingegebene Anfrage nach Ablauf der Pause löst einen Request aus, veraltete In-Flight-Requests werden ignoriert (kein Wettlauf, bei dem eine ältere Antwort eine neuere Vorschlagsliste überschreibt)
 12. **Sheet wird während einer laufenden Adresssuche geschlossen (Abbrechen):** Der Such-Request wird verworfen, analog zum bestehenden Verhalten beim GPS-Lookup (Edge Case 8) — keine Race Condition, da der State nur beim Speichern übernommen wird
 13. **Nominatim-Nutzungsrichtlinie (Rate Limit):** Client-seitiges Debouncing hält die Requestrate weit unter dem von Nominatim vorgeschriebenen Maximum (1 Request/Sekunde); da es sich um eine Einzelnutzer-PWA ohne Server-Proxy handelt, geht die Anfrage direkt vom Browser des Erstellers aus — kein serverseitiges Rate-Limiting nötig, da Requests nicht gebündelt/aggregiert werden
+14. **Sehr kleine Viewport-Höhe (z.B. 360×640 px, Browser-Adressleiste eingeblendet):** Der Sheet-Inhalt ist höher als die verfügbaren 92dvh. Der mittlere Bereich scrollt, Titelzeile und Button-Zeile bleiben fixiert — die Karte behält ihre Mindesthöhe von 220px, statt so weit zu schrumpfen, dass sie zum Platzieren unbrauchbar wird (siehe Decision Log 2026-09-06)
+15. **Scroll-Geste trifft die Karte:** Leaflet fängt Touch-Gesten innerhalb des Kartencontainers ab (Pan/Zoom) — ein Wisch über die Karte bewegt die Karte, nicht den Sheet-Inhalt. Das ist gewolltes Verhalten; gescrollt wird über die Bereiche außerhalb der Karte (Namensfeld, Adresssuche, Radius-Slider, Ränder)
+16. **Bildschirmtastatur verkleinert den sichtbaren Bereich:** Beim Fokussieren von Namens- oder Adressfeld schiebt die mobile Tastatur den nutzbaren Bereich zusammen. Da der Footer am Sheet-Rand fixiert ist und der Inhalt dazwischen scrollt, wird nichts unerreichbar aus dem Sheet herausgedrückt — nach Schließen der Tastatur ist der Ausgangszustand wiederhergestellt
 
 ## Technical Requirements
 - Karten-Bibliothek: Leaflet + OpenStreetMap-Tiles (kostenlos, kein API-Key nötig) — neue Dependency, siehe Decision Log
@@ -126,6 +137,9 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 - Geocoding: Nominatim (OpenStreetMap) Search-API (`https://nominatim.openstreetmap.org/search`), kein API-Key nötig, konsistent mit der bestehenden Leaflet/OSM-Kartenbasis; keine Länder-/Regionseinschränkung (weltweite Suche)
 - Nominatim-Nutzungsrichtlinie erfordert einen aussagekräftigen `User-Agent`- oder `Referer`-Header sowie clientseitiges Debouncing (max. 1 Request/Sekunde) — beides bei der Implementierung zu beachten
 - Debounce für das Adress-Suchfeld: ca. 500ms nach der letzten Eingabe, veraltete In-Flight-Requests werden verworfen (siehe Edge Case 11)
+- Sheet-Layout (neu seit Refine 2026-09-06): Das Stations-Sheet muss auf jeder Viewport-Höhe eine dreiteilige Struktur haben — fixierte Titelzeile, scrollbarer Inhaltsbereich dazwischen, fixierte Button-Zeile am unteren Rand. Das `SheetContent` selbst darf nicht überlaufen; der Scroll-Container ist ausschließlich der mittlere Bereich
+- Die Karten-Mindesthöhe (220px) bleibt erhalten und darf nicht zugunsten der Höhenanpassung aufgegeben werden — stattdessen scrollt der Inhalt (siehe Decision Log 2026-09-06)
+- Referenz-Viewport für die Prüfung: 360×640 px (kleinstes im PRD genanntes Mobile-Format, 360–430px Breite) — dort müssen beide Footer-Buttons ohne Scrollen sichtbar sein
 
 ## Open Questions
 - [x] Welche konkrete Drag-and-Drop-Bibliothek soll verwendet werden? → Gelöst in `/architecture`: `@dnd-kit` (Begründung siehe Tech Design)
@@ -137,6 +151,10 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 
 **Neu seit Refine 2026-09-02 — noch nicht implementiert:**
 - [x] Adress-Suchfeld im `StationEditorSheet` ergänzen (Debounced Nominatim-Suche, Vorschlagsliste, Pin-Setzen bei Auswahl) → Gelöst in `/architecture`: shadcn `Command` (bereits installiert) + neuer `useAddressSearch`-Hook, siehe Tech Design "Adresssuche" unten
+
+**Neu seit Refine 2026-09-06 (Sheet-Layout) — noch nicht implementiert:**
+- [ ] `StationEditorSheet` auf dreiteiliges Layout umbauen: `SheetContent` behält `h-[92dvh] flex flex-col`, verliert aber die Gefahr des Überlaufs; `SheetHeader` und `SheetFooter` bekommen `shrink-0`, der Block dazwischen (Name, Position/GPS, Adresssuche, Karte, Radius) wandert in einen eigenen `flex-1 min-h-0 overflow-y-auto`-Container
+- [ ] Auf 360×640 px verifizieren, dass beide Footer-Buttons ohne Scrollen sichtbar sind und die Karte weiterhin mindestens 220px hoch bleibt
 
 **Neu seit Refine 2026-09-06 — noch nicht implementiert:**
 - [ ] `AppHeader`-Aufruf in `src/app/create/[id]/page.tsx` verliert die `rightAction`-Prop; der Stift-Button zieht in den Titel-Block darunter (neben `{quest.name}`), Sichtbarkeit weiterhin an `!locked` gekoppelt
@@ -164,6 +182,10 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 | Debounced Live-Vorschlagsliste statt explizitem Such-Button | Vertrautes UX-Muster (Google Maps o.ä.), reduziert die Anzahl nötiger Taps gegenüber einem separaten Such-Button-Schritt | 2026-09-02 |
 | Auswahl eines Vorschlags setzt den Pin sofort (nicht nur Kartenzentrierung) | Konsistent mit dem bestehenden "Aktuelle Position verwenden"-Verhalten (setzt ebenfalls direkt den Pin); Nutzer kann bei Bedarf trotzdem per Drag feinjustieren, kein zusätzlicher Pflichtschritt für den Regelfall | 2026-09-02 |
 | Manuelle Lat/Lng-Zahlen-Eingabe bleibt Out of Scope, auch mit Adresssuche | Adresssuche ist ein zusätzlicher Zuführungsweg zur Karte (wie Antippen/GPS), keine direkte Koordinaten-Eingabe — die ursprüngliche Begründung (Zielgruppe kennt keine GPS-Koordinaten) bleibt unverändert gültig | 2026-09-02 |
+| "Abbrechen"/"Speichern" müssen im Stations-Sheet auf jedem Gerät ohne Scrollen erreichbar sein | Nutzer-Feedback nach Live-Test auf dem Handy: Die Karte überlagerte den Speichern-Button, das Sheet war damit auf kleinen Geräten funktional gesperrt — eingegebene Stationsdaten ließen sich nicht sichern. Das trifft die Kernaktion des Screens; ein Dialog, aus dem man nicht speichern kann, macht den Stationen-Editor auf Mobile unbrauchbar, und Mobile-First ist eine PRD-Vorgabe | 2026-09-06 |
+| Fixierter Footer + scrollender Inhaltsbereich, statt die Karte schrumpfen zu lassen | Von drei erwogenen Optionen (Footer fixieren / Karten-Mindesthöhe aufgeben / Karte als Vollbild-Schritt) gewählt: Die Karte behält eine zum Platzieren brauchbare Größe, die Speichern-Aktion ist immer sichtbar, und es kommt kein zusätzlicher Bedienschritt hinzu. Eine schrumpfende Karte hätte auf sehr kleinen Geräten das eine Problem gegen ein anderes getauscht; der Vollbild-Schritt wäre deutlich mehr Umbau für einen Layoutfehler | 2026-09-06 |
+| Karten-Mindesthöhe von 220px bleibt unangetastet | Unter etwa dieser Höhe lässt sich ein Pin auf einer Karte per Touch nicht mehr sinnvoll platzieren — die Karte ist der einzige direkte Koordinaten-Eingabeweg (Decision 2026-08-28), also darf ihre Bedienbarkeit nicht dem Platzsparen geopfert werden | 2026-09-06 |
+| Fix bleibt auf das Stations-Sheet begrenzt, Modul-Editor (PROJ-8) wird nicht mitgezogen | Der Modul-Editor überläuft nicht — er scrollt als Ganzes, sein Speichern-Button wandert also nur mit, statt unerreichbar zu sein. Bewusste Entscheidung des Nutzers, den Scope eng am tatsächlichen Fehler zu halten, statt ein Refactoring über beide Sheets aufzumachen; die daraus folgende Uneinheitlichkeit ist als offener Punkt notiert | 2026-09-06 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -184,6 +206,9 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 | Debounce direkt im Hook implementiert (`setTimeout`/`clearTimeout`), keine neue Debounce-Bibliothek | Einzelner Anwendungsfall im gesamten Projekt, eine dedizierte Bibliothek (z.B. `use-debounce`) wäre eine neue Dependency für ein Standard-Pattern, das sich in wenigen Zeilen selbst abbilden lässt | 2026-09-02 |
 | `AbortController` für Race-Schutz UND Abbruch beim Sheet-Schließen in einem Mechanismus | Ein Werkzeug statt zweier getrennter Lösungen für Edge Case 11 (veraltete Antworten) und Edge Case 12 (Sheet schließt während laufender Suche) — weniger State, weniger Fehlerquellen | 2026-09-02 |
 | Positions-Auswahl aus der Adresssuche nutzt denselben `setPosition`/`setMapView`-Pfad wie "Aktuelle Position verwenden" | Kein separater Code-Pfad für "Position setzen" nötig — Adresssuche ist nur eine dritte Aufrufquelle desselben bestehenden Mechanismus, konsistent mit dem bereits etablierten Sheet-Datenfluss | 2026-09-02 |
+| Ursache des Überlagerungs-Bugs: `min-h-[220px]` der Karte gewinnt gegen `flex-1` im nicht-scrollbaren `SheetContent` | Das `SheetContent` ist `h-[92dvh] flex flex-col` ohne Scroll-Container. Auf kleinen Viewports übersteigt die Summe aus Header, Namensfeld, Positions-Zeile, Adresssuche, Karten-Mindesthöhe, Radius-Slider und Footer die verfügbare Höhe; da nichts scrollt, wird der `SheetFooter` schlicht aus dem sichtbaren Bereich herausgedrückt und liegt hinter/unter der Karte | 2026-09-06 |
+| Scroll-Container ist der mittlere Bereich, nicht das `SheetContent` selbst | `overflow-y-auto` auf dem `SheetContent` (so gelöst im Modul-Editor) würde den Footer mitscrollen lassen — genau das soll hier vermieden werden. Header und Footer bekommen `shrink-0`, der Bereich dazwischen `flex-1 min-h-0 overflow-y-auto` | 2026-09-06 |
+| Kein Eingriff in Leaflets Touch-Handling innerhalb des Kartencontainers | Leaflet fängt Wischgesten über der Karte ab (Pan/Zoom) — das ist für einen Karten-Editor korrekt und soll so bleiben. Gescrollt wird über die Bereiche außerhalb der Karte; ein Sonderfall-Handling wäre unnötige Komplexität für ein Verhalten, das Nutzer von jeder Karten-App kennen | 2026-09-06 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
