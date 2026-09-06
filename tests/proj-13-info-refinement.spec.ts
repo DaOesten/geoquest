@@ -63,8 +63,13 @@ test.describe("Burger-Menu (mobil)", () => {
 
     await trigger.click();
     const menu = page.getByRole("dialog");
-    for (const label of ["App", "Anleitung", "Impressum", "Datenschutz"]) {
+    // Seit 2026-09-06 das app-weite Menu (PROJ-1): sechs Ziele in drei Gruppen,
+    // "App" ist jetzt eine Gruppen-Überschrift statt eines Links.
+    for (const label of ["Play", "Create", "Über", "Anleitung", "Impressum", "Datenschutz"]) {
       await expect(menu.getByRole("link", { name: label, exact: true })).toBeVisible();
+    }
+    for (const group of ["App", "Info", "Rechtliches"]) {
+      await expect(menu.getByText(group, { exact: true })).toBeVisible();
     }
   });
 
@@ -246,16 +251,19 @@ test.describe("Responsive", () => {
     });
   }
 
-  test("Desktop zeigt die Navigationslinks statt des Burger-Menus", async ({ page }) => {
+  test("Desktop zeigt die Navigationslinks UND das Burger-Menu", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/about");
 
-    await expect(page.getByRole("button", { name: "Menü öffnen" })).toBeHidden();
-    for (const label of ["Anleitung", "Impressum", "Datenschutz"]) {
-      await expect(
-        page.getByRole("navigation").getByRole("link", { name: label, exact: true })
-      ).toBeVisible();
-    }
+    // Seit 2026-09-06 auch am Desktop sichtbar: das Menu führt Play und Create,
+    // Ziele, die die Desktop-Zeile nicht abbildet (PROJ-13 Refinement 3).
+    await expect(page.getByRole("button", { name: "Menü öffnen" })).toBeVisible();
+    await expect(
+      page.getByRole("navigation").getByRole("link", { name: "Anleitung", exact: true })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("navigation").getByRole("link", { name: "Zur App", exact: true })
+    ).toBeVisible();
   });
 });
 
@@ -308,12 +316,12 @@ test.describe("Zurückpfeil & Footer (Refinement 2)", () => {
     await expect(nav.getByRole("link", { name: "Anleitung" })).toBeVisible();
   });
 
-  test("Burger-Menü behält alle vier Ziele", async ({ page }) => {
+  test("Burger-Menü behält die Rechtslinks (jetzt neben Play/Create)", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/about");
     await page.getByRole("button", { name: "Menü öffnen" }).click();
     const menu = page.getByRole("dialog");
-    for (const label of ["App", "Anleitung", "Impressum", "Datenschutz"]) {
+    for (const label of ["Play", "Create", "Über", "Anleitung", "Impressum", "Datenschutz"]) {
       await expect(menu.getByRole("link", { name: label, exact: true })).toBeVisible();
     }
   });

@@ -1,7 +1,7 @@
 # PROJ-1: App Shell & Mode Switch
 
 ## Status: In Progress
-_Deployed; Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist spezifiziert, aber noch nicht gebaut._
+_Deployed; das Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist gebaut und im Browser verifiziert — QA steht aus._
 **Created:** 2026-08-23
 **Last Updated:** 2026-09-06
 
@@ -64,6 +64,7 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 - [ ] Angenommen das Menu ist offen, wenn der Nutzer die Escape-Taste drückt oder neben das Menu tippt, dann schließt es sich, ohne zu navigieren
 - [ ] Angenommen der Nutzer bedient die App mit der Tastatur, wenn er das Burger-Menu öffnet, dann liegt der Fokus im Menu und der Auslöser meldet seinen Zustand (`aria-expanded`) an Screenreader
 - [ ] Angenommen der Nutzer befindet sich bereits auf einer der verlinkten Seiten, wenn er das Menu öffnet, dann ist der Eintrag der aktuellen Seite visuell als aktiv erkennbar
+- [ ] Angenommen der Nutzer befindet sich in einer Unteransicht eines Modus (z.B. `/create/[id]` oder `/create/[id]/station/[x]`), wenn er das Menu öffnet, dann ist der übergeordnete Eintrag („Create") als aktiv markiert — nicht nur auf der exakten Top-Level-URL
 - [ ] Angenommen das Menu wird im Creator (Light Theme) geöffnet, wenn es erscheint, dann trägt es das Theme des jeweiligen Modus — es bricht nicht aus dem Farbschema des Screens aus
 
 **Scroll-Verhalten der Kopfzeile (Refinement 2026-09-06):**
@@ -604,3 +605,70 @@ Die Icon-Auswahl trifft `/frontend` aus dem bereits genutzten `lucide-react`-Set
 - Kein Auto-Hide-Header, kein schwebender Menu-Button: „nicht sticky" heißt, die Kopfzeile scrollt schlicht mit
 - Kein PWA-Eintrag im Menu — das gehört zu PROJ-12
 - Kein kontextabhängiger Menü-Eintrag „Quest bearbeiten": diese Aktion bleibt sichtbar auf der Seite, statt sich hinter zwei Taps zu verstecken
+
+---
+
+## Implementation Notes (Frontend) — App-weite Navigation (2026-09-06)
+
+### Neue/geänderte Dateien
+
+| Datei | Änderung |
+|-------|----------|
+| `src/lib/app-nav.ts` | **Neu** — sechs Links in drei Gruppen (`APP_NAV_GROUPS`), je mit `LucideIcon`. Ersetzt `src/lib/info-nav.ts` (gelöscht). `HEADER_NAV_LINKS` bleibt als abgeleitete Desktop-Teilmenge der Info-Seiten erhalten |
+| `src/components/app-nav-menu.tsx` | **Neu** — Burger-Menu auf Basis von shadcn `Sheet`. Ersetzt `src/components/info-nav-menu.tsx` (gelöscht) |
+| `src/components/app-header.tsx` | `sticky top-0 z-50` entfernt; Logo-Zweig, `variant`- und `rightAction`-Prop entfallen; `AppNavMenu` fest rechts eingebaut |
+| `src/components/ui/sheet.tsx` | Optionale `overlayClassName`-Prop auf `SheetContent` durchgereicht (Default-Verhalten unverändert) |
+| `src/components/navigation-screen.tsx` | Nutzt jetzt `AppHeader` statt einer inline nachgebauten Kopfzeile — siehe „Nebenbefund" unten |
+| `src/components/info-page-shell.tsx` | `InfoNavMenu` → `AppNavMenu`; Header bleibt bewusst `sticky` |
+| `src/app/create/[id]/page.tsx` | `rightAction` entfernt; Stift-Button sitzt jetzt im Titel-Block neben `{quest.name}` (PROJ-7) |
+| `src/app/create/page.tsx`, `src/app/create/[id]/station/[stationId]/page.tsx` | `variant="light"` entfernt (Prop existiert nicht mehr) |
+| `tests/proj-1-app-shell.spec.ts`, `tests/proj-3-…`, `tests/proj-13-info-refinement.spec.ts` | Auf das neue Verhalten umgestellt, siehe „Angepasste Tests" |
+
+### Zwei Probleme, die erst im Browser sichtbar wurden
+
+**1. Menu erschien im Creator schwarz statt hell.**
+Radix rendert den Sheet-Inhalt per Portal an `document.body` — also außerhalb des `[data-theme="light"]`-Wrappers aus `create/layout.tsx`. Die Tokens `--background` & Co. fielen damit auf die Dark-Werte von `<html>` zurück. Gelöst, indem das Menu das Theme dort abliest, wo sein Trigger tatsächlich steht (`closest("[data-theme]")`, per Ref-Callback), und es dem portalierten Inhalt selbst aufstempelt. `[data-theme="light"]` in `globals.css` setzt die Variablen auf dem Element, greift also auch ohne umgebenden Wrapper. Verifiziert: `/play` → `rgb(10,14,15)`, `/create` → `rgb(246,248,249)`.
+
+**2. Der z-index über der Karte war real nötig, nicht vorsorglich.**
+Im Stationen-Editor vergibt Leaflet tatsächlich bis **z-index 1000**. Der shadcn-Default (`z-50`) hätte das Menu dort begraben. `z-[1100]` auf Overlay und Content löst es — und weil das Overlay im Original hart auf `z-50` stand, brauchte `sheet.tsx` die neue `overlayClassName`-Prop.
+
+### Nebenbefund: doppelte Kopfzeile im Navigations-Screen
+
+`navigation-screen.tsx` trug eine eigene, von Hand nachgebaute Kopfzeile (`sticky top-0 z-50`, eigener Zurück-Knopf) statt `AppHeader`. Sie wäre als einziger Screen sticky geblieben und hätte kein Menu bekommen — genau die Uneinheitlichkeit, die dieses Refinement beseitigt. Jetzt ersetzt durch `AppHeader`; ihr Zurück-Knopf heißt dadurch „Zurück" statt „Zurück zur Stationsliste" (Test angepasst).
+
+### Bewusst unverändert: die headerlosen Player-Screens
+
+`permission-screen`, `intro-screen` und `outro-screen` haben keine `AppHeader` und behalten das. Es sind absichtlich immersive Vollbild-Screens; ein Burger-Menu würde dort die Inszenierung brechen. Die Navigation ist auf jedem Screen erreichbar, der überhaupt eine Kopfzeile trägt.
+
+Während der **Stationen-Editor als modales Sheet offen ist**, ist das Menu nicht erreichbar — das Sheet besitzt den Screen. Das ist korrektes Modal-Verhalten, kein Defekt.
+
+### Verifikation im Browser
+
+Playwright gegen System-Chrome (der gebündelte Chromium fehlt in dieser Umgebung — bekannt aus dem QA-Abschnitt), iPhone-13-Viewport:
+
+| Prüfung | Ergebnis |
+|---------|----------|
+| Menu-Gruppen | `App | Info | Rechtliches` |
+| Alle sechs Links vorhanden | Play, Create, Über, Anleitung, Impressum, Datenschutz — alle OK |
+| Aktiver Eintrag | auf `/play` trägt „Play" `aria-current="page"` |
+| Aktiver Eintrag auf Unterroute | auf `/create/[id]` trägt „Create" `aria-current="page"` (Präfix-Vergleich, nicht nur exakte URL) |
+| Escape schließt | ja, ohne zu navigieren |
+| Theme dark/light | `rgb(10,14,15)` / `rgb(246,248,249)` |
+| Kein Sticky auf Play/Create | Header `y: 0 → -300` bei `scrollY=300` |
+| Sticky auf Info-Seiten | `/about` und `/anleitung` bleiben bei `y: 0` |
+| Pin-Marke entfernt | 0 Treffer für `header img[src*="mark-pin"]` und `aria-label="Zurück zum Start"` |
+| Menu über Seiteninhalt | Hit-Test: „Menu liegt oben" |
+| Konsolen-/JS-Fehler | keine |
+
+### Angepasste Tests
+
+7 E2E-Tests prüften das alte Verhalten und wurden auf das neue umgestellt (nicht gelöscht):
+
+| Test | Vorher → Nachher |
+|------|------------------|
+| PROJ-1: `/play` bzw. `/create` Pin-Marke | Prüft jetzt, dass die Marke **weg** ist und das Burger da ist; zwei neue Tests für Modus-Wechsel via Menu und `aria-current` |
+| PROJ-1: rapid mode switching | Wechselt jetzt per Menu statt über die Pin-Marke |
+| PROJ-1: neu | Header ist nicht `sticky` |
+| PROJ-3: back button | `aria-label` „Zurück zur Stationsliste" → „Zurück" |
+| PROJ-13: Burger-Inhalt (2×) | vier Ziele inkl. Link „App" → sechs Ziele plus drei Gruppen-Überschriften |
+| PROJ-13: Desktop | „Burger ist versteckt" → „Burger ist sichtbar, neben Anleitung und Zur App" |

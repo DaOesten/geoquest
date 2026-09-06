@@ -124,7 +124,7 @@ export default function StationModulesPage({ params }: StationModulesPageProps) 
     <>
       <CreatorBackdrop />
       <div className="relative" key={unlockTick}>
-        <AppHeader backHref={`/create/${questId}`} variant="light" transparent />
+        <AppHeader backHref={`/create/${questId}`} transparent />
 
         <div className="px-5 pt-3">
           <span className="text-tech text-[10px] text-gq-teal">Stationsinhalte</span>

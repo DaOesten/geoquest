@@ -152,29 +152,30 @@ export default function CreateQuestPage({ params }: CreateQuestPageProps) {
     <>
       <CreatorBackdrop />
       <div className="relative" key={unlockTick}>
-        <AppHeader
-          backHref="/create"
-          variant="light"
-          transparent
-          rightAction={
-            locked ? undefined : (
+        <AppHeader backHref="/create" transparent />
+
+        <div className="px-5 pt-3">
+          <span className="text-tech text-[10px] text-gq-teal">Stationen</span>
+          {/* Der Stift saß bis 2026-09-06 oben rechts in der Kopfzeile — dort
+              steht jetzt das app-weite Burger-Menu (PROJ-1). Neben dem Titel
+              ist er ohnehin besser aufgehoben: er steht direkt bei dem, was er
+              bearbeitet, statt anonym in der Systemleiste. `items-start` hält
+              ihn bei mehrzeiligen Quest-Namen auf Höhe der ersten Zeile. */}
+          <div className="flex items-start gap-2 mt-1">
+            <h1 className="font-display italic text-[clamp(1.8rem,8vw,2.4rem)] leading-[0.96] uppercase text-foreground min-w-0">
+              {quest.name}
+            </h1>
+            {!locked && (
               <button
                 type="button"
                 onClick={() => setIsEditFormOpen(true)}
                 aria-label="Quest bearbeiten"
-                className="flex items-center justify-center w-11 h-11 rounded-full text-muted-foreground transition-colors duration-fast ease-gq hover:text-primary active:scale-[0.96]"
+                className="flex-shrink-0 flex items-center justify-center w-11 h-11 -mt-2 -mr-2 rounded-full text-muted-foreground transition-colors duration-fast ease-gq hover:text-primary active:scale-[0.96]"
               >
                 <Pencil className="w-5 h-5" />
               </button>
-            )
-          }
-        />
-
-        <div className="px-5 pt-3">
-          <span className="text-tech text-[10px] text-gq-teal">Stationen</span>
-          <h1 className="font-display italic text-[clamp(1.8rem,8vw,2.4rem)] leading-[0.96] uppercase text-foreground mt-1">
-            {quest.name}
-          </h1>
+            )}
+          </div>
           <div className="flex items-center gap-2 mt-2.5 text-tech text-[10px] text-gq-grey-dark">
             <span>
               {stations.length} {stations.length === 1 ? "Ziel" : "Ziele"}

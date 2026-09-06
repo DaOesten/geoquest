@@ -1,7 +1,7 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
 ## Status: In Progress
-_Deployed; Refinement 3 vom 2026-09-06 (gemeinsames Burger-Menu mit der App) ist spezifiziert, aber noch nicht gebaut._
+_Deployed; Refinement 3 vom 2026-09-06 (gemeinsames Burger-Menu mit der App) ist gebaut und im Browser verifiziert — QA steht aus._
 **Created:** 2026-09-04
 **Last Updated:** 2026-09-06 (Refinement 3 — Navigation vereinheitlicht, siehe PROJ-1)
 
@@ -940,3 +940,21 @@ Eine erste Live-Kontrolle meldete den Deploy nach 10 Sekunden als fertig — das
 - Bug: Navigationslinks verweisen auf die aktuelle Seite (Low, vorbestehend)
 - Bug: 16px-Schließen-Button im Sheet (Medium, bewusst offen gelassen)
 - Vercel Analytics: Datenfluss im Dashboard zu prüfen
+
+---
+
+## Implementation Notes (Frontend) — Refinement 3: gemeinsames Menu (2026-09-06)
+
+| Datei | Änderung |
+|-------|----------|
+| `src/components/info-page-shell.tsx` | `InfoNavMenu` → `AppNavMenu`; Import von `HEADER_NAV_LINKS` zieht von `@/lib/info-nav` nach `@/lib/app-nav` |
+| `src/components/info-nav-menu.tsx` | **Gelöscht** — ersetzt durch `src/components/app-nav-menu.tsx` (PROJ-1) |
+| `src/lib/info-nav.ts` | **Gelöscht** — ersetzt durch `src/lib/app-nav.ts` (PROJ-1) |
+
+Wie spezifiziert umgesetzt:
+- Das Menu ist auf den Info-Seiten jetzt **auch ab `sm` sichtbar** (das frühere `sm:hidden` am Trigger ist entfallen), weil es mit Play und Create Ziele führt, die die Desktop-Zeile nicht abbildet
+- Die Desktop-Zeile bleibt unangetastet: Textlink „Anleitung" plus Aktions-Button „Zur App" (weiterhin der reservierte Ko-fi-Platz)
+- Der **Sticky-Header der Info-Seiten bleibt sticky** — im Browser gegengeprüft: `/about` und `/anleitung` halten bei `y: 0`, während `/play` und `/create/[id]` bei `scrollY=300` auf `y: -300` wegscrollen
+- `HEADER_NAV_LINKS` filtert weiterhin auf `/anleitung`, jetzt aus den flachgeklopften `APP_NAV_GROUPS`
+
+Drei E2E-Tests in `tests/proj-13-info-refinement.spec.ts` prüften das alte Verhalten (vier Ziele inkl. Link „App"; Burger am Desktop versteckt) und wurden auf sechs Ziele, die drei Gruppen-Überschriften und den am Desktop sichtbaren Burger umgestellt.

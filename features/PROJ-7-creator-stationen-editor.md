@@ -1,7 +1,7 @@
 # PROJ-7: Creator — Stationen-Editor
 
 ## Status: In Progress
-_Deployed; Refinement vom 2026-09-06 (Quest-Bearbeiten-Einstieg wandert aus der Kopfzeile) ist spezifiziert, aber noch nicht gebaut._
+_Deployed; das Refinement vom 2026-09-06 (Quest-Bearbeiten-Einstieg neben dem Titel) ist gebaut und im Browser verifiziert — QA steht aus._
 **Created:** 2026-08-28
 **Last Updated:** 2026-09-06
 
@@ -803,3 +803,21 @@ Test-Quest wurde ausschließlich im `localStorage` des Test-Browsers angelegt un
 
 ### Bekannte offene Punkte
 Keine für die Adresssuche selbst. Die im Arbeitsverzeichnis liegenden, bewusst nicht mit deployten PROJ-4-Styling-Änderungen (Aufgaben-Screen-Redesign) warten auf einen separaten `/qa`- und `/deploy`-Durchgang außerhalb dieses PROJ-7-Umfangs.
+
+---
+
+## Implementation Notes (Frontend) — Quest-Bearbeiten-Stift verlegt (2026-09-06)
+
+Umgesetzt im Zuge des app-weiten Navigations-Refinements (PROJ-1).
+
+| Datei | Änderung |
+|-------|----------|
+| `src/app/create/[id]/page.tsx` | `rightAction`-Prop am `AppHeader` entfällt (die Prop existiert nicht mehr). Der Stift-Button sitzt jetzt im Titel-Block: `<div className="flex items-start gap-2">` um `<h1>{quest.name}</h1>` und den Button |
+
+Details der Umsetzung:
+- **Sichtbarkeit unverändert** an `!locked` gekoppelt — eine importierte, noch nicht per Passwort entsperrte Quest (PROJ-11) zeigt weiterhin keinen Stift
+- **Dialog unverändert**: derselbe `QuestFormDialog` über denselben `setIsEditFormOpen(true)`-Handler; nur der Auslöser ist umgezogen
+- **Mehrzeilige Titel**: `items-start` am Flex-Container plus `-mt-2` am Button halten den Stift auf Höhe der ersten Zeile statt ihn mittig zum umgebrochenen Block zu setzen. `min-w-0` an der `<h1>` lässt den Titel umbrechen, statt den Button aus der Zeile zu drängen
+- **Tap-Ziel** bleibt 44×44px (`w-11 h-11`); `-mr-2` zieht die optische Kante an den 20px-Screen-Gutter, ohne die Fläche zu verkleinern
+
+Im Browser verifiziert (iPhone-13-Viewport): Kopfzeile trägt links den Zurück-Pfeil und rechts nur noch das Burger-Menu; der Stift steht neben „RÄTSEL AM FLUSS" und öffnet den Bearbeiten-Dialog.

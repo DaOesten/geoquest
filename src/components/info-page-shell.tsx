@@ -1,9 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
-import { InfoNavMenu } from "@/components/info-nav-menu";
+import { AppNavMenu } from "@/components/app-nav-menu";
 import { InfoFooter } from "@/components/info-footer";
-import { HEADER_NAV_LINKS } from "@/lib/info-nav";
+import { HEADER_NAV_LINKS } from "@/lib/app-nav";
 
 interface InfoPageShellProps {
   /** Show the brand lockup above the eyebrow (front page only — subpages go without). */
@@ -64,7 +64,7 @@ export function InfoPageShell({
 
           <nav className="ml-auto flex items-center gap-1 sm:gap-2">
             {/* Impressum und Datenschutz stehen im Footer — hier nur die
-                inhaltlichen Ziele. Im Burger-Menu bleiben alle vier. */}
+                inhaltlichen Ziele. Im Burger-Menu bleiben alle sechs. */}
             {HEADER_NAV_LINKS.map(({ href, label }) => (
               <Link
                 key={href}
@@ -83,7 +83,11 @@ export function InfoPageShell({
               Zur App
             </Link>
 
-            <InfoNavMenu />
+            {/* Anders als das frühere InfoNavMenu auch ab `sm` sichtbar: das
+                Menu enthält seit 2026-09-06 Play und Create, also Ziele, die
+                die Desktop-Zeile nicht abbildet. Ausgeblendet käme ein
+                Laptop-Besucher von /impressum nicht direkt in den Creator. */}
+            <AppNavMenu />
           </nav>
         </div>
       </header>

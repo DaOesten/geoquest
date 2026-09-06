@@ -46,7 +46,7 @@
 - Screen-Gutters: 20px (`px-5`)
 - Card-Abstand: 12px
 - Section-Abstand: 28px
-- Feste Elemente: Header oben, Primary Action unten (12px Gutter, 14px Safe-Area)
+- Primary Action unten fest (12px Gutter, 14px Safe-Area); die Kopfzeile der App-Screens scrollt dagegen mit (siehe Header-Pattern)
 - Mitte scrollt
 - Min. Touch-Target: 44px
 - **Keine Bottom-Navigation / Tab-Bar**
@@ -90,7 +90,26 @@ Container: `px-5 pt-3`. `AppHeader` selbst bleibt `transparent` und ohne `title`
 
 Referenzimplementierung: `station-list.tsx` (Player, Dark), `create/[id]/page.tsx` und `create/[id]/station/[stationId]/page.tsx` (Creator, Light), `station-modules.tsx` (Player, Dark).
 
-**Navigation im Header:** `AppHeader` unterstützt `backHref` (Link, für URL-Routen) oder `onBack` (Callback, wenn "zurück" nur In-Memory-Screen-State ändert, z.B. im Quest-Player). Nie beides gleichzeitig übergeben.
+## Header-Pattern (app-weit, seit 2026-09-06)
+
+`AppHeader` ist die eine Kopfzeile aller App-Screens. Aufteilung:
+
+- **Links:** Zurück-Pfeil — `backHref` (Link, für URL-Routen) oder `onBack` (Callback, wenn „zurück" nur In-Memory-Screen-State ändert, z.B. im Quest-Player). Nie beides gleichzeitig übergeben. Auf Top-Level-Ansichten (`/play`, `/create`) bleibt die Seite leer.
+- **Rechts:** das Burger-Menu (`AppNavMenu`) — fest eingebaut, auf jedem Screen. Es gibt keine `rightAction`-Prop mehr; screen-spezifische Aktionen gehören in den Titel-Block (siehe den Quest-Bearbeiten-Stift in `create/[id]/page.tsx`).
+- **Keine Bildmarke** in der Kopfzeile. Der Weg zwischen den Modi läuft über das Menu.
+- **Nicht sticky:** Die Kopfzeile scrollt mit. Auf 430px verdeckt eine klebende Zeile dauerhaft Inhalt, ohne beizutragen.
+
+**Ausnahme Info-Seiten** (`/about`, `/anleitung`, `/impressum`, `/datenschutz`): Deren Header in `InfoPageShell` bleibt `sticky` — lange Fließtext-Seiten, auf denen der Weg zurück nach oben weit ist. Sie tragen zusätzlich eine Desktop-Linkzeile und den Aktions-Button „Zur App".
+
+**Menu-Struktur** (`src/lib/app-nav.ts`) — drei Gruppen, je Link ein Lucide-Icon:
+
+| Gruppe | Links |
+|--------|-------|
+| App | Play, Create |
+| Info | Über, Anleitung |
+| Rechtliches | Impressum, Datenschutz |
+
+Der Eintrag der aktuellen Seite wird Teal hervorgehoben und trägt `aria-current="page"`; Unterrouten zählen zum jeweiligen Eintrag (`/create/[id]` markiert „Create").
 
 ## Corner Radii
 

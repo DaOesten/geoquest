@@ -225,7 +225,9 @@ test.describe("PROJ-3: Player — GPS-Navigation", () => {
       await openStationList(page, context, { latitude: 53.60, longitude: 10.03 });
 
       await page.getByRole("button", { name: /Navigation zu Erste Station starten/ }).click();
-      await page.getByLabel("Zurück zur Stationsliste").click();
+      // Seit 2026-09-06 nutzt der Navigations-Screen die gemeinsame AppHeader,
+      // deren Zurück-Knopf schlicht "Zurück" heißt.
+      await page.getByLabel("Zurück").click();
       await expect(page.getByText("Zweite Station")).toBeVisible();
     });
   });

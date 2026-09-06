@@ -132,7 +132,7 @@ export default function CreatePage() {
     <>
       <CreatorBackdrop />
       <div className="relative">
-        <AppHeader variant="light" transparent />
+        <AppHeader transparent />
 
         <div className="px-5 pt-4">
           <h1 className="font-display italic text-[clamp(1.8rem,8vw,2.4rem)] leading-[0.95] uppercase text-foreground">

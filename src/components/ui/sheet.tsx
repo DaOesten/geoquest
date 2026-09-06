@@ -51,14 +51,22 @@ const sheetVariants = cva(
 
 interface SheetContentProps
   extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
-    VariantProps<typeof sheetVariants> {}
+    VariantProps<typeof sheetVariants> {
+  /**
+   * Klassen für das Overlay hinter dem Sheet. Nötig, wo der Default-`z-50`
+   * nicht reicht — im Stationen-Editor vergibt Leaflet gemessene z-index bis
+   * 1000, sodass ein Sheet über einer Karte sonst darunter verschwindet
+   * (siehe `app-nav-menu.tsx`). Ohne die Prop bleibt alles wie gehabt.
+   */
+  overlayClassName?: string
+}
 
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
->(({ side = "right", className, children, ...props }, ref) => (
+>(({ side = "right", className, overlayClassName, children, ...props }, ref) => (
   <SheetPortal>
-    <SheetOverlay />
+    <SheetOverlay className={overlayClassName} />
     <SheetPrimitive.Content
       ref={ref}
       className={cn(sheetVariants({ side }), className)}

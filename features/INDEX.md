@@ -38,11 +38,11 @@ PROJ-1 → PROJ-2 → PROJ-3 → PROJ-4 → PROJ-5 → PROJ-6 → PROJ-7 → PRO
 _PROJ-10 (Verworfen) ist bewusst nicht Teil der Build Order — siehe Status-Spalte und Spec._
 
 ## Laufende Änderung: App-weite Navigation (2026-09-06)
-Ein Refinement über drei Specs hinweg — spezifiziert, noch nicht gebaut:
+Ein Refinement über drei Specs hinweg — **Frontend umgesetzt**, QA steht aus:
 - **PROJ-1** trägt das Modell: Burger-Menu (App / Info / Rechtliches) auf allen Screens, Zurück-Pfeil links, keine Pin-Bildmarke mehr, kein Sticky-Header auf Play/Create
 - **PROJ-7** verlegt den Quest-Bearbeiten-Stift aus der Kopfzeile neben den Quest-Titel, weil dort jetzt das Menu sitzt
 - **PROJ-13** gibt sein Info-Seiten-Menu an PROJ-1 ab und bindet stattdessen die gemeinsame Komponente ein
 
-Bauen in dieser Reihenfolge: PROJ-1 (Komponente) → PROJ-7 und PROJ-13 (Anpassungen).
+Gebaut am 2026-09-06 in einem Zug (PROJ-1 Komponente + Anpassungen in PROJ-7/PROJ-13). Nächster Schritt: `/qa`.
 
 ## Next Available ID: PROJ-14

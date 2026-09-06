@@ -66,20 +66,72 @@ test.describe('PROJ-1: App Shell & Mode Switch', () => {
   })
 
   test.describe('Header & Navigation', () => {
-    test('top-level /play shows pin-mark home button that navigates to /', async ({ page }) => {
+    // Seit dem Refinement 2026-09-06: keine Pin-Bildmarke mehr im Header. Der
+    // Modus-Wechsel läuft über das Burger-Menu, nicht mehr über den Startscreen.
+    test('top-level /play has no pin-mark home button, but a burger menu', async ({ page }) => {
       await page.goto('/play')
-      const homeLink = page.locator('header a[aria-label="Zurück zum Start"]')
-      await expect(homeLink).toBeVisible()
-      await homeLink.click()
-      await expect(page).toHaveURL('/')
+      await expect(page.locator('header a[aria-label="Zurück zum Start"]')).toHaveCount(0)
+      await expect(page.locator('header img[src*="mark-pin"]')).toHaveCount(0)
+      await expect(page.getByRole('button', { name: 'Menü öffnen' })).toBeVisible()
     })
 
-    test('top-level /create shows pin-mark home button that navigates to /', async ({ page }) => {
+    test('top-level /create has no pin-mark home button, but a burger menu', async ({ page }) => {
       await page.goto('/create')
-      const homeLink = page.locator('header a[aria-label="Zurück zum Start"]')
-      await expect(homeLink).toBeVisible()
-      await homeLink.click()
-      await expect(page).toHaveURL('/')
+      await expect(page.locator('header a[aria-label="Zurück zum Start"]')).toHaveCount(0)
+      await expect(page.locator('header img[src*="mark-pin"]')).toHaveCount(0)
+      await expect(page.getByRole('button', { name: 'Menü öffnen' })).toBeVisible()
+    })
+
+    test('burger menu switches modes directly, without going via the start screen', async ({ page }) => {
+      await page.goto('/play')
+      await page.getByRole('button', { name: 'Menü öffnen' }).click()
+      await page.getByRole('dialog').getByRole('link', { name: 'Create', exact: true }).click()
+      await expect(page).toHaveURL('/create')
+    })
+
+    test('burger menu marks the current page as active', async ({ page }) => {
+      await page.goto('/play')
+      await page.getByRole('button', { name: 'Menü öffnen' }).click()
+      await expect(
+        page.getByRole('dialog').getByRole('link', { name: 'Play', exact: true })
+      ).toHaveAttribute('aria-current', 'page')
+    })
+
+    test('burger menu marks the parent entry active on a sub-route', async ({ page }) => {
+      // /create/[id] soll "Create" markieren, nicht nur die exakte Top-Level-URL.
+      const quest = {
+        version: 1,
+        id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+        name: 'Aktiv-Test',
+        lastModified: new Date().toISOString(),
+        intro: { text: 'Start.' },
+        outro: { text: 'Ende.' },
+        stations: [{
+          id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+          name: 'Station', lat: 52.52, lng: 13.405, radiusMeters: 25,
+          modules: [{ type: 'text', content: 'Hinweis.' }],
+        }],
+      }
+      await page.goto('/')
+      await page.evaluate((q) => {
+        localStorage.setItem('gq_first_visit_done', 'true')
+        localStorage.setItem('gq_quests', JSON.stringify([q]))
+      }, quest)
+
+      await page.goto(`/create/${quest.id}`)
+      await page.getByRole('button', { name: 'Menü öffnen' }).click()
+      await expect(
+        page.getByRole('dialog').getByRole('link', { name: 'Create', exact: true })
+      ).toHaveAttribute('aria-current', 'page')
+    })
+
+    test('header is not sticky on the app screens', async ({ page }) => {
+      await page.goto('/play')
+      const position = await page
+        .locator('header')
+        .first()
+        .evaluate((el) => getComputedStyle(el).position)
+      expect(position).not.toBe('sticky')
     })
 
     test('sub-level /play/[id] shows back arrow that navigates to /play', async ({ page, context }) => {
@@ -255,10 +307,10 @@ test.describe('PROJ-1: App Shell & Mode Switch', () => {
       await page.reload()
       await page.getByRole('link', { name: /Deine Quests/ }).click()
       await expect(page).toHaveURL('/play')
-      const homeLink = page.locator('header a[aria-label="Zurück zum Start"]')
-      await homeLink.click()
-      await expect(page).toHaveURL('/')
-      await page.getByRole('link', { name: /Quest Creator/ }).click()
+      // Der Weg zurück läuft seit 2026-09-06 über das Burger-Menu statt über
+      // die Pin-Marke — Play -> Create direkt, ohne Umweg über den Startscreen.
+      await page.getByRole('button', { name: 'Menü öffnen' }).click()
+      await page.getByRole('dialog').getByRole('link', { name: 'Create', exact: true }).click()
       await expect(page).toHaveURL('/create')
       expect(await activeTheme(page)).toBe('light')
     })

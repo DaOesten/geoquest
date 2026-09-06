@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, WifiOff, RotateCcw, Check } from "lucide-react";
+import { WifiOff, RotateCcw, Check } from "lucide-react";
+import { AppHeader } from "@/components/app-header";
 import { Button } from "@/components/ui/button";
 import { DirectionArrow } from "./direction-arrow";
 import { ConfettiEffect } from "./confetti-effect";
@@ -117,17 +118,10 @@ export function NavigationScreen({
 
   return (
     <div className="flex flex-col min-h-[100dvh]">
-      {/* Header */}
-      <header className="sticky top-0 z-50 flex h-14 items-center gap-3 px-5 bg-background/80 backdrop-blur-sm border-b border-border">
-        <button
-          onClick={onBack}
-          className="flex-shrink-0 flex items-center justify-center w-11 h-11 -ml-2 rounded-full transition-colors duration-base ease-gq hover:bg-gq-teal/10 active:scale-[0.96]"
-          aria-label="Zurück zur Stationsliste"
-        >
-          <ArrowLeft className="w-5 h-5 text-gq-teal" />
-        </button>
-        <h1 className="text-tech text-sm flex-1 truncate">{station.name}</h1>
-      </header>
+      {/* Trug bis 2026-09-06 eine eigene, inline nachgebaute Kopfzeile — dadurch
+          blieb sie sticky und bekam das Burger-Menu nicht mit. Jetzt dieselbe
+          AppHeader wie überall sonst. */}
+      <AppHeader title={station.name} onBack={onBack} />
 
       {/* Progress indicator */}
       <div className="px-5 pt-2">
