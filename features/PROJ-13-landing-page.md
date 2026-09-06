@@ -1002,3 +1002,23 @@ Geprüft im Rahmen des app-weiten Navigations-QA; die vollständigen Ergebnisse 
 **`/about` ohne Zurück-Pfeil** ist kein Bug: Die Seite ist die Wurzel des Info-Bereichs, ihre drei Unterseiten zeigen mit `backHref="/about"` auf sie zurück, und ihr Ausgang ist der „Zur App"-Button.
 
 **Status: Approved** — BUG-1 wurde am 2026-09-06 behoben (Token-Tausch, siehe Bugfix-Pass in PROJ-1). Die Rechtstexte bekamen dabei zusätzlich ihre 22 fest verdrahteten `gq-teal`-Vorkommen auf `text-primary` umgestellt; Überschriften und Inline-Links liegen jetzt bei 4.54:1 statt 1.55:1.
+
+---
+
+## Deployment — Refinement 3 & Light-Theme (2026-09-06)
+
+**Production URL:** https://geoquesty.vercel.app
+**Git Tag:** v1.21.0-PROJ-1 (gemeinsames Deployment mit PROJ-1 und PROJ-7)
+**Deployt:** 2026-09-06
+
+Live verifiziert:
+
+| Prüfung | Ergebnis |
+|---------|----------|
+| Alle vier Info-Seiten laden | ✅ HTTP 200 |
+| Gemeinsames Burger-Menu mit sechs Zielen | ✅ |
+| `/impressum` und `/datenschutz` im Light-Theme | ✅ `rgb(246,248,249)` |
+| `/about` und `/anleitung` weiterhin dunkel | ✅ |
+| Menü-Kontrast auf den hellen Seiten | ✅ 5.30:1 / 4.54:1 |
+
+Vollständige Deployment-Details in [PROJ-1](PROJ-1-app-shell-mode-switch.md#deployment--app-weite-navigation-2026-09-06).

@@ -841,3 +841,15 @@ Geprüft im Rahmen des app-weiten Navigations-QA; die vollständigen Ergebnisse 
 **Keine Bugs in PROJ-7.** Die beiden offenen Befunde (Kontrast im Light-Theme, 16px-Schließen-X) liegen in gemeinsam genutzten Komponenten und sind in PROJ-1 dokumentiert. BUG-2 betrifft allerdings auch `station-editor-sheet.tsx` und `module-editor-sheets.tsx` dieses Features.
 
 **Status: Approved** — sobald BUG-1/BUG-2 in den gemeinsamen Komponenten behoben sind, ist hier nichts weiter zu tun.
+
+---
+
+## Deployment — Quest-Bearbeiten-Stift (2026-09-06)
+
+**Production URL:** https://geoquesty.vercel.app
+**Git Tag:** v1.21.0-PROJ-1 (gemeinsames Deployment mit PROJ-1 und PROJ-13)
+**Deployt:** 2026-09-06
+
+Live verifiziert: Der Stift steht neben dem Quest-Titel und nicht mehr in der Kopfzeile; dort sitzt links der Zurück-Pfeil und rechts das Burger-Menu. Vollständige Deployment-Details in [PROJ-1](PROJ-1-app-shell-mode-switch.md#deployment--app-weite-navigation-2026-09-06).
+
+**Hinweis:** BUG-2 (16×16px-Schließen-X) betrifft auch `station-editor-sheet.tsx` und `module-editor-sheets.tsx` dieses Features und bleibt offen.

@@ -882,3 +882,70 @@ Alle 24 Kontrastmessungen bestanden (Menü-Inhalt, Kopfzeilen-Bedienelemente und
 | Meta-Zeile („1 Ziel · 0,4 km") | `text-gq-grey-dark` | 5.61:1 ✅ |
 
 Betrifft `src/app/create/page.tsx`, `src/app/create/[id]/page.tsx` und `src/app/create/[id]/station/[stationId]/page.tsx`. Bewusst **nicht** in diesem Pass behoben: Diese Stellen sind seit PROJ-6/7/8 deployed, standen nicht im QA-Bericht und gehören nicht zur Navigation. Der Fix wäre derselbe Token-Tausch — sinnvollerweise in einem eigenen Durchgang über die Creator-Screens, mit eigenem QA.
+
+---
+
+## Deployment — App-weite Navigation (2026-09-06)
+
+**Production URL:** https://geoquesty.vercel.app
+**Git Tag:** v1.21.0-PROJ-1
+**Deployt:** 2026-09-06
+
+Gemeinsames Deployment mit PROJ-7 (Quest-Stift) und PROJ-13 (Info-Seiten & Light-Theme) — die drei Änderungen teilen sich Komponenten und lassen sich nicht sinnvoll trennen.
+
+### Pre-Deployment-Checks
+
+| Prüfung | Ergebnis |
+|---------|----------|
+| `npm run build` | ✅ Erfolgreich |
+| `npm run lint` | ✅ 0 Fehler (6 vorbestehende `<img>`-Warnungen) |
+| Unit-Tests | ✅ 167/167 |
+| E2E-Tests | ✅ 269/269 |
+| QA-Freigabe | ✅ Alle drei Features auf „Approved" |
+| Kritische/High-Bugs offen | ✅ Keine — BUG-1 behoben, BUG-2/BUG-3 sind Medium und vorbestehend |
+| Secrets im Repo | ✅ Nur `.env.local.example` getrackt |
+| Security-Header | ✅ Unverändert in `next.config.ts` (X-Frame-Options, X-Content-Type-Options, Referrer-Policy) |
+
+### Deploy-Vorgang
+
+Push nach `origin/main` → Vercel baut und veröffentlicht automatisch. Sechs Commits:
+
+| Commit | Inhalt |
+|--------|--------|
+| `d1c5dae` | Spec-Refinement: app-weite Navigation |
+| `ca7b77b` | Frontend: Burger-Menu, Kopfzeile, Stift-Verlegung |
+| `222dc7d` | Spec-Refinement PROJ-3 (nur Dokumentation, kein Code) |
+| `e460e07` | Zurück-Pfeil, Controller-Icon, Schließen-X, Light-Theme |
+| `c3302d6` | QA-Ergebnisse |
+| `3eebfc1` | BUG-1: WCAG-AA-Kontrast |
+
+### Keine neuen Umgebungsvariablen
+
+Die Änderung ist rein clientseitig — kein Backend, keine neuen Env-Vars, keine Migrationen. Die bestehende Vercel-Konfiguration bleibt unangetastet.
+
+### Post-Deployment-Verifikation (Live gegen https://geoquesty.vercel.app)
+
+| Prüfung | Ergebnis |
+|---------|----------|
+| Alle 7 Routen laden | ✅ HTTP 200 (`/`, `/play`, `/create`, `/about`, `/anleitung`, `/impressum`, `/datenschutz`) |
+| Burger auf allen Screens | ✅ |
+| Keine Pin-Bildmarke mehr | ✅ 0 Treffer |
+| Zurück-Pfeil auf `/play` | ✅ |
+| Sechs Menü-Links in drei Gruppen | ✅ Play, Create, Über, Anleitung, Impressum, Datenschutz |
+| Controller-Icon bei Play | ✅ |
+| **BUG-1 in Produktion** | ✅ Gruppen-Label 5.30:1 (hell) / 8.02:1 (dunkel), Aktiv-Markierung 4.54:1 / 11.60:1 |
+| Menü-Theme folgt dem Screen | ✅ `rgb(246,248,249)` hell / `rgb(10,14,15)` dunkel |
+| Rechtstexte im Light-Theme | ✅ `/impressum` und `/datenschutz` |
+| PROJ-7: Stift neben dem Titel, nicht in der Kopfzeile | ✅ |
+| Konsolenfehler | ✅ Keine auf den Hauptseiten |
+
+**Ein 404 mit Erklärung:** `/create/[id]` liefert serverseitig 404, weil die Quest nur im localStorage des Browsers existiert — der Server kann sie nicht kennen. Der Client rendert die Seite anschließend korrekt. Das ist der Bauart der App ohne Backend geschuldet, besteht seit PROJ-6 und ist keine Folge dieser Änderung. Nutzer erreichen die Seite über die Navigation, nicht per Direkteinstieg.
+
+### Offene, nicht blockierende Befunde
+
+| ID | Schwere | Inhalt |
+|----|---------|--------|
+| BUG-2 | Medium | 16×16px-Schließen-X in allen vier Sheets (shadcn-Standard, vorbestehend) |
+| BUG-3 | Medium | Kontrast auf den Creator-Screens: Eyebrow 1.55:1, Empty-State 2.26:1 (vorbestehend seit PROJ-6/7/8) |
+
+Beide sind dokumentiert und für einen eigenen Durchgang vorgesehen.
