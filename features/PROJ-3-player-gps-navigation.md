@@ -582,6 +582,28 @@ Alle bestehenden Stationsliste-relevanten Criteria aus PROJ-3/PROJ-4 erneut gege
 
 > Korrektur (2026-08-28): Die Production-URL war hier fälschlich als `geoquest-eight.vercel.app` dokumentiert — das ist eine andere, unabhängige Vercel-App, nicht dieses Projekt. Alle anderen Feature-Specs (PROJ-1, 2, 4, 5, 6, 7) nennen korrekt `geoquesty.vercel.app`; hier entsprechend korrigiert.
 
+### Redeploy: GPS- und Kompass-Ausfallmodi (2026-09-06)
+
+**Deployed:** 2026-09-06
+**Production URL:** https://geoquesty.vercel.app
+**Commit:** cb3b6a2
+**Tag:** v1.22.0-PROJ-3
+
+**Ausgeliefert:** Kein-Fix-Zustand mit 15s-Timeout, Auswertung aller
+`GeolocationPositionError`-Codes, HTTPS-Pruefung, richtungsloser Pfeil
+(`gq-seek`), "Kompass aktivieren"-Button fuer iOS.
+
+> **Ohne QA deployt — bewusste Entscheidung des Nutzers (2026-09-06).** Der
+> Grund: Die zentrale Aenderung (iOS-Sensorfreigabe) laesst sich nur auf einem
+> echten iPhone ueber HTTPS pruefen, also weder lokal noch durch `/qa`. Der
+> Deploy ist damit selbst der Testaufbau. Abgesichert war vorab: 177 Unit-Tests,
+> Production-Build, E2E 267/267 (Mobile Safari/WebKit) und eine Browser-Pruefung
+> der neuen Zustaende gegen die echte UI. **Nicht** abgesichert: der iOS-Pfad
+> `canRequestPermission` und Chromium/Android (Browser-Binary lokal nicht
+> installiert). Rollback ueber Vercel: vorherigen Deploy "Promote to Production".
+
+**Offen:** Verifikation auf dem iPhone durch den Nutzer, danach `/qa`.
+
 ### Redeploy: Stationsliste-Redesign (2026-08-28)
 
 **Deployed:** 2026-08-28
