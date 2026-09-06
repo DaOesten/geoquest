@@ -1,8 +1,10 @@
 # PROJ-3: Player — GPS-Navigation
 
-## Status: Deployed
+## Status: In Progress
 **Created:** 2026-08-23
-**Last Updated:** 2026-08-28
+**Last Updated:** 2026-09-06
+
+> **Offenes Refinement (2026-09-06):** Zwei stille Ausfallmodi ergänzt — GPS-Fix bleibt trotz erteilter Permission aus, und der Richtungspfeil hat keine Richtung. Beides ist deployed noch nicht abgedeckt. Siehe Abschnitte "Permission-Flow", "Richtungsanzeige ohne Heading" und Edge Cases 9–12.
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — für Routing und UI-Rahmen
@@ -39,6 +41,10 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 - [ ] Angenommen der Spieler lehnt die GPS-Permission ab, wenn er es erneut versucht, dann erscheint eine freundliche Erklärung ("Damit wir dich zur Station navigieren können") mit einem "Erlauben"-Button
 - [ ] Angenommen der Spieler hat GPS dauerhaft blockiert, wenn er die Quest starten will, dann erscheint ein Hinweis mit Link zu den Geräte-Einstellungen
 - [ ] Angenommen die GPS-Permission ist erteilt, wenn das Signal verfügbar ist (< 5s), dann wird das Intro angezeigt
+- [ ] Angenommen die GPS-Permission ist erteilt, wenn noch kein Fix vorliegt, dann zeigt der Permission-Screen einen Suchzustand ("Suche GPS-Signal…", Icon pulsiert) statt weiterhin den unveränderten "Standort erlauben"-Button
+- [ ] Angenommen die GPS-Permission ist erteilt, wenn nach 15s immer noch kein Fix vorliegt, dann erscheint der Hinweis "Wir finden dein GPS-Signal nicht. Gehe nach draußen und versuche es nochmal." mit "Erneut versuchen"-Button
+- [ ] Angenommen der Browser meldet `POSITION_UNAVAILABLE` oder `TIMEOUT`, wenn der Fehler eintritt, dann landet der Spieler im Kein-Fix-Zustand (nicht im "Gerät unterstützt kein GPS"-Zustand — das ist eine andere Ursache und eine andere Handlungsanweisung)
+- [ ] Angenommen die Seite läuft über unverschlüsseltes HTTP, wenn GPS angefordert wird, dann erscheint ein technischer Hinweis statt einer irreführenden Geräte-Meldung
 
 **Intro:**
 - [ ] Angenommen die Permissions sind erteilt, wenn die Quest startet, dann wird der Intro-Text angezeigt (mit optionalem Medium: Bild, Audio oder Video)
@@ -56,6 +62,13 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 - [ ] Angenommen das Gerät hat keinen Kompass (oder er ist unkalibriert), wenn der Spieler sich bewegt, dann basiert die Pfeilrichtung auf der GPS-Bewegungsrichtung (Heading)
 - [ ] Angenommen der Kompass braucht Kalibrierung, wenn dies erkannt wird, dann erscheint ein kurzer Hinweis ("Bewege dein Handy in einer 8")
 - [ ] Angenommen der Spieler navigiert, wenn er den Zurück-Button tippt, dann kehrt er zur Stationsliste zurück
+
+**Richtungsanzeige ohne Heading:**
+- [ ] Angenommen weder Kompass- noch GPS-Heading liegen vor, wenn der Pfeil gezeichnet wird, dann ist er sichtbar als richtungslos dargestellt (ausgegraut/pulsierend) — er zeigt **nicht** unkommentiert nach oben, weil das mit "geradeaus" verwechselbar ist
+- [ ] Angenommen der Pfeil ist richtungslos, wenn der Spieler den Screen sieht, dann bleibt die Entfernung in Metern normal sichtbar (sie ist korrekt und unabhängig vom Heading)
+- [ ] Angenommen die Bewegungsrichtung ist die einzige Heading-Quelle, wenn der Spieler stillsteht, dann ist der Hinweis "Laufe ein paar Schritte" gut lesbar (nicht 9px grau) und dem Pfeil klar zugeordnet
+- [ ] Angenommen die Bewegungssensor-Permission wurde auf iOS nie erteilt, wenn der Navigations-Screen geöffnet wird, dann erscheint ein antippbarer "Kompass aktivieren"-Button statt des "Laufe ein paar Schritte"-Hinweises
+- [ ] Angenommen der Spieler tippt "Kompass aktivieren", wenn die Permission erteilt wird, dann richtet sich der Pfeil ohne Neuladen der Seite aus
 
 **Ankunft:**
 - [ ] Angenommen der Spieler befindet sich innerhalb des Ankunftsradius einer Station, wenn die Position erkannt wird, dann vibriert das Gerät und ein "Angekommen!"-Hinweis erscheint
@@ -79,6 +92,10 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 6. **Spieler öffnet Quest an anderem Ort als vorgesehen:** Navigation funktioniert trotzdem (zeigt Richtung + Entfernung), egal wie weit entfernt
 7. **Browser-Tab wird in den Hintergrund gelegt:** GPS-Tracking pausiert (Browser-Verhalten), bei Rückkehr in den Vordergrund wird Position neu bestimmt und Navigation fortgesetzt
 8. **localStorage gelöscht / anderer Browser:** Fortschritt verloren, Quest startet von vorne (erstes Start = Intro → Stationsliste mit nur Station 1 freigeschaltet)
+9. **Permission erteilt, aber kein Fix (drinnen, Keller, Schulgebäude):** Häufigster realer Fall bei der Zielgruppe. Suchzustand → nach 15s Hinweis "Gehe nach draußen" mit Retry. **Nicht** als "Gerät unterstützt kein GPS" ausgeben — die Ursache ist der Ort, nicht das Gerät.
+10. **Wiedereinstieg über gespeicherten Fortschritt auf iOS:** Der Spieler überspringt den Permission-Screen und damit den einzigen Ort, an dem `DeviceOrientationEvent.requestPermission()` bisher aufgerufen wird. Folge: Kompass bleibt die ganze Session stumm, Pfeil steht fest auf 0°. Der "Kompass aktivieren"-Button im Navigations-Screen muss diesen Einstieg abfangen.
+11. **Pfeil ohne jede Heading-Quelle:** Rotation 0 bedeutet "unbekannt", sieht aber aus wie "geradeaus" — der Spieler läuft mit einem Pfeil los, der nichts aussagt. Muss visuell vom gültigen Zustand unterscheidbar sein.
+12. **Gerät ohne brauchbares Magnetometer (Android-Billiggeräte):** Fällt auf GPS-Bewegungsrichtung zurück, funktioniert also nur beim Laufen — gleicher sichtbarer Zustand wie Edge Case 11 im Stand.
 
 ## Technical Requirements
 - GPS-Position: `navigator.geolocation.watchPosition()` mit `enableHighAccuracy: true`
@@ -89,6 +106,11 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 - Richtungsberechnung: Bearing zwischen aktueller Position und Zielstation
 - Farbwechsel: rot (>200m), gelb (50–200m), grün (<50m)
 - GPS-Timeout: 30s ohne Signal → Navigation stoppen
+- Fehlerbehandlung: **alle** `GeolocationPositionError`-Codes auswerten (`PERMISSION_DENIED`, `POSITION_UNAVAILABLE`, `TIMEOUT`) — nicht nur `PERMISSION_DENIED`
+- Kein-Fix-Timeout: 15s nach erteilter Permission ohne erste Position → Hinweis + Retry
+- `!navigator.geolocation` ist als alleiniger Verfügbarkeitstest unzureichend: In der Praxis existiert das Objekt immer; die realen Ausfälle sind fehlendes HTTPS, `POSITION_UNAVAILABLE` und `TIMEOUT`
+- Kompass-Verfügbarkeit muss als eigener Zustand nach außen sichtbar sein (Heading vorhanden / nur Bewegungsrichtung / Permission ausstehend / nicht unterstützt) — nicht nur als `heading: number | null`
+- `DeviceOrientationEvent.requestPermission()` (iOS) muss auch außerhalb des Permission-Screens auslösbar sein
 - Performance: GPS-Signal innerhalb 5s nach Permission (PRD-Anforderung)
 - Update-Intervall: GPS-Position alle 1–3s (Browser-abhängig via watchPosition)
 - Fortschritt: localStorage mit Key `gq_progress_{questId}`
@@ -99,6 +121,8 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 - [ ] Ab welcher GPS-Genauigkeit (accuracy in Metern) soll eine Warnung angezeigt werden? (z.B. accuracy > 50m = "Signal ungenau")
 - [ ] Soll die Entfernung bei > 1000m als "1,2 km" statt "1200 m" angezeigt werden?
 - [ ] Soll die Stationsliste auch die Entfernung zur jeweiligen Station anzeigen (wenn GPS aktiv)?
+- [ ] Soll der richtungslose Pfeil langsam rotieren (Suchanimation) oder statisch ausgegraut bleiben? — Umsetzungsdetail für `/frontend`
+- [ ] Soll die Ankunftserkennung bei sehr schlechter `accuracy` (> Stationsradius) unterdrückt werden, um Falsch-Ankünfte zu vermeiden? Hängt mit der offenen Genauigkeits-Frage oben zusammen.
 
 ## Decision Log
 
@@ -118,6 +142,11 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 | Minimaler Fortschritt in PROJ-3 (besucht = freigeschaltet) | Macht PROJ-3 eigenständig testbar. PROJ-5 ersetzt dies später durch Task-Completion-Logik | 2026-08-23 |
 | Station-Übergang über Stationsliste (nicht direkt "Weiter") | Stationsliste als zentraler Hub gibt Überblick und Orientierung | 2026-08-23 |
 | Kein "Station überspringen"-Button | Lineare Struktur beibehalten, GPS-Probleme über Retry lösen | 2026-08-23 |
+| Kein-Fix-Zustand auf dem Permission-Screen statt eigenem Screen | Der Spieler steht dort ohnehin schon; ein eigener Screen für einen Wartezustand wäre Overhead. Spiegelt das bestehende Muster des GPS-Verlusts während der Navigation (Hinweis + Retry). | 2026-09-06 |
+| "Gehe nach draußen" statt "Gerät unterstützt kein GPS" | Bei der Zielgruppe ist der Ort (Schule, Keller, Wohnung) die häufigste Ursache, nicht das Gerät. Falsche Diagnose führt zu falscher Handlung. | 2026-09-06 |
+| Richtungsloser Pfeil wird sichtbar als solcher dargestellt | Rotation 0 ist von "geradeaus" nicht unterscheidbar — der Spieler vertraut einem Pfeil, der nichts weiß. Auslöser: Testquest 2026-09-06, Pfeil bewegte sich auf iPhone nicht. | 2026-09-06 |
+| "Kompass aktivieren"-Button im Navigations-Screen | Bei Wiedereinstieg über gespeicherten Fortschritt wird der Permission-Screen übersprungen — der bisher einzige Ort für die iOS-Sensorfreigabe. Der Rat "Laufe ein paar Schritte" hilft nicht, wenn eine Freigabe fehlt. | 2026-09-06 |
+| Entfernung bleibt bei richtungslosem Pfeil sichtbar | Die Entfernung ist unabhängig vom Heading korrekt und weiterhin nützlich — sie mit auszublenden würde funktionierende Information verschenken. | 2026-09-06 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->

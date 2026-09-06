@@ -18,7 +18,7 @@
 |----|---------|----------|--------------|--------|------|---------|
 | PROJ-1 | App Shell & Mode Switch | P0 | None | In Progress | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
-| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
+| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | In Progress | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
 | PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
@@ -44,5 +44,13 @@ Ein Refinement über drei Specs hinweg — **Frontend umgesetzt**, QA steht aus:
 - **PROJ-13** gibt sein Info-Seiten-Menu an PROJ-1 ab und bindet stattdessen die gemeinsame Komponente ein
 
 Gebaut am 2026-09-06 in einem Zug (PROJ-1 Komponente + Anpassungen in PROJ-7/PROJ-13). Nächster Schritt: `/qa`.
+
+## Offenes Refinement: GPS- & Kompass-Ausfallmodi (2026-09-06)
+**PROJ-3** war deployed und ist zurück auf In Progress — eine Testquest zeigte einen Richtungspfeil, der sich auf dem iPhone nicht bewegte. Die Analyse legte drei stille Ausfallmodi offen, die die Spec bisher nicht kannte:
+- **GPS-Fix bleibt aus trotz erteilter Permission** (drinnen/Keller) — Code wertet nur `PERMISSION_DENIED` aus, `POSITION_UNAVAILABLE`/`TIMEOUT` verschwinden lautlos
+- **Pfeil ohne Heading zeigt Rotation 0** — von "geradeaus" nicht unterscheidbar
+- **iOS-Sensorfreigabe beim Wiedereinstieg übersprungen** — Kompass bleibt die ganze Session stumm (wahrscheinlichste Ursache des Testbefunds)
+
+Spec ist aktualisiert (Acceptance Criteria, Edge Cases 9–12, Technical Requirements, Decision Log). Nächster Schritt: `/frontend` — **erst nach QA des laufenden Navigations-Umbaus**, weil beide `navigation-screen.tsx` anfassen.
 
 ## Next Available ID: PROJ-14
