@@ -282,4 +282,131 @@ test.describe("PROJ-3: Player — GPS-Navigation", () => {
       await expect(page.getByText("Navigation aktivieren")).not.toBeVisible();
     });
   });
+
+  /**
+   * Refinement 2026-09-06: Drei stille Ausfallmodi wurden zu sichtbaren
+   * Zustaenden gemacht. Diese Tests halten sie fest.
+   */
+  test.describe("GPS-Ausfallmodi", () => {
+    /** Permission erteilt, aber watchPosition liefert nie eine Position. */
+    async function stubSilentGps(page: Page) {
+      await page.addInitScript(() => {
+        navigator.geolocation.watchPosition = () => 1;
+        Object.defineProperty(navigator, "permissions", { value: undefined });
+      });
+    }
+
+    test("shows a searching state while the fix is still pending", async ({ page, context }) => {
+      await seedQuest(page);
+      await clearProgress(page);
+      await context.grantPermissions(["geolocation"]);
+      await stubSilentGps(page);
+      await page.goto(`/play/${TEST_QUEST.id}`);
+
+      await page.getByRole("button", { name: /Standort erlauben/ }).click();
+
+      await expect(page.getByText(/Suche GPS-Signal/)).toBeVisible();
+      // Der unveraenderte "Standort erlauben"-Button darf nicht stehenbleiben.
+      await expect(page.getByRole("button", { name: /Standort erlauben/ })).toHaveCount(0);
+    });
+
+    test("after 15s without a fix, tells the player to go outside and offers a retry", async ({ page, context }) => {
+      await seedQuest(page);
+      await clearProgress(page);
+      await context.grantPermissions(["geolocation"]);
+      await stubSilentGps(page);
+      await page.goto(`/play/${TEST_QUEST.id}`);
+
+      await page.getByRole("button", { name: /Standort erlauben/ }).click();
+
+      await expect(page.getByText(/Wir finden dein GPS-Signal nicht/)).toBeVisible({ timeout: 20_000 });
+      await expect(page.getByRole("button", { name: /Erneut versuchen/ })).toBeVisible();
+    });
+
+    test("POSITION_UNAVAILABLE lands in the no-fix state, not in 'device has no GPS'", async ({ page, context }) => {
+      await seedQuest(page);
+      await clearProgress(page);
+      await context.grantPermissions(["geolocation"]);
+      await page.addInitScript(() => {
+        navigator.geolocation.watchPosition = (_success, error) => {
+          setTimeout(
+            () =>
+              error?.({
+                code: 2,
+                message: "",
+                PERMISSION_DENIED: 1,
+                POSITION_UNAVAILABLE: 2,
+                TIMEOUT: 3,
+              } as GeolocationPositionError),
+            50
+          );
+          return 1;
+        };
+        Object.defineProperty(navigator, "permissions", { value: undefined });
+      });
+      await page.goto(`/play/${TEST_QUEST.id}`);
+
+      await page.getByRole("button", { name: /Standort erlauben/ }).click();
+
+      // Muss ueber den Fehlerpfad kommen, also deutlich vor dem 15s-Timeout.
+      await expect(page.getByText(/Wir finden dein GPS-Signal nicht/)).toBeVisible({ timeout: 5_000 });
+      await expect(page.getByText(/unterstützt kein GPS/)).toHaveCount(0);
+    });
+
+    test("a denied permission still shows the settings hint, not the no-fix text", async ({ page }) => {
+      await seedQuest(page);
+      await clearProgress(page);
+      await page.addInitScript(() => {
+        navigator.geolocation.watchPosition = (_success, error) => {
+          setTimeout(
+            () =>
+              error?.({
+                code: 1,
+                message: "",
+                PERMISSION_DENIED: 1,
+                POSITION_UNAVAILABLE: 2,
+                TIMEOUT: 3,
+              } as GeolocationPositionError),
+            50
+          );
+          return 1;
+        };
+        Object.defineProperty(navigator, "permissions", { value: undefined });
+      });
+      await page.goto(`/play/${TEST_QUEST.id}`);
+
+      await page.getByRole("button", { name: /Standort erlauben/ }).click();
+
+      await expect(page.getByText(/GPS wurde blockiert/)).toBeVisible({ timeout: 5_000 });
+      await expect(page.getByText(/Wir finden dein GPS-Signal nicht/)).toHaveCount(0);
+    });
+  });
+
+  test.describe("Richtungsanzeige ohne Heading", () => {
+    test("keeps the distance readable while the direction is unknown", async ({ page, context }) => {
+      await seedQuest(page);
+      await clearProgress(page);
+      // Weit entfernt und ohne Bewegung: keine Heading-Quelle, aber gueltige Distanz.
+      await openStationList(page, context, { latitude: 53.5, longitude: 10.0 });
+      await page.getByText("Erste Station").first().click();
+
+      const distance = page.locator("div.font-display").first();
+      await expect(distance).toBeVisible();
+      await expect(distance).toContainText(/\d/);
+    });
+
+    test("explains why the arrow has no direction instead of leaving it silent", async ({ page, context }) => {
+      await seedQuest(page);
+      await clearProgress(page);
+      await openStationList(page, context, { latitude: 53.5, longitude: 10.0 });
+      await page.getByText("Erste Station").first().click();
+
+      // Auf Nicht-iOS ist der Hinweis der richtige Rat; er muss lesbar sein
+      // (vorher 9px) und darf nicht fehlen.
+      const hint = page.getByText(/Laufe ein paar Schritte/);
+      await expect(hint).toBeVisible();
+      const fontSize = await hint.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+      expect(fontSize).toBeGreaterThanOrEqual(12);
+    });
+  });
 });

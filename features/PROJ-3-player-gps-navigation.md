@@ -1,10 +1,10 @@
 # PROJ-3: Player — GPS-Navigation
 
-## Status: In Progress
+## Status: Deployed
 **Created:** 2026-08-23
 **Last Updated:** 2026-09-06
 
-> **Refinement (2026-09-06) — Frontend umgesetzt, QA steht aus:** Zwei stille Ausfallmodi ergänzt — GPS-Fix bleibt trotz erteilter Permission aus, und der Richtungspfeil hat keine Richtung. Siehe Abschnitte "Permission-Flow", "Richtungsanzeige ohne Heading", Edge Cases 9–12 und die Implementation Notes vom 2026-09-06.
+> **Refinement (2026-09-06) — umgesetzt, deployt und QA-geprüft:** Zwei stille Ausfallmodi ergänzt — GPS-Fix bleibt trotz erteilter Permission aus, und der Richtungspfeil hat keine Richtung. Siehe Abschnitte "Permission-Flow", "Richtungsanzeige ohne Heading", Edge Cases 9–12 und die Implementation Notes vom 2026-09-06.
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — für Routing und UI-Rahmen
@@ -572,6 +572,114 @@ Alle bestehenden Stationsliste-relevanten Criteria aus PROJ-3/PROJ-4 erneut gege
 - **Security:** Pass, keine offenen Befunde
 - **Production Ready:** YES
 - **Recommendation:** Deploybar. `tsc`, ESLint, Vitest (109/109) und `next build` bestätigt nach beiden Fixes. Live-Browser-Bestätigung durch den Nutzer selbst hat die beiden zuvor gefundenen visuellen Bugs (unsichtbare Linie, gerade statt geschwungene Linie) bereits vor diesem QA-Pass aufgedeckt und beide sind seitdem behoben — dieser Report bestätigt den aktuellen Stand nur code-seitig, ersetzt aber keine erneute visuelle Kontrolle im Browser vor dem `/deploy`.
+
+## QA Test Results — GPS- und Kompass-Ausfallmodi (2026-09-06)
+
+**Getestet:** 2026-09-06
+**Commit:** cb3b6a2 (deployt), Tests ergaenzt im Anschluss
+**Scope:** Die 9 neuen Acceptance Criteria (Permission-Flow + "Richtungsanzeige
+ohne Heading") sowie Edge Cases 9-12. Bestehende Kriterien als Regression.
+
+### Acceptance Criteria
+
+**Permission-Flow (neu)**
+
+| # | Kriterium | Ergebnis | Nachweis |
+|---|-----------|----------|----------|
+| 1 | Suchzustand statt unveraendertem Button | PASS | E2E "shows a searching state while the fix is still pending" |
+| 2 | Nach 15s Hinweis + Retry | PASS | E2E "after 15s without a fix..."; Unit-Test 15s-Timer |
+| 3 | `POSITION_UNAVAILABLE`/`TIMEOUT` -> Kein-Fix, nicht "kein GPS" | PASS | E2E + 2 Unit-Tests (beide Codes) |
+| 4 | HTTP -> technischer Hinweis | PASS (Unit) | Unit-Test `insecure-context`; im Browser nicht pruefbar, da die Testumgebung HTTPS/localhost nutzt |
+
+**Richtungsanzeige ohne Heading (neu)**
+
+| # | Kriterium | Ergebnis | Nachweis |
+|---|-----------|----------|----------|
+| 5 | Pfeil sichtbar richtungslos, nicht "geradeaus" | PASS | Browser-Verifikation (Screenshot): grau, gedimmt, ohne Glow, `gq-seek`-Rotation |
+| 6 | Entfernung bleibt sichtbar | PASS | E2E "keeps the distance readable..."; im Browser "12514m" bei unbekannter Richtung |
+| 7 | Hinweis "Laufe ein paar Schritte" gut lesbar | PASS | E2E prueft `font-size >= 12px` (vorher 9px) |
+| 8 | iOS: "Kompass aktivieren"-Button statt Hinweis | PASS | **Auf echtem iPhone durch den Nutzer bestaetigt** (2026-09-06) |
+| 9 | Pfeil richtet sich ohne Reload aus | PASS | **Auf echtem iPhone durch den Nutzer bestaetigt** (2026-09-06) |
+
+**Abgrenzung (Regression der bestehenden Kriterien):** `PERMISSION_DENIED` zeigt
+weiterhin den Einstellungs-Hinweis und nicht den neuen Kein-Fix-Text — eigener
+E2E-Test, PASS. Der 30s-Signalverlust bleibt fuer Aussetzer *nach* dem ersten Fix
+zustaendig (Unit-Test), der Kein-Fix-Zustand greift nur davor.
+
+### Edge Cases
+
+| # | Edge Case | Ergebnis |
+|---|-----------|----------|
+| 9 | Kein Fix trotz Permission (drinnen) | PASS — Kernszenario, E2E + Unit |
+| 10 | iOS-Wiedereinstieg ueberspringt Sensorfreigabe | PASS — auf dem Geraet bestaetigt |
+| 11 | Pfeil ohne jede Heading-Quelle | PASS |
+| 12 | Geraet ohne brauchbares Magnetometer | PASS — identischer Zustand wie 11, gleicher Pfad |
+
+### Automatisierte Tests
+
+- **Unit (Vitest):** 177 PASS / 0 FAIL (12 Dateien). Neu: `use-geolocation.test.ts`
+  mit 10 Tests fuer Suchzustand, 15s-Timeout, alle Fehlercodes, Retry, `insecure-context`.
+- **E2E (Playwright, Mobile Safari/WebKit):** 267 PASS / 0 FAIL / 2 skipped ueber
+  die gesamte Suite — keine Regression in PROJ-1/2/4/5/6/7/8/9/11/13.
+- **E2E PROJ-3 speziell:** 19 PASS (vorher 13). **6 neue Tests** schliessen die
+  Luecke: Die neuen Zustaende hatten zuvor keinerlei E2E-Abdeckung.
+
+### Responsive & Touch-Targets
+
+375px / 768px / 1440px geprueft: Retry-Button >= 44px Hoehe, kein horizontaler
+Overflow. PASS auf allen drei Breiten.
+
+### Kontrast (WCAG AA)
+
+Kein-Fix-Text gegen den tatsaechlichen Hintergrund gemessen:
+`rgb(160,167,173)` auf `rgb(11,15,18)` = **7.90:1** (Anforderung 4.5:1). PASS.
+`text-gq-grey` ist hier zulaessig, weil die Player-Screens garantiert dunkel sind
+(siehe `docs/design-system.md`); BUG-1 aus dem PROJ-1-QA betraf Screens in beiden Themes.
+
+### Security Audit (Red Team)
+
+| Pruefung | Ergebnis |
+|----------|----------|
+| XSS ueber importierte Quest-Daten | PASS — `<img src=x onerror=...>` als Quest-/Stationsname rendert als inerter Text, kein `window.__pwned`, kein injiziertes Element. Der geaenderte Navigations-Screen rendert `station.name` ueber normale JSX-Interpolation. |
+| `dangerouslySetInnerHTML` / `eval` | PASS — einziger Treffer ist statisches JSON-LD in `about/page.tsx` (mit `<`-Escaping), ausserhalb dieses Scopes |
+| Standortdaten im Logging | PASS — kein `console.*` in den GPS-Pfaden; Koordinaten verlassen das Geraet nicht (kein Backend) |
+| Timer-Leak / Ressourcen | PASS — der neue 15s-Timer wird in `clearWatch()` freigegeben, das die Mount-Cleanup zurueckgibt |
+| Neue Angriffsflaeche durch die Aenderung | Keine — es kommen nur lokale Zustaende und statische Texte hinzu, keine neuen Eingaben, Netzwerkaufrufe oder Persistenz |
+
+### Bugs
+
+**Keine gefunden.** Weder Critical, High, Medium noch Low.
+
+Zwei Verdachtsmomente wurden waehrend des Audits geprueft und ausgeraeumt:
+1. *Verdacht:* Der "Kompass aktivieren"-Button koennte faelschlich erscheinen,
+   wenn nur das Bewegungs-Heading aktiv ist. *Befund:* `compassAvailable` ist
+   strikt `orientation.heading !== null`, der Movement-Fallback setzt es nicht —
+   Bedingung korrekt.
+2. *Verdacht:* Der Hinweis koennte nach einsetzender Bewegung stehenbleiben.
+   *Befund:* Durch den bestehenden gruenen E2E-Test abgedeckt; ein Gegentest
+   scheiterte an einem eigenen Selektor-Fehler, nicht am Produktverhalten.
+
+### Nicht abgedeckt (ehrliche Einschraenkung)
+
+- **Chromium / Desktop Chrome:** In dieser Umgebung nicht ausfuehrbar. Das
+  `chromium_headless_shell`-Binary fehlt, und der Start des vollen Chromium
+  scheitert an einer Sandbox-Beschraenkung (`kill EPERM`). Die 13 "Fehlschlaege"
+  frueherer Laeufe waren ausschliesslich dieser fehlende Browser, kein Produktdefekt —
+  verifiziert durch identische Fehlerzahl mit und ohne die Aenderungen.
+- **Firefox:** Binary ebenfalls nicht installiert.
+- Abdeckung entspricht damit WebKit (= iOS Safari, Zielplattform laut PRD) plus
+  der Geraeteverifikation auf einem echten iPhone. Fuer Android/Chrome steht die
+  Verifikation aus.
+
+### Production-Ready Decision
+
+**READY.** Keine Critical- oder High-Bugs. Der Code ist seit 2026-09-06 bereits in
+Production (Commit `cb3b6a2`, Tag `v1.22.0-PROJ-3`); dieser QA-Durchlauf zieht die
+Pruefung nach und bestaetigt den ausgelieferten Stand. Der zuvor offene iOS-Pfad
+ist durch den Nutzertest auf dem Geraet geschlossen.
+
+**Empfehlung:** Die 6 neuen E2E-Tests committen — ohne sie waeren die neuen
+Zustaende dauerhaft ungeschuetzt gegen Regression.
 
 ## Deployment
 
