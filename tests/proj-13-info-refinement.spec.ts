@@ -326,6 +326,20 @@ test.describe("Zurückpfeil & Footer (Refinement 2)", () => {
     }
   });
 
+  test("Impressum und Datenschutz laufen im Light-Theme, /about und /anleitung dunkel", async ({ page }) => {
+    // Refinement 2026-09-06: Die beiden Rechtstexte werden gelesen, nicht
+    // inszeniert — sie bekommen das helle Theme, die Marketingseiten nicht.
+    for (const path of ["/impressum", "/datenschutz"]) {
+      await page.goto(path);
+      const shell = page.locator('[data-theme="light"]').first();
+      await expect(shell, path).toBeVisible();
+    }
+    for (const path of ["/about", "/anleitung"]) {
+      await page.goto(path);
+      await expect(page.locator('[data-theme="light"]'), path).toHaveCount(0);
+    }
+  });
+
   test("Footer-Links erfüllen die 44px-Mindesthöhe", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/about");

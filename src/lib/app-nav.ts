@@ -1,4 +1,4 @@
-import { BookOpen, Info, Pencil, Play, ScrollText, ShieldCheck, type LucideIcon } from "lucide-react";
+import { BookOpen, Gamepad2, Info, Pencil, ScrollText, ShieldCheck, type LucideIcon } from "lucide-react";
 
 /**
  * Die Navigation der gesamten App (PROJ-1, Refinement 2026-09-06).
@@ -34,9 +34,10 @@ export const APP_NAV_GROUPS: readonly AppNavGroup[] = [
   {
     title: "App",
     links: [
-      // Play/Create tragen die Icons ihrer Mode-Cards auf dem Startscreen,
-      // damit das Menu dieselbe Sprache spricht wie der Einstieg.
-      { href: "/play", label: "Play", icon: Play },
+      // Controller statt Play-Dreieck: Das Dreieck liest sich als "Video
+      // abspielen", der Controller sagt "Spielen" — und trifft den Gaming-Ton
+      // der Zielgruppe (PRD: 10-15 Jahre).
+      { href: "/play", label: "Play", icon: Gamepad2 },
       { href: "/create", label: "Create", icon: Pencil },
     ],
   },

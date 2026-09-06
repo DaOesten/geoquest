@@ -21,6 +21,7 @@ export const metadata: Metadata = {
 export default function DatenschutzPage() {
   return (
     <InfoPageShell
+      theme="light"
       backHref="/about"
       eyebrow="Rechtliches"
       title="Datenschutz"
@@ -37,7 +38,7 @@ export default function DatenschutzPage() {
           <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
             Verantwortlicher
           </h2>
-          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-[#E7EAEC]">
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-foreground/90">
             Verantwortlich im Sinne der Datenschutz-Grundverordnung ist der im{" "}
             <Link
               href="/impressum"
@@ -53,13 +54,13 @@ export default function DatenschutzPage() {
           <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
             Quests und Spielfortschritt
           </h2>
-          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-gq-grey">
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
             Quests, die du erstellst oder importierst, und dein Fortschritt beim
             Spielen werden ausschließlich im lokalen Speicher deines Browsers
             abgelegt. Diese Daten werden nicht an uns übertragen. Wir können
             nicht sehen, welche Quests es gibt oder wie du spielst.
           </p>
-          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-gq-grey">
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
             Umgekehrt bedeutet das: Löschst du die Browserdaten oder wechselst
             das Gerät, sind die Quests weg. Sichere dir wichtige Quests über die
             Export-Funktion als Datei.
@@ -70,13 +71,13 @@ export default function DatenschutzPage() {
           <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
             Standortdaten
           </h2>
-          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-gq-grey">
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
             Zum Spielen einer Quest braucht die App deinen Standort, um Richtung
             und Entfernung zum nächsten Ziel zu berechnen. Der Browser fragt dich
             vorher um Erlaubnis; ohne diese Erlaubnis lässt sich der Spielmodus
             nicht nutzen.
           </p>
-          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-gq-grey">
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
             Die Standortdaten werden ausschließlich auf deinem Gerät verarbeitet.
             Sie werden nicht an uns oder an Dritte gesendet, nicht gespeichert
             und nicht ausgewertet. Sobald du den Spielmodus verlässt, endet die
@@ -89,7 +90,7 @@ export default function DatenschutzPage() {
           <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
             Hosting und Server-Protokolle
           </h2>
-          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-gq-grey">
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
             Diese Seite wird bei der Vercel Inc. gehostet. Beim Aufruf der Seite
             verarbeitet Vercel technisch notwendige Verbindungsdaten wie
             IP-Adresse, Zeitpunkt der Anfrage, aufgerufene Adresse und
@@ -103,22 +104,22 @@ export default function DatenschutzPage() {
           <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
             Reichweitenmessung
           </h2>
-          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-gq-grey">
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
             Wir nutzen Vercel Web Analytics, um zu sehen, wie oft die Seiten
             aufgerufen werden und über welche Wege Besucher hierher finden.
             Erfasst werden dabei nur zusammengefasste Angaben: die aufgerufene
             Seite, die verweisende Seite, ungefähre Herkunft auf Länderebene
             sowie Gerätetyp, Betriebssystem und Browser.
           </p>
-          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-gq-grey">
-            Dabei werden <strong className="font-medium text-gq-white">keine
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
+            Dabei werden <strong className="font-medium text-foreground">keine
             Cookies gesetzt</strong> und keine Kennungen auf deinem Gerät
             gespeichert. Es wird kein geräteübergreifendes Profil gebildet, und
             einzelne Besucher lassen sich für uns nicht wiedererkennen oder
             identifizieren. Deine IP-Adresse wird von Vercel zur Auswertung nur
             kurzzeitig verarbeitet und nicht gespeichert.
           </p>
-          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-gq-grey">
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
             Rechtsgrundlage ist unser berechtigtes Interesse an einer
             statistischen Auswertung der Nutzung nach Art. 6 Abs. 1 lit. f DSGVO.
             Inhalte deiner Quests, dein Spielfortschritt und deine Standortdaten
@@ -130,7 +131,7 @@ export default function DatenschutzPage() {
           <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
             Karten
           </h2>
-          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-gq-grey">
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
             Im Creator werden Kartenausschnitte von den Servern der OpenStreetMap
             Foundation geladen. Dabei überträgt dein Browser technisch bedingt
             seine IP-Adresse dorthin, damit die Kartenkacheln ausgeliefert werden
@@ -144,7 +145,7 @@ export default function DatenschutzPage() {
           <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
             Schriftarten
           </h2>
-          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-gq-grey">
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
             Die verwendeten Schriften werden von unserem eigenen Server
             ausgeliefert und nicht von einem Anbieter wie Google Fonts nachgeladen.
             Beim Aufruf der Seite wird deshalb keine Verbindung zu Google
@@ -156,7 +157,7 @@ export default function DatenschutzPage() {
           <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
             Medien in Quests
           </h2>
-          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-gq-grey">
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
             Quests können Bilder, Audio- oder Videodateien von fremden
             Internetadressen einbinden. Diese werden beim Abspielen direkt vom
             jeweiligen Anbieter geladen, der dabei die IP-Adresse deines Geräts
@@ -169,7 +170,7 @@ export default function DatenschutzPage() {
           <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
             Keine Konten, keine Werbung, keine Profile
           </h2>
-          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-gq-grey">
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
             Es gibt keine Registrierung und keine E-Mail-Abfrage. Wir setzen
             keinerlei Cookies — weder für Werbung noch für die Reichweitenmessung
             —, binden keine sozialen Netzwerke ein und geben keine Daten zu
@@ -184,7 +185,7 @@ export default function DatenschutzPage() {
           <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
             Deine Rechte
           </h2>
-          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-gq-grey">
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
             Dir stehen die Rechte auf Auskunft, Berichtigung, Löschung,
             Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch
             zu, sowie ein Beschwerderecht bei einer Datenschutz-Aufsichtsbehörde.
@@ -199,7 +200,7 @@ export default function DatenschutzPage() {
           <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
             Kinder und Jugendliche
           </h2>
-          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-gq-grey">
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
             Geo Quest richtet sich an Kinder und Jugendliche. Genau deshalb
             verzichtet die App auf Konten, Profile und jede Form der Auswertung:
             Es entstehen keine Daten, die man einer Person zuordnen könnte.

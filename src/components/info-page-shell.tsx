@@ -18,6 +18,13 @@ interface InfoPageShellProps {
   /** Rendered beside the title block from `lg` up; stacked underneath on smaller screens. */
   aside?: React.ReactNode;
   backHref?: string;
+  /**
+   * "dark" (Default) trägt den Gaming-Look der öffentlichen Eingangsseiten.
+   * "light" ist den Rechtstexten vorbehalten: nüchterne Fließtextseiten, die
+   * gelesen und nicht inszeniert werden — und die ohnehin `robots: noindex`
+   * tragen, also gar nicht erst als Marketing-Fläche gedacht sind.
+   */
+  theme?: "dark" | "light";
   children: React.ReactNode;
 }
 
@@ -26,9 +33,12 @@ const CONTAINER = "mx-auto w-full max-w-[1100px] px-5 sm:px-8";
 
 /**
  * Shared frame for the static info pages (/about, /anleitung, /impressum,
- * /datenschutz — PROJ-13). Dark theme like the player side: these pages are the
- * outward-facing front door, so they carry the gaming look rather than the
- * creator's light theme.
+ * /datenschutz — PROJ-13).
+ *
+ * Default ist Dark wie die Player-Seite: /about und /anleitung sind die
+ * öffentliche Eingangstür und tragen den Gaming-Look. Die beiden Rechtstexte
+ * setzen dagegen `theme="light"` (2026-09-06) — sie werden gelesen, nicht
+ * inszeniert.
  *
  * The background is the same flat `bg-gq-black` as the start screen `/` — no
  * grid, glow or particles. On a text page that ambient layer competes with the
@@ -45,12 +55,17 @@ export function InfoPageShell({
   lead,
   aside,
   backHref,
+  theme = "dark",
   children,
 }: InfoPageShellProps) {
   return (
-    <>
+    // `data-theme` setzt die Farb-Variablen auf diesem Teilbaum um; die
+    // Akzentfarben (Teal, Lime) bleiben laut Design-System in beiden Themes
+    // gleich. Der Wrapper trägt die Fläche, damit auch der Bereich unterhalb
+    // des Inhalts mitfärbt.
+    <div data-theme={theme} className="min-h-dvh bg-background">
       {/* No border under the header — it would cut the page into two blocks. */}
-      <header className="sticky top-0 z-50 bg-gq-black/70 backdrop-blur-sm">
+      <header className="sticky top-0 z-50 bg-background/70 backdrop-blur-sm">
         <div className={`${CONTAINER} flex h-14 items-center gap-3 sm:h-16`}>
           {backHref && (
             <Link
@@ -69,7 +84,7 @@ export function InfoPageShell({
               <Link
                 key={href}
                 href={href}
-                className="hidden sm:flex items-center h-11 px-4 rounded-pill text-tech text-[11px] tracking-[0.08em] text-gq-grey transition-colors duration-base ease-gq hover:text-gq-teal"
+                className="hidden sm:flex items-center h-11 px-4 rounded-pill text-tech text-[11px] tracking-[0.08em] text-muted-foreground transition-colors duration-base ease-gq hover:text-gq-teal"
               >
                 {label}
               </Link>
@@ -118,12 +133,12 @@ export function InfoPageShell({
                 {title}
               </h1>
               {meta && (
-                <p className="mt-3 text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-grey">
+                <p className="mt-3 text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-muted-foreground">
                   {meta}
                 </p>
               )}
               {lead && (
-                <div className="mt-5 max-w-[52ch] font-body text-[15px] sm:text-base lg:text-lg leading-relaxed text-[#E7EAEC]">
+                <div className="mt-5 max-w-[52ch] font-body text-[15px] sm:text-base lg:text-lg leading-relaxed text-foreground/90">
                   {lead}
                 </div>
               )}
@@ -142,6 +157,6 @@ export function InfoPageShell({
       </main>
 
       <InfoFooter />
-    </>
+    </div>
   );
 }

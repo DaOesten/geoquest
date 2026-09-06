@@ -15,5 +15,5 @@ export const PROVIDER = {
   street: "Kerbelweg 5b",
   city: "22337 Hamburg",
   country: "Deutschland",
-  email: "d.oesten@googlemail.com",
+  email: "hi@technolomagie.de",
 } as const;

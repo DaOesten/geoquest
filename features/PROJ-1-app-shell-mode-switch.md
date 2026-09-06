@@ -55,7 +55,7 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 
 **Kopfzeile & Burger-Menu (Refinement 2026-09-06):**
 - [ ] Angenommen der Nutzer befindet sich auf einem beliebigen Screen der App (`/`, `/play`, `/create`, jede Unteransicht, jede Info-Seite), wenn er die Kopfzeile betrachtet, dann sieht er rechts das Burger-Menu-Icon
-- [ ] Angenommen der Nutzer betrachtet die Kopfzeile eines beliebigen Screens, wenn er nach links schaut, dann sieht er entweder den Zurück-Pfeil (in jeder Unteransicht) oder nichts (auf den Top-Level-Ansichten `/`, `/play`, `/create`) — in keinem Fall noch die Pin-Bildmarke
+- [ ] Angenommen der Nutzer betrachtet die Kopfzeile eines beliebigen Screens, wenn er nach links schaut, dann sieht er den Zurück-Pfeil — in keinem Fall noch die Pin-Bildmarke. Auf `/play` und `/create` führt er zum Startscreen `/`, in Unteransichten eine Ebene nach oben _(korrigiert 2026-09-06: ursprünglich sollte die linke Seite auf Top-Level leer bleiben — dadurch fehlte dort jeder Weg zurück)_
 - [ ] Angenommen der Nutzer tippt auf das Burger-Menu, wenn sich das Menu öffnet, dann sieht er drei Gruppen mit den Überschriften **App**, **Info** und **Rechtliches**
 - [ ] Angenommen das Menu ist offen, wenn der Nutzer die Gruppe „App" betrachtet, dann enthält sie die Links **Play** (→ `/play`) und **Create** (→ `/create`), jeweils mit passendem Icon
 - [ ] Angenommen das Menu ist offen, wenn der Nutzer die Gruppe „Info" betrachtet, dann enthält sie die Links **Über** (→ `/about`) und **Anleitung** (→ `/anleitung`), jeweils mit passendem Icon
@@ -567,7 +567,7 @@ Menu-Inhalt — drei Gruppen, sechs Links, je ein Icon:
 
 | Gruppe | Link | Ziel |
 |--------|------|------|
-| **App** | Play | `/play` |
+| **App** | Play (Controller-Icon) | `/play` |
 | | Create | `/create` |
 | **Info** | Über | `/about` |
 | | Anleitung | `/anleitung` |
@@ -672,3 +672,16 @@ Playwright gegen System-Chrome (der gebündelte Chromium fehlt in dieser Umgebun
 | PROJ-3: back button | `aria-label` „Zurück zur Stationsliste" → „Zurück" |
 | PROJ-13: Burger-Inhalt (2×) | vier Ziele inkl. Link „App" → sechs Ziele plus drei Gruppen-Überschriften |
 | PROJ-13: Desktop | „Burger ist versteckt" → „Burger ist sichtbar, neben Anleitung und Zur App" |
+
+### Nachbesserung nach Nutzer-Durchsicht (2026-09-06)
+
+Vier Punkte aus der ersten Durchsicht im Browser:
+
+| Befund | Ursache | Behebung |
+|--------|---------|----------|
+| Auf `/play` und `/create` fehlte jeder Zurück-Weg | Mit dem Wegfall der Pin-Marke blieb die linke Seite auf Top-Level leer — die Spec hatte das so vorgesehen, in der Praxis war der Screen damit eine Sackgasse | Beide Seiten übergeben jetzt `backHref="/"`; der Zurück-Pfeil steht damit auf **jedem** Screen |
+| Play trug ein Play-Dreieck | Das Dreieck liest sich als „Video abspielen" | `Gamepad2` (Controller) — trifft den Gaming-Ton der Zielgruppe |
+| Schließen-X im Light-Theme unsichtbar | `SheetPrimitive.Close` in `sheet.tsx` hatte keine eigene Textfarbe und erbte die helle Vererbung des Portals; zusätzlich malte `data-[state=open]:bg-secondary` eine helle Fläche dahinter | `text-foreground` explizit gesetzt, die `bg-secondary`-Regel entfernt. Gemessen: `rgb(10,14,15)` auf hellem Panel |
+| Impressum/Datenschutz waren noch dunkel | Kein Fehler dieser Umsetzung — Light Mode für die Rechtstexte war in diesem Gespräch nie vereinbart, der Spec hielt Dark ausdrücklich fest. Nach Rückfrage umgesetzt | Siehe PROJ-13 |
+
+Die Korrektur am Zurück-Pfeil ändert eine Aussage der ursprünglichen Spec: „auf den Top-Level-Ansichten bleibt die linke Seite leer" war falsch gedacht. Das zugehörige Acceptance Criterion wurde entsprechend umgeschrieben, nicht nur ergänzt.

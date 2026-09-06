@@ -15,14 +15,14 @@ export function InfoFooter() {
   return (
     /* Leicht abgesetzte Fläche, damit der Fuß nicht lose auf dem
        Seitenhintergrund liegt — sonst wirkt er wie ein weiterer Absatz. */
-    <footer className="mt-8 border-t border-border/60 bg-gq-dark-teal/25">
+    <footer className="mt-8 border-t border-border/60 bg-foreground/[0.04]">
       <div className="mx-auto w-full max-w-[1100px] px-5 sm:px-8 py-8 sm:py-10">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-tech text-[10px] tracking-[0.12em] text-gq-teal">
               Kontakt
             </p>
-            <p className="mt-2 font-body text-sm leading-relaxed text-gq-grey">
+            <p className="mt-2 font-body text-sm leading-relaxed text-muted-foreground">
               {PROVIDER.name}
             </p>
             <a
@@ -39,13 +39,13 @@ export function InfoFooter() {
             </p>
             <Link
               href="/impressum"
-              className="inline-flex items-center min-h-11 -my-1 font-body text-sm text-gq-grey transition-colors duration-base ease-gq hover:text-gq-teal"
+              className="inline-flex items-center min-h-11 -my-1 font-body text-sm text-muted-foreground transition-colors duration-base ease-gq hover:text-gq-teal"
             >
               Impressum
             </Link>
             <Link
               href="/datenschutz"
-              className="inline-flex items-center min-h-11 -my-1 font-body text-sm text-gq-grey transition-colors duration-base ease-gq hover:text-gq-teal"
+              className="inline-flex items-center min-h-11 -my-1 font-body text-sm text-muted-foreground transition-colors duration-base ease-gq hover:text-gq-teal"
             >
               Datenschutz
             </Link>

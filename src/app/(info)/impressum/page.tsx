@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 export default function ImpressumPage() {
   return (
     <InfoPageShell
+      theme="light"
       backHref="/about"
       eyebrow="Rechtliches"
       title="Impressum"
@@ -27,7 +28,7 @@ export default function ImpressumPage() {
           <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
             Anbieter
           </h2>
-          <address className="mt-3 font-body text-sm lg:text-base not-italic leading-relaxed text-[#E7EAEC]">
+          <address className="mt-3 font-body text-sm lg:text-base not-italic leading-relaxed text-foreground/90">
             {PROVIDER.name}
             <br />
             {PROVIDER.street}
@@ -42,7 +43,7 @@ export default function ImpressumPage() {
           <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
             Kontakt
           </h2>
-          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-[#E7EAEC]">
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-foreground/90">
             E-Mail:{" "}
             <a
               href={`mailto:${PROVIDER.email}`}
@@ -57,7 +58,7 @@ export default function ImpressumPage() {
           <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
             Verantwortlich für den Inhalt
           </h2>
-          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-[#E7EAEC]">
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-foreground/90">
             {PROVIDER.name}, Anschrift wie oben.
           </p>
         </div>
@@ -66,7 +67,7 @@ export default function ImpressumPage() {
           <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
             Haftung für Inhalte
           </h2>
-          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-gq-grey">
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
             Als Diensteanbieter sind wir für eigene Inhalte auf diesen Seiten
             nach den allgemeinen Gesetzen verantwortlich. Wir sind allerdings
             nicht verpflichtet, übermittelte oder gespeicherte fremde
@@ -79,7 +80,7 @@ export default function ImpressumPage() {
           <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
             Inhalte von Quests
           </h2>
-          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-gq-grey">
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
             Quests werden von den Nutzern selbst erstellt und ausschließlich auf
             deren eigenem Gerät gespeichert. Sie werden nicht an uns übertragen
             und von uns weder gespeichert noch geprüft. Für die in einer Quest
@@ -93,7 +94,7 @@ export default function ImpressumPage() {
           <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
             Haftung für Links
           </h2>
-          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-gq-grey">
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
             Quests können Medien von fremden Internetadressen einbinden. Auf
             deren Inhalte haben wir keinen Einfluss und übernehmen dafür keine
             Gewähr. Für die Inhalte der verlinkten Seiten ist stets der
@@ -105,7 +106,7 @@ export default function ImpressumPage() {
           <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
             Sicherheit im Freien
           </h2>
-          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-gq-grey">
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
             Geo Quest führt Spieler zu Orten im Freien. Wer eine Quest erstellt,
             wählt die Ziele aus und trägt die Verantwortung dafür, dass die
             Route für die vorgesehene Altersgruppe gefahrlos begehbar ist. Wir

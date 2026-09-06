@@ -253,6 +253,7 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 | Desktop-Textlinks und „Zur App"-Button bleiben trotz Burger stehen | Am Laptop ist Platz vorhanden, und die Zeile ist die etablierte Erwartung an eine Webseite. Der Aktions-Button bleibt zudem der reservierte Ko-fi-Platz — er darf nicht in einem Menu verschwinden | 2026-09-06 |
 | Burger auf den Info-Seiten künftig auch ab `sm` sichtbar (nicht mehr `sm:hidden`) | Mit Play und Create im Menu enthält es jetzt Ziele, die die Desktop-Zeile nicht abbildet. Wäre es am Desktop ausgeblendet, käme ein Laptop-Besucher von `/impressum` nicht direkt in den Creator | 2026-09-06 |
 | Info-Seiten behalten ihren Sticky-Header, App-Screens verlieren ihn | Unterschiedliche Inhalte: Info-Seiten sind lange Fließtexte, bei denen der Weg nach oben weit ist. Play und Create sind kurze Listen auf 430px, wo ein klebender Header nur Inhalt verdeckt | 2026-09-06 |
+| Impressum und Datenschutz laufen im Light-Theme, `/about` und `/anleitung` bleiben dunkel | Die beiden Rechtstexte werden gelesen, nicht inszeniert — heller Grund ist für längere Fließtexte die ruhigere Lesefläche. Sie tragen ohnehin `robots: noindex` und sind damit auch nicht als Marketing-Fläche gedacht. `/about` und `/anleitung` bleiben die öffentliche Eingangstür und behalten den Gaming-Look aus dem PRD | 2026-09-06 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -958,3 +959,18 @@ Wie spezifiziert umgesetzt:
 - `HEADER_NAV_LINKS` filtert weiterhin auf `/anleitung`, jetzt aus den flachgeklopften `APP_NAV_GROUPS`
 
 Drei E2E-Tests in `tests/proj-13-info-refinement.spec.ts` prüften das alte Verhalten (vier Ziele inkl. Link „App"; Burger am Desktop versteckt) und wurden auf sechs Ziele, die drei Gruppen-Überschriften und den am Desktop sichtbaren Burger umgestellt.
+
+### Nachbesserung: Light-Theme für die Rechtstexte (2026-09-06)
+
+`/impressum` und `/datenschutz` laufen jetzt im hellen Theme, `/about` und `/anleitung` bleiben dunkel.
+
+| Datei | Änderung |
+|-------|----------|
+| `src/components/info-page-shell.tsx` | Neue Prop `theme?: "dark" \| "light"` (Default `"dark"`). Der Rahmen stempelt `data-theme` auf einen Wrapper-`div`, der zugleich die Fläche (`bg-background`) trägt |
+| `src/app/(info)/impressum/page.tsx`, `…/datenschutz/page.tsx` | `theme="light"`; alle fest verdrahteten Dunkelfarben (`text-[#E7EAEC]`, `text-gq-grey`, `text-gq-white`) durch Tokens ersetzt |
+| `src/components/info-footer.tsx` | `bg-gq-dark-teal/25` → `bg-foreground/[0.04]`, `text-gq-grey` → `text-muted-foreground` — der Footer folgt damit dem Theme der Seite, statt immer dunkel zu sein |
+| `src/app/(info)/layout.tsx` | `bg-gq-black` entfernt: die Fläche malt jetzt der Shell, sonst schiene Schwarz unter den hellen Seiten durch |
+
+Die Akzentfarben (Teal für Eyebrows und Links) bleiben laut Design-System in beiden Themes identisch — nur Grund und Textfarbe wechseln.
+
+Im Browser gemessen: `/impressum` und `/datenschutz` → `bg rgb(246,248,249)`, `/about` und `/anleitung` → `bg rgb(10,14,15)`. Footer: `rgba(10,14,15,0.04)` auf hell, `rgba(255,255,255,0.04)` auf dunkel; Links in beiden Fällen Teal. Ein E2E-Test in `proj-13-info-refinement.spec.ts` hält die Aufteilung fest.
