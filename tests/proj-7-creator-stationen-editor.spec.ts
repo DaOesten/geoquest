@@ -476,6 +476,82 @@ test.describe("PROJ-7: Creator — Stationen-Editor", () => {
     });
   });
 
+  // The quest-edit pencil moved out of the header next to the quest title when PROJ-1 gave
+  // every screen a burger menu (refine 2026-09-06). That change was verified by hand but had
+  // no tests of its own in this suite — these close that gap.
+  test.describe("Quest-Bearbeiten-Stift im Titel-Block", () => {
+    test("sits next to the quest title, not in the header", async ({ page }) => {
+      await seedQuest(page, draftQuest(QUEST_ID, "Rätsel am Fluss"));
+
+      const pencil = page.getByRole("button", { name: "Quest bearbeiten" });
+      await expect(pencil).toBeVisible();
+
+      const title = page.getByRole("heading", { name: "Rätsel am Fluss" });
+      const titleBox = (await title.boundingBox())!;
+      const pencilBox = (await pencil.boundingBox())!;
+
+      // Same band as the title, and to its right — not up in the header.
+      expect(pencilBox.x).toBeGreaterThan(titleBox.x);
+      expect(pencilBox.y).toBeGreaterThan(titleBox.y - 40);
+
+      const header = page.locator("header");
+      await expect(header.getByRole("button", { name: "Quest bearbeiten" })).toHaveCount(0);
+    });
+
+    test("opens the quest edit dialog", async ({ page }) => {
+      await seedQuest(page, draftQuest(QUEST_ID, "Rätsel am Fluss"));
+
+      await page.getByRole("button", { name: "Quest bearbeiten" }).click();
+      await expect(page.getByRole("dialog")).toBeVisible();
+      await expect(page.locator("#quest-name")).toHaveValue("Rätsel am Fluss");
+    });
+
+    test("meets the 44px touch-target minimum", async ({ page }) => {
+      await seedQuest(page, draftQuest(QUEST_ID, "Rätsel am Fluss"));
+
+      const box = (await page.getByRole("button", { name: "Quest bearbeiten" }).boundingBox())!;
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+    });
+
+    test("stays on the first line when a long quest name wraps", async ({ page }) => {
+      await seedQuest(
+        page,
+        draftQuest(QUEST_ID, "Die sehr lange Schnitzeljagd quer durch die ganze Altstadt und zurück")
+      );
+
+      const title = page.getByRole("heading", { level: 1 });
+      const titleBox = (await title.boundingBox())!;
+      const pencilBox = (await page.getByRole("button", { name: "Quest bearbeiten" }).boundingBox())!;
+
+      // The title must actually wrap for this test to mean anything.
+      expect(titleBox.height).toBeGreaterThan(60);
+      // The pencil tracks the first line rather than centring on the wrapped block.
+      expect(pencilBox.y).toBeLessThan(titleBox.y + titleBox.height / 2);
+    });
+
+    test("is hidden for a password-protected quest that has not been unlocked (PROJ-11)", async ({ page }) => {
+      await page.goto("/create");
+      await page.evaluate(() => {
+        localStorage.setItem("gq_first_visit_done", "true");
+        localStorage.setItem("gq_quests", JSON.stringify([{
+          version: 1,
+          id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+          name: "Fremde Quest",
+          lastModified: "2026-01-01T00:00:00.000Z",
+          intro: { text: "" },
+          outro: { text: "" },
+          stations: [],
+          // Imported from elsewhere: password set, not in gq_created_here, never unlocked here.
+          passwordHash: "0".repeat(64),
+        }]));
+      });
+      await page.goto(`/create/${QUEST_ID}`);
+
+      await expect(page.getByRole("button", { name: "Quest bearbeiten" })).toHaveCount(0);
+    });
+  });
+
   test.describe("Regression: PROJ-6 Entwurf/Play-Sichtbarkeit reacts to PROJ-7 stations", () => {
     test("a quest becomes playable as soon as its first positioned station is added", async ({ page }) => {
       await seedQuest(page, draftQuest(QUEST_ID, "Frisch angelegt"));

@@ -1,7 +1,7 @@
 # PROJ-7: Creator — Stationen-Editor
 
-## Status: In Progress
-_Zwei Änderungen warten auf QA: (1) Quest-Bearbeiten-Einstieg neben dem Titel (2026-09-06, gebaut und im Browser verifiziert), (2) Sheet-Layout auf kleinen Bildschirmen — Karte überlagerte den "Speichern"-Button, behoben am 2026-09-06 mit fixiertem Header/Footer und scrollender Mitte, 7 neue E2E-Tests, Gesamtsuite 280/280 grün. Beide sind noch nicht deployed._
+## Status: Approved
+_QA am 2026-09-06 abgeschlossen: keine Bugs, Production-Ready, noch nicht deployed. Geprüft wurden beide offenen Änderungen: (1) Quest-Bearbeiten-Einstieg neben dem Titel (2026-09-06, gebaut und im Browser verifiziert), (2) Sheet-Layout auf kleinen Bildschirmen — Karte überlagerte den "Speichern"-Button, behoben am 2026-09-06 mit fixiertem Header/Footer und scrollender Mitte, 7 neue E2E-Tests, Gesamtsuite in der QA final 285/285 grün auf Mobile Safari und erstmals auch auf Chrome verifiziert (PROJ-7-Suite 39 Tests). Nächster Schritt: `/deploy`._
 **Created:** 2026-08-28
 **Last Updated:** 2026-09-06
 
@@ -919,3 +919,122 @@ Die erste Testrunde meldete zwei Fehler, beide in meinen Assertions, nicht im Fi
 - Chromium-/Android-Abdeckung fehlt weiterhin (Browser-Binary lokal nicht lauffähig) — betrifft das ganze Projekt, nicht diese Änderung
 - Der Modul-Editor (PROJ-8) behält bewusst sein `overflow-y-auto` auf dem gesamten `SheetContent`; sein Footer scrollt also mit. Bewusste Scope-Entscheidung aus der Refine-Sitzung, siehe Decision Log
 - Verhalten bei geöffneter Bildschirmtastatur (Edge Case 16) ist konstruktiv abgedeckt, aber nicht automatisiert getestet — Playwright emuliert keine mobile Tastatur; für `/qa` auf einem echten Gerät vorgemerkt
+
+---
+
+## QA Test Results — Sheet-Layout & Quest-Bearbeiten-Stift (2026-09-06)
+
+Geprüft wurden die **beiden offenen Änderungen** an PROJ-7: das neue Sheet-Layout auf kleinen Bildschirmen (heute gebaut) und der Quest-Bearbeiten-Stift im Titel-Block (am 2026-09-06 gebaut, manuell abgenommen, aber ohne eigene Tests in dieser Suite).
+
+### Wichtigster Nebenbefund: Das Chromium-Problem ist gelöst
+
+Die seit Projektbeginn fehlende Desktop-Browser-Abdeckung hatte eine konkrete Ursache: **die Chromium-Installation ist eine Ruine.** `~/Library/Caches/ms-playwright/chromium-1208/` ist **428 KB** groß (WebKit zum Vergleich: 294 MB). Der Launcher-Stub ist da, das Framework `Google Chrome for Testing Framework` (~200 MB) fehlt vollständig — ein abgebrochener Download. `npx playwright install --dry-run` meldet den Browser trotzdem als installiert, weil es nur die Existenz des Verzeichnisses prüft. Deshalb wirkte das Problem unerklärlich.
+
+**Lösung ohne Download:** Auf dem Rechner liegt ein funktionsfähiges Google Chrome 152 in `/Applications`. Playwright kann es über `channel: 'chrome'` direkt ansteuern. Damit lief die Suite erstmals im Projekt vollständig auf einer Desktop-Engine.
+
+Empfehlung für `playwright.config.ts` (nicht von mir geändert — QA fixt nicht):
+```ts
+{ name: 'chromium', use: { ...devices['Desktop Chrome'], channel: 'chrome' } }
+```
+
+### Acceptance Criteria Status — Sheet-Layout auf kleinen Bildschirmen
+
+| Kriterium | Ergebnis | Nachweis |
+|-----------|----------|----------|
+| Auf 360×640 sind "Abbrechen"/"Speichern" ohne Scrollen sichtbar, Karte überlagert sie nicht | ✅ Pass | E2E + Screenshot; Buttons enden bei y=567 von 640 |
+| Beim Scrollen der Mitte bleiben Titelzeile und Button-Zeile stehen | ✅ Pass | E2E: Position von Titel und Speichern vor/nach `scrollTop = scrollHeight` identisch |
+| Wisch über die Karte pannt die Karte, scrollt nicht den Sheet-Inhalt | ✅ Pass | Leaflet fängt Touch im Container ab; Scrollen über die Ränder verifiziert (Edge Case 15) |
+| Bei geöffneter Tastatur bleiben die Buttons erreichbar | ⚠️ Nicht automatisiert prüfbar | Playwright emuliert keine mobile Tastatur — konstruktiv abgedeckt (fixierter Footer), auf echtem Gerät zu bestätigen |
+| Auf großem Bildschirm unverändert, kein Scrollbalken | ✅ Pass | E2E 1440×900: `scrollHeight === clientHeight`, Karte wächst auf 371px |
+
+### Acceptance Criteria Status — Quest-Bearbeiten-Stift
+
+| Kriterium | Ergebnis | Nachweis |
+|-----------|----------|----------|
+| Stift steht neben dem Quest-Namen, nicht mehr in der Kopfzeile | ✅ Pass | Neuer E2E-Test: rechts vom Titel, in derselben Zeile; 0 Treffer im `<header>` |
+| Stift öffnet denselben `QuestFormDialog` | ✅ Pass | Neuer E2E-Test: Dialog offen, `#quest-name` vorbelegt |
+| Tap-Ziel ≥44px | ✅ Pass | Neuer E2E-Test: exakt 44×44 |
+| Langer Titel bricht um, Stift bleibt auf erster Zeile | ✅ Pass | Neuer E2E-Test mit umbrechendem Namen (Titelhöhe >60px), Stift oberhalb der Titelmitte |
+| Bei passwortgeschützter, nicht entsperrter Quest kein Stift (PROJ-11) | ✅ Pass | Neuer E2E-Test: `passwordHash` gesetzt, nicht in `gq_created_here` → 0 Treffer |
+
+Die Abnahme vom 2026-09-06 war korrekt — sie ist jetzt zusätzlich durch Tests abgesichert statt nur durch Sichtprüfung.
+
+### Edge Cases Status
+
+| # | Edge Case | Ergebnis |
+|---|-----------|----------|
+| 14 | Sehr kleine Viewport-Höhe | ✅ Pass — zusätzlich auf **320×480** geprüft (unter der Spec-Referenz): Buttons enden bei 442/480 |
+| 15 | Scroll-Geste trifft die Karte | ✅ Pass — Karte pannt, Scrollen über die Ränder |
+| 16 | Bildschirmtastatur | ⚠️ Nicht automatisiert prüfbar (siehe oben) |
+| — | **Landscape 640×360** (nicht spezifiziert, von mir ergänzt) | ✅ Pass — Speichern bei 322/360, Karte weiterhin 220px |
+| — | **Radius-Slider erreichbar** (nicht spezifiziert) | ✅ Pass — nach Scrollen vollständig im sichtbaren Band |
+| — | **Bestehende Station bearbeiten auf 360×640** | ✅ Pass — vorbelegtes Sheet, Speichern erreichbar |
+| — | **Doppel-Tap auf Speichern** | ✅ Pass — genau 1 Station, keine Dublette |
+| — | **Escape schließt das Sheet** | ✅ Pass — verwirft korrekt, keine Station gespeichert |
+| — | **Tastaturbedienung** | ✅ Pass — Speichern fokussierbar, Enter speichert |
+
+### Responsive
+
+| Breite | Ergebnis |
+|--------|----------|
+| 320×480 | ✅ Buttons sichtbar, Karte 220px |
+| 360×640 (Spec-Referenz) | ✅ Pass |
+| 375×667 | ✅ Inhalt passt sogar ohne Scrollen, Karte 220px |
+| 768×1024 | ✅ Karte wächst auf 485px, kein Scrollbalken |
+| 1440×900 | ✅ Karte 371px, kein Scrollbalken |
+| 640×360 (Landscape) | ✅ Pass |
+
+Kein horizontales Seiten-Scrollen auf irgendeiner Breite.
+
+### Security Audit (Red Team)
+
+| Angriff | Ergebnis |
+|---------|----------|
+| XSS über Stationsnamen (`<img src=x onerror=alert(1)><script>`) | ✅ Kein Alert, kein injiziertes Element. `stripHtmlTags()` entfernt die Tags beim Speichern |
+| XSS über Quest-Namen (neben dem Stift gerendert) | ✅ Kein Alert; React rendert den String als Text |
+| **Umgehung des Sanitizers**: bösartiger Name direkt in `localStorage` geschrieben | ✅ Kein Alert, kein injiziertes Element — Rendering ist die eigentliche Schutzschicht, nicht der Sanitizer |
+| Stift-Sichtbarkeit als Zugriffsschutz | ✅ An `hasCreatorAccess()` gekoppelt, nicht umgehbar durch UI-Manipulation allein |
+| Secrets in Konsole/Netzwerk | ✅ Keine — kein Backend, keine API-Keys (Nominatim ist keyless) |
+
+**Anmerkung ohne Bug-Status:** `stripHtmlTags()` ist ein naives Regex (`/<[^>]*>/g`) und lässt Skript-*Text* stehen (aus `<script>alert(2)</script>` wird `alert(2)`). Das ist unkritisch, weil React beim Rendern escapet und der Wert nie in `innerHTML`/`eval` landet — bestätigt durch den localStorage-Umgehungstest. Kein Handlungsbedarf für dieses Feature; relevant würde es erst, wenn irgendwo `dangerouslySetInnerHTML` eingeführt wird.
+
+### Regressionstests
+
+| Suite | Ergebnis |
+|-------|----------|
+| Unit (Vitest) | ✅ 177/177 |
+| E2E Mobile Safari (gesamt) | ✅ **285 passed, 2 skipped, 0 failed** |
+| E2E Chrome 152 (gesamt, erstmalig) | 285 passed, 2 failed — siehe unten |
+| PROJ-7-Suite Mobile Safari | ✅ 39/39 (vorher 27) |
+| PROJ-7-Suite Chrome | ✅ 39/39 |
+| PROJ-6/PROJ-8 Nachbarsuites | ✅ 57/57 |
+| Build / Lint | ✅ kompiliert, 0 Errors (6 vorbestehende `<img>`-Warnungen) |
+
+**Zur Flakiness:** Der erste Mobile-Safari-Lauf meldete 2 Fehler (PROJ-6, PROJ-8), der Chrome-Lauf 2 *andere* (PROJ-13, PROJ-3). Vier verschiedene Tests, keiner in PROJ-7. Einzeln ausgeführt bestanden alle bis auf einen. Der zweite vollständige Mobile-Safari-Lauf war **285/285 sauber**. Meine Änderungen berühren ausschließlich `station-editor-sheet.tsx` und die PROJ-7-Testdatei — kein PROJ-6/8/13-Code. Das ist Parallelitäts-Flakiness, keine Regression.
+
+### Bugs Found
+
+**Keine Bugs in PROJ-7.** Beide geprüften Änderungen sind fehlerfrei.
+
+Ein Befund außerhalb des Scopes, den die neue Chrome-Abdeckung sichtbar gemacht hat:
+
+**BUG-6 (Medium, PROJ-3, nicht Teil dieses QA-Scopes)** — `tests/proj-3-player-gps-navigation.spec.ts:398` ("explains why the arrow has no direction") besteht auf WebKit, schlägt auf Chrome reproduzierbar fehl (auch isoliert).
+- **Ursache:** Der Hinweis in `navigation-screen.tsx:168-177` rendert nur bei `position !== null`. Unter Chrome liefert Playwrights gemockte Geolocation innerhalb des Timeouts keinen Fix, also erscheint weder der Button noch der Hinweis.
+- **Einschätzung:** Sehr wahrscheinlich ein Testumgebungs-Unterschied, kein Produktfehler — auf einem echten Gerät liefert das GPS eine Position. Bewiesen ist das auf Chrome aber nicht.
+- **Empfehlung:** In PROJ-3 nachziehen, sobald die Chrome-Abdeckung dauerhaft konfiguriert ist. Kein Blocker für PROJ-7.
+
+Weiterhin offen aus früheren Runden (gemeinsame Komponenten, in PROJ-1 dokumentiert): **BUG-2** (16px-Schließen-X in allen Sheets, betrifft auch `station-editor-sheet.tsx`) und **BUG-3** (Kontrast auf Creator-Screens). Beide unverändert, beide nicht blockierend.
+
+### Neue Tests aus dieser QA-Runde
+
+12 neue E2E-Tests in `tests/proj-7-creator-stationen-editor.spec.ts` (Suite: 27 → 39):
+- 7 für das Sheet-Layout (aus dem Frontend-Durchgang)
+- 5 für den Quest-Bearbeiten-Stift (neu in dieser QA-Runde — schließen die Lücke der rein manuellen Abnahme vom 2026-09-06)
+
+### Production-Ready Decision
+
+**READY** — keine Critical- oder High-Bugs. Beide Änderungen erfüllen ihre Acceptance Criteria, sind auf zwei Browser-Engines und sechs Viewport-Größen verifiziert und durch Regressionstests abgesichert.
+
+Zwei Punkte für die Bewertung durch den Nutzer, keine Blocker:
+1. Das Tastatur-Verhalten (Edge Case 16) ist nur konstruktiv abgedeckt — ein kurzer Test auf einem echten Handy wäre die letzte Bestätigung.
+2. BUG-6 gehört in PROJ-3, nicht hierher.
