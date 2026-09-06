@@ -1,8 +1,9 @@
 # PROJ-7: Creator — Stationen-Editor
 
-## Status: Deployed
+## Status: In Progress
+_Deployed; Refinement vom 2026-09-06 (Quest-Bearbeiten-Einstieg wandert aus der Kopfzeile) ist spezifiziert, aber noch nicht gebaut._
 **Created:** 2026-08-28
-**Last Updated:** 2026-09-02
+**Last Updated:** 2026-09-06
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — für Routing und UI-Rahmen
@@ -83,6 +84,14 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 - [ ] Angenommen die Stationszeile wird angezeigt, wenn sie gerendert wird, dann zeigt die Meta-Zeile ein Puzzle-Icon mit der Modulanzahl als visuellen Hinweis, dass die Zeile zum Modul-Editor führt
 - [ ] Angenommen eine Station hat eine Position, wenn die Zeile gerendert wird, dann steht das MapPin-Icon direkt vor der Nummerierung im Titel (z.B. "📍 1. Marktplatz"), nicht mehr in der Meta-Zeile
 
+**Quest bearbeiten — Einstieg verlegt (Refinement 2026-09-06, siehe PROJ-1):**
+- [x] ~~Angenommen der Nutzer ist auf `/create/[id]`, wenn er den Stift oben rechts in der Kopfzeile antippt, dann öffnet sich der Quest-Bearbeiten-Dialog~~ → Ersetzt: der Platz oben rechts gehört ab 2026-09-06 dem app-weiten Burger-Menu (PROJ-1)
+- [ ] Angenommen der Nutzer ist auf `/create/[id]` und hat Schreibrechte an der Quest, wenn er den Titel-Block betrachtet, dann steht direkt neben dem Quest-Namen ein Stift-Icon zum Bearbeiten der Quest-Details
+- [ ] Angenommen der Stift neben dem Quest-Namen ist sichtbar, wenn der Nutzer ihn antippt, dann öffnet sich derselbe Quest-Bearbeiten-Dialog (`QuestFormDialog`) wie zuvor über die Kopfzeile — Verhalten und Inhalt des Dialogs ändern sich nicht
+- [ ] Angenommen die Quest ist importiert und noch nicht per Passwort entsperrt (PROJ-11), wenn die Seite gerendert wird, dann fehlt der Stift neben dem Quest-Namen — wie bisher beim Kopfzeilen-Stift
+- [ ] Angenommen der Quest-Name ist lang und wird umgebrochen, wenn die Zeile gerendert wird, dann bleibt der Stift sichtbar und behält sein 44px-Tap-Ziel, ohne den Titel abzuschneiden
+- [ ] Angenommen der Nutzer betrachtet die Kopfzeile auf `/create/[id]`, wenn die Seite gerendert wird, dann steht dort links der Zurück-Pfeil (→ `/create`) und rechts ausschließlich das Burger-Menu — kein Stift mehr
+
 **Löschen:**
 - [ ] Angenommen eine Station existiert, wenn der Nutzer die Löschen-Aktion auswählt, dann erscheint ein Bestätigungsdialog ("Station wirklich löschen? Das kann nicht rückgängig gemacht werden.")
 - [ ] Angenommen der Bestätigungsdialog ist sichtbar, wenn der Nutzer bestätigt, dann wird die Station inklusive ihrer Module aus der Quest entfernt und die Liste aktualisiert sich
@@ -129,6 +138,10 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 **Neu seit Refine 2026-09-02 — noch nicht implementiert:**
 - [x] Adress-Suchfeld im `StationEditorSheet` ergänzen (Debounced Nominatim-Suche, Vorschlagsliste, Pin-Setzen bei Auswahl) → Gelöst in `/architecture`: shadcn `Command` (bereits installiert) + neuer `useAddressSearch`-Hook, siehe Tech Design "Adresssuche" unten
 
+**Neu seit Refine 2026-09-06 — noch nicht implementiert:**
+- [ ] `AppHeader`-Aufruf in `src/app/create/[id]/page.tsx` verliert die `rightAction`-Prop; der Stift-Button zieht in den Titel-Block darunter (neben `{quest.name}`), Sichtbarkeit weiterhin an `!locked` gekoppelt
+- [ ] Prüfen, ob das gleiche Muster auf `/play/[id]` (Stationsliste, PROJ-3) einen Gegenpart braucht — dort gibt es heute keine `rightAction`, die Frage ist nur, ob der Titel-Block optisch auseinanderläuft, wenn der Creator einen Stift trägt und der Player nicht
+
 ## Decision Log
 
 ### Product Decisions
@@ -145,6 +158,7 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 | Keine UI-Sperre bei Erreichen von 20 Stationen | Die Schema-Grenze aus PROJ-2 bleibt die einzige durchgesetzte Regel (greift bei Import/Export); eine zusätzliche UI-Sperre wäre doppelte Logik ohne klaren MVP-Nutzen | 2026-08-28 |
 | Stationszeile antippen führt zu Modulen (PROJ-8), nicht mehr zu Stationsdetails; Stationsdetails wandern ins ⋮-Menü ("Station bearbeiten") | Nutzer-Feedback nach Live-Nutzung: Mit Quest-Bearbeiten (Header), Stationsdetails (Sheet) und Modul-Editor gab es zu viele gleich aussehende "Bearbeiten"-Einstiege auf einer Seite. Modul-Bearbeitung ist beim Quest-Aufbau die mit Abstand häufigste Aktion — verdient den einfachsten Zugriff (ganze Zeile antippbar). Stationsdetails (Position/Radius/Name) werden seltener geändert, nachdem eine Station einmal angelegt ist — passt gut ins sekundäre ⋮-Menü, wo auch "Löschen" bereits sitzt | 2026-08-30 |
 | Puzzle-Icon + Modulanzahl in der Meta-Zeile statt separatem Pencil-Button | Visueller Hinweis, dass die Zeile zu Modulen führt, ohne einen zusätzlichen Tap-Ziel-Button zu brauchen; Pencil-Icon ist jetzt ausschließlich im ⋮-Menü bei "Station bearbeiten" reserviert, keine doppelte Icon-Bedeutung mehr | 2026-08-30 |
+| Quest-Bearbeiten-Stift wandert aus der Kopfzeile neben den Quest-Titel | Die Kopfzeile bekommt mit PROJ-1 (2026-09-06) app-weit das Burger-Menu rechts — der Stift hätte dort keinen Platz mehr. Der Titel-Block ist ohnehin der bessere Ort: das Icon steht direkt bei dem, was es bearbeitet, statt anonym in der Systemleiste. Damit sind alle drei Bearbeiten-Einstiege dieser Seite räumlich eindeutig zugeordnet: Quest → am Quest-Titel, Station → im ⋮-Menü der Zeile, Module → die Zeile selbst | 2026-09-06 |
 | Adresssuche als zusätzlicher Eingabeweg zur Karte ergänzt (Out-of-Scope-Entscheidung vom 2026-08-28 revidiert) | Nutzer-Feedback nach Live-Nutzung: Reines Antippen der Karte ist für bekannte Adressen (Straße + Hausnummer) umständlich, wenn man erst zoomen/scrollen muss, um den richtigen Ort zu finden — Grill-Antwort: "Reines Nutzungsproblem" | 2026-09-02 |
 | Nominatim (OpenStreetMap) als Geocoding-Service, keine Länder-/Regionseinschränkung | Kostenlos, kein API-Key, passt zur bestehenden Leaflet/OSM-Kartenbasis und zur etablierten "kein API-Key"-Philosophie des Projekts; weltweite Suche gewählt, da Ersteller Quests auch außerhalb Deutschlands planen könnten und die Einschränkung keinen MVP-Mehrwert böte | 2026-09-02 |
 | Debounced Live-Vorschlagsliste statt explizitem Such-Button | Vertrautes UX-Muster (Google Maps o.ä.), reduziert die Anzahl nötiger Taps gegenüber einem separaten Such-Button-Schritt | 2026-09-02 |

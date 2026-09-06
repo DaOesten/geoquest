@@ -1,8 +1,9 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Deployed
+## Status: In Progress
+_Deployed; Refinement 3 vom 2026-09-06 (gemeinsames Burger-Menu mit der App) ist spezifiziert, aber noch nicht gebaut._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-05 (Refinement 2 umgesetzt — Frontend)
+**Last Updated:** 2026-09-06 (Refinement 3 — Navigation vereinheitlicht, siehe PROJ-1)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -40,7 +41,7 @@ Kern der Seite ist eine **Copy-Paste-Prompt-Vorlage**: Nutzer kopieren einen fer
 - **Ko-fi-Anbindung** — der Aktions-Button im Header bleibt vorerst „Zur App"; der Wechsel auf einen Unterstützungslink ist bewusst vertagt (siehe Open Questions)
 - **Rechtsberatung / juristische Prüfung der Texte** — Impressum und Datenschutzerklärung entstehen als sachlich korrekte Beschreibung der tatsächlichen Verarbeitung, ersetzen aber keine anwaltliche Prüfung
 - **Cookie-Banner / Consent-Management** — die App setzt keine einwilligungspflichtigen Cookies; falls sich das durch ein späteres Tool ändert, ist das ein eigenes Feature
-- **Burger-Menu in den App-Screens** — das Menu gehört zu den Info-Seiten; `/`, `/play` und `/create` bleiben unverändert
+- ~~**Burger-Menu in den App-Screens** — das Menu gehört zu den Info-Seiten; `/`, `/play` und `/create` bleiben unverändert~~ → **Aufgehoben am 2026-09-06:** Das Menu wird zur app-weiten Navigation und zieht nach PROJ-1 um. Die Info-Seiten binden künftig dieselbe Komponente ein, statt eine eigene zu besitzen
 
 ## Seitenaufbau
 
@@ -68,6 +69,14 @@ Der Header trägt keine Trennlinie zum Seiteninhalt und keine Bildmarke links. R
 
 - **Desktop (ab `sm`)** — Textlinks „Anleitung", „Impressum", „Datenschutz" plus der Aktions-Button rechts außen
 - **Mobile (unter `sm`)** — der Aktions-Button plus ein **Burger-Menu** mit den Links App, Anleitung, Impressum, Datenschutz
+
+**Refinement 3 (2026-09-06) — gemeinsames Menu mit der App:** Das Burger-Menu der Info-Seiten war bis hierhin ein Sonderfall — nur diese vier Seiten hatten überhaupt eine Navigation, die App-Screens dagegen nur eine Pin-Marke zum Startscreen. Mit PROJ-1 wird daraus **eine** Navigation für die gesamte App: dieselbe `AppNavMenu`-Komponente, dieselben drei Gruppen **App** (Play, Create) / **Info** (Über, Anleitung) / **Rechtliches** (Impressum, Datenschutz), jeder Link mit Icon.
+
+Für die Info-Seiten ändert sich dadurch:
+- Die eigene `InfoNavMenu` entfällt und wird durch `AppNavMenu` ersetzt — mit sechs statt vier Zielen und mit Gruppen-Überschriften
+- Die Desktop-Zeile bleibt unverändert bestehen: Textlink „Anleitung" plus Aktions-Button „Zur App". Das Burger steht am Desktop daneben, statt wie bisher ab `sm` ausgeblendet zu werden — nur so sind Play und Create auch vom Laptop aus mit einem Tap erreichbar
+- Der Sticky-Header der Info-Seiten **bleibt** sticky. Die App-Screens verlieren ihren (PROJ-1), diese hier nicht: es sind lange Fließtext-Seiten, auf denen der Weg zurück nach oben weit ist
+- Der Zurückpfeil bleibt links, das Menu rechts — die Aufteilung, die die Info-Seiten schon haben, wird zum app-weiten Standard
 
 Der Aktions-Button rechts außen zeigt vorerst weiterhin „Zur App" und führt auf `/`. Er ist als Platzhalter für einen späteren Ko-fi-Unterstützungslink vorgesehen (siehe Open Questions) — die Position bleibt, das Ziel ändert sich später.
 
@@ -145,6 +154,14 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] Angenommen ein Nutzer betrachtet den Footer, dann steht dort **keine** Postanschrift — diese bleibt dem Impressum vorbehalten
 - [x] Angenommen ein Nutzer öffnet eine Info-Seite am Desktop, wenn er die Header-Zeile betrachtet, dann stehen dort keine Links mehr zu Impressum und Datenschutz
 - [x] Angenommen ein Nutzer öffnet das Burger-Menü auf dem Handy, dann sind weiterhin alle vier Ziele (App, Anleitung, Impressum, Datenschutz) enthalten
+
+### Gemeinsames Menu mit der App (Refinement 3, 2026-09-06)
+- [ ] Angenommen ein Nutzer öffnet das Burger-Menu auf einer Info-Seite, wenn es erscheint, dann ist es dasselbe Menu wie in der App: drei Gruppen (App, Info, Rechtliches) mit insgesamt sechs Links, jeder mit Icon
+- [ ] Angenommen ein Nutzer ist auf `/about` oder `/anleitung` am Laptop (ab `sm`), wenn er die Header-Zeile betrachtet, dann sieht er weiterhin den Textlink „Anleitung" und den Button „Zur App" — und zusätzlich das Burger-Menu
+- [ ] Angenommen ein Nutzer öffnet das Menu von einer Info-Seite aus, wenn er „Play" oder „Create" antippt, dann landet er direkt im jeweiligen App-Modus, ohne den Umweg über den Startscreen
+- [ ] Angenommen ein Nutzer ist auf `/impressum`, wenn er das Menu öffnet, dann ist der Eintrag „Impressum" als aktuelle Seite erkennbar
+- [ ] Angenommen ein Nutzer scrollt eine Info-Seite nach unten, wenn er scrollt, dann bleibt die Kopfzeile weiterhin am oberen Rand stehen — anders als auf den Play- und Create-Screens
+- [ ] Angenommen die `InfoNavMenu` wurde durch `AppNavMenu` ersetzt, wenn die Info-Seiten gerendert werden, dann verhalten sich Escape, Klick daneben, Fokus-Falle und `aria-expanded` unverändert wie zuvor
 - [x] Angenommen ein Nutzer betrachtet den Footer auf einem Mobilgerät (360–430px), dann sind alle Links mindestens 44px hoch antippbar und nichts läuft über den Rand
 
 ### Prompt-Vorlage
@@ -194,9 +211,9 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] ~~Wo genau sitzt der Einstieg aus der App heraus?~~ → Geklärt: im Creator-Empty-State, verlinkt direkt auf `/anleitung`
 - [x] ~~Welches Vorschaubild wird für Open Graph verwendet?~~ → Geklärt im Frontend: `public/assets/urbanquest.png` (1536×1024, markengetreu), zugleich Hero-Bild auf `/about`
 - [ ] Soll die Prompt-Vorlage in mehreren Varianten angeboten werden (z.B. kürzere Version für schwächere Modelle)? Aktuell: nein, eine vollständige Vorlage.
-- [ ] Sollen die beiden Seiten zusätzlich einen Einstieg außerhalb des Creator-Empty-States bekommen (z.B. dauerhaft im Creator-Header), sobald ein Nutzer bereits Quests hat?
+- [x] ~~Sollen die beiden Seiten zusätzlich einen Einstieg außerhalb des Creator-Empty-States bekommen (z.B. dauerhaft im Creator-Header), sobald ein Nutzer bereits Quests hat?~~ → Ja, gelöst am 2026-09-06: Das app-weite Burger-Menu (PROJ-1) enthält unter „Info" die Links Über und Anleitung und ist auf jedem Screen erreichbar — auch im Creator mit bestehenden Quests
 - [x] ~~Warum sind die Häufigen Fragen ausgeklappt statt als Accordion?~~ → Ursprünglich für bessere Auffindbarkeit durch KI-Systeme ausgeklappt. Annahme war falsch: Accordion-Inhalte stehen vollständig im HTML (Radix blendet sie nur per `hidden` aus) und das `FAQPage`-JSON-LD trägt die Antworten ohnehin. Zurück zum eingeklappten Accordion (2026-09-05)
-- [ ] Wann und wohin genau zeigt der Ko-fi-Link? Der Header-Button bleibt bis dahin „Zur App"; offen sind Ziel-URL, Beschriftung und ob „Zur App" dann in die Navigation rutscht
+- [ ] Wann und wohin genau zeigt der Ko-fi-Link? Der Header-Button bleibt bis dahin „Zur App"; offen sind Ziel-URL, Beschriftung und ob „Zur App" dann in die Navigation rutscht. **Ergänzung 2026-09-06:** Mit Play und Create im Burger-Menu wäre „Zur App" als Button entbehrlich — der Platz könnte früher als gedacht an Ko-fi gehen
 - [x] ~~Braucht `/about` zusätzlich einen Footer mit Impressum/Datenschutz für Desktop-Besucher?~~ → Ja, entschieden am 2026-09-05: Footer auf allen Info-Seiten mit Kontakt und Rechtslinks; die Links verlassen dafür den Desktop-Header
 - [x] ~~Welche konkreten Angaben kommen ins Impressum?~~ → Vom Betreiber geliefert und eingetragen (2026-09-05)
 
@@ -232,6 +249,10 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 | Footer zeigt Name und E-Mail, aber keine Anschrift | Die Postanschrift auf jeder Seite zu wiederholen, streut die Privatadresse des Betreibers unnötig breit; für die Impressumspflicht genügt die verlinkte Seite | 2026-09-05 |
 | Zurückpfeil führt fest nach `/about`, nicht über die Browser-History | Vorhersagbares Ziel und konsistent mit `/anleitung`; ein History-basierter Pfeil verhält sich je nach Herkunft anders und läuft bei direktem Aufruf ins Leere | 2026-09-05 |
 | Rechtslinks bleiben trotz Footer im Burger-Menü | Auf dem Handy müsste man sonst durch die ganze Seite scrollen, um ans Impressum zu kommen. Die Doppelung kostet nichts und erspart die Suche | 2026-09-05 |
+| Das Burger-Menu wird von den Info-Seiten zur app-weiten Navigation befördert (Umzug nach PROJ-1) | Es war der einzige Ort in der ganzen App mit einer echten Navigation — und ausgerechnet auf den Seiten, die man am seltensten besucht. Wer in `/play/[id]` oder `/create/[id]` steckte, hatte gar keine. Zwei getrennte Menüs zu pflegen hätte sie garantiert auseinanderlaufen lassen | 2026-09-06 |
+| Desktop-Textlinks und „Zur App"-Button bleiben trotz Burger stehen | Am Laptop ist Platz vorhanden, und die Zeile ist die etablierte Erwartung an eine Webseite. Der Aktions-Button bleibt zudem der reservierte Ko-fi-Platz — er darf nicht in einem Menu verschwinden | 2026-09-06 |
+| Burger auf den Info-Seiten künftig auch ab `sm` sichtbar (nicht mehr `sm:hidden`) | Mit Play und Create im Menu enthält es jetzt Ziele, die die Desktop-Zeile nicht abbildet. Wäre es am Desktop ausgeblendet, käme ein Laptop-Besucher von `/impressum` nicht direkt in den Creator | 2026-09-06 |
+| Info-Seiten behalten ihren Sticky-Header, App-Screens verlieren ihn | Unterschiedliche Inhalte: Info-Seiten sind lange Fließtexte, bei denen der Weg nach oben weit ist. Play und Create sind kurze Listen auf 430px, wo ein klebender Header nur Inhalt verdeckt | 2026-09-06 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -250,6 +271,8 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 | Info-Seiten nicht auf 430px begrenzt wie die App-Screens, sondern eigenes Desktop-Layout bis 1100px | Diese Seiten sind der Einstieg von außen (geteilter Link, QR-Code) und werden typischerweise am Laptop geöffnet; eine schmale Handy-Spalte auf einem 1440px-Bildschirm wirkt unfertig. Die App-Screens selbst bleiben unverändert bei 430px | 2026-09-05 |
 | `QuestListBackdrop` entfällt auf den Info-Seiten | Damit fällt zugleich die einzige Client-Komponente im Seitenrahmen weg (die Partikel brauchten `ssr: false` wegen Hydration); der Rahmen wird bis auf das Menu wieder serverseitig gerendert | 2026-09-05 |
 | Burger-Menu als kleine, eigene Client-Komponente im Header | Nur der Menü-Zustand braucht JavaScript. Der Rest des Headers und alle Links bleiben statisches HTML, damit die Navigation auch ohne JS erreichbar ist | 2026-09-05 |
+| `InfoNavMenu` wird durch `AppNavMenu` ersetzt, nicht daneben gestellt | Zwei Menü-Komponenten mit überlappenden Links wären genau die Doppelpflege, die dieses Refinement beseitigt. `InfoNavMenu` und `INFO_NAV_LINKS` entfallen; `HEADER_NAV_LINKS` (die Desktop-Textlink-Teilmenge) bleibt als eigene Ableitung erhalten | 2026-09-06 |
+| Menü-Struktur zieht von `src/lib/info-nav.ts` nach `src/lib/app-nav.ts` | Der Name beschreibt dann, was es ist: die Navigation der App, nicht die der Info-Seiten. Das Muster bleibt dasselbe (Plain-Modul außerhalb der Client-Komponente, damit der Wert nicht als Referenz-Proxy über die Client-Grenze kommt) | 2026-09-06 |
 | Menu nutzt die bereits installierte shadcn/ui-Komponente (Sheet oder DropdownMenu) statt Eigenbau | Fokus-Falle, Escape-Handling und `aria-expanded` sind dort gelöst; ein Eigenbau würde genau diese Details verlieren. Kein neues Paket | 2026-09-05 |
 | Häufige Fragen nutzen das bereits installierte Accordion | Gleiche Komponente wie das Troubleshooting auf `/anleitung`; die Antworten bleiben im DOM, das JSON-LD wird weiterhin aus derselben `FAQ`-Konstante erzeugt | 2026-09-05 |
 | `/impressum` und `/datenschutz` liegen in derselben `(info)`-Route-Gruppe | Sie teilen Rahmen, Hintergrund und Navigation mit `/about` und `/anleitung`; nur `robots: noindex` unterscheidet ihre Metadaten | 2026-09-05 |

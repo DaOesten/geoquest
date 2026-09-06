@@ -1,23 +1,28 @@
 # PROJ-1: App Shell & Mode Switch
 
-## Status: Deployed
+## Status: In Progress
+_Deployed; Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist spezifiziert, aber noch nicht gebaut._
 **Created:** 2026-08-23
-**Last Updated:** 2026-09-05
+**Last Updated:** 2026-09-06
 
 ## Dependencies
 - None (PROJ-1 ist das Fundament)
 - Verweis-Ziel (keine Code-Abhängigkeit): Das Logo auf dem Startscreen verlinkt auf `/about` (PROJ-13). Fehlt PROJ-13, ist nur dieser eine Link tot — der Startscreen funktioniert unverändert.
 
 ## Summary
-Der Rahmen der gesamten App: Startscreen mit Modus-Auswahl, Header mit kontextabhängiger Navigation, automatisches Theme-Switching, URL-basiertes Routing, Erststart-Dialog und 404-Seite.
+Der Rahmen der gesamten App: Startscreen mit Modus-Auswahl, eine app-weite Kopfzeile mit Zurück-Pfeil links und Burger-Menu rechts, automatisches Theme-Switching, URL-basiertes Routing, Erststart-Dialog und 404-Seite.
+
+Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der gesamten App — auf `/play`, `/create`, in allen Unteransichten und auf den Info-Seiten (PROJ-13). Es gliedert sich in drei Gruppen: **App** (Play, Create), **Info** (Über, Anleitung) und **Rechtliches** (Impressum, Datenschutz).
 
 ## User Stories
 1. Als Nutzer möchte ich beim Öffnen der App sofort wählen können, ob ich spielen oder eine Quest erstellen will, damit ich ohne Umwege in den gewünschten Modus komme.
-2. Als Nutzer möchte ich von überall in der App mit einem Tap zurück zum Startscreen gelangen, damit ich jederzeit den Modus wechseln kann.
+2. Als Nutzer möchte ich von überall in der App den Modus wechseln können, damit ich nicht erst zum Startscreen zurücknavigieren muss. _(Umformuliert 2026-09-06: Der Weg führt nicht mehr über die Pin-Marke zum Startscreen, sondern über das Burger-Menu direkt nach Play oder Create — ein Tap weniger.)_
 3. Als Nutzer möchte ich den Browser-Zurück-Button nutzen können, damit die App sich wie eine normale Webseite verhält.
 4. Als neuer Nutzer möchte ich beim ersten Start über die lokale Datenspeicherung informiert werden, damit ich weiß, dass meine Daten bei Browser-Löschung verloren gehen.
 5. Als Nutzer möchte ich bei einer ungültigen URL eine hilfreiche Seite sehen, damit ich zurück zur App finde.
 6. Als neuer Nutzer, der die App zum ersten Mal über einen geteilten Link öffnet, möchte ich über das Geo-Quest-Logo erfahren können, was diese App überhaupt ist, damit ich mich nicht blind zwischen zwei Modi entscheiden muss.
+7. Als Nutzer möchte ich von jedem Screen aus dieselbe Navigation öffnen können, damit ich von überall zu Play, Create, den Info-Seiten und den Rechtstexten komme, ohne mich erst zurück zum Startscreen durchzuklicken.
+8. Als Spieler möchte ich, dass die Kopfzeile beim Scrollen einer Stationsliste mit nach oben verschwindet, damit der kleine Handy-Bildschirm ganz dem Inhalt gehört.
 
 ## Out of Scope
 - Quest-Listen-Inhalte innerhalb der Modi (PROJ-2, PROJ-3, PROJ-6)
@@ -44,9 +49,27 @@ Der Rahmen der gesamten App: Startscreen mit Modus-Auswahl, Header mit kontextab
 - [ ] Angenommen der Startscreen wird auf einem 360×640-Gerät angezeigt, wenn die Seite lädt, dann sind Logo, Headline und beide Mode-Cards trotz des vergrößerten Card-Abstands ohne Scrollen sichtbar
 
 **Header & Navigation:**
-- [ ] Angenommen der Nutzer befindet sich auf der Top-Level-Ansicht eines Modus (`/play` oder `/create`), wenn er auf das Pin-Mark-Logo links im Header tippt, dann wird er zum Startscreen (`/`) navigiert
+- [x] ~~Angenommen der Nutzer befindet sich auf der Top-Level-Ansicht eines Modus (`/play` oder `/create`), wenn er auf das Pin-Mark-Logo links im Header tippt, dann wird er zum Startscreen (`/`) navigiert~~ → entfällt: die Pin-Marke wurde am 2026-09-06 aus der Kopfzeile entfernt, der Weg zu Play/Create läuft über das Burger-Menu
 - [ ] Angenommen der Nutzer befindet sich in einer tieferen Ansicht (z.B. `/play/[id]`), wenn er auf den Zurück-Pfeil links im Header tippt, dann wird er eine Ebene nach oben navigiert (z.B. zu `/play`)
 - [ ] Angenommen der Nutzer befindet sich in einer tieferen Ansicht, wenn er den Browser-Zurück-Button drückt, dann wird er eine Ebene nach oben navigiert
+
+**Kopfzeile & Burger-Menu (Refinement 2026-09-06):**
+- [ ] Angenommen der Nutzer befindet sich auf einem beliebigen Screen der App (`/`, `/play`, `/create`, jede Unteransicht, jede Info-Seite), wenn er die Kopfzeile betrachtet, dann sieht er rechts das Burger-Menu-Icon
+- [ ] Angenommen der Nutzer betrachtet die Kopfzeile eines beliebigen Screens, wenn er nach links schaut, dann sieht er entweder den Zurück-Pfeil (in jeder Unteransicht) oder nichts (auf den Top-Level-Ansichten `/`, `/play`, `/create`) — in keinem Fall noch die Pin-Bildmarke
+- [ ] Angenommen der Nutzer tippt auf das Burger-Menu, wenn sich das Menu öffnet, dann sieht er drei Gruppen mit den Überschriften **App**, **Info** und **Rechtliches**
+- [ ] Angenommen das Menu ist offen, wenn der Nutzer die Gruppe „App" betrachtet, dann enthält sie die Links **Play** (→ `/play`) und **Create** (→ `/create`), jeweils mit passendem Icon
+- [ ] Angenommen das Menu ist offen, wenn der Nutzer die Gruppe „Info" betrachtet, dann enthält sie die Links **Über** (→ `/about`) und **Anleitung** (→ `/anleitung`), jeweils mit passendem Icon
+- [ ] Angenommen das Menu ist offen, wenn der Nutzer die Gruppe „Rechtliches" betrachtet, dann enthält sie die Links **Impressum** (→ `/impressum`) und **Datenschutz** (→ `/datenschutz`), jeweils mit passendem Icon
+- [ ] Angenommen das Menu ist offen, wenn der Nutzer einen Eintrag antippt, dann schließt sich das Menu und er landet auf der gewählten Seite
+- [ ] Angenommen das Menu ist offen, wenn der Nutzer die Escape-Taste drückt oder neben das Menu tippt, dann schließt es sich, ohne zu navigieren
+- [ ] Angenommen der Nutzer bedient die App mit der Tastatur, wenn er das Burger-Menu öffnet, dann liegt der Fokus im Menu und der Auslöser meldet seinen Zustand (`aria-expanded`) an Screenreader
+- [ ] Angenommen der Nutzer befindet sich bereits auf einer der verlinkten Seiten, wenn er das Menu öffnet, dann ist der Eintrag der aktuellen Seite visuell als aktiv erkennbar
+- [ ] Angenommen das Menu wird im Creator (Light Theme) geöffnet, wenn es erscheint, dann trägt es das Theme des jeweiligen Modus — es bricht nicht aus dem Farbschema des Screens aus
+
+**Scroll-Verhalten der Kopfzeile (Refinement 2026-09-06):**
+- [ ] Angenommen der Nutzer ist auf einem Play- oder Create-Screen, wenn er die Seite nach unten scrollt, dann scrollt die Kopfzeile mit Zurück-Pfeil und Burger-Menu mit nach oben aus dem Bild — sie bleibt nicht am oberen Rand kleben
+- [ ] Angenommen die Kopfzeile ist aus dem Bild gescrollt, wenn der Nutzer wieder ganz nach oben scrollt, dann ist sie unverändert vorhanden und bedienbar
+- [ ] Angenommen der Nutzer betrachtet eine Info-Seite (`/about`, `/anleitung`, `/impressum`, `/datenschutz`), wenn er scrollt, dann bleibt deren Kopfzeile weiterhin sticky — die Info-Seiten sind lange Textseiten und behalten ihr bisheriges Verhalten
 
 **Theme:**
 - [ ] Angenommen der Nutzer befindet sich im Player-Modus (`/play/*`), wenn die Seite gerendert wird, dann ist das Dark Theme aktiv
@@ -71,6 +94,10 @@ Der Rahmen der gesamten App: Startscreen mit Modus-Auswahl, Header mit kontextab
 6. **Logo-Tap vs. Card-Tap:** Das Logo liegt oberhalb der Cards; sein Tap-Ziel darf nicht so groß werden, dass es versehentlich statt der oberen Card getroffen wird. Tap-Fläche bleibt auf das Logo-Bild begrenzt (min. 44px Höhe erfüllt es bereits).
 7. **Glow vs. Lesbarkeit:** Der ruhende Glow darf den Card-Text nicht überstrahlen — der Kontrast von Titel (`gq-white`) und Beschreibung (`#A0A7AD`) auf `#0F2429` muss WCAG AA (4.5:1) erfüllen, auch im hellsten Moment der Puls-Animation.
 8. **Glow auf schwachen Geräten:** Die Animation läuft dauerhaft auf dem Startscreen. Sie darf nur `box-shadow`/`opacity` bewegen (kompositor-freundlich) und keine spürbare Akku- oder Scroll-Last erzeugen.
+9. **Kein Sticky + langer Screen:** Auf einer sehr langen Stationsliste ist die Navigation nach dem Scrollen nicht mehr sichtbar. Der Nutzer muss hochscrollen oder den Browser-Zurück-Button nutzen — beides akzeptiert, weil die App-Screens auf 430px Breite und überschaubare Listen ausgelegt sind. Der Browser-Zurück-Button bleibt der jederzeit verfügbare Notausgang.
+10. **Menu über der Karte:** Im Stationen-Editor und in der Navigations-Ansicht liegt eine Leaflet-Karte im Screen. Das geöffnete Menu muss darüber liegen (Karten-Panes haben eigene z-index-Stapel) und darf beim Schließen keine Karten-Interaktion auslösen.
+11. **Menu im Play-Modus während einer laufenden Quest:** Ein Tap auf „Create" im Menu verlässt die laufende Quest. Der Fortschritt liegt in localStorage und bleibt erhalten — es braucht keinen Warndialog, aber der Wechsel darf nichts verwerfen.
+12. **Zurück-Pfeil vs. Burger auf 360px:** Beide Tap-Ziele liegen mit je 44px in derselben Zeile an gegenüberliegenden Rändern. Zwischen ihnen steht auf schmalen Geräten ggf. ein Titel — der muss truncaten, nie die Tap-Ziele verkleinern.
 
 ## URL-Struktur
 
@@ -87,6 +114,8 @@ Der Rahmen der gesamten App: Startscreen mit Modus-Auswahl, Header mit kontextab
 - [x] Soll der Startscreen später eine dezente Background-Animation erhalten? → Ja, aber nicht als Backdrop: die Bewegung sitzt im ruhenden Glow der beiden Mode-Cards (langsames, versetztes Pulsieren). Ein zusätzlicher Partikel-Backdrop wie auf den Listen-Screens bleibt Out of Scope, damit der Startscreen ruhig bleibt (2026-09-05)
 - [ ] Braucht das Logo auf `/` eine sichtbare Beschriftung ("Was ist Geo Quest?"), falls sich zeigt, dass Nutzer den Link nicht finden? Zunächst bewusst ohne — erst nach Beobachtung entscheiden
 - [ ] `docs/design-system.md` sagt unter Motion "keine Ambient-Loops", während sowohl der Partikel-Backdrop als auch jetzt der Card-Glow genau das tun. Regel präzisieren oder streichen?
+- [ ] Braucht der Startscreen `/` selbst das Burger-Menu? Er hat keine Kopfzeile und bietet mit den zwei Mode-Cards plus Logo-Link nach `/about` bereits fünf der sechs Ziele — offen, ob dort eine Kopfzeile ergänzt wird oder `/` die eine Ausnahme bleibt
+- [ ] Soll das Menu perspektivisch einen Eintrag „App installieren" (PROJ-12, PWA) bekommen? Das wäre eine vierte Gruppe oder ein Anhang unter „App" — erst entscheiden, wenn PROJ-12 gebaut wird
 
 ## Decision Log
 
@@ -107,6 +136,13 @@ Der Rahmen der gesamten App: Startscreen mit Modus-Auswahl, Header mit kontextab
 | Glow pulsiert langsam und zeitversetzt statt statisch | Ein statischer Glow liest sich als Rahmen, ein atmender als "lebendig"/Game. Der Versatz verhindert, dass die beiden Cards wie ein einziger blinkender Block wirken | 2026-09-05 |
 | Kein Partikel-Backdrop auf dem Startscreen | Die Listen-Screens nutzen ihn bereits; auf `/` würde er mit dem Card-Glow um Aufmerksamkeit konkurrieren. Startscreen bleibt der ruhigste Screen der App | 2026-09-05 |
 | Card-Abstand von 12px auf 20px erhöht | Die beiden Modi sind eine echte Verzweigung, keine Liste — mehr Luft macht sie zu zwei getrennten Entscheidungen und gibt dem Glow Raum, ohne dass sich die Halos überlappen | 2026-09-05 |
+| Ein Burger-Menu auf **allen** Screens statt Navigation nur auf den Info-Seiten | Die Navigation war gewachsen statt geplant: Info-Seiten hatten ein Menu, die App-Screens nur eine Pin-Marke, die zum Startscreen führte. Wer in `/play/[id]` steckte, kam nur über mehrere Taps zur Anleitung oder zum Impressum. Eine Navigation für die ganze App löst das an einer Stelle | 2026-09-06 |
+| Pin-Marke verlässt die Kopfzeile ersatzlos | Ihre einzige Funktion war „zurück zum Startscreen". Der Startscreen bietet nichts als die Wahl zwischen Play und Create — beides steht jetzt direkt im Menu, ein Zwischenschritt weniger. Auf den Info-Seiten war die Marke bereits am 2026-09-05 entfernt worden (PROJ-13) | 2026-09-06 |
+| Kein eigener „Start"-Eintrag im Menu | `/` ist reiner Ersteinstieg und leitet nur nach Play oder Create weiter. Ein Menüeintrag dorthin wäre ein Umweg zu genau den zwei Einträgen, die direkt darüber stehen | 2026-09-06 |
+| Menu-Gruppen App / Info / Rechtliches | Sechs Links ohne Gliederung sind eine Wand. Die drei Gruppen trennen „womit ich spiele" von „was ich nachlese" von „was rechtlich sein muss" — der Nutzer scannt nur die Gruppe, die er braucht | 2026-09-06 |
+| Jeder Menü-Link trägt ein Icon | Das Menu ist für 10–15-Jährige die zentrale Orientierung; Icons machen die sechs Ziele auf einen Blick unterscheidbar und passen zum Gaming-Look aus dem PRD | 2026-09-06 |
+| Zurück-Pfeil links, Burger rechts | Standard-Mobile-Pattern („links = zurück") und identisch zu dem, was die Info-Seiten seit PROJ-13 tun. Der Zurück-Pfeil ist die häufigere Aktion und liegt am Daumen der greifenden Hand | 2026-09-06 |
+| Kein Sticky-Header auf den Play- und Create-Screens | Der Header verdeckte auf 430px dauerhaft Inhalt, ohne dabei etwas beizutragen — beide Screens sind Listen, die man von oben nach unten liest. Die Info-Seiten behalten ihren Sticky-Header, weil das lange Fließtext-Seiten sind, auf denen der Weg zum Seitenanfang weit ist | 2026-09-06 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -124,6 +160,12 @@ Der Rahmen der gesamten App: Startscreen mit Modus-Auswahl, Header mit kontextab
 | `prefers-reduced-motion: reduce` schaltet nur die Animation ab, nicht den Glow | Der Glow trägt die Farbcodierung der beiden Modi (Teal/Lime) — er ist Information, die Bewegung ist Dekoration | 2026-09-05 |
 | Versatz über `animation-delay` statt zweier Keyframe-Sets | Ein Keyframe, zwei Delays — weniger CSS, gleiches Ergebnis | 2026-09-05 |
 | Ruhe- und Hover-Glow als getrennte Stufen derselben Farbe | Der bestehende `card-glow-teal`/`-lime` bleibt der verstärkte Hover-/Focus-Zustand; die neue Ruhestufe liegt darunter, damit Interaktion weiterhin spürbar ist | 2026-09-05 |
+| Ein `AppNavMenu` in `AppHeader`, kein separates Menu je Modus | Andernfalls existieren zwei Menüs, die auseinanderdriften — genau der Zustand, den dieses Refinement auflöst. Die Info-Seiten binden dieselbe Komponente in ihren eigenen Rahmen ein | 2026-09-06 |
+| Menu-Struktur als Daten in `src/lib/app-nav.ts`, nicht als JSX | `INFO_NAV_LINKS` existiert bereits nach genau diesem Muster (eigenes Plain-Modul, weil Werte über die Client-Grenze sonst als Referenz-Proxy ankommen). Die neue Struktur ersetzt es und wird von App-Header und Info-Header geteilt | 2026-09-06 |
+| Weiterhin shadcn `Sheet` (Radix) als Menu-Container | Liefert Fokus-Falle, Escape, `aria-expanded` und Scroll-Lock ohne Eigenbau — die bestehende `InfoNavMenu` nutzt ihn bereits erfolgreich. Nur der Inhalt wird ersetzt, nicht der Mechanismus | 2026-09-06 |
+| „Kein Sticky" = `sticky top-0` entfällt ersatzlos, kein Auto-Hide-Scroll-Listener | Der Header scrollt als normales Element mit. Ein Auto-Hide-Pattern bräuchte einen Scroll-Listener plus Zustands-Logik auf jedem Screen — Aufwand und Jank für einen Screen, der ohnehin nur 430px breit ist | 2026-09-06 |
+| Aktiver Menü-Eintrag über `usePathname()` | Das Menu ist bereits eine Client-Komponente (Open-Zustand); der Pathname-Vergleich kostet nichts zusätzlich und braucht kein Prop-Durchreichen durch jeden Screen | 2026-09-06 |
+| Menu-Overlay mit z-index über den Leaflet-Karten-Panes | Leaflet stapelt seine Panes bis z-index 700 in einem eigenen Kontext; ein Menu mit dem Default-z-index des Sheets würde im Stationen-Editor und in der Navigation unter der Karte verschwinden | 2026-09-06 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
@@ -215,7 +257,8 @@ src/app/
 
 | Komponente | Zweck |
 |------------|-------|
-| `AppHeader` | Kontextabhängiger Header: Logo/Zurück links, Titel mitte, Actions rechts. `transparent`-Prop (Default `false`) entfernt Background/Blur/Border, damit ein dahinterliegender Partikel-Backdrop (z.B. `quest-list-backdrop.tsx`) nahtlos durchscheint — genutzt auf Quest-Liste (`/play`) und Stationsliste (`station-list.tsx`, PROJ-3) |
+| `AppHeader` | App-weite Kopfzeile: Zurück-Pfeil links (entfällt auf Top-Level), Titel mitte, `AppNavMenu` rechts. `transparent`-Prop (Default `false`) entfernt Background/Blur/Border, damit ein dahinterliegender Partikel-Backdrop (z.B. `quest-list-backdrop.tsx`) nahtlos durchscheint — genutzt auf Quest-Liste (`/play`) und Stationsliste (`station-list.tsx`, PROJ-3). Seit 2026-09-06 **nicht mehr sticky**; die Pin-Bildmarke und die `rightAction`-Prop entfallen, der Platz rechts gehört dem Menu |
+| `AppNavMenu` | Burger-Menu (shadcn `Sheet`) mit den Gruppen App / Info / Rechtliches, je Link ein Icon, aktiver Eintrag über `usePathname()` hervorgehoben. Ersetzt `InfoNavMenu` (PROJ-13) und wird auf allen Screens sowie in `InfoPageShell` eingebunden |
 | `ModeCard` | Große Karte auf Startscreen mit Brush-Stroke-Button |
 | `FirstVisitDialog` | Einmaliger Erststart-Dialog (nutzt shadcn Dialog) |
 | `BrushStrokeButton` | Button mit SVG-Brush-Stroke-Hintergrund (Brand-Element) |
@@ -498,3 +541,66 @@ Logo auf `/` verlinkt jetzt auf die Landing Page `/about` (mit `aria-label`, Fok
 **Git Tag:** v1.10.0-PROJ-1
 
 `AppHeader` bekommt eine neue `transparent`-Prop (Default `false`, bestehende Aufrufer unverändert). Auf Quest-Liste (`/play/page.tsx`) und Stationsliste (`station-list.tsx`, PROJ-3) — den einzigen beiden Screens mit `QuestListBackdrop` — entfernt sie `bg-background/80 backdrop-blur-sm border-b border-border`, sodass der Partikel-Hintergrund nahtlos unter dem Header durchscheint statt sichtbar abgesetzt zu wirken. Creator-Screens (`variant="light"`, kein Partikel-Backdrop) bleiben unverändert opak. Nutzer hat das Ergebnis im Browser bestätigt ("Sieht gut aus").
+
+---
+
+## Refinement — App-weite Navigation & Kopfzeile (2026-09-06)
+
+**Auslöser:** Die Navigation war gewachsen statt geplant. Das Burger-Menu gab es nur auf den vier Info-Seiten (PROJ-13); die App-Screens hatten stattdessen eine Pin-Bildmarke, die zum Startscreen führte. Wer in `/play/[id]` oder `/create/[id]` steckte, kam nur über mehrere Taps zur Anleitung, zum Impressum oder in den anderen Modus. Gleichzeitig belegte im Creator (`/create/[id]`) ein Stift-Icon oben rechts genau die Stelle, an der das Menu künftig sitzt.
+
+### Das Navigationsmodell
+
+Eine Kopfzeile, ein Menu, auf jedem Screen gleich:
+
+```
+┌──────────────────────────────┐
+│ ←                          ☰ │   Zurück links · Burger rechts
+├──────────────────────────────┤
+│  STATIONEN                   │   ← scrollt mit, nicht sticky
+│  MEINE QUEST          ✎      │     (Stift nur im Creator)
+│  3 Ziele · 1,2 km            │
+│  ────────────────────────    │
+```
+
+Menu-Inhalt — drei Gruppen, sechs Links, je ein Icon:
+
+| Gruppe | Link | Ziel |
+|--------|------|------|
+| **App** | Play | `/play` |
+| | Create | `/create` |
+| **Info** | Über | `/about` |
+| | Anleitung | `/anleitung` |
+| **Rechtliches** | Impressum | `/impressum` |
+| | Datenschutz | `/datenschutz` |
+
+Die Icon-Auswahl trifft `/frontend` aus dem bereits genutzten `lucide-react`-Set; die Anforderung ist nur, dass jeder Link ein zu seinem Ziel passendes Icon trägt und die sechs untereinander unterscheidbar sind.
+
+### Was sich je Screen ändert
+
+| Screen | Vorher | Nachher |
+|--------|--------|---------|
+| `/play` | Pin-Marke links, sticky, kein Menu | Kein Zurück (Top-Level), Menu rechts, nicht sticky |
+| `/play/[id]` (Stationsliste) | Zurück-Pfeil links, sticky | Zurück links, Menu rechts, nicht sticky |
+| `/play/[id]` (Module) | Zurück (`onBack`) links, sticky | unverändert links, Menu rechts, nicht sticky |
+| `/create` | Pin-Marke links, sticky | Kein Zurück (Top-Level), Menu rechts, nicht sticky |
+| `/create/[id]` | Zurück links, **Stift rechts**, sticky | Zurück links, **Menu** rechts, nicht sticky — der Stift zieht neben den Quest-Titel (PROJ-7) |
+| `/create/[id]/station/[stationId]` | Zurück links, sticky | Zurück links, Menu rechts, nicht sticky |
+| Info-Seiten | Zurück links, Desktop-Links + „Zur App" + eigenes Burger rechts | Gleiche Zeile, aber gemeinsames Menu; **bleibt sticky** (PROJ-13) |
+
+### Betroffene Dateien (Hinweis für `/frontend`)
+
+| Datei | Änderung |
+|-------|----------|
+| `src/lib/app-nav.ts` | Neu — ersetzt `src/lib/info-nav.ts`: sechs Links in drei Gruppen mit Icon je Eintrag; `HEADER_NAV_LINKS` (Desktop-Teilmenge der Info-Seiten) wird daraus abgeleitet |
+| `src/components/app-nav-menu.tsx` | Neu — ersetzt `src/components/info-nav-menu.tsx`: shadcn `Sheet`, Gruppen-Überschriften, aktiver Eintrag via `usePathname()`, kein `sm:hidden` mehr |
+| `src/components/app-header.tsx` | `sticky top-0` entfällt; Logo-/`Image`-Zweig und `variant`-abhängige Logo-Quelle entfallen; `rightAction`-Prop entfällt zugunsten des fest eingebauten Menus |
+| `src/app/play/page.tsx`, `src/app/create/page.tsx` | `AppHeader` ohne `backHref` rendert jetzt eine leere linke Seite statt der Pin-Marke — kein Aufrufer-Änderung nötig außer der entfernten `variant`-Logolast |
+| `src/app/create/[id]/page.tsx` | `rightAction` entfällt; der Stift-Button wandert in den Titel-Block neben `{quest.name}` (PROJ-7) |
+| `src/components/info-page-shell.tsx` | `InfoNavMenu` → `AppNavMenu`; Header bleibt `sticky` |
+| Tests | `aria-label="Zurück zum Start"` (Pin-Marke) verschwindet — die E2E-Suite referenziert Header-Selektoren, siehe die bekannten stale Tests im QA-Abschnitt |
+
+### Bewusst nicht Teil dieser Änderung
+- Der Startscreen `/` bekommt vorerst keine Kopfzeile (siehe Open Questions) — er bietet mit den Mode-Cards und dem Logo-Link bereits fünf der sechs Ziele
+- Kein Auto-Hide-Header, kein schwebender Menu-Button: „nicht sticky" heißt, die Kopfzeile scrollt schlicht mit
+- Kein PWA-Eintrag im Menu — das gehört zu PROJ-12
+- Kein kontextabhängiger Menü-Eintrag „Quest bearbeiten": diese Aktion bleibt sichtbar auf der Seite, statt sich hinter zwei Taps zu verstecken
