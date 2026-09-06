@@ -38,10 +38,12 @@ test.describe("Seite & Navigation", () => {
   });
 
   test("„Zur App\" führt zum Start-Screen", async ({ page }) => {
+    // Der Erstbesuch-Hinweis liegt sonst als Overlay über dem Startscreen.
+    await page.addInitScript(() => localStorage.setItem("gq_first_visit_done", "true"));
     await page.goto("/about");
     await page.getByRole("link", { name: "Zur App" }).first().click();
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByText("Bist du bereit")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Bist du bereit" })).toBeVisible();
   });
 
   test("Creator-Empty-State verlinkt auf die Anleitung", async ({ page }) => {
@@ -53,8 +55,9 @@ test.describe("Seite & Navigation", () => {
   });
 
   test("Root-Route bleibt der unveränderte Mode-Switch aus PROJ-1", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("gq_first_visit_done", "true"));
     await page.goto("/");
-    await expect(page.getByText("Bist du bereit")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Bist du bereit" })).toBeVisible();
     // Beide Mode-Cards zeigen weiterhin in die App (nicht auf die neuen
     // Info-Seiten). Über href statt Accessible Name, da Titel und Beschreibung
     // im Markup ohne Trennzeichen aneinanderstoßen.

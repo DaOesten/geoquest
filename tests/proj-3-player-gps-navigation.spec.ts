@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page, type BrowserContext } from "@playwright/test";
 
 const TEST_QUEST = {
   version: 1,
@@ -40,6 +40,27 @@ async function seedQuest(page: Page) {
   await page.evaluate((quest) => {
     localStorage.setItem("gq_quests", JSON.stringify([quest]));
   }, TEST_QUEST);
+}
+
+/**
+ * Öffnet die Stationsliste auf dem Weg, den auch ein Nutzer geht.
+ *
+ * Ein per localStorage gesetztes `currentScreen: "stations"` allein genügt
+ * nicht: Der Player leitet den Startscreen aus `hasExistingProgress` ab
+ * (= `visitedStations.length > 0`, siehe use-quest-progress.ts). Bei leerer
+ * Liste landet man deshalb auf dem Permission- bzw. Intro-Screen. Eine Station
+ * künstlich als besucht einzutragen würde den Ausgangszustand verfälschen, den
+ * diese Tests gerade prüfen wollen.
+ */
+async function openStationList(
+  page: Page,
+  context: BrowserContext,
+  position: { latitude: number; longitude: number } = { latitude: 53.61, longitude: 10.04 }
+) {
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation(position);
+  await page.goto(`/play/${TEST_QUEST.id}`);
+  await page.getByRole("button", { name: /Los geht/ }).click();
 }
 
 async function clearProgress(page: Page) {
@@ -98,36 +119,18 @@ test.describe("PROJ-3: Player — GPS-Navigation", () => {
       await context.setGeolocation({ latitude: 53.61, longitude: 10.04 });
     });
 
-    test("all station names visible including locked ones", async ({ page }) => {
+    test("all station names visible including locked ones", async ({ page, context }) => {
       await seedQuest(page);
-      await page.evaluate(
-        ({ id }) => {
-          localStorage.setItem(
-            `gq_progress_${id}`,
-            JSON.stringify({ visitedStations: [], completedStations: [], solvedTasks: {}, currentScreen: "stations", lastStationIndex: 0 })
-          );
-        },
-        { id: TEST_QUEST.id }
-      );
-      await page.goto(`/play/${TEST_QUEST.id}`);
+      await openStationList(page, context);
 
       await expect(page.getByText("Erste Station")).toBeVisible();
       await expect(page.getByText("Zweite Station")).toBeVisible();
       await expect(page.getByText("Dritte Station")).toBeVisible();
     });
 
-    test("locked stations are disabled", async ({ page }) => {
+    test("locked stations are disabled", async ({ page, context }) => {
       await seedQuest(page);
-      await page.evaluate(
-        ({ id }) => {
-          localStorage.setItem(
-            `gq_progress_${id}`,
-            JSON.stringify({ visitedStations: [], completedStations: [], solvedTasks: {}, currentScreen: "stations", lastStationIndex: 0 })
-          );
-        },
-        { id: TEST_QUEST.id }
-      );
-      await page.goto(`/play/${TEST_QUEST.id}`);
+      await openStationList(page, context);
 
       const lockedStation = page.getByRole("button", { name: /Zweite Station/ });
       await expect(lockedStation).toBeDisabled();
@@ -184,7 +187,10 @@ test.describe("PROJ-3: Player — GPS-Navigation", () => {
         { id: TEST_QUEST.id }
       );
       await page.context().grantPermissions(["geolocation"]);
-      await page.context().setGeolocation({ latitude: 53.62, longitude: 10.05 });
+      // Bewusst AUSSERHALB des 30-m-Radius von Station 2 (53.62/10.05): direkt
+      // am Ziel zeigt der Player sofort den Ankunfts-Screen, und der trägt die
+      // "Ziel X von Y"-Zeile nicht.
+      await page.context().setGeolocation({ latitude: 53.60, longitude: 10.03 });
       await page.goto(`/play/${TEST_QUEST.id}`);
 
       await page.getByRole("button", { name: /Navigation zu Zweite Station starten/ }).click();
@@ -201,42 +207,22 @@ test.describe("PROJ-3: Player — GPS-Navigation", () => {
       await context.setGeolocation({ latitude: 53.61, longitude: 10.04 });
     });
 
-    test("shows direction arrow and distance when navigating", async ({ page }) => {
+    test("shows direction arrow and distance when navigating", async ({ page, context }) => {
       await seedQuest(page);
-      await page.evaluate(
-        ({ id }) => {
-          localStorage.setItem(
-            `gq_progress_${id}`,
-            JSON.stringify({ visitedStations: [], completedStations: [], solvedTasks: {}, currentScreen: "stations", lastStationIndex: 0 })
-          );
-        },
-        { id: TEST_QUEST.id }
-      );
-      await page.context().grantPermissions(["geolocation"]);
-      await page.context().setGeolocation({ latitude: 53.60, longitude: 10.03 });
-      await page.goto(`/play/${TEST_QUEST.id}`);
+      await openStationList(page, context, { latitude: 53.60, longitude: 10.03 });
 
       await page.getByRole("button", { name: /Navigation zu Erste Station starten/ }).click();
 
       await expect(page.getByText("Erste Station")).toBeVisible();
-      await expect(page.locator("svg")).toBeVisible();
+      // Gezielt der Richtungspfeil: `locator("svg")` traf auch den Zurück-Pfeil
+      // im Header und das Next.js-Devtools-Icon.
+      await expect(page.getByRole("img").first()).toBeVisible();
       await expect(page.getByText("Ziel 1 von 3")).toBeVisible();
     });
 
-    test("back button returns to station list", async ({ page }) => {
+    test("back button returns to station list", async ({ page, context }) => {
       await seedQuest(page);
-      await page.evaluate(
-        ({ id }) => {
-          localStorage.setItem(
-            `gq_progress_${id}`,
-            JSON.stringify({ visitedStations: [], completedStations: [], solvedTasks: {}, currentScreen: "stations", lastStationIndex: 0 })
-          );
-        },
-        { id: TEST_QUEST.id }
-      );
-      await page.context().grantPermissions(["geolocation"]);
-      await page.context().setGeolocation({ latitude: 53.60, longitude: 10.03 });
-      await page.goto(`/play/${TEST_QUEST.id}`);
+      await openStationList(page, context, { latitude: 53.60, longitude: 10.03 });
 
       await page.getByRole("button", { name: /Navigation zu Erste Station starten/ }).click();
       await page.getByLabel("Zurück zur Stationsliste").click();
@@ -252,20 +238,9 @@ test.describe("PROJ-3: Player — GPS-Navigation", () => {
       await context.setGeolocation({ latitude: 53.61, longitude: 10.04 });
     });
 
-    test("shows arrival overlay when within station radius", async ({ page }) => {
+    test("shows arrival overlay when within station radius", async ({ page, context }) => {
       await seedQuest(page);
-      await page.evaluate(
-        ({ id }) => {
-          localStorage.setItem(
-            `gq_progress_${id}`,
-            JSON.stringify({ visitedStations: [], completedStations: [], solvedTasks: {}, currentScreen: "stations", lastStationIndex: 0 })
-          );
-        },
-        { id: TEST_QUEST.id }
-      );
-      await page.context().grantPermissions(["geolocation"]);
-      await page.context().setGeolocation({ latitude: 53.61, longitude: 10.04 });
-      await page.goto(`/play/${TEST_QUEST.id}`);
+      await openStationList(page, context, { latitude: 53.61, longitude: 10.04 });
 
       await page.getByRole("button", { name: /Navigation zu Erste Station starten/ }).click();
 
@@ -274,21 +249,10 @@ test.describe("PROJ-3: Player — GPS-Navigation", () => {
       await expect(page.getByText("Station entdecken")).toBeVisible();
     });
 
-    test("tapping 'Station entdecken' marks the station visited and opens its modules", async ({ page }) => {
+    test("tapping 'Station entdecken' marks the station visited and opens its modules", async ({ page, context }) => {
       // PROJ-4: arrival now leads into the station's module screen, not back to the list.
       await seedQuest(page);
-      await page.evaluate(
-        ({ id }) => {
-          localStorage.setItem(
-            `gq_progress_${id}`,
-            JSON.stringify({ visitedStations: [], completedStations: [], solvedTasks: {}, currentScreen: "stations", lastStationIndex: 0 })
-          );
-        },
-        { id: TEST_QUEST.id }
-      );
-      await page.context().grantPermissions(["geolocation"]);
-      await page.context().setGeolocation({ latitude: 53.61, longitude: 10.04 });
-      await page.goto(`/play/${TEST_QUEST.id}`);
+      await openStationList(page, context);
 
       await page.getByRole("button", { name: /Navigation zu Erste Station starten/ }).click();
       await page.getByText("Station entdecken").click({ timeout: 10_000 });
