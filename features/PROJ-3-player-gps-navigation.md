@@ -1,10 +1,12 @@
 # PROJ-3: Player — GPS-Navigation
 
-## Status: Deployed
+## Status: In Progress
 **Created:** 2026-08-23
-**Last Updated:** 2026-09-06
+**Last Updated:** 2026-09-07
 
 > **Refinement (2026-09-06) — umgesetzt, deployt und QA-geprüft:** Zwei stille Ausfallmodi ergänzt — GPS-Fix bleibt trotz erteilter Permission aus, und der Richtungspfeil hat keine Richtung. Siehe Abschnitte "Permission-Flow", "Richtungsanzeige ohne Heading", Edge Cases 9–12 und die Implementation Notes vom 2026-09-06.
+
+> **Refinement (2026-09-07) — BUG-6 geklärt, noch nicht umgesetzt:** Die iOS-Erkennung hinter dem "Kompass aktivieren"-Button ist zu grob. Sie schließt allein daraus auf iOS, dass `DeviceOrientationEvent.requestPermission` eine Funktion ist — das trifft auf Desktop-Chrome ebenfalls zu. Folge: Chrome-Nutzer bekommen einen Button angeboten, der garantiert fehlschlägt, statt des Hinweises, der ihnen hilft. BUG-6 war als vermutliches Testumgebungs-Artefakt notiert und ist als **echter Produktfehler bestätigt**. Siehe Acceptance Criteria "Richtungsanzeige ohne Heading", Edge Cases 13–14, Technical Requirements und Decision Log.
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — für Routing und UI-Rahmen
@@ -69,6 +71,8 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 - [ ] Angenommen die Bewegungsrichtung ist die einzige Heading-Quelle, wenn der Spieler stillsteht, dann ist der Hinweis "Laufe ein paar Schritte" gut lesbar (nicht 9px grau) und dem Pfeil klar zugeordnet
 - [ ] Angenommen die Bewegungssensor-Permission wurde auf iOS nie erteilt, wenn der Navigations-Screen geöffnet wird, dann erscheint ein antippbarer "Kompass aktivieren"-Button statt des "Laufe ein paar Schritte"-Hinweises
 - [ ] Angenommen der Spieler tippt "Kompass aktivieren", wenn die Permission erteilt wird, dann richtet sich der Pfeil ohne Neuladen der Seite aus
+- [ ] Angenommen der Browser stellt `DeviceOrientationEvent.requestPermission` bereit, ohne eine echte Sensorfreigabe zu kennen (Desktop-Chrome), wenn der Navigations-Screen geöffnet wird, dann erscheint **kein** "Kompass aktivieren"-Button, sondern direkt der "Laufe ein paar Schritte"-Hinweis
+- [ ] Angenommen der Spieler tippt "Kompass aktivieren", wenn die Freigabe abgelehnt wird oder fehlschlägt, dann erscheint sofort der "Laufe ein paar Schritte"-Hinweis — der Screen bleibt nie ohne Erklärung zurück
 
 **Ankunft:**
 - [ ] Angenommen der Spieler befindet sich innerhalb des Ankunftsradius einer Station, wenn die Position erkannt wird, dann vibriert das Gerät und ein "Angekommen!"-Hinweis erscheint
@@ -96,6 +100,8 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 10. **Wiedereinstieg über gespeicherten Fortschritt auf iOS:** Der Spieler überspringt den Permission-Screen und damit den einzigen Ort, an dem `DeviceOrientationEvent.requestPermission()` bisher aufgerufen wird. Folge: Kompass bleibt die ganze Session stumm, Pfeil steht fest auf 0°. Der "Kompass aktivieren"-Button im Navigations-Screen muss diesen Einstieg abfangen.
 11. **Pfeil ohne jede Heading-Quelle:** Rotation 0 bedeutet "unbekannt", sieht aber aus wie "geradeaus" — der Spieler läuft mit einem Pfeil los, der nichts aussagt. Muss visuell vom gültigen Zustand unterscheidbar sein.
 12. **Gerät ohne brauchbares Magnetometer (Android-Billiggeräte):** Fällt auf GPS-Bewegungsrichtung zurück, funktioniert also nur beim Laufen — gleicher sichtbarer Zustand wie Edge Case 11 im Stand.
+13. **Nicht-iOS-Browser mit `requestPermission`-API (Desktop-Chrome, evtl. Android-Chrome):** `DeviceOrientationEvent.requestPermission` existiert dort als Funktion, ohne dass es eine iOS-artige Sensorfreigabe gäbe. Eine Erkennung, die allein darauf prüft, hält jeden solchen Browser für ein iPhone und bietet den "Kompass aktivieren"-Button an. Der Aufruf liefert `denied`, der Button ist eine Sackgasse. Richtig ist hier der "Laufe ein paar Schritte"-Hinweis. **Bestätigt auf Chrome 152 (2026-09-07), siehe BUG-6.**
+14. **Sensorfreigabe wird abgelehnt oder schlägt fehl (jede Plattform):** Nach einem `denied` darf der Screen nicht in einem Zustand ohne Erklärung stehen bleiben. Der Spieler fällt auf denselben sichtbaren Zustand wie Edge Case 11/12 zurück — richtungsloser Pfeil plus "Laufe ein paar Schritte".
 
 ## Technical Requirements
 - GPS-Position: `navigator.geolocation.watchPosition()` mit `enableHighAccuracy: true`
@@ -111,6 +117,8 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 - `!navigator.geolocation` ist als alleiniger Verfügbarkeitstest unzureichend: In der Praxis existiert das Objekt immer; die realen Ausfälle sind fehlendes HTTPS, `POSITION_UNAVAILABLE` und `TIMEOUT`
 - Kompass-Verfügbarkeit muss als eigener Zustand nach außen sichtbar sein (Heading vorhanden / nur Bewegungsrichtung / Permission ausstehend / nicht unterstützt) — nicht nur als `heading: number | null`
 - `DeviceOrientationEvent.requestPermission()` (iOS) muss auch außerhalb des Permission-Screens auslösbar sein
+- Die iOS-Erkennung darf sich **nicht allein** darauf stützen, dass `DeviceOrientationEvent.requestPermission` eine Funktion ist — Desktop-Chrome erfüllt diese Bedingung ebenfalls (gemessen: Chrome 152, 2026-09-07). Zusätzliches Plattform-Signal erforderlich
+- Ein `denied`/fehlgeschlagenes Ergebnis von `requestPermission()` muss in den "Laufe ein paar Schritte"-Zustand münden — als zweite Verteidigungslinie, unabhängig davon, ob die Plattformerkennung richtig lag. Damit bleibt das Verhalten auch auf ungetesteten Browsern (Android-Chrome) korrekt
 - Performance: GPS-Signal innerhalb 5s nach Permission (PRD-Anforderung)
 - Update-Intervall: GPS-Position alle 1–3s (Browser-abhängig via watchPosition)
 - Fortschritt: localStorage mit Key `gq_progress_{questId}`
@@ -123,6 +131,7 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 - [ ] Soll die Stationsliste auch die Entfernung zur jeweiligen Station anzeigen (wenn GPS aktiv)?
 - [ ] Soll der richtungslose Pfeil langsam rotieren (Suchanimation) oder statisch ausgegraut bleiben? — Umsetzungsdetail für `/frontend`
 - [ ] Soll die Ankunftserkennung bei sehr schlechter `accuracy` (> Stationsradius) unterdrückt werden, um Falsch-Ankünfte zu vermeiden? Hängt mit der offenen Genauigkeits-Frage oben zusammen.
+- [ ] Verhält sich **Android-Chrome** wie Desktop-Chrome (`requestPermission` vorhanden, liefert `denied`)? Lokal nicht messbar — kein Android-Gerät und kein lauffähiges Chromium-Binary. Der beschlossene `denied`-Rückfall macht die Antwort für die Korrektheit unkritisch, sie bliebe aber für die Testabdeckung interessant.
 
 ## Decision Log
 
@@ -147,6 +156,8 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 | Richtungsloser Pfeil wird sichtbar als solcher dargestellt | Rotation 0 ist von "geradeaus" nicht unterscheidbar — der Spieler vertraut einem Pfeil, der nichts weiß. Auslöser: Testquest 2026-09-06, Pfeil bewegte sich auf iPhone nicht. | 2026-09-06 |
 | "Kompass aktivieren"-Button im Navigations-Screen | Bei Wiedereinstieg über gespeicherten Fortschritt wird der Permission-Screen übersprungen — der bisher einzige Ort für die iOS-Sensorfreigabe. Der Rat "Laufe ein paar Schritte" hilft nicht, wenn eine Freigabe fehlt. | 2026-09-06 |
 | Entfernung bleibt bei richtungslosem Pfeil sichtbar | Die Entfernung ist unabhängig vom Heading korrekt und weiterhin nützlich — sie mit auszublenden würde funktionierende Information verschenken. | 2026-09-06 |
+| BUG-6 ist ein Produktfehler, kein Testumgebungs-Artefakt | Auf echtem Chrome 152 reproduziert und instrumentiert: Position liegt vor (12514m gerendert), der Nachbartest besteht. Die vermutete Ursache "Playwright liefert keinen Fix" ist damit widerlegt; die Ursache ist die zu grobe iOS-Erkennung. | 2026-09-07 |
+| Ursache beheben statt Symptom: echte Plattformerkennung **und** `denied`-Rückfall | Nur die Erkennung zu schärfen würde Android-Chrome ungeprüft lassen — das reale Zielgerät. Der Rückfall bei `denied` macht das Verhalten dort korrekt, ohne dass wir es je messen müssen. Zwei unabhängige Schutzebenen für einen Fehler, der sonst still bleibt. | 2026-09-07 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
