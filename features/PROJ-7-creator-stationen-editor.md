@@ -1,7 +1,7 @@
 # PROJ-7: Creator — Stationen-Editor
 
-## Status: Approved
-_QA am 2026-09-06 abgeschlossen: keine Bugs, Production-Ready, noch nicht deployed. Geprüft wurden beide offenen Änderungen: (1) Quest-Bearbeiten-Einstieg neben dem Titel (2026-09-06, gebaut und im Browser verifiziert), (2) Sheet-Layout auf kleinen Bildschirmen — Karte überlagerte den "Speichern"-Button, behoben am 2026-09-06 mit fixiertem Header/Footer und scrollender Mitte, 7 neue E2E-Tests, Gesamtsuite in der QA final 285/285 grün auf Mobile Safari und erstmals auch auf Chrome verifiziert (PROJ-7-Suite 39 Tests). Nächster Schritt: `/deploy`._
+## Status: Deployed
+_Am 2026-09-07 nach Production deployt (Tag `v1.23.0-PROJ-7`) und dort verifiziert. Live gingen beide Änderungen: (1) Quest-Bearbeiten-Einstieg neben dem Titel (2026-09-06, gebaut und im Browser verifiziert), (2) Sheet-Layout auf kleinen Bildschirmen — Karte überlagerte den "Speichern"-Button, behoben am 2026-09-06 mit fixiertem Header/Footer und scrollender Mitte, 7 neue E2E-Tests, Gesamtsuite in der QA final 285/285 grün auf Mobile Safari und erstmals auch auf Chrome verifiziert (PROJ-7-Suite 39 Tests). In Produktion per Smoketest auf 360×640 bestätigt: Speichern erreichbar, Karte 220px, keine Konsolenfehler._
 **Created:** 2026-08-28
 **Last Updated:** 2026-09-06
 
@@ -1038,3 +1038,52 @@ Weiterhin offen aus früheren Runden (gemeinsame Komponenten, in PROJ-1 dokument
 Zwei Punkte für die Bewertung durch den Nutzer, keine Blocker:
 1. Das Tastatur-Verhalten (Edge Case 16) ist nur konstruktiv abgedeckt — ein kurzer Test auf einem echten Handy wäre die letzte Bestätigung.
 2. BUG-6 gehört in PROJ-3, nicht hierher.
+
+---
+
+## Deployment — Sheet-Layout & Quest-Bearbeiten-Stift (2026-09-07)
+
+**Production URL:** https://geoquesty.vercel.app
+**Deployed:** 2026-09-07
+**Platform:** Vercel (auto-deploy on push to main)
+**Git Tag:** `v1.23.0-PROJ-7`
+**Commits:** `7228d61` (Spec), `bdd66c1` (Frontend), `cba6f21` (QA)
+
+Deployt wurden **zwei** Änderungen gemeinsam: das neue Sheet-Layout (heute gebaut) und der Quest-Bearbeiten-Stift, der seit dem 2026-09-06 ungeprüft in `main` lag und mit diesem Deploy erstmals QA-abgesichert live geht.
+
+### Pre-Deployment Checks
+- [x] `npm run build` erfolgreich
+- [x] `npm run lint` erfolgreich (0 Errors, weiterhin die 6 vorbestehenden `<img>`-Warnungen)
+- [x] `npm test` erfolgreich (177/177)
+- [x] E2E Mobile Safari 285/285, PROJ-7-Suite 39/39
+- [x] QA-Freigabe: "Approved" / "Production-Ready: READY"
+- [x] Keine Critical/High-Bugs offen
+- [x] Keine neuen Umgebungsvariablen nötig (reines Layout, kein Datenzugriff)
+- [x] Keine Secrets im Diff — einzige getrackte `.env*`-Datei ist `.env.local.example` (Platzhalter-Template, seit jeher getrackt); im Code keine `process.env`-Nutzung außer `NODE_ENV`
+- [x] Kein Datenbank-Layer betroffen (weiterhin reines localStorage)
+- [x] Nur PROJ-7-relevante Dateien committet — `design-preparation/` bleibt bewusst untracked
+- [x] Nutzer hat dem Deploy ausdrücklich zugestimmt
+
+### Deploy-Vorgang
+`git push origin main` (`6eaa963..cba6f21`) löste den bestehenden Vercel-GitHub-Auto-Deploy aus — kein manueller `vercel --prod`-Schritt nötig. Frischer Build bestätigt über `age: 0` im Response-Header von `/create`.
+
+### Post-Deployment-Verifikation
+Automatisierter Smoketest gegen die **Live-URL** (Playwright/WebKit, Viewport 360×640 — die Referenzgröße aus der Spec, auf der der Bug ursprünglich auftrat):
+
+| Prüfung | Ergebnis |
+|---------|----------|
+| Quest-Bearbeiten-Stift neben dem Titel | ✅ 44×44px bei y=88 |
+| "Speichern" endet innerhalb des Viewports mit Safe-Area | ✅ bottom=602 von 640 (38px Luft) |
+| "Abbrechen"/"Speichern" nebeneinander statt gestapelt | ✅ gleiche y-Position |
+| Karten-Mindesthöhe | ✅ exakt 220px |
+| Karte überlagert den Speichern-Button nicht | ✅ sichtbare Kartenfläche endet oberhalb |
+| End-to-End: Station speichern | ✅ Station angelegt und in der Liste sichtbar |
+| Konsolenfehler | ✅ 0 |
+
+Die Testquest wurde ausschließlich im `localStorage` des Testbrowsers angelegt und dort direkt wieder entfernt — keine Bereinigung in Produktion nötig, da GeoQuest kein Backend hat.
+
+### Bekannte offene Punkte
+- **Edge Case 16 (Bildschirmtastatur)** weiterhin nur konstruktiv abgedeckt — Playwright emuliert keine mobile Tastatur. Ein kurzer Test auf einem echten iPhone bleibt die letzte offene Bestätigung dieses Refinements
+- **BUG-6 (Medium, PROJ-3)** unverändert offen — gehört in PROJ-3, kein Blocker
+- **BUG-2 / BUG-3** (gemeinsame Komponenten, in PROJ-1 dokumentiert) unverändert offen, nicht blockierend
+- **`playwright.config.ts`** trägt weiterhin die kaputte `chromium`-Konfiguration; die verifizierte Lösung (`channel: 'chrome'`) ist dokumentiert, aber nicht angewendet
