@@ -1,6 +1,6 @@
 # PROJ-3: Player — GPS-Navigation
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-08-23
 **Last Updated:** 2026-09-07
 
@@ -874,3 +874,42 @@ Keine Befunde.
 **READY** — keine Critical- oder High-Bugs. Der urspruengliche Fehler ist auf der Engine
 behoben, auf der er auftrat, auf beiden verfuegbaren Engines verifiziert und durch eine
 per Gegenprobe geschaerfte Regressionssuite abgesichert.
+
+---
+
+### Redeploy: BUG-6 — korrekte iOS-Erkennung (2026-09-07)
+
+**Production URL:** https://geoquesty.vercel.app
+**Deployed:** 2026-09-07
+**Tag:** `v1.24.0-PROJ-3`
+**Commits:** `1041d1f` (Spec) → `bf4ada2` (Frontend) → `03ecef7` (QA)
+
+**Pre-Deployment:** Build ✅, Lint ✅ (0 Errors), Unit 186/186 ✅,
+E2E Mobile Safari 288 passed / 2 skipped / 0 failed, E2E Desktop Chrome 152 290 passed / 0 failed.
+Keine Secrets im Repo (nur `.env.local.example` getrackt).
+
+**Verifikation in Production:**
+- Alle Nutzerrouten HTTP 200 (`/`, `/play`, `/create`, `/about`, `/anleitung`, `/impressum`, `/datenschutz`)
+- **Der Fix ist im ausgelieferten Bundle nachgewiesen:** `/_next/static/chunks/21a22d389651ae9d.js`
+  enthaelt die neue Erkennung im Klartext (minifiziert):
+  `/iPad|iPhone|iPod/.test(e)` und `e.includes("Macintosh")&&navigator.maxTouchPoints>1`
+- Live-Smoke-Test gegen die Production-URL auf **zwei Engines bestanden**: Der Hinweis
+  "Laufe ein paar Schritte" erscheint, der Sackgassen-Button nicht; die Entfernung rechnet;
+  keine JS-Fehler in der Konsole
+- Ladezeit `/play`: 0,06–0,14s (PRD-Anforderung < 2s)
+- Security-Header aktiv: HSTS (2 Jahre, preload), `X-Frame-Options: DENY`,
+  `X-Content-Type-Options: nosniff`, `Referrer-Policy`
+
+**Zwei Beobachtungen aus der Verifikation (keine Regressionen):**
+1. `/play/<id>` liefert serverseitig **404**, waehrend der Client korrekt rendert. Systembedingt
+   und vorbestehend: Quests liegen ausschliesslich im localStorage, die Server-Route kennt sie
+   nicht. Fuer den Nutzer unsichtbar, aber es erzeugt Konsolen-Rauschen und waere fuer eine
+   spaetere SEO-/Sharing-Betrachtung relevant.
+2. Desktop-WebKit mit iPhone-Emulation hat **kein** `DeviceOrientationEvent.requestPermission`
+   (`undefined`) — anders als ein echtes iOS-Geraet. Die Erkennung faellt dort korrekt auf den
+   Hinweis zurueck. Bestaetigt nebenbei, dass `hasRequestPermissionApi()` als notwendige
+   Bedingung greift.
+
+**Rollback:** Vercel Dashboard → Deployments → vorheriges Deployment "Promote to Production".
+Der Fix beruehrt ausschliesslich `use-device-orientation.ts`; ein Rollback bringt den
+Sackgassen-Button auf Chrome zurueck, mehr nicht.

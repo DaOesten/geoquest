@@ -18,7 +18,7 @@
 |----|---------|----------|--------------|--------|------|---------|
 | PROJ-1 | App Shell & Mode Switch | P0 | None | Deployed | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
-| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Approved | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
+| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
 | PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
@@ -110,4 +110,8 @@ Suiten: Unit 186/186, Mobile Safari 288 passed / 2 skipped / 0 failed, **Desktop
 
 Offen bleiben: **Firefox** (Binary fehlt trotz gegenteiliger `--dry-run`-Meldung, kein Firefox in `/Applications`; Risiko gering, da Firefox `requestPermission` gar nicht bereitstellt) und ein **echtes Android-Gerät**. Unverändert gilt: `playwright.config.ts` zeigt weiter auf das kaputte Chromium-Binary — solange das so bleibt, sieht die Standard-Suite genau die Fehlerklasse nicht, aus der BUG-6 entstand.
 
-**Nächster Schritt `/deploy`.**
+**Am 2026-09-07 nach Production deployt** (Tag `v1.24.0-PROJ-3`) — live auf https://geoquesty.vercel.app und dort verifiziert. Der Fix ist im ausgelieferten Bundle nachgewiesen: `21a22d389651ae9d.js` enthält die neue Erkennung im Klartext (`/iPad|iPhone|iPod/.test(e)` und `maxTouchPoints>1`). Live-Smoke-Test auf beiden Engines bestanden, alle Nutzerrouten HTTP 200, Ladezeit 0,06–0,14s, Security-Header aktiv.
+
+Zwei Beobachtungen ohne Regressionscharakter: `/play/<id>` liefert serverseitig 404, während der Client korrekt rendert (systembedingt — Quests liegen nur im localStorage; für den Nutzer unsichtbar, aber relevant, falls Sharing/SEO je ein Thema wird). Und Desktop-WebKit mit iPhone-Emulation hat gar kein `requestPermission` — die Erkennung fällt dort korrekt auf den Hinweis zurück.
+
+**PROJ-3 ist abgeschlossen.** Offen im Projekt bleibt die kaputte `playwright.config.ts`: Sie zeigt weiter auf das 428-KB-Chromium-Fragment. Solange das so ist, sieht die Standard-Suite genau die Fehlerklasse nicht, aus der BUG-6 entstand — ein Einzeiler (`channel: 'chrome'`), der nicht in den Scope von QA oder Deploy fällt.
