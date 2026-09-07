@@ -51,18 +51,18 @@ Das Feature besteht aus **zwei zusammengehörenden statischen Seiten**, die geme
 
 _Neu gefasst in Refinement 4 (2026-09-07). Die vollständige Copy steht im Abschnitt „Refinement 4" am Ende dieser Spec._
 
-1. **Hero** — „Die reale Welt wird zum Spielfeld.", Subline, „Kostenlos. Ohne Abo. Ohne Account.", zwei CTAs (`Rallye erstellen` → `/create`, `Mit KI bauen` → `/anleitung`)
+1. **Hero** — „Die reale Welt wird zum Spielfeld.", Subline mit „GPS-Rallye", „Kostenlos. Ohne Abo. Ohne Account.", zwei CTAs (`Quest erstellen` → `/create`, `Mit KI bauen` → `/anleitung`)
 2. **Draußen spielen. Wie ein Game.** — der emotionale Hook
-3. **Die Welt ist deine Spielkarte.** — fünf Orte als visuelle Reihe plus Erklärung, wie eine Rallye entsteht
-4. **Was drin steckt** — GPS-Navigation, 5 Modultypen, 3 Aufgabentypen (unverändert)
-5. **Nicht nur spielen. Selber machen.** — Game-Designer-Gedanke, kein Vorwissen nötig
-6. **Eine Rallye erstellen? Ganz einfach.** — drei nummerierte Schritte
-7. **Für wen ist Geo Quest?** — vier Zielgruppen-Karten (Familien, Schule & Pädagogik, Kinder & Jugendliche, Gruppen & Events)
-8. **Der Unterschied** — kostenlos, kein Abo, kein Account (unverändert)
-9. **Häufige Fragen** — eingeklapptes Accordion, gespiegelt im JSON-LD (unverändert)
-10. **Abschluss-CTA** — „Deine Umgebung. Dein Abenteuer." mit Button nach `/create`
+3. **Jeder Ort kann ein Level sein.** — fünf Orte als visuelle Reihe, Erklärung wie eine Quest entsteht, Merkzeile „Die Welt ist deine Spielkarte."
+4. **Nicht nur spielen. Selber machen.** — Game-Designer-Gedanke, kein Vorwissen nötig
+5. **Eine Quest erstellen? Ganz einfach.** — drei nummerierte Schritte
+6. **Für wen ist Geo Quest?** — vier Zielgruppen-Karten (Familien, Schule & Pädagogik, Kinder & Jugendliche, Gruppen & Events)
+7. **Häufige Fragen** — eingeklapptes Accordion, gespiegelt im JSON-LD; vier bestehende Fragen plus neu „Was kann ich in eine Quest einbauen?"
+8. **Abschluss-CTA** — „Deine Umgebung. Dein Abenteuer." mit Button nach `/create`
 
-_Vorherige Fassung (bis 2026-09-07): Hero „Draußen ist das Spielfeld." → Features → Für wen/vier Anlässe → Abgrenzung → FAQ → Abschluss-CTA nach `/anleitung`._
+**Vokabular:** „GPS-Rallye" steht ausschließlich im Hero und holt den Besucher in seiner Suchsprache ab; ab Sektion 2 heißt es durchgehend „Quest" — dieselbe Sprache, die ihn in der App erwartet. „Schnitzeljagd" bleibt in Meta-Title, Keywords und JSON-LD.
+
+_Vorherige Fassung (bis 2026-09-07): Hero „Draußen ist das Spielfeld." → Features → Für wen/vier Anlässe → Abgrenzung → FAQ → Abschluss-CTA nach `/anleitung`. Die Sektionen „Was drin steckt" und „Der Unterschied" entfallen mit diesem Refinement ersatzlos; der Inhalt der Feature-Karten lebt in der fünften FAQ-Frage weiter._
 
 ### Seite 3: `/impressum` und Seite 4: `/datenschutz` — Rechtstexte
 Zwei schlanke Textseiten im gleichen Rahmen wie `/about` und `/anleitung`. Sie existieren, weil das Burger-Menu sie verlinkt und weil eine öffentlich geteilte Seite in Deutschland eine Anbieterkennzeichnung braucht.
@@ -176,16 +176,24 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [ ] Angenommen ein Besucher öffnet `/about`, wenn die Seite lädt, dann lautet die Hauptüberschrift „Die reale Welt wird zum Spielfeld." und darunter steht die Zeile „Kostenlos. Ohne Abo. Ohne Account." als eigenständige, hervorgehobene Zeile
 - [ ] Angenommen ein Besucher ist im Hero-Bereich, wenn er den primären Button „Rallye erstellen" klickt, dann gelangt er direkt nach `/create` — ohne Zwischenstopp auf dem Mode-Switch `/`
 - [ ] Angenommen ein Besucher ist im Hero-Bereich, wenn er den sekundären Button „Mit KI bauen" klickt, dann gelangt er nach `/anleitung`
-- [ ] Angenommen ein Besucher scrollt `/about` von oben nach unten, wenn er die Sektionen zählt, dann folgen sie in dieser Reihenfolge: Hero → Draußen spielen → Die Welt ist deine Spielkarte → Was drin steckt → Nicht nur spielen. Selber machen. → Eine Rallye erstellen? Ganz einfach. → Für wen ist Geo Quest? → Der Unterschied → Häufige Fragen → Abschluss-CTA
-- [ ] Angenommen ein Besucher liest die Sektion „Die Welt ist deine Spielkarte", wenn er die Orte betrachtet, dann sind die fünf Orte (Park, Stadt, Schulhof, Wanderweg, Viertel) als eigenständige visuelle Elemente gesetzt und nicht als Aufzählung im Fließtext
-- [ ] Angenommen ein Besucher liest die Sektion „Eine Rallye erstellen? Ganz einfach.", wenn er Schritt 03 liest, dann ist vom Weitergeben als Datei die Rede — nicht von einem Teilen-Link, den die App nicht anbietet
+- [ ] Angenommen ein Besucher scrollt `/about` von oben nach unten, wenn er die Sektionen zählt, dann sind es genau acht, in dieser Reihenfolge: Hero → Draußen spielen. Wie ein Game. → Jeder Ort kann ein Level sein. → Nicht nur spielen. Selber machen. → Eine Quest erstellen? Ganz einfach. → Für wen ist Geo Quest? → Häufige Fragen → Abschluss-CTA
+- [ ] Angenommen ein Besucher liest die Sektion „Jeder Ort kann ein Level sein", wenn er die Orte betrachtet, dann sind die fünf Orte (Park, Stadt, Schulhof, Wanderweg, Viertel) als eigenständige visuelle Elemente gesetzt und nicht als Aufzählung im Fließtext
+- [ ] Angenommen ein Besucher liest dieselbe Sektion zu Ende, wenn er die letzte Zeile liest, dann steht dort „Die Welt ist deine Spielkarte." als abschließende Merkzeile
+- [ ] Angenommen ein Besucher liest die Sektion „Eine Quest erstellen? Ganz einfach.", wenn er Schritt 03 liest, dann ist vom Weitergeben als Datei die Rede — nicht von einem Teilen-Link, den die App nicht anbietet
 - [ ] Angenommen ein Besucher liest „Für wen ist Geo Quest?", wenn die Sektion lädt, dann sieht er genau vier Zielgruppen-Karten (Familien, Schule & Pädagogik, Kinder & Jugendliche, Gruppen & Events), jede mit Emoji und Kurztext
 - [ ] Angenommen ein Besucher liest die Karte „Für Schule & Pädagogik", dann findet er dort den Lernpfad-Gedanken inklusive Fachbeispielen — ohne dass dafür eine eigene Sektion existiert
 - [ ] Angenommen ein Besucher erreicht das Seitenende, wenn er den Abschluss-CTA liest, dann lautet die Überschrift „Deine Umgebung. Dein Abenteuer." und der Button führt nach `/create`
-- [ ] Angenommen die Seite ist neu getextet, wenn ein Besucher die sichtbare Copy liest, dann spricht sie durchgehend von „Rallye" und „Abenteuer" — während Meta-Title, Keywords, JSON-LD und die FAQ weiterhin „Schnitzeljagd" tragen
+- [ ] Angenommen ein Besucher liest den Hero, wenn er die Subline betrachtet, dann steht dort „GPS-Rallye" — der einzige Ort der Seite, an dem das Wort „Rallye" vorkommt
+- [ ] Angenommen ein Besucher liest die Seite ab Sektion 2 vollständig durch, wenn er auf Begriffe achtet, dann heißt es überall „Quest" und an keiner Stelle mehr „Rallye" — auch die Buttons heißen „Quest erstellen"
+- [ ] Angenommen ein Besucher liest den Hero, wenn er den Wechsel von „GPS-Rallye" zu „Quest" bemerkt, dann gibt es dazu **keinen** erklärenden Satz — die Verknüpfung bleibt implizit
+- [ ] Angenommen ein Besucher sucht auf `/about` nach den Sektionen „Was drin steckt" oder „Der Unterschied", dann existieren beide nicht mehr
+- [ ] Angenommen ein Besucher öffnet die Häufigen Fragen, wenn er sie zählt, dann sind es fünf — die vier bisherigen wörtlich unverändert plus „Was kann ich in eine Quest einbauen?"
+- [ ] Angenommen ein Crawler oder KI-System wertet `/about` aus, wenn es die fünfte FAQ-Antwort liest, dann findet es dort die fünf Modultypen, die drei Aufgabentypen und die GPS-Navigation — also den vollständigen Inhalt der gestrichenen Feature-Karten, auch im `FAQPage`-JSON-LD
+- [ ] Angenommen ein Besucher sucht auf der Seite nach einer Zeitangabe zum Erstellen, dann findet er sie ausschließlich in der eingeklappten FAQ-Antwort, nicht im sichtbaren Marketing-Text
 - [ ] Angenommen ein Suchmaschinen-Crawler wertet `/about` aus, wenn er die Metadaten liest, dann enthält der Title weiterhin „Schnitzeljagd" und die Keyword-Liste zusätzlich „GPS-Rallye", „Rallye erstellen" und „Lernpfad draußen"
 - [ ] Angenommen ein Besucher öffnet `/about` auf einem Mobilgerät (360–430px), wenn er die gesamte Seite durchscrollt, dann ist alles lesbar ohne horizontales Scrollen, alle Touch-Targets sind ≥ 44px und die Emoji der Zielgruppen-Karten brechen das Layout nicht
-- [ ] Angenommen ein Besucher öffnet `/about` am Desktop (ab 1024px), wenn die Seite lädt, dann nutzen die mehrteiligen Sektionen (Features, Schritte, Zielgruppen, Orte) die Breite mehrspaltig, ohne dass Textzeilen überdehnen
+- [ ] Angenommen ein Besucher öffnet `/about` am Desktop (ab 1024px), wenn die Seite lädt, dann nutzen die mehrteiligen Sektionen (Orte, Schritte, Zielgruppen) die Breite mehrspaltig, ohne dass Textzeilen überdehnen
+- [ ] Angenommen ein Besucher scrollt die ganze Seite durch, wenn er auf die Darstellungsformen achtet, dann wechseln sie durchgehend ab (Text → Text → Chips → Text → Schritte → Karten → Accordion → Box) — nie zweimal dieselbe Form hintereinander
 - [ ] Angenommen ein Nutzer öffnet `/anleitung`, `/impressum` oder `/datenschutz`, wenn die Seiten laden, dann sind sie durch dieses Refinement unverändert
 - [ ] Angenommen ein Nutzer betrachtet den Header von `/about`, wenn er nach rechts schaut, dann steht dort weiterhin der Button „Zur App" sowie das Burger-Menu — beides unverändert aus Refinement 3
 
@@ -281,13 +289,19 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 | Impressum und Datenschutz laufen im Light-Theme, `/about` und `/anleitung` bleiben dunkel | Die beiden Rechtstexte werden gelesen, nicht inszeniert — heller Grund ist für längere Fließtexte die ruhigere Lesefläche. Sie tragen ohnehin `robots: noindex` und sind damit auch nicht als Marketing-Fläche gedacht. `/about` und `/anleitung` bleiben die öffentliche Eingangstür und behalten den Gaming-Look aus dem PRD | 2026-09-06 |
 | `/about` wird zur Marketing-Landingpage umgetextet, statt eine zweite Seite anzulegen | Zwei Marketing-Seiten müssten beide gepflegt werden und würden im Suchergebnis gegeneinander antreten. `/about` ist bereits die Route, die geteilt und verlinkt wird — sie muss die Arbeit leisten, nicht eine neue daneben | 2026-09-07 |
 | Zielgruppe bleibt der Ersteller (Erwachsene), trotz jugendlicher Tonalität | Der Ton der neuen Copy ist jung, der Adressat bleibt aber, wer die Rallye baut und wer nach so einer App sucht: Eltern, Lehrkräfte, Jugendleiter. Kinder kommen über den geteilten Quest-Link in die App, nicht über eine Landingpage. „Spieler-orientiertes Marketing" bleibt daher Out of Scope | 2026-09-07 |
-| „Rallye" in der Seiten-Copy, „Quest" in der App, „Schnitzeljagd" in den Metadaten | Drei Begriffe für drei Aufgaben: „Rallye" ist die Sprache, in der die Zielgruppe denkt; „Quest" ist die etablierte App-Sprache und ein Umbenennen würde acht Specs anfassen; „Schnitzeljagd" ist der Suchbegriff mit dem größten Volumen und muss im SEO-Fundament bleiben | 2026-09-07 |
+| ~~„Rallye" in der Seiten-Copy, „Quest" in der App, „Schnitzeljagd" in den Metadaten~~ → **revidiert am selben Tag** | Ursprünglich sollte die gesamte Landingpage „Rallye" sagen. Das hätte einen Bruch erzeugt: Wer nach einer Seite voller *Rallyes* auf `/create` klickt, liest dort überall *Quest* und muss selbst übersetzen — ausgerechnet im Moment des Übergangs, den die Seite vorbereiten soll | 2026-09-07 |
+| Der Hero sagt einmal „GPS-Rallye", ab Sektion 2 heißt es durchgehend „Quest" | Die Übersetzung findet auf der Seite statt statt an der Schwelle zur App. „GPS-Rallye" holt den Besucher in seiner Suchsprache ab; wer unten ankommt, denkt bereits in Quests und findet in der App genau das wieder. Buttons heißen entsprechend „Quest erstellen" | 2026-09-07 |
+| Die Verknüpfung Rallye/Quest bleibt implizit, ohne Erklärsatz | Der Leser stellt sie selbst her, wie er es bei „Schnitzeljagd" auch tut. Ein Satz wie „in Geo Quest heißt das Quest" würde an der wichtigsten Stelle der Seite Tempo kosten und den Leser für etwas belehren, das er ohnehin versteht | 2026-09-07 |
 | Drei Textdopplungen der Vorlage werden zusammengeführt statt einzeln umgesetzt | „Aus einem Ort wird ein Abenteuer" und „Jeder Ort kann ein Level sein" sagen dasselbe; ebenso „Jeder kann eine Rallye erstellen" und „Nicht nur spielen. Selber machen.". Dreimal an derselben Aussage vorbeizuscrollen schwächt sie, statt sie zu verstärken | 2026-09-07 |
 | „Lernen, ohne dass es sich nach Lernen anfühlt" geht in der Schul-Zielgruppenkarte auf | Eine eigene Sektion für einen von vier Anlässen kippt die Balance der Seite zugunsten des Schulkontexts. Die Aussage steht ohnehin in der Karte; sie bekommt dort mehr Text als die drei anderen und damit das Gewicht, das ihr zusteht | 2026-09-07 |
-| Die drei bestehenden Feature-Karten bleiben, obwohl die neue Copy keine Feature-Sektion enthält | Stimmungstexte beantworten nicht, was die App konkret kann. Wer eine Schnitzeljagd für Samstag plant, muss GPS-Navigation, fünf Bausteine und drei Aufgabentypen sehen, bevor er sich entscheidet | 2026-09-07 |
+| ~~Die drei bestehenden Feature-Karten bleiben~~ → **revidiert am selben Tag: Sektion „Was drin steckt" entfällt** | Die Argumentation für das Behalten (der Leser müsse die Funktionen sehen) unterschätzt, was eine Landingpage leisten soll: überzeugen, nicht spezifizieren. Der Inhalt geht nicht verloren, sondern wandert in die neue fünfte FAQ-Frage — dort steht er weiterhin im HTML und im JSON-LD, unterbricht aber den Lesefluss nicht | 2026-09-07 |
+| Sektion „Der Unterschied" (kostenlos, kein Account) entfällt ersatzlos | Dritte Wiederholung derselben Aussage auf einer Seite: Sie steht im Hero als hervorgehobene Zeile, im Abschluss-CTA und in zwei FAQ-Antworten. Ein Alleinstellungsmerkmal wird nicht stärker, wenn man es viermal sagt | 2026-09-07 |
+| Der Inhalt der Feature-Karten wird zur fünften FAQ-Frage, statt ersatzlos zu verschwinden | Die Frage „Was kann ich in eine Quest einbauen?" ist genau die, die ein Interessent tatsächlich stellt. Eingeklappt kostet sie keinen Lesefluss, bleibt aber für Suchmaschinen und für den, der Details sucht, vollständig vorhanden | 2026-09-07 |
+| Sektion 3 heißt „Jeder Ort kann ein Level sein", nicht „Die Welt ist deine Spielkarte" | Die Level-Metapher trifft den Gaming-Ton des PRD genauer und macht aus einer Feststellung ein Versprechen. „Die Welt ist deine Spielkarte" bleibt als abschließende Merkzeile derselben Sektion erhalten — beide gelieferten Formulierungen bleiben damit in Gebrauch | 2026-09-07 |
+| Die halbe Stunde („in einer halben Stunde eine fertige Schnitzeljagd") verschwindet von der Seite | Bewusste Entscheidung des Betreibers: Die Zahl bleibt der FAQ-Antwort „Wie lange dauert das Erstellen?" vorbehalten und wird nicht zum Verkaufsargument erhoben. Ein Zeitversprechen im Marketing-Text erzeugt eine Messlatte, an der die erste eigene Quest gemessen wird | 2026-09-07 |
 | Die vier Anlass-Karten (Kindergeburtstag, Schulausflug, …) weichen den vier Zielgruppen-Karten | Inhaltlich vollständig deckungsgleich — beide Blöcke nebeneinander wäre reine Wiederholung. Die Zielgruppen-Fassung ist die bessere: sie adressiert den Leser („Für Familien") statt einen Anlass zu benennen | 2026-09-07 |
+| Schritt 03 sagt „Quest als Datei weitergeben", nicht „teilen" | Ein Teilen-Link existiert nicht; Weitergabe läuft über den JSON-Export (PROJ-9). Eine Landingpage, die eine Funktion suggeriert, die es nicht gibt, erzeugt genau die Enttäuschung, die sie vermeiden soll | 2026-09-07 |
 | Hero-CTAs führen nach `/create` und `/anleitung` statt nach `/anleitung` und `/` | Wer über eine Landingpage kommt, hat sich für „erstellen" entschieden. Der Mode-Switch `/` als Zwischenstopp verlangt eine Entscheidung, die schon gefallen ist. Die KI-Anleitung bleibt als sekundärer Weg sichtbar — sie ist die Abkürzung, nicht der Hauptweg | 2026-09-07 |
-| Schritt 03 der Anleitung sagt „als Datei weitergeben" statt „teilen" | Ein Teilen-Link existiert nicht; Weitergabe läuft über den JSON-Export (PROJ-9). Eine Landingpage, die eine Funktion suggeriert, die es nicht gibt, erzeugt genau die Enttäuschung, die sie vermeiden soll | 2026-09-07 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -1069,11 +1083,23 @@ Der Betreiber hat neue Marketing-Copy geliefert (elf Textblöcke). Dieses Refine
 
 ### Die drei Rahmenentscheidungen
 
-1. **`/about` wird ersetzt, nicht ergänzt.** Keine zweite Marketing-Route. Bestehende Sektionen (Features, Der Unterschied, FAQ) bleiben erhalten, wo sie etwas leisten, das reine Marketing-Copy nicht leistet.
+1. **`/about` wird ersetzt, nicht ergänzt.** Keine zweite Marketing-Route. Von der alten Seite bleibt nur die FAQ erhalten — sie trägt das SEO-Fundament. Feature-Karten, „Der Unterschied" und die Anlass-Karten entfallen (siehe „Was von der alten Seite wegfällt").
 2. **Primäre Zielgruppe bleiben die Ersteller** — Eltern, Lehrkräfte, Jugendleiter. Das durchgängige „du" der neuen Copy adressiert **den Ersteller**, nicht das Kind. Kinder und Jugendliche bleiben eine von vier Zielgruppen im „Für wen"-Block, nicht der Hauptadressat. Der Out-of-Scope-Eintrag „Spieler-orientiertes Marketing" bleibt damit bestehen.
-3. **„Rallye" außen, „Quest" innen.** Die Landingpage-Copy spricht von *Rallye* und *Abenteuer* — das ist die Sprache, in der Eltern und Lehrkräfte suchen und denken. Die App-UI bleibt bei *Quest* (kein Eingriff in PROJ-1 bis PROJ-11). *Schnitzeljagd* bleibt in Meta-Title, Keywords, JSON-LD und FAQ erhalten: es ist der Suchbegriff mit dem meisten Volumen und darf nicht aus dem SEO-Fundament verschwinden.
+3. **Der Hero übersetzt „GPS-Rallye" in „Quest" — danach gilt die App-Sprache.** *(Revidiert am 2026-09-07, siehe unten)*
 
-### Die Copy: elf Blöcke werden neun Sektionen
+   Die erste Fassung dieses Refinements sah „Rallye" auf der ganzen Landingpage vor und „Quest" nur in der App. Das hätte einen Bruch genau dort erzeugt, wo die Seite ihre Arbeit getan hat: Wer nach einer Seite voller *Rallyes* auf `/create` klickt, liest dort überall *Quest* und muss selbst übersetzen.
+
+   Stattdessen findet die Übersetzung **auf der Seite selbst** statt, im Hero:
+   - **Sektion 1 (Hero)** sagt einmal **„GPS-Rallye"** — der Begriff, in dem Eltern und Lehrkräfte suchen und denken. Er holt den Besucher ab.
+   - **Ab Sektion 2** heißt es durchgehend **„Quest"** — dieselbe Sprache, die ihn in der App erwartet.
+   - **Die Buttons** heißen „Quest erstellen", nicht „Rallye erstellen".
+   - **„Schnitzeljagd"** bleibt in Meta-Title, Keywords, JSON-LD und FAQ: der Suchbegriff mit dem größten Volumen, er darf aus dem SEO-Fundament nicht verschwinden.
+
+   Die Verknüpfung bleibt **implizit** — kein Erklärsatz à la „in Geo Quest heißt das Quest". Der Leser stellt sie selbst her, wie er es bei „Schnitzeljagd" auch tut; ein Erklärsatz würde an der wichtigsten Stelle der Seite Tempo kosten.
+
+   Kein Eingriff in die App-UI (PROJ-1 bis PROJ-11).
+
+### Die Copy: elf Blöcke werden acht Sektionen
 
 Die gelieferten Texte enthalten drei inhaltliche Dopplungen. Alles einzubauen hieße, den Leser dreimal an derselben Aussage vorbeizuscrollen. Zusammengeführt wird:
 
@@ -1098,54 +1124,54 @@ Reihenfolge und vollständige Copy. Kursive Klammern sind Umsetzungshinweise, ke
 >
 > **Kostenlos. Ohne Abo. Ohne Account.**
 >
-> `[Rallye erstellen]` → `/create`  `[Mit KI bauen]` → `/anleitung`
+> `[Quest erstellen]` → `/create`  `[Mit KI bauen]` → `/anleitung`
 
 *Hero-Bild `urbanquest.png` und Logo-Lockup bleiben wie bisher. Die „Kostenlos"-Zeile steht als eigenständige, hervorgehobene Zeile über den Buttons — sie ist das stärkste Einzelargument der Seite und darf nicht als Fließtext untergehen.*
+
+*Dies ist die **einzige** Stelle der Seite, an der „GPS-Rallye" und „Rallyes" stehen. Ab Sektion 2 heißt es „Quest" — die Übersetzung passiert hier, im Hero, und zwar implizit (siehe Rahmenentscheidung 3).*
 
 **2 — Draußen spielen. Wie ein Game.** *(neu)*
 
 > Warum nur drinnen am Bildschirm spielen, wenn das Abenteuer direkt vor der Tür liegt?
 >
-> Geo Quest verbindet die Freiheit der echten Welt mit dem Spielgefühl eines Games. Laufe zu verschiedenen Orten, löse Aufgaben, entdecke Neues und folge deiner Rallye mit GPS.
+> Geo Quest verbindet die Freiheit der echten Welt mit dem Spielgefühl eines Games. Laufe zu verschiedenen Orten, löse Aufgaben, entdecke Neues und folge deiner Quest mit GPS.
 >
 > **Dein Spiel. Dein Ort. Deine Regeln.**
 
-**3 — Die Welt ist deine Spielkarte.** *(neu, zwei Blöcke zusammengeführt)*
+**3 — Jeder Ort kann ein Level sein.** *(neu, zwei Blöcke zusammengeführt)*
 
 > Ein Park. Eine Stadt. Der Schulhof. Ein Wanderweg. Dein Viertel.
 >
-> Lege Stationen fest, füge Aufgaben hinzu und verbinde sie zu einem eigenen Abenteuer. Die Teilnehmenden bewegen sich durch die echte Welt und entdecken dabei die nächste Herausforderung.
+> Lege Stationen fest, füge Aufgaben hinzu und verbinde sie zu einer eigenen Quest. Die Teilnehmenden bewegen sich durch die echte Welt und entdecken dabei die nächste Herausforderung.
 >
 > **Die Welt ist deine Spielkarte.**
 
 *Die fünf Orte werden als visuelle Reihe gesetzt (Chips oder Kacheln), nicht als Fließtext-Aufzählung — sie sind der Beleg für „überall", und als Aufzählung im Satz geht das unter.*
 
-**4 — Was drin steckt** *(bleibt unverändert)*
+*Überschrift und Merkzeile stammen aus zwei verschiedenen gelieferten Blöcken: „Jeder Ort kann ein Level sein" trägt die Sektion, „Die Welt ist deine Spielkarte" schließt sie ab. Beide Formulierungen bleiben erhalten, ohne die Sektion zu doppeln.*
 
-Die drei bestehenden Feature-Karten: Navigation zu echten Orten / Fünf Bausteine pro Ziel / Drei Aufgabentypen. **Bewusst behalten:** Die neue Copy enthält keine Feature-Sektion. Ein Elternteil, das eine Schnitzeljagd für Samstag plant, muss konkret wissen, was die App kann — Stimmungstexte allein beantworten das nicht.
-
-**5 — Nicht nur spielen. Selber machen.** *(neu, zwei Blöcke zusammengeführt)*
+**4 — Nicht nur spielen. Selber machen.** *(neu, zwei Blöcke zusammengeführt)*
 
 > Mit Geo Quest bist du nicht nur Spieler. Du bist der Game-Designer.
 >
-> Du brauchst kein Programmierwissen und keine besonderen Vorkenntnisse. Erstelle eine GPS-Rallye für deinen nächsten Ausflug, eine Geburtstagsfeier, eine Schulstunde oder einfach für deine Freunde.
+> Du brauchst kein Programmierwissen und keine besonderen Vorkenntnisse. Erstelle eine Quest für deinen nächsten Ausflug, eine Geburtstagsfeier, eine Schulstunde oder einfach für deine Freunde.
 >
 > **Erstelle deine eigene Welt, deine eigenen Regeln und deine eigenen Herausforderungen.**
 
-**6 — Eine Rallye erstellen? Ganz einfach.** *(neu)*
+**5 — Eine Quest erstellen? Ganz einfach.** *(neu)*
 
 > **01 — Ort auswählen**
 > Entscheide, wo dein Abenteuer stattfinden soll.
 >
-> **02 — Rallye gestalten**
+> **02 — Quest gestalten**
 > Füge Stationen und Aufgaben hinzu und verbinde alles zu einem Abenteuer.
 >
 > **03 — Losspielen**
-> Gib deine Rallye als Datei weiter — oder spielt sie direkt auf deinem Gerät. GPS führt euch von Station zu Station.
+> Gib deine Quest als Datei weiter — oder spielt sie direkt auf deinem Gerät. GPS führt euch von Station zu Station.
 
 *Schritt 03 ist gegenüber der Vorlage („Teile deine Rallye und los geht's") umformuliert: Teilen läuft heute über den JSON-Datei-Export (PROJ-9), es gibt keinen Teilen-Link. Die Originalformulierung weckt eine Erwartung, die die App nicht einlöst.*
 
-**7 — Für wen ist Geo Quest?** *(ersetzt die vier Anlass-Karten)*
+**6 — Für wen ist Geo Quest?** *(ersetzt die vier Anlass-Karten)*
 
 > **👨‍👩‍👧 Für Familien**
 > Mach aus einem Spaziergang, Ausflug oder Urlaub ein gemeinsames Abenteuer.
@@ -1154,30 +1180,46 @@ Die drei bestehenden Feature-Karten: Navigation zu echten Orten / Fünf Baustein
 > Gestalte interaktive Lernpfade und bringe Unterricht nach draußen. Statt Arbeitsblättern am Schreibtisch erkunden Kinder Themen draußen und lösen Aufgaben an realen Orten — ob Geschichte, Natur oder Geografie.
 >
 > **🧭 Für Kinder & Jugendliche**
-> Erstelle deine eigene Rallye, überrasche deine Freunde und werde selbst zum Game-Designer.
+> Erstelle deine eigene Quest, überrasche deine Freunde und werde selbst zum Game-Designer.
 >
 > **🎉 Für Gruppen & Events**
-> Geburtstag, Ferienprogramm, Jugendgruppe oder einfach ein Nachmittag mit Freunden — erstelle eine Rallye, die zu deinem Anlass passt.
+> Geburtstag, Ferienprogramm, Jugendgruppe oder einfach ein Nachmittag mit Freunden — erstelle eine Quest, die zu deinem Anlass passt.
 
 *Die Schul-Karte trägt bewusst mehr Text als die anderen drei: hier ist der Lernpfad-Block aufgegangen. Die vier bisherigen Anlässe (Kindergeburtstag, Schulausflug, Ferienprogramm, Jugendgruppe) sind inhaltlich vollständig in diesen vier Karten enthalten und entfallen als eigener Block.*
 
-**8 — Der Unterschied** *(bleibt unverändert)*
+**7 — Häufige Fragen** *(bleibt, wächst um eine fünfte Frage)*
 
-Kostenlos, kein Abo / Kein Account. Beides trägt die Differenzierung gegenüber Actionbound aus dem PRD.
+Eingeklapptes Accordion, gespiegelt im `FAQPage`-JSON-LD. Trägt „Schnitzeljagd" als Suchbegriff und beantwortet Preis, Account, Alter, Aufwand. Die vier bestehenden Fragen bleiben wörtlich unverändert.
 
-**9 — Häufige Fragen** *(bleibt unverändert)*
+**Neu als fünfte Frage** — sie fängt auf, was mit den Feature-Karten wegfällt:
 
-Vier Fragen als eingeklapptes Accordion, gespiegelt im `FAQPage`-JSON-LD. Trägt „Schnitzeljagd" als Suchbegriff und beantwortet Preis, Account, Alter, Aufwand.
+> **Was kann ich in eine Quest einbauen?**
+> Jede Station kann fünf Bausteine kombinieren: Text, Bild, Audio, Video und Aufgaben. Als Aufgaben gibt es drei Typen — einen Code eintippen, Multiple Choice oder Elemente in die richtige Reihenfolge bringen. Weiter geht es erst, wenn die Aufgabe gelöst ist. Die Navigation zwischen den Stationen läuft über GPS: Ein Pfeil zeigt die Richtung, die Entfernung zählt herunter.
 
-**10 — Abschluss-CTA** *(ersetzt „Bereit für deine Quest?")*
+*Der Inhalt der drei gestrichenen Feature-Karten steht damit weiterhin im HTML und im JSON-LD — er unterbricht den Lesefluss aber nicht mehr. Wer die Frage nicht hat, scrollt vorbei; wer sie hat, klappt auf.*
+
+**8 — Abschluss-CTA** *(ersetzt „Bereit für deine Quest?")*
 
 > ## Deine Umgebung. Dein Abenteuer.
 >
-> **Erstelle jetzt kostenlos deine erste GPS-Rallye.**
+> **Erstelle jetzt kostenlos deine erste Quest.**
 >
 > Kein Abo. Kein Account. Einfach draußen spielen.
 >
-> `[Rallye erstellen]` → `/create`
+> `[Quest erstellen]` → `/create`
+
+### Was von der alten Seite wegfällt
+
+| Weg | Warum |
+|---|---|
+| Hero „Draußen ist das Spielfeld." | Ersetzt durch „Die reale Welt wird zum Spielfeld." |
+| Sektion **„Was drin steckt"** (drei Feature-Karten) | Entschieden am 2026-09-07: Die Seite soll Stimmung tragen, nicht Funktionen aufzählen. Der Inhalt wandert vollständig in die neue fünfte FAQ-Frage — er bleibt damit im HTML und im JSON-LD, unterbricht aber den Lesefluss nicht mehr |
+| Sektion **„Der Unterschied"** (Kostenlos kein Abo / Kein Account) | Entschieden am 2026-09-07: dritte Wiederholung derselben Aussage. Sie steht bereits im Hero („Kostenlos. Ohne Abo. Ohne Account."), im Abschluss-CTA und in zwei FAQ-Antworten |
+| Vier Anlass-Karten (Kindergeburtstag, Schulausflug, Ferienprogramm, Jugendgruppe & Verein) | Gehen in den vier Zielgruppen-Karten auf |
+| „Kein technisches Vorwissen nötig — wer eine Runde durch den Park kennt, hat in einer halben Stunde eine fertige Schnitzeljagd." | Entschieden am 2026-09-07: bleibt ersatzlos draußen. Der Vorwissen-Teil steht sinngemäß in Sektion 4; die Zeitangabe bleibt allein der FAQ-Antwort „Wie lange dauert das Erstellen?" vorbehalten und wird nicht zum Verkaufsargument erhoben |
+| Abschluss-CTA „Bereit für deine Quest?" | Ersetzt durch „Deine Umgebung. Dein Abenteuer." |
+
+**Formaler Rhythmus der neuen Seite:** Text → Text → Chips → Text → Schritte → Karten → Accordion → Box. Nie zweimal dieselbe Darstellungsform hintereinander.
 
 ### Was sich außerhalb der Seiten-Copy ändert
 
@@ -1192,8 +1234,10 @@ Vier Fragen als eingeklapptes Accordion, gespiegelt im `FAQPage`-JSON-LD. Trägt
 - `src/app/(info)/about/page.tsx` — neue Sektionsfolge und Copy nach obiger Vorlage
 - Metadaten derselben Datei: `title`, `description`, `keywords`, `openGraph`
 - Hero-CTA-Ziele auf `/create` und `/anleitung`
-- Neue Sektionstypen: Orte-Reihe (Sektion 3), nummerierte Schritte (Sektion 6), Zielgruppen-Karten mit Emoji (Sektion 7)
-- Bestehende Konstanten `FEATURES`, `DIFFERENCES`, `FAQ` und das JSON-LD bleiben; `OCCASIONS` wird durch `AUDIENCES` ersetzt
+- Neue Sektionstypen: Orte-Reihe (Sektion 3), nummerierte Schritte (Sektion 5), Zielgruppen-Karten mit Emoji (Sektion 6)
+- Konstanten: `FAQ` wächst um die fünfte Frage und speist wie bisher Accordion **und** JSON-LD aus einer Quelle; `OCCASIONS` wird durch `AUDIENCES` ersetzt; **`FEATURES` und `DIFFERENCES` entfallen ersatzlos** samt der zugehörigen Sektionen
+- Nicht mehr benötigte lucide-Icons (`Compass`, `Layers`, `Puzzle`, `Wallet`, `UserX`) aus den Imports entfernen
+- Vokabular-Prüfung vor Abschluss: „Rallye" darf **nur** im Hero vorkommen, sonst nirgends im sichtbaren Seitentext
 
 ### Bleibt unangetastet
 
