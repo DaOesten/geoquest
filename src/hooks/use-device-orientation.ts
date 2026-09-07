@@ -18,11 +18,40 @@ export interface UseDeviceOrientationReturn {
   canRequestPermission: boolean;
 }
 
-function isIOS(): boolean {
+/**
+ * Existiert die iOS-Sensorfreigabe-API? Notwendige, aber **nicht hinreichende**
+ * Bedingung für iOS — Desktop-Chrome stellt `requestPermission` ebenfalls als
+ * Funktion bereit (gemessen: Chrome 152, 2026-09-07).
+ */
+function hasRequestPermissionApi(): boolean {
   return (
     typeof DeviceOrientationEvent !== "undefined" &&
-    typeof (DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> }).requestPermission === "function"
+    typeof (DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> })
+      .requestPermission === "function"
   );
+}
+
+/**
+ * Echte iOS-Erkennung (BUG-6, Edge Case 13).
+ *
+ * Bis 2026-09-07 galt allein `typeof requestPermission === "function"` als
+ * iOS-Beweis. Chrome erfüllt das ebenfalls, bekam dadurch den
+ * "Kompass aktivieren"-Button — der dort in eine Sackgasse führt, weil
+ * `requestPermission()` `denied` liefert. Deshalb zusätzlich ein
+ * Plattform-Signal.
+ *
+ * iPadOS meldet sich als "MacIntel" mit Touch-Punkten, daher die zweite
+ * Bedingung. `maxTouchPoints` schließt echte Macs aus (dort 0).
+ */
+function isIOS(): boolean {
+  if (!hasRequestPermissionApi()) return false;
+  if (typeof navigator === "undefined") return false;
+
+  const ua = navigator.userAgent;
+  const isIPhoneOrIPad = /iPad|iPhone|iPod/.test(ua);
+  const isIPadOS = ua.includes("Macintosh") && navigator.maxTouchPoints > 1;
+
+  return isIPhoneOrIPad || isIPadOS;
 }
 
 export function useDeviceOrientation(): UseDeviceOrientationReturn {
@@ -58,6 +87,10 @@ export function useDeviceOrientation(): UseDeviceOrientationReturn {
       return;
     }
 
+    // Zweite Verteidigungslinie (Edge Case 14): Ein `denied` oder ein Fehler
+    // muss immer im "Laufe ein paar Schritte"-Zustand landen, damit der Screen
+    // nie ohne Erklärung zurückbleibt — unabhängig davon, ob die
+    // Plattformerkennung oben richtig lag.
     if (isIOS()) {
       try {
         const result = await (

@@ -85,4 +85,12 @@ Beschlossene Lösung (zwei unabhängige Schutzebenen):
 
 Ebene 2 macht das Verhalten auch auf **Android-Chrome** korrekt, das lokal nicht messbar ist (kein Gerät, kein lauffähiges Chromium-Binary) — als offene Frage in der Spec vermerkt, für die Korrektheit aber unkritisch.
 
-Spec ist aktualisiert (2 neue Acceptance Criteria, Edge Cases 13–14, 2 Technical Requirements, 2 Decision-Log-Einträge, 1 Open Question). **Nächster Schritt `/frontend`.**
+Spec ist aktualisiert (2 neue Acceptance Criteria, Edge Cases 13–14, 2 Technical Requirements, 2 Decision-Log-Einträge, 1 Open Question).
+
+**Frontend umgesetzt am 2026-09-07.** `isIOS()` in `use-device-orientation.ts` ist aufgeteilt in `hasRequestPermissionApi()` (notwendig) und eine echte Plattformprüfung (UA + `maxTouchPoints` für iPadOS). Die zweite Verteidigungslinie war bereits im Code vorhanden und ist jetzt durch Tests festgehalten. `navigation-screen.tsx` blieb unverändert — die Render-Logik war korrekt, sie bekam nur ein falsches `canRequestPermission`.
+
+Für den Hook gab es bisher **keine Unit-Tests** — genau die Lücke, durch die der Fehler live gehen konnte. Jetzt 9 Tests in `use-device-orientation.test.ts`, per Gegenprobe abgesichert (mit alter Erkennung fallen 3 davon um). Der ursprünglich fehlschlagende E2E-Test besteht auf echtem Chrome 152; PROJ-3 19/19 auf Chrome, volle Suite **285 passed / 2 skipped / 0 failed** auf Mobile Safari, Unit-Suite 186/186, Build und Lint sauber.
+
+Weiterhin gilt: Die reguläre `playwright.config.ts` ist **unverändert** (Chromium-Binary weiterhin kaputt), der Chrome-Lauf lief über eine temporäre Config. Ohne `channel: 'chrome'` kann die Standard-Suite diese Klasse von Fehlern nicht sehen.
+
+**Nächster Schritt `/qa`.**

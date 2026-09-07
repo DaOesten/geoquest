@@ -6,7 +6,7 @@
 
 > **Refinement (2026-09-06) — umgesetzt, deployt und QA-geprüft:** Zwei stille Ausfallmodi ergänzt — GPS-Fix bleibt trotz erteilter Permission aus, und der Richtungspfeil hat keine Richtung. Siehe Abschnitte "Permission-Flow", "Richtungsanzeige ohne Heading", Edge Cases 9–12 und die Implementation Notes vom 2026-09-06.
 
-> **Refinement (2026-09-07) — BUG-6 geklärt, noch nicht umgesetzt:** Die iOS-Erkennung hinter dem "Kompass aktivieren"-Button ist zu grob. Sie schließt allein daraus auf iOS, dass `DeviceOrientationEvent.requestPermission` eine Funktion ist — das trifft auf Desktop-Chrome ebenfalls zu. Folge: Chrome-Nutzer bekommen einen Button angeboten, der garantiert fehlschlägt, statt des Hinweises, der ihnen hilft. BUG-6 war als vermutliches Testumgebungs-Artefakt notiert und ist als **echter Produktfehler bestätigt**. Siehe Acceptance Criteria "Richtungsanzeige ohne Heading", Edge Cases 13–14, Technical Requirements und Decision Log.
+> **Refinement (2026-09-07) — BUG-6 geklärt und umgesetzt (QA offen):** Die iOS-Erkennung hinter dem "Kompass aktivieren"-Button ist zu grob. Sie schließt allein daraus auf iOS, dass `DeviceOrientationEvent.requestPermission` eine Funktion ist — das trifft auf Desktop-Chrome ebenfalls zu. Folge: Chrome-Nutzer bekommen einen Button angeboten, der garantiert fehlschlägt, statt des Hinweises, der ihnen hilft. BUG-6 war als vermutliches Testumgebungs-Artefakt notiert und ist als **echter Produktfehler bestätigt**. Siehe Acceptance Criteria "Richtungsanzeige ohne Heading", Edge Cases 13–14, Technical Requirements und Decision Log.
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — für Routing und UI-Rahmen
@@ -429,6 +429,43 @@ sich der Richtungspfeil auf dem iPhone nicht bewegte.
 - Bei ausstehender iOS-Sensorfreigabe erscheint ein "Kompass aktivieren"-Button
   statt des Hinweises "Laufe ein paar Schritte" (der dort nicht hilft)
 - Hinweistext von 9px `text-tech` auf `text-sm font-body` angehoben
+
+### Nachtraegliche Korrektur: BUG-6 — falsche iOS-Erkennung (2026-09-07)
+
+Umsetzung des Refinements vom selben Tag. Der Fehler stammt aus der Ergaenzung
+vom 2026-09-06 (Zeile darueber): der neue "Kompass aktivieren"-Button erschien
+auch dort, wo es gar keine iOS-Sensorfreigabe gibt.
+
+**`use-device-orientation.ts`**
+- `isIOS()` prueft nicht mehr allein, ob `DeviceOrientationEvent.requestPermission`
+  eine Funktion ist. Desktop-Chrome erfuellt das ebenfalls (gemessen: Chrome 152)
+  und bekam dadurch den Button, dessen `requestPermission()` dort `denied` liefert —
+  eine Sackgasse vor dem eigentlich hilfreichen Hinweis
+- Aufgeteilt in `hasRequestPermissionApi()` (notwendige Bedingung) und `isIOS()`
+  (zusaetzlich UA-Pruefung auf iPhone/iPad/iPod)
+- iPadOS meldet sich als "Macintosh" und wird ueber `maxTouchPoints > 1` erkannt;
+  ein echter Mac (0 Touch-Punkte) faellt korrekt heraus
+- Die zweite Verteidigungslinie (Edge Case 14) war bereits vorhanden und ist jetzt
+  durch Tests abgesichert: beide `denied`-Pfade setzen `permission: "denied"`,
+  wodurch `canRequestPermission` false wird und der "Laufe ein paar Schritte"-Hinweis
+  erscheint. Damit ist das Verhalten auch auf ungetestetem Android-Chrome korrekt
+
+**`use-device-orientation.test.ts` (neu)**
+- Fuer diesen Hook gab es bisher **keine** Unit-Tests — die Luecke, durch die der
+  Fehler ueberhaupt live gehen konnte. Jetzt 9 Tests: 5 zur Plattformerkennung
+  (Desktop-Chrome, Android-Chrome, iPhone, iPadOS, echter Mac), 3 zum
+  `denied`/Fehler-Rueckfall, 1 zur nicht unterstuetzten Umgebung
+- Gegenprobe durchgefuehrt: mit der alten Erkennung schlagen 3 der 9 Tests fehl,
+  mit der Korrektur bestehen alle — die Tests koennen den Regress also wirklich fangen
+
+**Keine Aenderung an `navigation-screen.tsx`** — die Render-Logik war korrekt, sie
+bekam nur ein falsches `canRequestPermission` geliefert.
+
+**Verifikation:** Der ursprünglich fehlschlagende E2E-Test
+(`"explains why the arrow has no direction"`) besteht jetzt auf echtem Chrome 152.
+PROJ-3-Suite 19/19 auf Chrome, volle E2E-Suite 285 passed / 2 skipped / 0 failed auf
+Mobile Safari, Unit-Suite 186/186, Build und Lint sauber (6 vorbestehende
+`<img>`-Warnungen).
 
 **Tests:** `src/hooks/use-geolocation.test.ts` neu (10 Tests) — deckt Suchzustand,
 15s-Timeout, Error-Code-Mapping, Abgrenzung zu `denied`, Retry und `insecure-context` ab.
