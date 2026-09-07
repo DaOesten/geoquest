@@ -1,12 +1,12 @@
 # PROJ-3: Player — GPS-Navigation
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-08-23
 **Last Updated:** 2026-09-07
 
 > **Refinement (2026-09-06) — umgesetzt, deployt und QA-geprüft:** Zwei stille Ausfallmodi ergänzt — GPS-Fix bleibt trotz erteilter Permission aus, und der Richtungspfeil hat keine Richtung. Siehe Abschnitte "Permission-Flow", "Richtungsanzeige ohne Heading", Edge Cases 9–12 und die Implementation Notes vom 2026-09-06.
 
-> **Refinement (2026-09-07) — BUG-6 geklärt und umgesetzt (QA offen):** Die iOS-Erkennung hinter dem "Kompass aktivieren"-Button ist zu grob. Sie schließt allein daraus auf iOS, dass `DeviceOrientationEvent.requestPermission` eine Funktion ist — das trifft auf Desktop-Chrome ebenfalls zu. Folge: Chrome-Nutzer bekommen einen Button angeboten, der garantiert fehlschlägt, statt des Hinweises, der ihnen hilft. BUG-6 war als vermutliches Testumgebungs-Artefakt notiert und ist als **echter Produktfehler bestätigt**. Siehe Acceptance Criteria "Richtungsanzeige ohne Heading", Edge Cases 13–14, Technical Requirements und Decision Log.
+> **Refinement (2026-09-07) — BUG-6 geklärt, umgesetzt und QA-geprüft:** Die iOS-Erkennung hinter dem "Kompass aktivieren"-Button ist zu grob. Sie schließt allein daraus auf iOS, dass `DeviceOrientationEvent.requestPermission` eine Funktion ist — das trifft auf Desktop-Chrome ebenfalls zu. Folge: Chrome-Nutzer bekommen einen Button angeboten, der garantiert fehlschlägt, statt des Hinweises, der ihnen hilft. BUG-6 war als vermutliches Testumgebungs-Artefakt notiert und ist als **echter Produktfehler bestätigt**. Siehe Acceptance Criteria "Richtungsanzeige ohne Heading", Edge Cases 13–14, Technical Requirements und Decision Log.
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — für Routing und UI-Rahmen
@@ -767,3 +767,110 @@ Zustaende dauerhaft ungeschuetzt gegen Regression.
 **Commit:** 1a0acc5
 **Tag:** v1.9.0-PROJ-3
 **Verifiziert:** `/play` liefert HTTP 200 mit frischem `age: 0` (Vercel-Cache) direkt nach dem Push — konsistent mit einem gerade abgeschlossenen Auto-Deploy über die GitHub-Integration. Keine Live-Klick-Verifikation durch den Nutzer im Rahmen dieses Deploys (siehe QA-Hinweis oben zur fehlenden Browser-Bestätigung dieser Session).
+
+---
+
+## QA Test Results — BUG-6: Falsche iOS-Erkennung (2026-09-07)
+
+**Getestet:** 2026-09-07
+**Scope:** Die Korrektur der Plattformerkennung in `use-device-orientation.ts` und ihre
+Regressionsabsicherung. Nicht erneut geprueft wurden die uebrigen PROJ-3-Kriterien, die
+seit dem 2026-09-06 unveraendert sind — sie laufen aber in jedem Suite-Lauf mit.
+
+### Acceptance Criteria
+
+| # | Kriterium | Ergebnis | Nachweis |
+|---|-----------|----------|----------|
+| 1 | Browser mit `requestPermission`, aber ohne echte Sensorfreigabe (Desktop-Chrome) zeigt **keinen** "Kompass aktivieren"-Button, sondern den Hinweis | PASS | E2E auf echtem Chrome 152; Unit-Test "Desktop-Chrome" |
+| 2 | Nach abgelehnter/fehlgeschlagener Freigabe erscheint sofort der Hinweis — kein Zustand ohne Erklaerung | PASS | 2 Unit-Tests (`denied` und `throw`), E2E auf beiden Engines |
+| 3 | iOS behaelt den "Kompass aktivieren"-Button (keine Regression) | PASS | E2E auf Mobile Safari (iPhone-UA), Unit-Test "iPhone" |
+| 4 | Pfeil richtet sich nach erteilter Freigabe ohne Neuladen aus | PASS | Unit-Test mit `webkitCompassHeading`-Event |
+| 5 | Entfernung bleibt in jedem Kompass-Zustand nutzbar | PASS | E2E "keeps the distance usable in every compass state" |
+
+### Edge Cases
+
+| # | Fall | Ergebnis | Anmerkung |
+|---|------|----------|-----------|
+| 13 | Nicht-iOS-Browser mit `requestPermission`-API | PASS | Desktop-Chrome **und** Android-Chrome (UA-Sonde) liefern `canRequestPermission=false` |
+| 14 | Freigabe abgelehnt / Aufruf wirft | PASS | Beide Pfade setzen `permission="denied"` → Hinweis erscheint |
+| — | Chrome auf iOS (`CriOS`) | PASS | `true` — korrekt, ist WebKit mit echter Sensorfreigabe |
+| — | Firefox auf iOS (`FxiOS`) | PASS | `true` — dito |
+| — | iPad mit "Desktop-Website anfordern" | PASS | `true` via `maxTouchPoints > 1` |
+| — | Echter Mac (0 Touch-Punkte) | PASS | `false` — wird nicht faelschlich fuer ein iPad gehalten |
+| — | Android-Firefox / Desktop-Firefox | PASS | `false` (keine `requestPermission`-API) |
+
+Die letzten fuenf Faelle wurden mit einer temporaeren UA-Sonde gegen die echte
+Implementierung gemessen, nicht nur durchdacht. Die Sonde ist nach der Messung entfernt.
+
+### Gegenprobe (koennen die Tests den Fehler ueberhaupt fangen?)
+
+Beide Testebenen wurden gegen die **alte** Erkennung laufen gelassen:
+
+| Ebene | Mit alter Erkennung | Mit Korrektur |
+|-------|---------------------|---------------|
+| Unit (9 Tests) | **3 failed** | 9 passed |
+| E2E BUG-6 (3 Tests, Chrome) | **1 failed** | 3 passed |
+
+Damit ist belegt, dass die Suite den Regress tatsaechlich faengt und nicht nur zufaellig gruen ist.
+
+### Automatisierte Tests
+
+| Suite | Ergebnis |
+|-------|----------|
+| Unit (Vitest) | ✅ 186/186, 13 Dateien |
+| E2E Mobile Safari (WebKit) | ✅ 288 passed / 2 skipped / **0 failed** |
+| E2E Desktop Chrome 152 | ✅ **290 passed / 0 failed** |
+| PROJ-3-Suite | 19 → **22 Tests** (3 neue fuer BUG-6) |
+| Build / Lint | ✅ 0 Errors (6 vorbestehende `<img>`-Warnungen) |
+
+Der vollstaendige Chrome-Lauf ist der erste gruene Gesamtlauf auf dieser Engine im Projekt.
+
+### Bugs Found
+
+**Keine Bugs im Produktcode.**
+
+Ein Fehler in meinem **eigenen neuen Test**, waehrend dieser QA-Runde gefunden und behoben:
+Der Test "shows the hint, not the compass button" pruefte Chromes Verhalten
+bedingungslos und schlug auf Mobile Safari fehl. Ursache war der Test, nicht das
+Produkt: Das WebKit-Projekt faehrt eine iPhone-UA (`Mozilla/5.0 (iPhone; CPU iPhone OS
+15_0 …)`), dort ist der Button **korrekt**. Der Test verzweigt jetzt nach echter
+Plattform und besteht auf beiden Engines — die Gegenprobe auf Chrome bleibt scharf.
+
+### Security Audit (Red Team)
+
+| Pruefung | Ergebnis |
+|----------|----------|
+| Wird die UA gerendert, gespeichert oder gesendet? | Nein — nur lokal fuer eine Verzweigung gelesen, kein Sink |
+| `dangerouslySetInnerHTML` / `eval` im geaenderten Pfad | Keine Treffer |
+| Persistenz (localStorage / fetch) im Hook | Keine |
+| Manipulierbarkeit der UA durch den Nutzer | Ja, aber ohne Sicherheitsrelevanz: Wer seine eigene UA faelscht, blendet sich hoechstens selbst einen Button ein. Keine Rechte-, Daten- oder Vertrauensgrenze beruehrt |
+
+Keine Befunde.
+
+### Design System
+
+- "Kompass aktivieren"-Button: `h-11` = **44px** — erfuellt das Touch-Target-Minimum
+- Hinweistext: `text-sm` = **14px** — ueber der 12px-Schwelle des E2E-Tests
+
+### Nicht abgedeckt (ehrliche Einschraenkung)
+
+- **Firefox:** `firefox-1509` ist trotz gegenteiliger Meldung von
+  `playwright install --dry-run` **nicht vorhanden**, und in `/Applications` liegt kein
+  Firefox. Die Cross-Browser-Anforderung ist damit auf zwei von drei Engines erfuellt.
+  Fuer diesen Fix ist das Risiko gering: Firefox stellt `requestPermission` gar nicht
+  bereit, faellt also ueber `hasRequestPermissionApi()` heraus (per Sonde bestaetigt).
+- **Echtes Android-Geraet:** weiterhin ungeprueft. Die UA-Sonde deckt den Fall ab,
+  ein physisches Geraet ersetzt sie nicht.
+- **Echtes iPhone:** der iOS-Pfad ist hier nur ueber die iPhone-UA von WebKit geprueft.
+  Die Freigabe selbst wurde am 2026-09-06 auf einem echten Geraet bestaetigt und
+  ist durch diese Aenderung nicht beruehrt.
+- **Playwright-Konfiguration unveraendert:** Der Chrome-Lauf lief ueber eine temporaere
+  Config mit `channel: 'chrome'`. `playwright.config.ts` zeigt weiterhin auf das kaputte
+  Chromium-Binary (428 KB). **Solange das so bleibt, sieht die Standard-Suite genau die
+  Fehlerklasse nicht, aus der BUG-6 entstanden ist.** Empfehlung unveraendert — QA fixt nicht.
+
+### Production-Ready Decision
+
+**READY** — keine Critical- oder High-Bugs. Der urspruengliche Fehler ist auf der Engine
+behoben, auf der er auftrat, auf beiden verfuegbaren Engines verifiziert und durch eine
+per Gegenprobe geschaerfte Regressionssuite abgesichert.

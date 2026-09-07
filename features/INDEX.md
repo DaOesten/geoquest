@@ -18,7 +18,7 @@
 |----|---------|----------|--------------|--------|------|---------|
 | PROJ-1 | App Shell & Mode Switch | P0 | None | Deployed | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
-| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | In Review | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
+| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Approved | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
 | PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
@@ -102,4 +102,10 @@ Für den Hook gab es bisher **keine Unit-Tests** — genau die Lücke, durch die
 
 Weiterhin gilt: Die reguläre `playwright.config.ts` ist **unverändert** (Chromium-Binary weiterhin kaputt), der Chrome-Lauf lief über eine temporäre Config. Ohne `channel: 'chrome'` kann die Standard-Suite diese Klasse von Fehlern nicht sehen.
 
-**Nächster Schritt `/qa`.**
+**QA am 2026-09-07 abgeschlossen: keine Bugs im Produktcode, Production-Ready.** Beide Testebenen wurden per Gegenprobe geschärft (mit alter Erkennung fallen 3 Unit- und 1 E2E-Test um) — die Suite fängt den Regress also wirklich. Eine UA-Sonde hat sieben Plattform-Grenzfälle gegen die echte Implementierung gemessen, darunter Chrome/Firefox auf iOS, iPad mit „Desktop-Website" und echter Mac; alle korrekt. Ein Fehler im **neuen Test selbst** (engine-blind, schlug auf WebKit fehl) wurde dabei gefunden und behoben — das Produkt war auf beiden Engines richtig.
+
+Suiten: Unit 186/186, Mobile Safari 288 passed / 2 skipped / 0 failed, **Desktop Chrome 152: 290 passed / 0 failed** — der erste grüne Gesamtlauf auf dieser Engine im Projekt. PROJ-3 jetzt 22 statt 19 Tests.
+
+Offen bleiben: **Firefox** (Binary fehlt trotz gegenteiliger `--dry-run`-Meldung, kein Firefox in `/Applications`; Risiko gering, da Firefox `requestPermission` gar nicht bereitstellt) und ein **echtes Android-Gerät**. Unverändert gilt: `playwright.config.ts` zeigt weiter auf das kaputte Chromium-Binary — solange das so bleibt, sieht die Standard-Suite genau die Fehlerklasse nicht, aus der BUG-6 entstand.
+
+**Nächster Schritt `/deploy`.**

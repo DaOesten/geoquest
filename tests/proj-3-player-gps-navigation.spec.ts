@@ -409,4 +409,88 @@ test.describe("PROJ-3: Player — GPS-Navigation", () => {
       expect(fontSize).toBeGreaterThanOrEqual(12);
     });
   });
+
+  /**
+   * BUG-6 (2026-09-07): Die iOS-Erkennung schloss allein aus der Existenz von
+   * `DeviceOrientationEvent.requestPermission` auf iOS. Desktop-Chrome erfuellt
+   * das ebenfalls und bekam dadurch den "Kompass aktivieren"-Button, dessen
+   * Aufruf dort `denied` liefert — eine Sackgasse vor dem hilfreichen Hinweis.
+   *
+   * Der erste Test faengt den Regress auf jeder Engine: er stellt die API
+   * bereit, ohne die Plattform zu aendern. Vor der Korrektur erschien hier der
+   * Button, jetzt der Hinweis.
+   */
+  test.describe("BUG-6: Kompass-Freigabe nur auf echtem iOS", () => {
+    test("shows the hint, not the compass button, when only the API looks like iOS", async ({
+      page,
+      context,
+    }) => {
+      await seedQuest(page);
+      await clearProgress(page);
+      await context.grantPermissions(["geolocation"]);
+      await context.setGeolocation({ latitude: 53.5, longitude: 10.0 });
+
+      // requestPermission vortaeuschen, ohne die Plattform zu aendern.
+      await page.addInitScript(() => {
+        const DOE = (window as unknown as Record<string, unknown>)
+          .DeviceOrientationEvent as Record<string, unknown> | undefined;
+        if (DOE) DOE.requestPermission = async () => "denied";
+      });
+
+      await page.goto(`/play/${TEST_QUEST.id}`);
+      await page.getByRole("button", { name: /Los geht/ }).click();
+      await page.getByText("Erste Station").first().click();
+
+      // Die erwartete Anzeige haengt an der echten Plattform, nicht an der API:
+      // Das Projekt "Mobile Safari" faehrt eine iPhone-UA — dort ist der Button
+      // korrekt. Auf Desktop-Chrome darf er gerade nicht erscheinen (BUG-6).
+      const isRealIOS = await page.evaluate(() =>
+        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.userAgent.includes("Macintosh") && navigator.maxTouchPoints > 1)
+      );
+
+      if (isRealIOS) {
+        await expect(page.getByRole("button", { name: /Kompass aktivieren/ })).toBeVisible();
+      } else {
+        await expect(page.getByText(/Laufe ein paar Schritte/)).toBeVisible();
+        await expect(page.getByRole("button", { name: /Kompass aktivieren/ })).toHaveCount(0);
+      }
+    });
+
+    test("never leaves the screen without advice after a denied sensor request", async ({
+      page,
+      context,
+    }) => {
+      await seedQuest(page);
+      await clearProgress(page);
+      await context.grantPermissions(["geolocation"]);
+      await context.setGeolocation({ latitude: 53.5, longitude: 10.0 });
+      await page.goto(`/play/${TEST_QUEST.id}`);
+      await page.getByRole("button", { name: /Los geht/ }).click();
+      await page.getByText("Erste Station").first().click();
+
+      // Auf echtem iOS (WebKit) steht hier der Button; auf Chrome der Hinweis.
+      // Beide Wege muessen in einer verwertbaren Anweisung enden (Edge Case 14).
+      const button = page.getByRole("button", { name: /Kompass aktivieren/ });
+      if (await button.count()) {
+        await button.click();
+      }
+
+      await expect(page.getByText(/Laufe ein paar Schritte/)).toBeVisible({ timeout: 5_000 });
+    });
+
+    test("keeps the distance usable in every compass state", async ({ page, context }) => {
+      await seedQuest(page);
+      await clearProgress(page);
+      await context.grantPermissions(["geolocation"]);
+      await context.setGeolocation({ latitude: 53.5, longitude: 10.0 });
+      await page.goto(`/play/${TEST_QUEST.id}`);
+      await page.getByRole("button", { name: /Los geht/ }).click();
+      await page.getByText("Erste Station").first().click();
+
+      const distance = page.locator("div.font-display").first();
+      await expect(distance).toContainText(/\d/);
+      await expect(distance).not.toContainText("—");
+    });
+  });
 });
