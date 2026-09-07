@@ -18,7 +18,7 @@
 |----|---------|----------|--------------|--------|------|---------|
 | PROJ-1 | App Shell & Mode Switch | P0 | None | Deployed | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
-| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | In Progress | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
+| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | In Review | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
 | PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
@@ -69,6 +69,15 @@ Bewusst nicht mitgezogen: der Modul-Editor (PROJ-8) hat dieselbe `h-[92dvh]`-Str
 - **iOS-Sensorfreigabe beim Wiedereinstieg übersprungen** — Kompass bleibt die ganze Session stumm (wahrscheinlichste Ursache des Testbefunds)
 
 Spec ist aktualisiert (Acceptance Criteria, Edge Cases 9–12, Technical Requirements, Decision Log). **Frontend umgesetzt am 2026-09-06** (nach Deploy des Navigations-Umbaus, daher kein Konflikt in `navigation-screen.tsx`): neue Zustände `no-fix`/`insecure-context`/`searching`, richtungsloser Pfeil, "Kompass aktivieren"-Button für iOS. 10 neue Unit-Tests. **Am 2026-09-06 ohne QA nach Production deployt** (Commit `cb3b6a2`, Tag `v1.22.0-PROJ-3`) — bewusste Entscheidung, weil der iOS-Kompass-Pfad nur auf einem echten iPhone über HTTPS pruefbar ist und `/qa` dieselben Suiten wie das Frontend-Build fahren wuerde. **QA am 2026-09-06 nachgezogen: keine Bugs, Production-Ready.** Der iOS-Kompass-Pfad ist auf einem echten iPhone bestätigt; 6 neue E2E-Tests schließen die Regressionslücke (PROJ-3 jetzt 19 statt 13 Tests, Suite 267/267 grün). Offen bleibt nur die Chromium-/Android-Abdeckung — Browser-Binary lokal nicht lauffähig.
+
+## Offenes Refinement: `/about` wird zur Marketing-Landingpage (2026-09-07)
+**PROJ-13** war deployed und bleibt auf In Progress — der Betreiber hat neue Marketing-Copy geliefert. Die bisherige `/about` erklärt das Produkt sachlich, verkauft es aber nicht: Der Hero („Draußen ist das Spielfeld.") beschreibt einen Zustand statt ein Versprechen, und die Seite beantwortet „Was ist das?" ausführlicher als „Warum sollte ich das wollen?". Für die einzige Seite, die per QR-Code, Social-Media-Link oder Suchergebnis den Erstkontakt trägt, ist das die falsche Gewichtung.
+
+Elf gelieferte Textblöcke werden zu **zehn Sektionen** zusammengeführt — drei Dopplungen in der Vorlage werden gebündelt statt einzeln umgesetzt. Drei Rahmenentscheidungen: `/about` wird ersetzt statt um eine zweite Marketing-Route ergänzt; primäre Zielgruppe bleiben die **Ersteller** (das „du" der Copy adressiert den Erwachsenen, nicht das Kind); Vokabular ist **„Rallye" außen, „Quest" innen, „Schnitzeljagd" in den Metadaten** — der SEO-Begriff mit dem größten Volumen bleibt im Fundament.
+
+Neu hinzu kommen ein Orte-Block, eine Game-Designer-Sektion, drei nummerierte Schritte und vier Zielgruppen-Karten (die die bisherigen vier Anlass-Karten ersetzen). Behalten werden die drei Feature-Karten, „Der Unterschied" und die FAQ — Stimmungscopy beantwortet nicht, was die App konkret kann. Die Hero-CTAs führen neu direkt nach `/create` statt über den Mode-Switch `/`.
+
+Spec ist aktualisiert (Seitenaufbau, 15 neue Acceptance Criteria, 9 Decision-Log-Einträge, vollständige Copy im Abschnitt „Refinement 4"). `/anleitung`, `/impressum`, `/datenschutz` und der gesamte Seitenrahmen bleiben unangetastet. **Nächster Schritt: `/frontend`.**
 
 ## Next Available ID: PROJ-14
 
