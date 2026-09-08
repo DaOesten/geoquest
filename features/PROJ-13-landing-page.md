@@ -1,9 +1,9 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: In Progress
-_Refinement 4 (`/about` als Marketing-Landingpage) ist am 2026-09-08 gebaut, im Browser verifiziert und testabgedeckt — QA steht aus. Refinement 3 (gemeinsames Burger-Menu) ist deployed und verifiziert._
+## Status: Approved
+_Refinement 4 (`/about` als Marketing-Landingpage) ist gebaut und am 2026-09-08 QA-geprüft: 23/23 Acceptance Criteria erfüllt, keine Critical/High-Bugs, produktionsreif. Offen ist BUG-7 (Medium, CTA unter dem Falz auf 1366×768 und 1280×800). Refinement 3 (gemeinsames Burger-Menu) ist deployed und verifiziert._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-08 (Refinement 4 — Frontend umgesetzt, danach auf sieben Sektionen gestrafft)
+**Last Updated:** 2026-09-08 (Refinement 4 — QA abgeschlossen, Production-Ready)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -174,29 +174,29 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] Angenommen ein Nutzer betrachtet den Footer auf einem Mobilgerät (360–430px), dann sind alle Links mindestens 44px hoch antippbar und nichts läuft über den Rand
 
 ### Neue `/about`-Landingpage (Refinement 4, 2026-09-07)
-- [ ] Angenommen ein Besucher öffnet `/about`, wenn die Seite lädt, dann lautet die Hauptüberschrift „Die reale Welt wird zum Spielfeld." und darunter steht die Zeile „Kostenlos. Ohne Abo. Ohne Account." als eigenständige, hervorgehobene Zeile
-- [ ] Angenommen ein Besucher ist im Hero-Bereich, wenn er den primären Button „Rallye erstellen" klickt, dann gelangt er direkt nach `/create` — ohne Zwischenstopp auf dem Mode-Switch `/`
-- [ ] Angenommen ein Besucher ist im Hero-Bereich, wenn er den sekundären Button „Mit KI bauen" klickt, dann gelangt er nach `/anleitung`
-- [ ] Angenommen ein Besucher scrollt `/about` von oben nach unten, wenn er die Sektionen zählt, dann sind es genau acht, in dieser Reihenfolge: Hero → Draußen spielen. Wie ein Game. → Jeder Ort kann ein Level sein. → Nicht nur spielen. Selber machen. → Eine Quest erstellen? Ganz einfach. → Für wen ist Geo Quest? → Häufige Fragen → Abschluss-CTA
-- [ ] Angenommen ein Besucher liest die Sektion „Jeder Ort kann ein Level sein", wenn er die Orte betrachtet, dann sind die fünf Orte (Park, Stadt, Schulhof, Wanderweg, Viertel) als eigenständige visuelle Elemente gesetzt und nicht als Aufzählung im Fließtext
-- [ ] Angenommen ein Besucher liest dieselbe Sektion zu Ende, wenn er die letzte Zeile liest, dann steht dort „Die Welt ist deine Spielkarte." als abschließende Merkzeile
-- [ ] Angenommen ein Besucher liest die Sektion „Eine Quest erstellen? Ganz einfach.", wenn er Schritt 03 liest, dann ist vom Weitergeben als Datei die Rede — nicht von einem Teilen-Link, den die App nicht anbietet
-- [ ] Angenommen ein Besucher liest „Für wen ist Geo Quest?", wenn die Sektion lädt, dann sieht er genau vier Zielgruppen-Karten (Familien, Schule & Pädagogik, Kinder & Jugendliche, Gruppen & Events), jede mit Emoji und Kurztext
-- [ ] Angenommen ein Besucher liest die Karte „Für Schule & Pädagogik", dann findet er dort den Lernpfad-Gedanken inklusive Fachbeispielen — ohne dass dafür eine eigene Sektion existiert
-- [ ] Angenommen ein Besucher erreicht das Seitenende, wenn er den Abschluss-CTA liest, dann lautet die Überschrift „Deine Umgebung. Dein Abenteuer." und der Button führt nach `/create`
-- [ ] Angenommen ein Besucher liest den Hero, wenn er die Subline betrachtet, dann steht dort „GPS-Rallye" — der einzige Ort der Seite, an dem das Wort „Rallye" vorkommt
-- [ ] Angenommen ein Besucher liest die Seite ab Sektion 2 vollständig durch, wenn er auf Begriffe achtet, dann heißt es überall „Quest" und an keiner Stelle mehr „Rallye" — auch die Buttons heißen „Quest erstellen"
-- [ ] Angenommen ein Besucher liest den Hero, wenn er den Wechsel von „GPS-Rallye" zu „Quest" bemerkt, dann gibt es dazu **keinen** erklärenden Satz — die Verknüpfung bleibt implizit
-- [ ] Angenommen ein Besucher sucht auf `/about` nach den Sektionen „Was drin steckt" oder „Der Unterschied", dann existieren beide nicht mehr
-- [ ] Angenommen ein Besucher öffnet die Häufigen Fragen, wenn er sie zählt, dann sind es fünf — die vier bisherigen wörtlich unverändert plus „Was kann ich in eine Quest einbauen?"
-- [ ] Angenommen ein Crawler oder KI-System wertet `/about` aus, wenn es die fünfte FAQ-Antwort liest, dann findet es dort die fünf Modultypen, die drei Aufgabentypen und die GPS-Navigation — also den vollständigen Inhalt der gestrichenen Feature-Karten, auch im `FAQPage`-JSON-LD
-- [ ] Angenommen ein Besucher sucht auf der Seite nach einer Zeitangabe zum Erstellen, dann findet er sie ausschließlich in der eingeklappten FAQ-Antwort, nicht im sichtbaren Marketing-Text
-- [ ] Angenommen ein Suchmaschinen-Crawler wertet `/about` aus, wenn er die Metadaten liest, dann enthält der Title weiterhin „Schnitzeljagd" und die Keyword-Liste zusätzlich „GPS-Rallye", „Rallye erstellen" und „Lernpfad draußen"
-- [ ] Angenommen ein Besucher öffnet `/about` auf einem Mobilgerät (360–430px), wenn er die gesamte Seite durchscrollt, dann ist alles lesbar ohne horizontales Scrollen, alle Touch-Targets sind ≥ 44px und die Emoji der Zielgruppen-Karten brechen das Layout nicht
-- [ ] Angenommen ein Besucher öffnet `/about` am Desktop (ab 1024px), wenn die Seite lädt, dann nutzen die mehrteiligen Sektionen (Orte, Schritte, Zielgruppen) die Breite mehrspaltig, ohne dass Textzeilen überdehnen
-- [ ] Angenommen ein Besucher scrollt die ganze Seite durch, wenn er auf die Darstellungsformen achtet, dann wechseln sie durchgehend ab (Text → Text → Chips → Text → Schritte → Karten → Accordion → Box) — nie zweimal dieselbe Form hintereinander
-- [ ] Angenommen ein Nutzer öffnet `/anleitung`, `/impressum` oder `/datenschutz`, wenn die Seiten laden, dann sind sie durch dieses Refinement unverändert
-- [ ] Angenommen ein Nutzer betrachtet den Header von `/about`, wenn er nach rechts schaut, dann steht dort weiterhin der Button „Zur App" sowie das Burger-Menu — beides unverändert aus Refinement 3
+- [x] Angenommen ein Besucher öffnet `/about`, wenn die Seite lädt, dann lautet die Hauptüberschrift „Die reale Welt wird zum Spielfeld." und darunter steht die Zeile „Kostenlos. Ohne Abo. Ohne Account." als eigenständige, hervorgehobene Zeile
+- [x] Angenommen ein Besucher ist im Hero-Bereich, wenn er den primären Button ~~„Rallye erstellen"~~ **„Quest erstellen"** klickt, dann gelangt er direkt nach `/create` — ohne Zwischenstopp auf dem Mode-Switch `/` _(Beschriftung angepasst am 2026-09-07: ab Sektion 2 gilt die App-Sprache, das schließt die Buttons ein)_
+- [x] Angenommen ein Besucher ist im Hero-Bereich, wenn er den sekundären Button „Mit KI bauen" klickt, dann gelangt er nach `/anleitung`
+- [x] Angenommen ein Besucher scrollt `/about` von oben nach unten, wenn er die Sektionen zählt, dann sind es genau **sieben**, in dieser Reihenfolge: Hero → Jeder Ort kann ein Level sein. → Nicht nur spielen. Selber machen. → Eine Quest erstellen? Ganz einfach. → Für wen ist Geo Quest? → Häufige Fragen → Abschluss-CTA _(„Draußen spielen. Wie ein Game." ist am 2026-09-08 entfallen, siehe Decision Log)_
+- [x] Angenommen ein Besucher liest die Sektion „Jeder Ort kann ein Level sein", wenn er die Orte betrachtet, dann sind die fünf Orte (Park, Stadt, Schulhof, Wanderweg, Viertel) als eigenständige visuelle Elemente gesetzt und nicht als Aufzählung im Fließtext
+- [x] Angenommen ein Besucher liest dieselbe Sektion zu Ende, wenn er die letzte Zeile liest, dann steht dort „Die Welt ist deine Spielkarte." als abschließende Merkzeile
+- [x] Angenommen ein Besucher liest die Sektion „Eine Quest erstellen? Ganz einfach.", wenn er Schritt 03 liest, dann ist vom Weitergeben als Datei die Rede — nicht von einem Teilen-Link, den die App nicht anbietet
+- [x] Angenommen ein Besucher liest „Für wen ist Geo Quest?", wenn die Sektion lädt, dann sieht er genau vier Zielgruppen-Karten (Familien, Schule & Pädagogik, Kinder & Jugendliche, Gruppen & Events), jede mit **Lucide-Icon** und Kurztext _(nicht Emoji: das Design System schließt sie aus)_
+- [x] Angenommen ein Besucher liest die Karte „Für Schule & Pädagogik", dann findet er dort den Lernpfad-Gedanken inklusive Fachbeispielen — ohne dass dafür eine eigene Sektion existiert
+- [x] Angenommen ein Besucher erreicht das Seitenende, wenn er den Abschluss-CTA liest, dann lautet die Überschrift „Deine Umgebung. Dein Abenteuer." und der Button führt nach `/create`
+- [x] Angenommen ein Besucher liest den Hero, wenn er die Subline betrachtet, dann steht dort „GPS-Rallye" — der einzige Ort der Seite, an dem das Wort „Rallye" vorkommt
+- [x] Angenommen ein Besucher liest die Seite ab Sektion 2 vollständig durch, wenn er auf Begriffe achtet, dann heißt es überall „Quest" und an keiner Stelle mehr „Rallye" — auch die Buttons heißen „Quest erstellen"
+- [x] Angenommen ein Besucher liest den Hero, wenn er den Wechsel von „GPS-Rallye" zu „Quest" bemerkt, dann gibt es dazu **keinen** erklärenden Satz — die Verknüpfung bleibt implizit
+- [x] Angenommen ein Besucher sucht auf `/about` nach den Sektionen „Was drin steckt" oder „Der Unterschied", dann existieren beide nicht mehr
+- [x] Angenommen ein Besucher öffnet die Häufigen Fragen, wenn er sie zählt, dann sind es fünf — die vier bisherigen wörtlich unverändert plus „Was kann ich in eine Quest einbauen?"
+- [x] Angenommen ein Crawler oder KI-System wertet `/about` aus, wenn es die fünfte FAQ-Antwort liest, dann findet es dort die fünf Modultypen, die drei Aufgabentypen und die GPS-Navigation — also den vollständigen Inhalt der gestrichenen Feature-Karten, auch im `FAQPage`-JSON-LD
+- [x] Angenommen ein Besucher sucht auf der Seite nach einer Zeitangabe zum Erstellen, dann findet er sie ausschließlich in der eingeklappten FAQ-Antwort, nicht im sichtbaren Marketing-Text
+- [x] Angenommen ein Suchmaschinen-Crawler wertet `/about` aus, wenn er die Metadaten liest, dann enthält der Title weiterhin „Schnitzeljagd" und die Keyword-Liste zusätzlich „GPS-Rallye", „Rallye erstellen" und „Lernpfad draußen"
+- [x] Angenommen ein Besucher öffnet `/about` auf einem Mobilgerät (360–430px), wenn er die gesamte Seite durchscrollt, dann ist alles lesbar ohne horizontales Scrollen und alle Touch-Targets sind ≥ 44px _(zusätzlich auf 320px geprüft; der Emoji-Teilsatz entfällt mit den Lucide-Icons)_
+- [x] Angenommen ein Besucher öffnet `/about` am Desktop (ab 1024px), wenn die Seite lädt, dann nutzen die mehrteiligen Sektionen (Orte, Schritte, Zielgruppen) die Breite mehrspaltig, ohne dass Textzeilen überdehnen
+- [x] Angenommen ein Besucher scrollt die ganze Seite durch, wenn er auf die Darstellungsformen achtet, dann wechseln sie durchgehend ab (Chips → Text → Schritte → Karten → Accordion → Box) — nie zweimal dieselbe Form hintereinander
+- [x] Angenommen ein Nutzer öffnet `/anleitung`, `/impressum` oder `/datenschutz`, wenn die Seiten laden, dann sind sie durch dieses Refinement unverändert
+- [x] Angenommen ein Nutzer betrachtet den Header von `/about`, wenn er nach rechts schaut, dann steht dort weiterhin der Button „Zur App" sowie das Burger-Menu — beides unverändert aus Refinement 3
 
 ### Prompt-Vorlage
 - [x] Angenommen ein Nutzer ist bei der Anleitungs-Sektion, wenn er die Seite betrachtet, dann ist die vollständige Prompt-Vorlage als lesbarer Text sichtbar und manuell markierbar
@@ -1305,3 +1305,131 @@ Damit sieben Sektionen statt acht; die Seite ist auf Desktop von ~3900px auf ~37
 **Tests:** Zwei Assertions auf die alte Sektionsfolge gezogen (Anzahl 6 statt 7 `<section>`, Titelliste ohne den entfallenen Eintrag), ein Wegfall-Check für die gestrichene Sektion ergänzt und **ein neuer Test**, der festhält, dass die Spielmechanik im Hero steht — wandert der Satz, fällt es auf. PROJ-13 jetzt **74 Tests**.
 
 **Verifikation:** Build und Lint sauber, Browser auf 390×844 und 1440×900 geprüft, **Gesamtsuite Chrome 313/313**, **Mobile Safari 310 passed / 2 skipped**, Unit 186/186.
+---
+
+## QA Test Results — Refinement 4: Marketing-Landingpage (2026-09-08)
+
+**Getestet:** `/about` in der Fassung nach Commit `9b45c2c` (sieben Sektionen)
+**Engines:** Desktop Chrome 152, Mobile Safari (WebKit). Firefox weiterhin nicht lauffähig (Binary fehlt trotz gegenteiliger `--dry-run`-Meldung).
+**Viewports:** 320, 360, 375, 430, 768, 1024, 1366, 1440, 1920 px
+
+### Acceptance Criteria
+
+Die AC-Liste im Spec-Abschnitt „Refinement 4" ist an drei Stellen **veraltet** — sie beschreibt den Stand vor zwei später getroffenen Entscheidungen. Getestet wurde gegen die Entscheidungen (Decision Log + Implementation Notes), nicht gegen den überholten Wortlaut. Die betroffenen Kriterien sind unten als „angepasst" markiert und in der AC-Liste selbst korrigiert.
+
+| # | Kriterium | Ergebnis |
+|---|-----------|----------|
+| 1 | Hauptüberschrift „Die reale Welt wird zum Spielfeld." + eigenständige Zeile „Kostenlos. Ohne Abo. Ohne Account." | **PASS** |
+| 2 | Primärer Hero-CTA führt direkt nach `/create` (angepasst: heißt „Quest erstellen", nicht „Rallye erstellen") | **PASS** |
+| 3 | Sekundärer Hero-CTA „Mit KI bauen" führt nach `/anleitung` | **PASS** |
+| 4 | Sektionsfolge (angepasst: **sieben** statt acht, ohne „Draußen spielen. Wie ein Game.") | **PASS** — DOM-Reihenfolge geprüft, exakt wie dokumentiert |
+| 5 | Fünf Orte als eigenständige visuelle Elemente | **PASS** — fünf `<li>`-Chips, kein Fließtext |
+| 6 | Sektion schließt mit „Die Welt ist deine Spielkarte." | **PASS** |
+| 7 | Schritt 03 spricht vom Weitergeben als Datei, nicht von einem Teilen-Link | **PASS** |
+| 8 | Vier Zielgruppen-Karten (angepasst: mit **Lucide-Icons**, nicht Emoji) | **PASS** — vier `<dt>/<dd>`-Paare, Icons `Users`/`GraduationCap`/`Compass`/`PartyPopper` |
+| 9 | Lernpfad-Gedanke samt Fachbeispielen in der Schul-Karte, ohne eigene Sektion | **PASS** |
+| 10 | Abschluss-CTA „Deine Umgebung. Dein Abenteuer." mit Button nach `/create` | **PASS** |
+| 11 | „GPS-Rallye" im Hero — einziger Ort mit „Rallye" | **PASS** — zwei Treffer im sichtbaren Text, beide im Hero-Lead |
+| 12 | Ab Sektion 2 durchgehend „Quest", Buttons „Quest erstellen" | **PASS** — `main section` enthält kein „Rallye" |
+| 13 | Kein Erklärsatz, der Rallye und Quest gleichsetzt | **PASS** |
+| 14 | „Was drin steckt" und „Der Unterschied" existieren nicht mehr | **PASS** — 0 Treffer im ausgelieferten HTML |
+| 15 | Fünf FAQ-Fragen, die vier bisherigen wörtlich unverändert | **PASS** |
+| 16 | Fünfte FAQ-Antwort trägt Modultypen, Aufgabentypen und GPS — auch im `FAQPage`-JSON-LD | **PASS** — im HTML und im JSON-LD nachgewiesen |
+| 17 | Zeitangabe nur in der eingeklappten FAQ, nicht im Marketing-Text | **PASS** |
+| 18 | Title trägt „Schnitzeljagd", Keywords zusätzlich die drei neuen Begriffe | **PASS** |
+| 19 | Mobil 360–430px: kein horizontales Scrollen, Touch-Targets ≥ 44px | **PASS** — zusätzlich auf 320px geprüft, ebenfalls sauber |
+| 20 | Desktop ab 1024px mehrspaltig ohne überdehnte Textzeilen | **PASS** — Fließtext max. 626px (~76 Zeichen) |
+| 21 | Darstellungsformen wechseln durchgehend ab | **PASS** — Chips → Text → Schritte → Karten → Accordion → Box |
+| 22 | `/anleitung`, `/impressum`, `/datenschutz` unverändert | **PASS** — `git diff` gegen den Stand vor dem Refinement ist leer |
+| 23 | Header trägt weiterhin „Zur App" und das Burger-Menu | **PASS** |
+
+**23 von 23 erfüllt.**
+
+### Zusätzlich geprüft (nicht in den AC)
+
+- **Kontrast (WCAG AA, PRD-Vorgabe 4.5:1):** Elf neue Textelemente gemessen, Alpha jeweils auf den effektiven Hintergrund komponiert. Schlechtester Wert **6.96:1** bei den Fließtexten in Karten — deutlich über der Vorgabe. Die Orts-Chips liegen bei 19.24:1, die Lime-Merkzeile bei 14.28:1.
+- **Überschriften-Hierarchie:** keine Sprünge (h1 → h2 → h3 → h4 durchgehend lückenlos).
+- **Tastatur:** FAQ vollständig per Enter bedienbar, `aria-expanded` wechselt korrekt in beide Richtungen.
+- **Alternativtexte:** beide Bilder haben einen.
+- **Design-System-Regel „ein Lime-Element pro Screen":** eingehalten — genau eine Karte mit Lime-Rahmen, alles andere Teal.
+- **Cross-Browser:** WebKit und Chrome liefern identische Struktur (6 Sektionen, 5 Chips, 3 Schritte, 4 Zielgruppen, 5 FAQ) und identische Rahmenfarben, keine JS-Fehler.
+
+### Security-Audit (Red Team)
+
+| Prüfung | Ergebnis |
+|---------|----------|
+| XSS über das JSON-LD | **Sicher** — `<` wird zu `<` escaped; das ausgelieferte Script enthält kein `</` |
+| Weitere `dangerouslySetInnerHTML` | Keine — genau eine Verwendung, das JSON-LD |
+| Nutzereingaben / Client-State | Keine — 0 Treffer für `useState`, `useEffect`, `onChange`, `localStorage`, `searchParams` |
+| Fremde Hosts / Tracking | Keine — im Netzwerk-Mitschnitt kein einziger externer Request (`schema.org` ist nur ein Namespace-String) |
+| Security-Header | `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: origin-when-cross-origin` aktiv |
+
+Die Seite ist statisch, ohne Eingaben und ohne Datenhaltung — die Angriffsfläche beschränkt sich auf das JSON-LD, und das ist korrekt escaped. **Keine Befunde.**
+
+### Regressionstest
+
+- Alle sieben Nutzerrouten liefern HTTP 200 (`/`, `/about`, `/anleitung`, `/impressum`, `/datenschutz`, `/play`, `/create`)
+- `/anleitung`, `/impressum`, `/datenschutz`, `InfoPageShell`, `AppNavMenu`, `InfoFooter`: **byte-identisch** zum Stand vor dem Refinement (leerer `git diff`)
+- Creator-Empty-State verlinkt weiterhin korrekt auf `/anleitung`
+
+### Bugs
+
+#### BUG-7 (Medium) — Primärer CTA liegt auf verbreiteten Laptop-Auflösungen unter dem Falz
+
+**Betrifft:** `/about`, Desktop
+**Reproduktion:** `/about` bei 1366×768 öffnen, nicht scrollen.
+**Beobachtet:** Die Unterkante des Buttons „Quest erstellen" liegt konstant bei y=908px. Damit ist er unsichtbar auf:
+
+| Auflösung | CTA-Unterkante | fehlt |
+|-----------|----------------|-------|
+| 1366×768 (verbreitet Windows) | 908 | **140px** |
+| 1280×800 | 908 | **108px** |
+| 1440×900 (MacBook Air/Pro 13") | 908 | **8px** |
+| 1512×982, 1920×1080 | 908 | sichtbar |
+| 390×844 (Mobil) | 701 | sichtbar |
+
+**Ursache:** Das Logo-Lockup über dem Eyebrow verbraucht 168px Höhe plus 24px `margin-bottom` — zusammen **192px**, bevor die Headline beginnt. Die rechte Spalte (Bild, ~340px) hat dagegen Luft.
+
+**Auswirkung:** Auf einer Landingpage, deren Zweck die Conversion ist, sieht ein Teil der Desktop-Besucher zuerst keinen vollständigen Handlungsaufruf. Kein Funktionsverlust — der Button ist nach kurzem Scrollen erreichbar und wiederholt sich am Seitenende.
+
+**Warum Medium, nicht High:** Die Seite funktioniert vollständig, alle Inhalte sind erreichbar, mobil (die Hauptzielplattform laut PRD) tritt das Problem nicht auf.
+
+**Lösungsvorschläge** (Entscheidung liegt beim Frontend):
+1. Logo kleiner (`w-[220px]` statt `lg:w-[320px]`) oder auf `/about` weglassen — im Header steht ohnehin die Navigation, und der Seitentitel nennt die Marke
+2. Container-`padding-top` am Desktop reduzieren (aktuell `lg:pt-16` = 64px)
+3. Lead-Absätze und Buttons enger setzen (`mt-4`/`mt-6`/`mt-5` in Summe 60px)
+
+### Vorbestehende Befunde (nicht durch dieses Refinement verursacht)
+
+Beide betreffen den gesamten Info-Bereich und existierten schon vor Refinement 4. Sie gehören nicht in den Scope dieser Abnahme, sind aber real:
+
+- **BUG-8 (Low) — Sektions-Kicker sind `h2`, die eigentlichen Titel `h3`.** Wer per Screenreader durch die Überschriften navigiert, hört „Wo gespielt wird" als Sektionsüberschrift statt „Jeder Ort kann ein Level sein." Das dekorative Label rangiert über dem echten Titel. Dasselbe Muster auf `/anleitung` (dort seit 2026-09-04). Sauber wäre der Kicker als `<p>` und der Titel als `h2`.
+- **BUG-9 (Low) — Kein eigener Fokus-Ring.** `globals.css` definiert keine `:focus-visible`-Regel; die App verlässt sich app-weit auf den Browser-Standard. In Chrome ist das `1px rgb(4, 63, 129)` — ein dunkles Blau auf nahezu schwarzem Grund, kaum erkennbar. Das Design System schreibt `0 0 0 3px rgba(0,224,209,.45)` vor.
+
+### Nicht abgedeckt
+
+- **Firefox** — Binary fehlt weiterhin trotz gegenteiliger `--dry-run`-Meldung, kein Firefox in `/Applications`. Risiko gering: die Seite ist statisches HTML/CSS ohne JS-Logik außer dem Accordion.
+- **Echte Geräte** — geprüft wurde mit gesetzten Viewports, nicht auf physischer Hardware.
+- **Reale Suchmaschinen-/KI-Auswertung** — dass Title, Keywords und JSON-LD korrekt ausgeliefert werden, ist nachgewiesen; wie Google und LLMs die Seite tatsächlich einordnen, lässt sich lokal nicht messen.
+
+### Neue Tests
+
+`tests/proj-13-landing-qa.spec.ts` — **17 Tests**, die abdecken, was die Frontend-Phase nicht geprüft hatte: Kontrast (gemessen, nicht geschätzt), Überschriften-Hierarchie, Tastaturbedienung der FAQ, Alternativtexte, Darstellungs-Rhythmus, die Lime-Regel, fünf Viewports, JSON-LD-Escaping, Fremdhost-Freiheit und die Unversehrtheit der Nachbarseiten.
+
+**Gegenprobe durchgeführt:** Mit absichtlich gebrochenem Code (Kostenlos-Zeile auf `text-gq-grey-dark`, zweite Karte auf Lime) fallen genau die zwei zuständigen Tests um — die Suite fängt diese Regressionen also wirklich. Anschließend sauber zurückgesetzt (leerer `git diff`).
+
+PROJ-13 damit **91 Tests** (vorher 74).
+
+### Suiten
+
+| Suite | Ergebnis |
+|-------|----------|
+| Unit (Vitest) | **186 passed** |
+| E2E Desktop Chrome 152 | **330 passed / 0 failed** |
+| E2E Mobile Safari (WebKit) | **317 passed / 2 skipped / 0 failed** |
+| Build | sauber |
+| Lint | 0 Fehler (6 vorbestehende `<img>`-Warnungen in anderen Dateien) |
+
+### Produktionsreife: **JA**
+
+Keine Critical- oder High-Bugs. BUG-7 ist ein Conversion-Thema, kein Funktionsfehler — die Seite ist vollständig nutzbar, und auf der laut PRD primären Plattform (mobil) tritt es nicht auf. Die Entscheidung, ob BUG-7 vor oder nach dem Deploy behoben wird, liegt beim Betreiber; behoben werden sollte er, weil er genau den Zweck der Seite schwächt.

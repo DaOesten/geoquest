@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Roadmap | — | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | Approved | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 
 <!-- Add features above this line -->
 
@@ -87,7 +87,17 @@ Die Browser-Verifikation (390×844 und 1440×900) förderte drei Dinge zutage, d
 
 **Nach der Abnahme auf sieben Sektionen gestrafft (2026-09-08).** Die Sektion „Draußen spielen. Wie ein Game." ist ersatzlos entfallen — ihr rhetorischer Hook doppelte die Headline direkt darüber; die Erklärung der Spielmechanik (Laufen, Aufgaben, GPS), die es sonst nirgends gab, steht jetzt im Hero. „Jeder Ort kann ein Level sein." wurde zur Karte mit Teal-Rahmen und bildet mit der Game-Designer-Karte ein Paar in der Seitenmitte; Teal, weil das Design System nur ein Lime-Element pro Screen zulässt. Desktop-Länge von ~3900px auf ~3750px.
 
-Testabdeckung: 24 Tests in `tests/proj-13-landing-refinement.spec.ts` (darunter ein Wächter, der festhält, dass die Spielmechanik im Hero steht), dazu Assertions in den beiden bestehenden PROJ-13-Suiten auf die neue Fassung gezogen. **PROJ-13 74/74 auf Chrome; Gesamtsuiten 313/313 (Chrome) und 310 passed / 2 skipped (Mobile Safari); Unit 186/186; Build und Lint sauber.** **Nächster Schritt: `/qa`.**
+Testabdeckung: 24 Tests in `tests/proj-13-landing-refinement.spec.ts` (darunter ein Wächter, der festhält, dass die Spielmechanik im Hero steht), dazu Assertions in den beiden bestehenden PROJ-13-Suiten auf die neue Fassung gezogen. **PROJ-13 74/74 auf Chrome; Gesamtsuiten 313/313 (Chrome) und 310 passed / 2 skipped (Mobile Safari); Unit 186/186; Build und Lint sauber.** **QA am 2026-09-08 abgeschlossen: 23/23 Acceptance Criteria erfüllt, keine Critical- oder High-Bugs, produktionsreif.**
+
+Drei Acceptance Criteria waren gegenüber den später getroffenen Entscheidungen veraltet (acht statt sieben Sektionen, Emoji statt Lucide-Icons, Button-Beschriftung „Rallye erstellen") — getestet wurde gegen Decision Log und Implementation Notes, die AC-Liste ist entsprechend korrigiert.
+
+Kontrast gemessen statt geschätzt: schlechtester Wert **6.96:1** bei 4.5:1 Vorgabe. Überschriften-Hierarchie ohne Sprünge, FAQ per Tastatur bedienbar, ein Lime-Element wie vom Design System verlangt, WebKit und Chrome strukturgleich. Security-Audit ohne Befund — die Seite ist statisch, hat keine Eingaben, lädt keinen fremden Host, und das JSON-LD escaped `<` korrekt. Nachbarseiten byte-identisch (leerer `git diff`).
+
+**BUG-7 (Medium, offen):** Der primäre CTA liegt auf 1366×768 (140px), 1280×800 (108px) und knapp auf 1440×900 (8px) unter dem Falz — Ursache ist das Logo-Lockup, das mit Rand 192px vor der Headline verbraucht. Kein Funktionsfehler und mobil nicht vorhanden, aber es schwächt genau den Zweck der Seite. Dazu zwei **vorbestehende** Low-Befunde, die den ganzen Info-Bereich betreffen: BUG-8 (Sektions-Kicker sind `h2`, die echten Titel `h3` — Screenreader hören das dekorative Label als Überschrift) und BUG-9 (kein `:focus-visible` in `globals.css`, der Browser-Standard ist auf dunklem Grund kaum sichtbar).
+
+17 neue Tests in `tests/proj-13-landing-qa.spec.ts` für das, was die Frontend-Phase nicht abdeckte (Kontrast, Tastatur, Semantik, Rhythmus, fünf Viewports, Security). Per Gegenprobe geschärft: mit absichtlich gebrochenem Code fallen genau die zwei zuständigen Tests um. PROJ-13 jetzt **91 Tests**. Suiten: **Chrome 330/330**, **Mobile Safari 317 passed / 2 skipped**, **Unit 186/186**, Build und Lint sauber.
+
+**Nächster Schritt: `/deploy`.**
 
 ## Next Available ID: PROJ-14
 
