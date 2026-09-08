@@ -1,9 +1,9 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
 ## Status: In Progress
-_Deployed; Refinement 4 vom 2026-09-07 (`/about` wird zur Marketing-Landingpage) ist gespect und wartet auf `/frontend`. Refinement 3 (gemeinsames Burger-Menu) ist gebaut, deployed und verifiziert._
+_Refinement 4 (`/about` als Marketing-Landingpage) ist am 2026-09-08 gebaut, im Browser verifiziert und testabgedeckt — QA steht aus. Refinement 3 (gemeinsames Burger-Menu) ist deployed und verifiziert._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-07 (Refinement 4 — neue Landingpage-Copy für `/about`)
+**Last Updated:** 2026-09-08 (Refinement 4 — Frontend umgesetzt)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -1242,3 +1242,48 @@ Eingeklapptes Accordion, gespiegelt im `FAQPage`-JSON-LD. Trägt „Schnitzeljag
 ### Bleibt unangetastet
 
 `/anleitung`, `/impressum`, `/datenschutz`, `InfoPageShell`, Header, Burger-Menu (`AppNavMenu`), Footer, Hintergrund, Prompt-Vorlage, Import, Creator, Player. Kein neues Paket, kein Backend, keine Route.
+
+---
+
+## Implementation Notes (Frontend — Refinement 4, 2026-09-08)
+
+### Geänderte Dateien
+- `src/app/(info)/about/page.tsx` — vollständig neu getextet und umstrukturiert; acht Sektionen statt der bisherigen sechs Blöcke
+- `tests/proj-13-landing-page.spec.ts` — drei Assertions auf die neue Fassung gezogen (Hero-Text, CTA-Beschriftung, OG-Titel)
+- `tests/proj-13-info-refinement.spec.ts` — der Block „Für wen — gekürzte Fassung" prüft jetzt die vier Zielgruppen-Karten statt der entfallenen Anlass-Karten
+- `tests/proj-13-landing-refinement.spec.ts` — **neu**, 23 Tests entlang der Acceptance Criteria dieses Refinements
+
+Nicht angefasst: `/anleitung`, `/impressum`, `/datenschutz`, `InfoPageShell`, `AppNavMenu`, `InfoFooter`. Kein neues Paket, keine neue Route, keine neue Komponente — die Seite kommt mit dem bestehenden Rahmen und Tailwind aus.
+
+### Umsetzung wie gespect
+Die acht Sektionen, die Copy, das Vokabular (`GPS-Rallye` nur im Hero, ab Sektion 2 durchgehend `Quest`), die CTA-Ziele (`/create` primär, `/anleitung` sekundär) und die fünfte FAQ-Frage sind wie beschrieben umgesetzt. `FEATURES`, `DIFFERENCES` und `OCCASIONS` sind entfallen, `AUDIENCES`, `PLACES` und `STEPS` neu; die nicht mehr benötigten Icons (`Layers`, `Puzzle`, `Wallet`, `UserX`) sind aus den Imports raus.
+
+### Abweichungen von der Spec (bewusst, mit Begründung)
+
+**1. Lucide-Icons statt der Emoji in den Zielgruppen-Karten.**
+Die Spec-Vorlage sah 👨‍👩‍👧 / 🧑‍🏫 / 🧭 / 🎉 vor. Das Design System schließt Emojis ausdrücklich aus („Keine Emojis. Nie. Energie kommt aus Type, Neon und Brush Marks"), und die gesamte App zeichnet mit Lucide-Outlines. Gesetzt sind jetzt `Users`, `GraduationCap`, `Compass` und `PartyPopper` in Teal — dieselbe Behandlung wie die Icons auf `/anleitung`. Nach Rückfrage entschieden.
+
+**2. Sektion 4 („Nicht nur spielen. Selber machen.") steht in einer Karte mit Lime-Rahmen.**
+Mit dem Wegfall von „Was drin steckt" folgen die Sektionen 2, 3 und 4 als drei Textblöcke aufeinander — derselbe Aufbau dreimal hintereinander liest sich flach. Die Karte bricht die Reihe auf, ohne Inhalt zu erfinden. Lime, weil das Design System ein Lime-Element pro Screen vorsieht und dies der stärkste Satz der Seite ist. Nach Rückfrage entschieden.
+
+### Befunde aus der Browser-Verifikation
+Drei Dinge fielen erst im gerenderten Bild auf und wurden nachgezogen:
+
+- **Die „Kostenlos"-Zeile im Hero war ebenfalls Lime** — damit zwei Lime-Elemente auf einem Screen, gegen die Design-System-Regel. Sie ist jetzt Teal; das eine Lime-Element bleibt die Game-Designer-Karte
+- **Die FAQ-Accordion lief auf `max-w-[70ch]`**, während alle anderen Sektionen die volle Containerbreite nutzen — auf 1440px wirkte die halbe Spalte unfertig. Die Trigger-Zeilen laufen jetzt voll, die Antworten bleiben auf 70ch Lesebreite begrenzt
+- **Der Zeilenumbruch der Headline** trennte „Die reale Welt wird" / „zum Spielfeld." und ließ „WIRD" allein auf einer Zeile stehen. Jetzt „Die reale Welt" / „wird zum Spielfeld."
+
+### Verifikation
+- **Build und Lint sauber** (6 vorbestehende `<img>`-Warnungen in anderen Dateien, 0 Fehler)
+- **Browser geprüft** auf 390×844 und 1440×900, jeweils als Vollseiten-Screenshot; keine Konsolenfehler außer dem lokal erwarteten 404 auf `/_vercel/insights/script.js` (Vercel Analytics existiert nur in Production)
+- **PROJ-13: 73/73** auf Desktop Chrome 152
+- **Gesamtsuite Chrome: 312 passed / 0 failed**
+- **Gesamtsuite Mobile Safari (Standard-Config): 310 passed / 2 skipped / 0 failed**
+- **Unit-Tests: 186/186**
+
+Der Chrome-Lauf lief wie in den Vorgänger-Refinements über eine temporäre Config (`channel: 'chrome'`) — die reguläre `playwright.config.ts` bleibt unverändert und zeigt weiterhin auf das kaputte Chromium-Fragment.
+
+### Offen für QA
+- **Echte Geräte:** verifiziert wurde in Desktop-Chrome mit gesetztem Viewport, nicht auf einem physischen Handy
+- **Kontrast der neuen Elemente:** Die Orts-Chips (`text-gq-white` auf `bg-gq-dark-teal/70`) und die Lime-Merkzeile in der Karte sind rechnerisch unkritisch, aber nicht mit einem Messwerkzeug geprüft
+- **Die Seite ist deutlich länger geworden** (8 Sektionen, ~3900px auf Desktop). Ob der Abschluss-CTA damit noch in Reichweite ist oder ob die Seite gekürzt gehört, ist eine Produktfrage für die Abnahme

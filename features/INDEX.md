@@ -79,7 +79,13 @@ Elf gelieferte Textblöcke werden zu **acht Sektionen**: Hero → Draußen spiel
 
 **Zwei Sektionen der alten Seite entfallen ersatzlos:** „Was drin steckt" (drei Feature-Karten) und „Der Unterschied" — letztere war die vierte Wiederholung von „kostenlos, kein Account". Der Inhalt der Feature-Karten wandert vollständig in eine **neue fünfte FAQ-Frage** („Was kann ich in eine Quest einbauen?") und bleibt damit im HTML und im JSON-LD, ohne den Lesefluss zu unterbrechen. Ebenfalls gestrichen: die Zeitangabe „in einer halben Stunde" — sie bleibt allein der FAQ vorbehalten. Die Hero-CTAs führen neu direkt nach `/create` statt über den Mode-Switch `/`.
 
-Spec ist aktualisiert (Seitenaufbau, 23 Acceptance Criteria, 15 Decision-Log-Einträge inkl. zweier dokumentierter Revisionen, Wegfall-Tabelle, vollständige Copy im Abschnitt „Refinement 4"). `/anleitung`, `/impressum`, `/datenschutz` und der gesamte Seitenrahmen bleiben unangetastet. **Nächster Schritt: `/frontend`.**
+Spec ist aktualisiert (Seitenaufbau, 23 Acceptance Criteria, 15 Decision-Log-Einträge inkl. zweier dokumentierter Revisionen, Wegfall-Tabelle, vollständige Copy im Abschnitt „Refinement 4"). `/anleitung`, `/impressum`, `/datenschutz` und der gesamte Seitenrahmen bleiben unangetastet.
+
+**Frontend umgesetzt am 2026-09-08.** Nur `src/app/(info)/about/page.tsx` angefasst — keine neue Komponente, kein neues Paket, keine neue Route. Zwei bewusste Abweichungen von der Spec-Vorlage, beide nach Rückfrage: **Lucide-Icons statt der Emoji** in den Zielgruppen-Karten (das Design System schließt Emojis aus), und **Sektion 4 steht in einer Karte mit Lime-Rahmen** — nach dem Wegfall von „Was drin steckt" folgten sonst drei Textblöcke aufeinander.
+
+Die Browser-Verifikation (390×844 und 1440×900) förderte drei Dinge zutage, die im Code nicht auffielen und nachgezogen wurden: die „Kostenlos"-Zeile war ebenfalls Lime (zwei Lime-Elemente auf einem Screen verstoßen gegen das Design System, jetzt Teal), die FAQ-Accordion lief auf halber Breite, und der Headline-Umbruch ließ „WIRD" allein stehen.
+
+Testabdeckung: 23 neue Tests in `tests/proj-13-landing-refinement.spec.ts`, dazu vier Assertions in den beiden bestehenden PROJ-13-Suiten auf die neue Fassung gezogen. **PROJ-13 73/73 auf Chrome; Gesamtsuiten 312/312 (Chrome) und 310 passed / 2 skipped (Mobile Safari); Unit 186/186; Build und Lint sauber.** **Nächster Schritt: `/qa`.**
 
 ## Next Available ID: PROJ-14
 

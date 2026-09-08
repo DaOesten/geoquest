@@ -144,23 +144,31 @@ test.describe("Häufige Fragen (Accordion)", () => {
   });
 });
 
-test.describe("Für wen — gekürzte Fassung", () => {
-  test("ein Satz zur Zielgruppe plus vier Anlässe mit Kurzzeile", async ({ page }) => {
+test.describe("Für wen — Zielgruppen-Karten (Refinement 4)", () => {
+  test("vier Zielgruppen statt der früheren vier Anlässe", async ({ page }) => {
     await page.goto("/about");
 
-    await expect(page.getByRole("heading", { name: "Für wen" })).toBeVisible();
-    await expect(page.getByText(/Kein technisches Vorwissen nötig/)).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Für wen ist Geo Quest?" })
+    ).toBeVisible();
 
-    for (const anlass of [
-      "Kindergeburtstag",
-      "Schulausflug",
-      "Ferienprogramm",
-      "Jugendgruppe & Verein",
+    for (const zielgruppe of [
+      "Für Familien",
+      "Für Schule & Pädagogik",
+      "Für Kinder & Jugendliche",
+      "Für Gruppen & Events",
     ]) {
-      await expect(page.getByRole("term").filter({ hasText: anlass })).toBeVisible();
+      await expect(
+        page.getByRole("term").filter({ hasText: zielgruppe })
+      ).toBeVisible();
     }
 
-    // Die früheren Fließtext-Absätze sind ersetzt.
+    // Der Lernpfad-Gedanke ist in der Schul-Karte aufgegangen, statt eine
+    // eigene Sektion zu bekommen.
+    await expect(page.getByText(/interaktive Lernpfade/)).toBeVisible();
+
+    // Die früheren Anlass-Karten und der Vorwissen-Satz sind ersetzt.
+    await expect(page.getByText(/Kein technisches Vorwissen nötig/)).toHaveCount(0);
     await expect(page.getByText(/Am häufigsten entstehen Quests/)).toHaveCount(0);
   });
 });

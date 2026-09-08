@@ -6,18 +6,24 @@ import { test, expect } from "@playwright/test";
  */
 
 test.describe("Seite & Navigation", () => {
-  test("/about lädt eigenständig mit Hero, Features und Anlässen", async ({ page }) => {
+  test("/about lädt eigenständig mit Hero, Sektionen und Zielgruppen", async ({ page }) => {
     await page.goto("/about");
 
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("Draußen ist");
-    await expect(page.getByRole("heading", { name: "Was drin steckt" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Navigation zu echten Orten" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Für wen" })).toBeVisible();
-    // Seit dem Refinement (2026-09-05): ein Satz zur Zielgruppe statt der
-    // früheren Fließtext-Absätze, Anlässe als Definitionsliste ohne Zwischentitel.
-    await expect(page.getByText(/Kein technisches Vorwissen nötig/)).toBeVisible();
+    // Refinement 4 (2026-09-07): neue Marketing-Fassung, acht Sektionen.
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      "Die reale Welt"
+    );
     await expect(
-      page.getByRole("term").filter({ hasText: "Kindergeburtstag" })
+      page.getByRole("heading", { name: "Draußen spielen. Wie ein Game." })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Jeder Ort kann ein Level sein." })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Für wen ist Geo Quest?" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("term").filter({ hasText: "Für Familien" })
     ).toBeVisible();
   });
 
@@ -33,7 +39,8 @@ test.describe("Seite & Navigation", () => {
 
   test("Verweis auf /about führt zur Anleitung", async ({ page }) => {
     await page.goto("/about");
-    await page.getByRole("link", { name: /Quest mit KI bauen/i }).click();
+    // Seit Refinement 4 heißt der sekundäre Hero-CTA „Mit KI bauen".
+    await page.getByRole("link", { name: /Mit KI bauen/i }).click();
     await expect(page).toHaveURL(/\/anleitung$/);
   });
 
@@ -188,7 +195,9 @@ test.describe("Fehlerfälle & Troubleshooting", () => {
 
 test.describe("Teilen & Auffindbarkeit", () => {
   for (const [path, expectedTitle] of [
-    ["/about", "digitale Schnitzeljagd selbst erstellen"],
+    // Der OG-Titel von /about zieht seit Refinement 4 die neue Positionierung
+    // nach; „Schnitzeljagd" bleibt im <title> für die Suche (dort geprüft).
+    ["/about", "die reale Welt wird zum Spielfeld"],
     ["/anleitung", "Quest mit KI erstellen"],
   ] as const) {
     test(`${path} liefert eigene Open-Graph-Daten`, async ({ page }) => {

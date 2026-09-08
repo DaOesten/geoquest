@@ -4,11 +4,10 @@ import Image from "next/image";
 import {
   ArrowRight,
   Compass,
-  Layers,
-  Puzzle,
+  GraduationCap,
+  PartyPopper,
   Sparkles,
-  UserX,
-  Wallet,
+  Users,
 } from "lucide-react";
 import { InfoPageShell } from "@/components/info-page-shell";
 import {
@@ -19,7 +18,7 @@ import {
 } from "@/components/ui/accordion";
 
 const DESCRIPTION =
-  "Digitale Schnitzeljagd selbst erstellen — kostenlos, ohne Anmeldung. Geo Quest ist eine GPS-Rallye-App für Kindergeburtstag, Schulausflug und Ferienprogramm, für Kinder von 10 bis 15 Jahren.";
+  "Die reale Welt wird zum Spielfeld: Erstelle deine eigene GPS-Rallye und mach aus jedem Ort ein Abenteuer. Digitale Schnitzeljagd für Kindergeburtstag, Schulausflug und Ferienprogramm — kostenlos, ohne Abo, ohne Account.";
 
 export const metadata: Metadata = {
   title: "Digitale Schnitzeljagd selbst erstellen — kostenlos & ohne Anmeldung",
@@ -28,7 +27,10 @@ export const metadata: Metadata = {
     "digitale Schnitzeljagd",
     "Schnitzeljagd App",
     "GPS Schnitzeljagd",
+    "GPS-Rallye",
+    "Rallye erstellen",
     "Schnitzeljagd selbst erstellen",
+    "Lernpfad draußen",
     "Stadtrallye App",
     "Kindergeburtstag Schnitzeljagd",
     "Schulausflug",
@@ -36,7 +38,7 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "/about" },
   openGraph: {
-    title: "Geo Quest — digitale Schnitzeljagd selbst erstellen",
+    title: "Geo Quest — die reale Welt wird zum Spielfeld",
     description: DESCRIPTION,
     images: ["/assets/urbanquest.png"],
     type: "website",
@@ -44,41 +46,63 @@ export const metadata: Metadata = {
   },
 };
 
-const FEATURES = [
+/** Sektion 3 — der Beleg für „überall". Als Fließtext-Aufzählung überliest man ihn. */
+const PLACES = [
+  "Ein Park",
+  "Eine Stadt",
+  "Der Schulhof",
+  "Ein Wanderweg",
+  "Dein Viertel",
+];
+
+const STEPS = [
+  {
+    no: "01",
+    title: "Ort auswählen",
+    body: "Entscheide, wo dein Abenteuer stattfinden soll.",
+  },
+  {
+    no: "02",
+    title: "Quest gestalten",
+    body: "Füge Stationen und Aufgaben hinzu und verbinde alles zu einem Abenteuer.",
+  },
+  {
+    no: "03",
+    title: "Losspielen",
+    // Bewusst nicht „teilen": Weitergabe läuft über den JSON-Export (PROJ-9),
+    // einen Teilen-Link gibt es nicht. Die Vorlage hätte eine Funktion
+    // versprochen, die die App nicht einlöst.
+    body: "Gib deine Quest als Datei weiter — oder spielt sie direkt auf deinem Gerät. GPS führt euch von Station zu Station.",
+  },
+];
+
+/**
+ * Lucide statt der Emoji aus der Spec-Vorlage: Das Design System schließt
+ * Emojis aus („Energie kommt aus Type, Neon und Brush Marks"), und die
+ * gesamte App zeichnet mit Lucide-Outlines.
+ */
+const AUDIENCES = [
+  {
+    icon: Users,
+    title: "Für Familien",
+    body: "Mach aus einem Spaziergang, Ausflug oder Urlaub ein gemeinsames Abenteuer.",
+  },
+  {
+    icon: GraduationCap,
+    title: "Für Schule & Pädagogik",
+    // Trägt mehr Text als die drei anderen — hier ist der Lernpfad-Block
+    // aufgegangen, statt eine eigene Sektion zu bekommen.
+    body: "Gestalte interaktive Lernpfade und bringe Unterricht nach draußen. Statt Arbeitsblättern am Schreibtisch erkunden Kinder Themen draußen und lösen Aufgaben an realen Orten — ob Geschichte, Natur oder Geografie.",
+  },
   {
     icon: Compass,
-    title: "Navigation zu echten Orten",
-    body: "Spieler laufen mit GPS von Ziel zu Ziel. Ein Pfeil zeigt die Richtung, die Entfernung zählt runter.",
+    title: "Für Kinder & Jugendliche",
+    body: "Erstelle deine eigene Quest, überrasche deine Freunde und werde selbst zum Game-Designer.",
   },
   {
-    icon: Layers,
-    title: "Fünf Bausteine pro Ziel",
-    body: "Text, Bild, Audio, Video und Aufgaben — kombinierbar, wie du willst.",
-  },
-  {
-    icon: Puzzle,
-    title: "Drei Aufgabentypen",
-    body: "Code eintippen, Multiple Choice oder Sortieren. Weiter geht es erst, wenn gelöst ist.",
-  },
-];
-
-const OCCASIONS = [
-  { title: "Kindergeburtstag", body: "Route durch die Nachbarschaft" },
-  { title: "Schulausflug", body: "Stationen zur Stadtgeschichte" },
-  { title: "Ferienprogramm", body: "Rallye über das Gelände" },
-  { title: "Jugendgruppe & Verein", body: "Kennenlern-Tour im Zeltlager" },
-];
-
-const DIFFERENCES = [
-  {
-    icon: Wallet,
-    title: "Kostenlos, kein Abo",
-    body: "Keine Bezahlschranke, keine Testphase, keine Begrenzung auf eine Quest.",
-  },
-  {
-    icon: UserX,
-    title: "Kein Account",
-    body: "Keine Anmeldung, keine E-Mail. Deine Quests bleiben auf deinem Gerät — teilen kannst du sie als Datei.",
+    icon: PartyPopper,
+    title: "Für Gruppen & Events",
+    body: "Geburtstag, Ferienprogramm, Jugendgruppe oder einfach ein Nachmittag mit Freunden — erstelle eine Quest, die zu deinem Anlass passt.",
   },
 ];
 
@@ -103,6 +127,14 @@ const FAQ = [
     question: "Wie lange dauert das Erstellen?",
     answer:
       "Mit der KI-Anleitung entsteht ein erster Entwurf in wenigen Minuten. Danach setzt man die Ziele auf der Karte — insgesamt etwa eine halbe Stunde.",
+  },
+  {
+    // Fängt auf, was mit der gestrichenen Sektion „Was drin steckt" wegfällt:
+    // Der Inhalt der drei Feature-Karten bleibt so im HTML und im JSON-LD,
+    // unterbricht aber den Lesefluss der Seite nicht mehr.
+    question: "Was kann ich in eine Quest einbauen?",
+    answer:
+      "Jede Station kann fünf Bausteine kombinieren: Text, Bild, Audio, Video und Aufgaben. Als Aufgaben gibt es drei Typen — einen Code eintippen, Multiple Choice oder Elemente in die richtige Reihenfolge bringen. Weiter geht es erst, wenn die Aufgabe gelöst ist. Die Navigation zwischen den Stationen läuft über GPS: Ein Pfeil zeigt die Richtung, die Entfernung zählt herunter.",
   },
 ];
 
@@ -146,6 +178,16 @@ const JSON_LD = {
   ],
 };
 
+/** Kicker über jeder Sektion — eine Klasse statt sechsmal derselbe Wust. */
+const SECTION_LABEL =
+  "text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal";
+/** Sektions-Überschrift im Display-Schnitt. */
+const SECTION_TITLE =
+  "mt-2 font-display italic text-[clamp(1.5rem,4vw,2.4rem)] uppercase leading-[1] text-gq-white";
+/** Abschließende Merkzeile einer Sektion — der Beat am Ende des Blocks. */
+const PUNCHLINE =
+  "mt-5 font-display italic text-[clamp(1.15rem,3vw,1.6rem)] uppercase leading-[1.05] text-gq-teal";
+
 export default function AboutPage() {
   return (
     <InfoPageShell
@@ -153,31 +195,47 @@ export default function AboutPage() {
       eyebrow="Über Geo Quest"
       title={
         <>
-          Draußen ist
+          Die reale Welt
           <br />
-          <span className="text-gq-teal">das Spielfeld.</span>
+          wird <span className="text-gq-teal">zum Spielfeld.</span>
         </>
       }
       lead={
         <>
-          <p>
-            Geo Quest ist eine Schnitzeljagd-App für Kinder und Jugendliche von
-            10 bis 15. Du baust die Route, schreibst die Rätsel — die Gruppe
-            läuft los und löst sie draußen.
+          <p className="font-body text-base sm:text-lg lg:text-xl leading-snug text-gq-white">
+            Erstelle deine eigene GPS-Rallye und mach aus jedem Ort ein
+            Abenteuer.
           </p>
-          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+          <p className="mt-4">
+            Ob mit Freunden, der Familie, in der Schule oder im Verein: Mit Geo
+            Quest kannst du eigene Rallyes erstellen, draußen spielen und Orte
+            auf eine ganz neue Art entdecken.
+          </p>
+
+          {/* Das stärkste Einzelargument der Seite — als eigene Zeile über den
+              Buttons, damit es nicht im Fließtext untergeht. Teal, nicht Lime:
+              Das Design System erlaubt ein Lime-Element pro Screen, und das
+              ist die Game-Designer-Karte weiter unten. */}
+          <p className="mt-6 text-tech text-xs sm:text-[13px] tracking-[0.1em] text-gq-teal">
+            Kostenlos. Ohne Abo. Ohne Account.
+          </p>
+
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+            {/* Direkt in den Creator statt über den Mode-Switch `/`: wer von
+                einer Landingpage kommt, hat sich für „erstellen" entschieden. */}
             <Link
-              href="/anleitung"
+              href="/create"
               className="flex items-center justify-center gap-2 h-12 px-7 rounded-pill bg-gq-teal text-gq-black text-tech text-xs tracking-[0.08em] transition-all duration-base ease-gq hover:bg-gq-teal-hover active:scale-[0.96]"
             >
-              <Sparkles className="w-4 h-4" />
-              Quest mit KI bauen
+              Quest erstellen
+              <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
-              href="/"
-              className="flex items-center justify-center h-12 px-7 rounded-pill border border-gq-teal text-gq-teal text-tech text-xs tracking-[0.08em] transition-all duration-base ease-gq hover:bg-gq-teal/10 active:scale-[0.96]"
+              href="/anleitung"
+              className="flex items-center justify-center gap-2 h-12 px-7 rounded-pill border border-gq-teal text-gq-teal text-tech text-xs tracking-[0.08em] transition-all duration-base ease-gq hover:bg-gq-teal/10 active:scale-[0.96]"
             >
-              Zur App
+              <Sparkles className="w-4 h-4" />
+              Mit KI bauen
             </Link>
           </div>
         </>
@@ -196,54 +254,121 @@ export default function AboutPage() {
         </div>
       }
     >
-      {/* Features */}
+      {/* 2 — Der emotionale Hook. Ab hier heißt es „Quest": Der Hero oben hat
+          den Besucher mit „GPS-Rallye" in seiner Suchsprache abgeholt, von
+          jetzt an gilt die Sprache, die ihn auch in der App erwartet. */}
       <section className="mt-12 sm:mt-16">
-        <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
-          Was drin steckt
-        </h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map(({ icon: Icon, title, body }) => (
+        <h2 className={SECTION_LABEL}>Warum draußen</h2>
+        <h3 className={SECTION_TITLE}>Draußen spielen. Wie ein Game.</h3>
+        <div className="mt-4 max-w-[58ch] font-body text-sm sm:text-base lg:text-[17px] leading-relaxed text-gq-grey">
+          <p>
+            Warum nur drinnen am Bildschirm spielen, wenn das Abenteuer direkt
+            vor der Tür liegt?
+          </p>
+          <p className="mt-3">
+            Geo Quest verbindet die Freiheit der echten Welt mit dem Spielgefühl
+            eines Games. Laufe zu verschiedenen Orten, löse Aufgaben, entdecke
+            Neues und folge deiner Quest mit GPS.
+          </p>
+        </div>
+        <p className={PUNCHLINE}>Dein Spiel. Dein Ort. Deine Regeln.</p>
+      </section>
+
+      {/* 3 — Orte als Chip-Reihe. */}
+      <section className="mt-12 sm:mt-20">
+        <h2 className={SECTION_LABEL}>Wo gespielt wird</h2>
+        <h3 className={SECTION_TITLE}>Jeder Ort kann ein Level sein.</h3>
+
+        <ul className="mt-5 flex flex-wrap gap-2 sm:gap-3">
+          {PLACES.map((place) => (
+            <li
+              key={place}
+              className="rounded-pill border border-gq-teal/40 bg-gq-dark-teal/70 px-4 py-2 text-tech text-[11px] sm:text-xs tracking-[0.08em] text-gq-white"
+            >
+              {place}
+            </li>
+          ))}
+        </ul>
+
+        <p className="mt-6 max-w-[58ch] font-body text-sm sm:text-base lg:text-[17px] leading-relaxed text-gq-grey">
+          Lege Stationen fest, füge Aufgaben hinzu und verbinde sie zu einer
+          eigenen Quest. Die Teilnehmenden bewegen sich durch die echte Welt und
+          entdecken dabei die nächste Herausforderung.
+        </p>
+        <p className={PUNCHLINE}>Die Welt ist deine Spielkarte.</p>
+      </section>
+
+      {/* 4 — Als Karte abgesetzt: Sektionen 2, 3 und 4 sind alle Textblöcke,
+          und drei gleiche Formen hintereinander lesen sich flach. Lime, weil
+          das laut Design System das eine Hervorhebungs-Element pro Screen ist. */}
+      <section className="mt-12 sm:mt-20">
+        <div className="rounded-card border border-gq-lime/40 bg-gq-dark-teal/70 p-6 sm:p-8 lg:p-10 shadow-card">
+          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-lime">
+            Deine Rolle
+          </h2>
+          <h3 className={SECTION_TITLE}>Nicht nur spielen. Selber machen.</h3>
+          <div className="mt-4 max-w-[58ch] font-body text-sm sm:text-base lg:text-[17px] leading-relaxed text-gq-grey">
+            <p>
+              Mit Geo Quest bist du nicht nur Spieler.{" "}
+              <span className="text-gq-white">Du bist der Game-Designer.</span>
+            </p>
+            <p className="mt-3">
+              Du brauchst kein Programmierwissen und keine besonderen
+              Vorkenntnisse. Erstelle eine Quest für deinen nächsten Ausflug,
+              eine Geburtstagsfeier, eine Schulstunde oder einfach für deine
+              Freunde.
+            </p>
+          </div>
+          <p className="mt-5 font-display italic text-[clamp(1.15rem,3vw,1.6rem)] uppercase leading-[1.05] text-gq-lime">
+            Deine Welt. Deine Regeln. Deine Herausforderungen.
+          </p>
+        </div>
+      </section>
+
+      {/* 5 — Drei Schritte. */}
+      <section className="mt-12 sm:mt-20">
+        <h2 className={SECTION_LABEL}>So geht es</h2>
+        <h3 className={SECTION_TITLE}>Eine Quest erstellen? Ganz einfach.</h3>
+
+        <ol className="mt-6 grid gap-4 sm:grid-cols-3">
+          {STEPS.map(({ no, title, body }) => (
+            <li
+              key={no}
+              className="rounded-card border border-border bg-gq-dark-teal/70 p-5 shadow-card"
+            >
+              <span
+                aria-hidden
+                className="grid place-items-center w-9 h-9 rounded-full border border-gq-teal text-tech text-xs text-gq-teal"
+              >
+                {no}
+              </span>
+              <h4 className="mt-4 text-tech text-xs lg:text-[13px] tracking-[0.08em] text-gq-white">
+                {title}
+              </h4>
+              <p className="mt-2 font-body text-sm lg:text-[15px] leading-relaxed text-gq-grey">
+                {body}
+              </p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* 6 — Zielgruppen. */}
+      <section className="mt-12 sm:mt-20">
+        <h2 className={SECTION_LABEL}>Für wen</h2>
+        <h3 className={SECTION_TITLE}>Für wen ist Geo Quest?</h3>
+
+        <dl className="mt-6 grid gap-4 sm:grid-cols-2">
+          {AUDIENCES.map(({ icon: Icon, title, body }) => (
             <div
               key={title}
               className="rounded-card border border-border bg-gq-dark-teal/70 p-5 shadow-card transition-all duration-base ease-gq hover:-translate-y-0.5 hover:card-glow-teal"
             >
               <Icon className="w-7 h-7 text-gq-teal" />
-              <h3 className="mt-4 font-display italic text-lg lg:text-xl uppercase leading-tight text-gq-white">
-                {title}
-              </h3>
-              <p className="mt-2 font-body text-sm lg:text-[15px] leading-relaxed text-gq-grey">
-                {body}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Für wen */}
-      <section className="mt-12 sm:mt-20">
-        <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
-          Für wen
-        </h2>
-        <h3 className="mt-2 font-display italic text-[clamp(1.5rem,4vw,2.4rem)] uppercase leading-[1] text-gq-white">
-          Eltern, Lehrer, Jugendleiter.
-        </h3>
-        <p className="mt-3 max-w-[52ch] font-body text-sm lg:text-base leading-relaxed text-[#E7EAEC]">
-          Kein technisches Vorwissen nötig — wer eine Runde durch den Park kennt,
-          hat in einer halben Stunde eine fertige Schnitzeljagd.
-        </p>
-
-        {/* Single column below 400px: "Kindergeburtstag" doesn't fit a half-width
-            card at a readable size. Two-up from there, four across on desktop. */}
-        <dl className="mt-6 grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 sm:gap-4 lg:grid-cols-4">
-          {OCCASIONS.map(({ title, body }) => (
-            <div
-              key={title}
-              className="rounded-card border border-border bg-gq-dark-teal/70 p-4 shadow-card"
-            >
-              <dt className="text-tech text-[11px] tracking-[0.04em] sm:text-xs sm:tracking-[0.08em] text-gq-white">
+              <dt className="mt-4 font-display italic text-lg lg:text-xl uppercase leading-tight text-gq-white">
                 {title}
               </dt>
-              <dd className="mt-1.5 font-body text-[13px] sm:text-sm leading-relaxed text-gq-grey">
+              <dd className="mt-2 font-body text-sm lg:text-[15px] leading-relaxed text-gq-grey">
                 {body}
               </dd>
             </div>
@@ -251,39 +376,16 @@ export default function AboutPage() {
         </dl>
       </section>
 
-      {/* Abgrenzung */}
+      {/* 7 — FAQ. Mirrors the JSON-LD below so structured data matches visible
+          content. Collapsed by default: Radix keeps the answers in the DOM
+          (hidden only via attribute), so crawlers and AI systems still read
+          them in full. */}
       <section className="mt-12 sm:mt-20">
-        <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-lime">
-          Der Unterschied
-        </h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          {DIFFERENCES.map(({ icon: Icon, title, body }) => (
-            <div
-              key={title}
-              className="flex gap-4 rounded-card border border-border bg-gq-dark-teal/70 p-5 shadow-card"
-            >
-              <Icon className="w-6 h-6 flex-shrink-0 text-gq-lime" />
-              <div>
-                <h3 className="text-tech text-xs lg:text-[13px] tracking-[0.08em] text-gq-white">
-                  {title}
-                </h3>
-                <p className="mt-2 font-body text-sm lg:text-[15px] leading-relaxed text-gq-grey">
-                  {body}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* FAQ — mirrors the JSON-LD below so structured data matches visible content.
-          Collapsed by default: Radix keeps the answers in the DOM (hidden only via
-          attribute), so crawlers and AI systems still read them in full. */}
-      <section className="mt-12 sm:mt-20">
-        <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
-          Häufige Fragen
-        </h2>
-        <Accordion type="single" collapsible className="mt-4 max-w-[70ch]">
+        <h2 className={SECTION_LABEL}>Häufige Fragen</h2>
+        {/* Volle Containerbreite wie die übrigen Sektionen — eine auf 70ch
+            beschnittene Accordion-Spalte wirkt neben den Karten unfertig.
+            Die Antworten selbst bleiben unten auf Lesebreite begrenzt. */}
+        <Accordion type="single" collapsible className="mt-4">
           {FAQ.map(({ question, answer }) => (
             <AccordionItem
               key={question}
@@ -293,7 +395,7 @@ export default function AboutPage() {
               <AccordionTrigger className="text-left font-display italic text-lg uppercase leading-tight text-gq-white hover:text-gq-teal hover:no-underline">
                 {question}
               </AccordionTrigger>
-              <AccordionContent className="font-body text-sm lg:text-[15px] leading-relaxed text-gq-grey">
+              <AccordionContent className="max-w-[70ch] font-body text-sm lg:text-[15px] leading-relaxed text-gq-grey">
                 {answer}
               </AccordionContent>
             </AccordionItem>
@@ -309,19 +411,22 @@ export default function AboutPage() {
         }}
       />
 
-      {/* Abschluss-CTA */}
+      {/* 8 — Abschluss-CTA */}
       <section className="mt-12 sm:mt-20 rounded-card border border-gq-teal/40 bg-gq-dark-teal/70 p-6 sm:p-10 text-center shadow-card">
         <h2 className="font-display italic text-[clamp(1.5rem,4vw,2.4rem)] uppercase leading-[1] text-gq-white">
-          Bereit für <span className="text-gq-teal">deine Quest?</span>
+          Deine Umgebung. <span className="text-gq-teal">Dein Abenteuer.</span>
         </h2>
-        <p className="mx-auto mt-3 max-w-[46ch] font-body text-sm lg:text-base leading-relaxed text-gq-grey">
-          Lass dir von einer KI den ersten Entwurf bauen — in wenigen Minuten.
+        <p className="mx-auto mt-4 max-w-[46ch] font-body text-sm lg:text-base leading-relaxed text-gq-white">
+          Erstelle jetzt kostenlos deine erste Quest.
+        </p>
+        <p className="mx-auto mt-2 max-w-[46ch] font-body text-sm lg:text-base leading-relaxed text-gq-grey">
+          Kein Abo. Kein Account. Einfach draußen spielen.
         </p>
         <Link
-          href="/anleitung"
+          href="/create"
           className="mx-auto mt-6 inline-flex items-center justify-center gap-2 h-12 px-8 rounded-pill bg-gq-teal text-gq-black text-tech text-xs tracking-[0.08em] transition-all duration-base ease-gq hover:bg-gq-teal-hover active:scale-[0.96]"
         >
-          Zur Anleitung
+          Quest erstellen
           <ArrowRight className="w-4 h-4" />
         </Link>
       </section>
