@@ -85,7 +85,9 @@ Spec ist aktualisiert (Seitenaufbau, 23 Acceptance Criteria, 15 Decision-Log-Ein
 
 Die Browser-Verifikation (390×844 und 1440×900) förderte drei Dinge zutage, die im Code nicht auffielen und nachgezogen wurden: die „Kostenlos"-Zeile war ebenfalls Lime (zwei Lime-Elemente auf einem Screen verstoßen gegen das Design System, jetzt Teal), die FAQ-Accordion lief auf halber Breite, und der Headline-Umbruch ließ „WIRD" allein stehen.
 
-Testabdeckung: 23 neue Tests in `tests/proj-13-landing-refinement.spec.ts`, dazu vier Assertions in den beiden bestehenden PROJ-13-Suiten auf die neue Fassung gezogen. **PROJ-13 73/73 auf Chrome; Gesamtsuiten 312/312 (Chrome) und 310 passed / 2 skipped (Mobile Safari); Unit 186/186; Build und Lint sauber.** **Nächster Schritt: `/qa`.**
+**Nach der Abnahme auf sieben Sektionen gestrafft (2026-09-08).** Die Sektion „Draußen spielen. Wie ein Game." ist ersatzlos entfallen — ihr rhetorischer Hook doppelte die Headline direkt darüber; die Erklärung der Spielmechanik (Laufen, Aufgaben, GPS), die es sonst nirgends gab, steht jetzt im Hero. „Jeder Ort kann ein Level sein." wurde zur Karte mit Teal-Rahmen und bildet mit der Game-Designer-Karte ein Paar in der Seitenmitte; Teal, weil das Design System nur ein Lime-Element pro Screen zulässt. Desktop-Länge von ~3900px auf ~3750px.
+
+Testabdeckung: 24 Tests in `tests/proj-13-landing-refinement.spec.ts` (darunter ein Wächter, der festhält, dass die Spielmechanik im Hero steht), dazu Assertions in den beiden bestehenden PROJ-13-Suiten auf die neue Fassung gezogen. **PROJ-13 74/74 auf Chrome; Gesamtsuiten 313/313 (Chrome) und 310 passed / 2 skipped (Mobile Safari); Unit 186/186; Build und Lint sauber.** **Nächster Schritt: `/qa`.**
 
 ## Next Available ID: PROJ-14
 

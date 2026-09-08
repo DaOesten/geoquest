@@ -46,7 +46,7 @@ export const metadata: Metadata = {
   },
 };
 
-/** Sektion 3 — der Beleg für „überall". Als Fließtext-Aufzählung überliest man ihn. */
+/** Sektion 2 — der Beleg für „überall". Als Fließtext-Aufzählung überliest man ihn. */
 const PLACES = [
   "Ein Park",
   "Eine Stadt",
@@ -211,6 +211,15 @@ export default function AboutPage() {
             Quest kannst du eigene Rallyes erstellen, draußen spielen und Orte
             auf eine ganz neue Art entdecken.
           </p>
+          {/* Die Spielmechanik stand bis 2026-09-08 in einer eigenen Sektion
+              („Draußen spielen. Wie ein Game."). Die ist entfallen — der Hook
+              lag ohnehin schon in der Headline darüber, nur die Erklärung war
+              einmalig. Sie steht jetzt hier, wo sie zuerst gebraucht wird. */}
+          <p className="mt-4">
+            Laufe zu verschiedenen Orten, löse Aufgaben, entdecke Neues und
+            folge deiner Quest mit GPS — die Freiheit der echten Welt mit dem
+            Spielgefühl eines Games.
+          </p>
 
           {/* Das stärkste Einzelargument der Seite — als eigene Zeile über den
               Buttons, damit es nicht im Fließtext untergeht. Teal, nicht Lime:
@@ -254,53 +263,40 @@ export default function AboutPage() {
         </div>
       }
     >
-      {/* 2 — Der emotionale Hook. Ab hier heißt es „Quest": Der Hero oben hat
-          den Besucher mit „GPS-Rallye" in seiner Suchsprache abgeholt, von
-          jetzt an gilt die Sprache, die ihn auch in der App erwartet. */}
+      {/* 2 — Orte als Chip-Reihe, in einer Karte wie Sektion 3. Ab hier heißt
+          es „Quest": Der Hero oben hat den Besucher mit „GPS-Rallye" in seiner
+          Suchsprache abgeholt, von jetzt an gilt die Sprache der App.
+
+          Teal statt Lime: Die beiden Karten sollen sich unterscheiden, und das
+          Design System lässt nur ein Lime-Element pro Screen zu — das bleibt
+          die Game-Designer-Karte darunter. */}
       <section className="mt-12 sm:mt-16">
-        <h2 className={SECTION_LABEL}>Warum draußen</h2>
-        <h3 className={SECTION_TITLE}>Draußen spielen. Wie ein Game.</h3>
-        <div className="mt-4 max-w-[58ch] font-body text-sm sm:text-base lg:text-[17px] leading-relaxed text-gq-grey">
-          <p>
-            Warum nur drinnen am Bildschirm spielen, wenn das Abenteuer direkt
-            vor der Tür liegt?
+        <div className="rounded-card border border-gq-teal/40 bg-gq-dark-teal/70 p-6 sm:p-8 lg:p-10 shadow-card">
+          <h2 className={SECTION_LABEL}>Wo gespielt wird</h2>
+          <h3 className={SECTION_TITLE}>Jeder Ort kann ein Level sein.</h3>
+
+          <ul className="mt-5 flex flex-wrap gap-2 sm:gap-3">
+            {PLACES.map((place) => (
+              <li
+                key={place}
+                className="rounded-pill border border-gq-teal/40 bg-gq-black/40 px-4 py-2 text-tech text-[11px] sm:text-xs tracking-[0.08em] text-gq-white"
+              >
+                {place}
+              </li>
+            ))}
+          </ul>
+
+          <p className="mt-6 max-w-[58ch] font-body text-sm sm:text-base lg:text-[17px] leading-relaxed text-gq-grey">
+            Lege Stationen fest, füge Aufgaben hinzu und verbinde sie zu einer
+            eigenen Quest. Die Teilnehmenden bewegen sich durch die echte Welt
+            und entdecken dabei die nächste Herausforderung.
           </p>
-          <p className="mt-3">
-            Geo Quest verbindet die Freiheit der echten Welt mit dem Spielgefühl
-            eines Games. Laufe zu verschiedenen Orten, löse Aufgaben, entdecke
-            Neues und folge deiner Quest mit GPS.
-          </p>
+          <p className={PUNCHLINE}>Die Welt ist deine Spielkarte.</p>
         </div>
-        <p className={PUNCHLINE}>Dein Spiel. Dein Ort. Deine Regeln.</p>
       </section>
 
-      {/* 3 — Orte als Chip-Reihe. */}
-      <section className="mt-12 sm:mt-20">
-        <h2 className={SECTION_LABEL}>Wo gespielt wird</h2>
-        <h3 className={SECTION_TITLE}>Jeder Ort kann ein Level sein.</h3>
-
-        <ul className="mt-5 flex flex-wrap gap-2 sm:gap-3">
-          {PLACES.map((place) => (
-            <li
-              key={place}
-              className="rounded-pill border border-gq-teal/40 bg-gq-dark-teal/70 px-4 py-2 text-tech text-[11px] sm:text-xs tracking-[0.08em] text-gq-white"
-            >
-              {place}
-            </li>
-          ))}
-        </ul>
-
-        <p className="mt-6 max-w-[58ch] font-body text-sm sm:text-base lg:text-[17px] leading-relaxed text-gq-grey">
-          Lege Stationen fest, füge Aufgaben hinzu und verbinde sie zu einer
-          eigenen Quest. Die Teilnehmenden bewegen sich durch die echte Welt und
-          entdecken dabei die nächste Herausforderung.
-        </p>
-        <p className={PUNCHLINE}>Die Welt ist deine Spielkarte.</p>
-      </section>
-
-      {/* 4 — Als Karte abgesetzt: Sektionen 2, 3 und 4 sind alle Textblöcke,
-          und drei gleiche Formen hintereinander lesen sich flach. Lime, weil
-          das laut Design System das eine Hervorhebungs-Element pro Screen ist. */}
+      {/* 3 — Die zweite Karte, in Lime: das eine Hervorhebungs-Element der
+          Seite laut Design System. */}
       <section className="mt-12 sm:mt-20">
         <div className="rounded-card border border-gq-lime/40 bg-gq-dark-teal/70 p-6 sm:p-8 lg:p-10 shadow-card">
           <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-lime">
@@ -325,7 +321,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 5 — Drei Schritte. */}
+      {/* 4 — Drei Schritte. */}
       <section className="mt-12 sm:mt-20">
         <h2 className={SECTION_LABEL}>So geht es</h2>
         <h3 className={SECTION_TITLE}>Eine Quest erstellen? Ganz einfach.</h3>
@@ -353,7 +349,7 @@ export default function AboutPage() {
         </ol>
       </section>
 
-      {/* 6 — Zielgruppen. */}
+      {/* 5 — Zielgruppen. */}
       <section className="mt-12 sm:mt-20">
         <h2 className={SECTION_LABEL}>Für wen</h2>
         <h3 className={SECTION_TITLE}>Für wen ist Geo Quest?</h3>
@@ -376,7 +372,7 @@ export default function AboutPage() {
         </dl>
       </section>
 
-      {/* 7 — FAQ. Mirrors the JSON-LD below so structured data matches visible
+      {/* 6 — FAQ. Mirrors the JSON-LD below so structured data matches visible
           content. Collapsed by default: Radix keeps the answers in the DOM
           (hidden only via attribute), so crawlers and AI systems still read
           them in full. */}
@@ -411,7 +407,7 @@ export default function AboutPage() {
         }}
       />
 
-      {/* 8 — Abschluss-CTA */}
+      {/* 7 — Abschluss-CTA */}
       <section className="mt-12 sm:mt-20 rounded-card border border-gq-teal/40 bg-gq-dark-teal/70 p-6 sm:p-10 text-center shadow-card">
         <h2 className="font-display italic text-[clamp(1.5rem,4vw,2.4rem)] uppercase leading-[1] text-gq-white">
           Deine Umgebung. <span className="text-gq-teal">Dein Abenteuer.</span>

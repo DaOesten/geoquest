@@ -20,6 +20,20 @@ test.describe("Hero", () => {
     ).toBeVisible();
   });
 
+  test("die Spielmechanik steht im Hero, nicht mehr in einer eigenen Sektion", async ({
+    page,
+  }) => {
+    await page.goto("/about");
+
+    // Mit dem Wegfall von „Draußen spielen. Wie ein Game." (2026-09-08) ist
+    // der Hero die einzige Stelle vor den Schritten, die erklärt, wie
+    // gespielt wird. Wandert der Satz, fällt das hier auf.
+    await expect(
+      page.getByText(/Laufe zu verschiedenen Orten, löse Aufgaben/)
+    ).toBeVisible();
+    await expect(page.getByText(/folge deiner Quest mit GPS/)).toBeVisible();
+  });
+
   test("primärer CTA führt direkt in den Creator, ohne Umweg über /", async ({
     page,
   }) => {
@@ -49,12 +63,14 @@ test.describe("Hero", () => {
 });
 
 test.describe("Sektionsfolge", () => {
-  test("genau acht Sektionen in der festgelegten Reihenfolge", async ({ page }) => {
+  test("genau sieben Sektionen in der festgelegten Reihenfolge", async ({ page }) => {
     await page.goto("/about");
 
-    // Hero lebt im Shell-Titelblock (h1), die übrigen sieben sind <section>.
+    // Hero lebt im Shell-Titelblock (h1), die übrigen sechs sind <section>.
+    // Seit 2026-09-08 ohne „Draußen spielen. Wie ein Game." — die Erklärung
+    // steht jetzt im Hero, der Hook lag ohnehin schon in der Headline.
     const sections = page.locator("main section");
-    await expect(sections).toHaveCount(7);
+    await expect(sections).toHaveCount(6);
 
     // Nur die Sektions-Titel, nicht die FAQ-Trigger (die ebenfalls h3 sind).
     // `allInnerTexts` liefert den gerenderten Text, und der Display-Schnitt
@@ -64,7 +80,6 @@ test.describe("Sektionsfolge", () => {
       .allInnerTexts();
 
     expect(headings.map((h) => h.trim())).toEqual([
-      "DRAUSSEN SPIELEN. WIE EIN GAME.",
       "JEDER ORT KANN EIN LEVEL SEIN.",
       "NICHT NUR SPIELEN. SELBER MACHEN.",
       "EINE QUEST ERSTELLEN? GANZ EINFACH.",
@@ -85,6 +100,10 @@ test.describe("Sektionsfolge", () => {
     ).toHaveCount(0);
     await expect(
       page.getByRole("heading", { name: "Der Unterschied" })
+    ).toHaveCount(0);
+    // Seit 2026-09-08 ebenfalls entfallen — Inhalt im Hero aufgegangen.
+    await expect(
+      page.getByRole("heading", { name: "Draußen spielen. Wie ein Game." })
     ).toHaveCount(0);
   });
 });

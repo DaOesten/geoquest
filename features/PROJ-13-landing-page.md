@@ -3,7 +3,7 @@
 ## Status: In Progress
 _Refinement 4 (`/about` als Marketing-Landingpage) ist am 2026-09-08 gebaut, im Browser verifiziert und testabgedeckt — QA steht aus. Refinement 3 (gemeinsames Burger-Menu) ist deployed und verifiziert._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-08 (Refinement 4 — Frontend umgesetzt)
+**Last Updated:** 2026-09-08 (Refinement 4 — Frontend umgesetzt, danach auf sieben Sektionen gestrafft)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -51,14 +51,15 @@ Das Feature besteht aus **zwei zusammengehörenden statischen Seiten**, die geme
 
 _Neu gefasst in Refinement 4 (2026-09-07). Die vollständige Copy steht im Abschnitt „Refinement 4" am Ende dieser Spec._
 
-1. **Hero** — „Die reale Welt wird zum Spielfeld.", Subline mit „GPS-Rallye", „Kostenlos. Ohne Abo. Ohne Account.", zwei CTAs (`Quest erstellen` → `/create`, `Mit KI bauen` → `/anleitung`)
-2. **Draußen spielen. Wie ein Game.** — der emotionale Hook
-3. **Jeder Ort kann ein Level sein.** — fünf Orte als visuelle Reihe, Erklärung wie eine Quest entsteht, Merkzeile „Die Welt ist deine Spielkarte."
-4. **Nicht nur spielen. Selber machen.** — Game-Designer-Gedanke, kein Vorwissen nötig
-5. **Eine Quest erstellen? Ganz einfach.** — drei nummerierte Schritte
-6. **Für wen ist Geo Quest?** — vier Zielgruppen-Karten (Familien, Schule & Pädagogik, Kinder & Jugendliche, Gruppen & Events)
-7. **Häufige Fragen** — eingeklapptes Accordion, gespiegelt im JSON-LD; vier bestehende Fragen plus neu „Was kann ich in eine Quest einbauen?"
-8. **Abschluss-CTA** — „Deine Umgebung. Dein Abenteuer." mit Button nach `/create`
+1. **Hero** — „Die reale Welt wird zum Spielfeld.", Subline mit „GPS-Rallye", die Spielmechanik in einem Satz (Laufen, Aufgaben, GPS), „Kostenlos. Ohne Abo. Ohne Account.", zwei CTAs (`Quest erstellen` → `/create`, `Mit KI bauen` → `/anleitung`)
+2. **Jeder Ort kann ein Level sein.** — Karte mit Teal-Rahmen: fünf Orte als Chip-Reihe, Erklärung wie eine Quest entsteht, Merkzeile „Die Welt ist deine Spielkarte."
+3. **Nicht nur spielen. Selber machen.** — Karte mit Lime-Rahmen: Game-Designer-Gedanke, kein Vorwissen nötig
+4. **Eine Quest erstellen? Ganz einfach.** — drei nummerierte Schritte
+5. **Für wen ist Geo Quest?** — vier Zielgruppen-Karten (Familien, Schule & Pädagogik, Kinder & Jugendliche, Gruppen & Events)
+6. **Häufige Fragen** — eingeklapptes Accordion, gespiegelt im JSON-LD; vier bestehende Fragen plus neu „Was kann ich in eine Quest einbauen?"
+7. **Abschluss-CTA** — „Deine Umgebung. Dein Abenteuer." mit Button nach `/create`
+
+_Nachtrag 2026-09-08: Die ursprünglich als Sektion 2 gespecte „Draußen spielen. Wie ein Game." ist nach der ersten Browser-Abnahme entfallen — der Hook lag bereits in der Headline, nur die Erklärung der Spielmechanik war einmalig und steht jetzt im Hero. Damit sieben statt acht Sektionen._
 
 **Vokabular:** „GPS-Rallye" steht ausschließlich im Hero und holt den Besucher in seiner Suchsprache ab; ab Sektion 2 heißt es durchgehend „Quest" — dieselbe Sprache, die ihn in der App erwartet. „Schnitzeljagd" bleibt in Meta-Title, Keywords und JSON-LD.
 
@@ -299,6 +300,9 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 | Der Inhalt der Feature-Karten wird zur fünften FAQ-Frage, statt ersatzlos zu verschwinden | Die Frage „Was kann ich in eine Quest einbauen?" ist genau die, die ein Interessent tatsächlich stellt. Eingeklappt kostet sie keinen Lesefluss, bleibt aber für Suchmaschinen und für den, der Details sucht, vollständig vorhanden | 2026-09-07 |
 | Sektion 3 heißt „Jeder Ort kann ein Level sein", nicht „Die Welt ist deine Spielkarte" | Die Level-Metapher trifft den Gaming-Ton des PRD genauer und macht aus einer Feststellung ein Versprechen. „Die Welt ist deine Spielkarte" bleibt als abschließende Merkzeile derselben Sektion erhalten — beide gelieferten Formulierungen bleiben damit in Gebrauch | 2026-09-07 |
 | Die halbe Stunde („in einer halben Stunde eine fertige Schnitzeljagd") verschwindet von der Seite | Bewusste Entscheidung des Betreibers: Die Zahl bleibt der FAQ-Antwort „Wie lange dauert das Erstellen?" vorbehalten und wird nicht zum Verkaufsargument erhoben. Ein Zeitversprechen im Marketing-Text erzeugt eine Messlatte, an der die erste eigene Quest gemessen wird | 2026-09-07 |
+| Sektion „Draußen spielen. Wie ein Game." entfällt nach der ersten Abnahme; der Erklärsatz zieht in den Hero | Die Sektion trug zwei Dinge: einen Hook („Warum nur drinnen am Bildschirm spielen?") und die einzige Erklärung der Spielmechanik. Der Hook doppelt die Headline direkt darüber — dieselbe Aussage zweimal in Folge macht sie nicht stärker. Die Erklärung dagegen gab es sonst nirgends vor Sektion 4, deshalb steht sie jetzt dort, wo der Leser sie zuerst braucht | 2026-09-08 |
+| „Jeder Ort kann ein Level sein." bekommt dieselbe Kartenform wie die Game-Designer-Sektion, aber in Teal | Zwei Karten hintereinander bilden ein erkennbares Paar und geben der Seitenmitte Struktur, die sie als Folge von Textblöcken nicht hatte. Teal statt Lime, weil das Design System ein Lime-Element pro Screen zulässt — das bleibt die Game-Designer-Karte, die den stärksten Satz der Seite trägt | 2026-09-08 |
+| Die Orts-Chips wechseln in der Karte von `bg-gq-dark-teal/70` auf `bg-gq-black/40` | Die Karte selbst trägt `bg-gq-dark-teal/70`; Chips im gleichen Ton wären auf ihr verschwunden. Der dunklere Grund setzt sie wieder ab, ohne eine neue Farbe einzuführen | 2026-09-08 |
 | Die vier Anlass-Karten (Kindergeburtstag, Schulausflug, …) weichen den vier Zielgruppen-Karten | Inhaltlich vollständig deckungsgleich — beide Blöcke nebeneinander wäre reine Wiederholung. Die Zielgruppen-Fassung ist die bessere: sie adressiert den Leser („Für Familien") statt einen Anlass zu benennen | 2026-09-07 |
 | Schritt 03 sagt „Quest als Datei weitergeben", nicht „teilen" | Ein Teilen-Link existiert nicht; Weitergabe läuft über den JSON-Export (PROJ-9). Eine Landingpage, die eine Funktion suggeriert, die es nicht gibt, erzeugt genau die Enttäuschung, die sie vermeiden soll | 2026-09-07 |
 | Hero-CTAs führen nach `/create` und `/anleitung` statt nach `/anleitung` und `/` | Wer über eine Landingpage kommt, hat sich für „erstellen" entschieden. Der Mode-Switch `/` als Zwischenstopp verlangt eine Entscheidung, die schon gefallen ist. Die KI-Anleitung bleibt als sekundärer Weg sichtbar — sie ist die Abkürzung, nicht der Hauptweg | 2026-09-07 |
@@ -1287,3 +1291,17 @@ Der Chrome-Lauf lief wie in den Vorgänger-Refinements über eine temporäre Con
 - **Echte Geräte:** verifiziert wurde in Desktop-Chrome mit gesetztem Viewport, nicht auf einem physischen Handy
 - **Kontrast der neuen Elemente:** Die Orts-Chips (`text-gq-white` auf `bg-gq-dark-teal/70`) und die Lime-Merkzeile in der Karte sind rechnerisch unkritisch, aber nicht mit einem Messwerkzeug geprüft
 - **Die Seite ist deutlich länger geworden** (8 Sektionen, ~3900px auf Desktop). Ob der Abschluss-CTA damit noch in Reichweite ist oder ob die Seite gekürzt gehört, ist eine Produktfrage für die Abnahme
+
+### Nachtrag: Straffung auf sieben Sektionen (2026-09-08)
+
+Nach der ersten Browser-Abnahme zwei Eingriffe, beide vom Betreiber angestoßen:
+
+**Sektion „Draußen spielen. Wie ein Game." ist ersatzlos entfallen.** Der Vorschlag war, sie zu kürzen; die Entscheidung fiel dann auf den ganzen Block. Der rhetorische Hook („Warum nur drinnen am Bildschirm spielen?") doppelte die Headline unmittelbar darüber. Was die Sektion exklusiv trug, war die Erklärung der Spielmechanik — die steht jetzt als dritter Absatz im Hero-Lead: „Laufe zu verschiedenen Orten, löse Aufgaben, entdecke Neues und folge deiner Quest mit GPS — die Freiheit der echten Welt mit dem Spielgefühl eines Games."
+
+**Sektion „Jeder Ort kann ein Level sein." steht jetzt in einer Karte** mit `border-gq-teal/40`, sonst identisch zur Game-Designer-Karte darunter. Die beiden bilden ein Paar in der Seitenmitte. Die Orts-Chips mussten dabei von `bg-gq-dark-teal/70` auf `bg-gq-black/40` wechseln — auf dem Kartengrund im selben Ton wären sie unsichtbar geworden.
+
+Damit sieben Sektionen statt acht; die Seite ist auf Desktop von ~3900px auf ~3750px geschrumpft.
+
+**Tests:** Zwei Assertions auf die alte Sektionsfolge gezogen (Anzahl 6 statt 7 `<section>`, Titelliste ohne den entfallenen Eintrag), ein Wegfall-Check für die gestrichene Sektion ergänzt und **ein neuer Test**, der festhält, dass die Spielmechanik im Hero steht — wandert der Satz, fällt es auf. PROJ-13 jetzt **74 Tests**.
+
+**Verifikation:** Build und Lint sauber, Browser auf 390×844 und 1440×900 geprüft, **Gesamtsuite Chrome 313/313**, **Mobile Safari 310 passed / 2 skipped**, Unit 186/186.

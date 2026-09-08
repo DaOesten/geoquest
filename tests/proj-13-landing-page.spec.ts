@@ -14,9 +14,6 @@ test.describe("Seite & Navigation", () => {
       "Die reale Welt"
     );
     await expect(
-      page.getByRole("heading", { name: "Draußen spielen. Wie ein Game." })
-    ).toBeVisible();
-    await expect(
       page.getByRole("heading", { name: "Jeder Ort kann ein Level sein." })
     ).toBeVisible();
     await expect(
