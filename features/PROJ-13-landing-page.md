@@ -1,9 +1,9 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Approved
-_Refinement 4 ist deployt (Tag `v1.25.0-PROJ-13`). Refinement 5 (Copy-Feinschliff) ist gebaut und am 2026-09-09 QA-geprüft: alle fünf Änderungen bestätigt, keine Bugs, produktionsreif — Deploy steht aus._
+## Status: Deployed
+_Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und dort verifiziert. Live auf https://geoquesty.vercel.app/about (Tag `v1.26.0-PROJ-13`)._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-09 (Refinement 5 — QA abgeschlossen, Production-Ready)
+**Last Updated:** 2026-09-09 (Refinement 5 nach Production deployt)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -1700,3 +1700,53 @@ PROJ-13 damit **105 Tests** (vorher 100).
 Keine Bugs. Die fünf Änderungen sind reine Textersetzungen an einer bereits abgenommenen Seite; die einzige strukturelle Folge — `eyebrow` als optionale Prop — ist geprüft und lässt die drei Nachbarseiten unberührt. BUG-7 bleibt behoben.
 
 Weiterhin offen aus früheren Runden: **BUG-8** (Sektions-Kicker als `h2`, die echten Titel als `h3`) und **BUG-9** (kein `:focus-visible` in `globals.css`) — beide vorbestehend, app-weit und nicht Gegenstand dieses Refinements.
+
+---
+
+## Deployment — Refinement 5 (2026-09-09)
+
+**Production-URL:** https://geoquesty.vercel.app/about
+**Tag:** `v1.26.0-PROJ-13`
+**Commits:** `fc18198` (Copy-Feinschliff), `d1540cf` (QA)
+**Weg:** Push auf `main` → Vercel Auto-Deploy, nach rund 50 Sekunden live.
+
+### Pre-Deployment
+| Prüfung | Ergebnis |
+|---|---|
+| `npm run build` | erfolgreich |
+| `npm run lint` | 0 Fehler (6 vorbestehende `<img>`-Warnungen) |
+| QA-Freigabe | Approved, keine Bugs |
+| Secrets im Repo | keine |
+| Alles committed | ja, zwei Commits gepusht |
+
+### Post-Deployment-Verifikation (live geprüft)
+
+**Die fünf Änderungen** — alle bestätigt, alte Fassungen restlos verschwunden:
+
+| # | Neu | Alt |
+|---|---|---|
+| 1 | kein Eyebrow, kein leeres `<p>` an seiner Stelle | „Über Geo Quest": 0 Treffer |
+| 2 | „Nimm die Herausforderung an…" vorhanden | — |
+| 3 | „Mit KI erstellen" | „Mit KI bauen": 0 Treffer |
+| 4 | „Draußen ist das Game." | „Die Welt ist deine Spielkarte": 0 Treffer |
+| 5 | „Verbessere das Lernen durch Bewegung" | Fachbeispiele: 0 Treffer |
+
+**Gemessen in Production, nicht nur gesucht:**
+- Beide Hero-Sätze identisch formatiert: `20px|400|28px|Rubik`
+- Buttons: „Quest erstellen" 232px, „Mit KI erstellen" 225px — der sekundäre bleibt schmaler
+- **BUG-7 bleibt behoben:** alle neun Viewports von 320 bis 1920px zeigen den CTA vollständig, kein Überlauf, kein Touch-Target unter 44px. Knappster Fall unverändert 320×568 mit 27px Luft
+
+| Prüfung | Ergebnis |
+|---|---|
+| Alle sieben Routen | HTTP 200, 0,08–0,22s |
+| Konsole | **keine** JS-Fehler, **kein** fehlgeschlagener Request |
+| Security-Header | `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, HSTS mit Preload |
+
+**Regression — der kritische Punkt dieses Refinements:** `eyebrow` wurde in der geteilten `InfoPageShell` optional. In Production bestätigt, dass die drei Nachbarseiten ihre Eyebrows behalten: `/anleitung` („Anleitung"), `/impressum` und `/datenschutz` (beide „Rechtliches") — alle ohne Überlauf, mit Footer, ohne JS-Fehler.
+
+### Weiterhin offen
+- **BUG-8 (Low)** — Sektions-Kicker als `h2`, echte Titel als `h3`; betrifft den gesamten Info-Bereich
+- **BUG-9 (Low)** — kein `:focus-visible` in `globals.css`, app-weit
+- **BUG-2 / BUG-3** aus PROJ-1 — vorbestehend
+- **Firefox** — Binary nicht lauffähig
+- **Beobachtung:** 320×568 hat nur 27px Luft unter dem CTA. Kein Fehler, aber die Stelle, die zuerst kippt, falls der Hero wächst

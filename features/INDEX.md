@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Roadmap | — | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | Approved | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 
 <!-- Add features above this line -->
 
@@ -126,7 +126,11 @@ Fünf neue Tests, per Gegenprobe geschärft: Mit drei absichtlich eingebauten Fe
 
 **Beobachtung ohne Bug-Status:** 320×568 hat nur noch 27px Luft unter dem CTA (vorher 98px) — kein Fehler, aber die Stelle, die zuerst kippt, falls der Hero künftig wächst.
 
-**Nächster Schritt: `/deploy`.**
+**Am 2026-09-09 nach Production deployt** (Tag `v1.26.0-PROJ-13`) — live auf https://geoquesty.vercel.app/about und dort verifiziert. Alle fünf Änderungen bestätigt, alte Fassungen restlos verschwunden. In Production gemessen: beide Hero-Sätze identisch formatiert (`20px|400|28px|Rubik`), der sekundäre Button mit 225px schmaler als der primäre (232px), kein leeres `<p>` an der Stelle des entfernten Eyebrows. **BUG-7 bleibt behoben** — alle neun Viewports von 320 bis 1920px zeigen den CTA vollständig. Sieben Routen HTTP 200 mit 0,08–0,22s, Konsole ohne JS-Fehler und ohne fehlgeschlagenen Request, Security-Header aktiv.
+
+Der kritische Regressionspunkt ist in Production bestätigt: `eyebrow` wurde in der geteilten `InfoPageShell` optional, und `/anleitung`, `/impressum` und `/datenschutz` behalten ihre Eyebrows.
+
+**PROJ-13 ist abgeschlossen.** Offen bleiben BUG-8 (Sektions-Kicker als `h2`) und BUG-9 (kein `:focus-visible`) — beide vorbestehend, app-weit und ein eigenes Refinement wert. Dazu die Beobachtung, dass 320×568 nur noch 27px Luft unter dem CTA hat.
 
 ## Abgeschlossen: Refinement 4 (Marketing-Landingpage)
 Deployt am 2026-09-09 (Tag `v1.25.0-PROJ-13`). Offen bleiben zwei Low-Befunde aus der QA, die den gesamten Info-Bereich betreffen und ein eigenes Refinement wert wären: BUG-8 (Sektions-Kicker als `h2`, die echten Titel als `h3` — Screenreader hören das dekorative Label als Überschrift) und BUG-9 (kein `:focus-visible` in `globals.css`, app-weit).
