@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Roadmap | — | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | Approved | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 
 <!-- Add features above this line -->
 
@@ -105,7 +105,9 @@ Als Folge richtet das Hero-Grid ab `lg` oben aus statt zu zentrieren — das tri
 
 Weiterhin offen: BUG-8 (Sektions-Kicker als `h2`) und BUG-9 (kein `:focus-visible`) — beide vorbestehend und app-weit, ein eigenes Refinement wert.
 
-**Nächster Schritt: `/deploy`.**
+**Am 2026-09-09 nach Production deployt** (Tag `v1.25.0-PROJ-13`) — live auf https://geoquesty.vercel.app/about und dort verifiziert. **BUG-7 ist in Production bestätigt behoben:** alle elf Viewports von 320×568 bis 1920×1080 zeigen den primären CTA vollständig, die Werte decken sich exakt mit den lokalen Messungen. Alle sieben Routen HTTP 200 mit 0,07–0,09s Ladezeit, Struktur und Inhalte wie gebaut, Konsole ohne einen einzigen fehlgeschlagenen Request, Security-Header aktiv, SEO-Metadaten und `FAQPage`-JSON-LD ausgeliefert. Die Nachbarseiten wurden wegen der Änderung an `InfoPageShell` mitgeprüft und sind unbeschädigt — die Prompt-Vorlage auf `/anleitung` ist mit 6956 Zeichen vollständig.
+
+**PROJ-13 ist abgeschlossen.** Offen bleiben zwei Low-Befunde aus der QA, die den gesamten Info-Bereich betreffen und ein eigenes Refinement wert wären: BUG-8 (Sektions-Kicker als `h2`, die echten Titel als `h3` — Screenreader hören das dekorative Label als Überschrift) und BUG-9 (kein `:focus-visible` in `globals.css`, app-weit).
 
 ## Next Available ID: PROJ-14
 

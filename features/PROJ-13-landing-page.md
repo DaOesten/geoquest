@@ -1,9 +1,9 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Approved
-_Refinement 4 (`/about` als Marketing-Landingpage) ist gebaut, am 2026-09-08 QA-geprüft (23/23 Acceptance Criteria) und am 2026-09-09 um die BUG-7-Behebung ergänzt: Der Hero-CTA steht jetzt auf allen elf geprüften Viewports über dem Falz. Refinement 3 (gemeinsames Burger-Menu) ist deployed und verifiziert._
+## Status: Deployed
+_Refinement 4 (`/about` als Marketing-Landingpage) ist am 2026-09-09 nach Production deployt und dort verifiziert — inklusive BUG-7-Behebung. Live auf https://geoquesty.vercel.app/about (Tag `v1.25.0-PROJ-13`)._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-09 (BUG-7 behoben — Hero gekürzt, Logo weicht am Desktop)
+**Last Updated:** 2026-09-09 (nach Production deployt)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -1483,3 +1483,50 @@ PROJ-13 damit **98 Tests** (vorher 91).
 
 ### Nicht behoben
 BUG-8 (Sektions-Kicker als `h2`) und BUG-9 (kein `:focus-visible`) bleiben offen — beide betreffen den gesamten Info-Bereich und nicht nur `/about`; sie gehören in ein eigenes Refinement.
+
+---
+
+## Deployment — Refinement 4 (2026-09-09)
+
+**Production-URL:** https://geoquesty.vercel.app/about
+**Tag:** `v1.25.0-PROJ-13`
+**Commits:** `52b66f1` (Frontend), `9b45c2c` (Straffung), `8ca1afc` (QA), `7f475e3` (BUG-7)
+**Weg:** Push auf `main` → Vercel Auto-Deploy, nach rund 50 Sekunden live.
+
+### Pre-Deployment
+| Prüfung | Ergebnis |
+|---|---|
+| `npm run build` | erfolgreich |
+| `npm run lint` | 0 Fehler (6 vorbestehende `<img>`-Warnungen in anderen Dateien) |
+| QA-Freigabe | Approved, keine Critical/High-Bugs |
+| Secrets im Repo | keine; nur `.env.local.example`, `.env*.local` ist in `.gitignore` |
+| Alles committed | ja, vier Commits gepusht |
+
+### Post-Deployment-Verifikation (live geprüft)
+
+**BUG-7 in Production bestätigt behoben** — der eigentliche Grund dieses Deploys. Alle elf Viewports von 320×568 bis 1920×1080 zeigen den primären CTA vollständig, keiner mit horizontalem Überlauf. Die Werte decken sich exakt mit den lokalen Messungen (1366×768: 259px Luft, vorher 140px Fehlbetrag).
+
+| Prüfung | Ergebnis |
+|---|---|
+| Alle sieben Routen | HTTP 200, Ladezeit **0,07–0,09s** (PRD verlangt < 2s) |
+| Neue Inhalte | alle acht Stichproben vorhanden |
+| Gestrichene Inhalte | alle sieben Stichproben auf 0 — nichts vom alten Stand übrig |
+| Struktur | 6 Sektionen, 5 Orts-Chips, 3 Schritte, 4 Zielgruppen, 5 FAQ-Fragen |
+| Logo | ab `lg` ausgeblendet, auf 390px sichtbar (115px) — wie vorgesehen |
+| Design-System-Regel | genau ein Lime-Element |
+| FAQ interaktiv | Klick öffnet, `aria-expanded` wechselt auf `true`, Antwort sichtbar |
+| CTA-Ziele | „Quest erstellen" → `/create`, „Mit KI bauen" → `/anleitung` |
+| Konsole | sauber — kein einziger fehlgeschlagener Request |
+| Security-Header | `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload` |
+| SEO | Title trägt „Schnitzeljagd", Keywords enthalten die drei neuen Begriffe, `FAQPage`-JSON-LD ausgeliefert |
+
+**Nachbarseiten** (wegen der Änderung an `InfoPageShell` mitgeprüft): `/anleitung`, `/impressum` und `/datenschutz` laden fehlerfrei, mit Footer und Menu, ohne Überlauf. Die Prompt-Vorlage auf `/anleitung` ist mit 6956 Zeichen vollständig.
+
+**Zur Konsolen-Prüfung:** Ein erster Lauf meldete einen 404 — der stammte aus einem Netzwerkabbruch während der Messung, nicht von der Seite. Ein sauberer Durchlauf mit Response-Mitschnitt zeigt **keine** fehlgeschlagene Anfrage.
+
+### Weiterhin offen
+- **BUG-8 (Low)** — Sektions-Kicker sind `h2`, die eigentlichen Titel `h3`. Betrifft den gesamten Info-Bereich, nicht nur `/about`
+- **BUG-9 (Low)** — kein `:focus-visible` in `globals.css`; der Browser-Standard ist auf dunklem Grund kaum sichtbar. App-weit
+- **BUG-2 / BUG-3** aus PROJ-1 — vorbestehend, unverändert
+- **Firefox** — Binary weiterhin nicht lauffähig; die Seite ist statisches HTML/CSS, das Risiko bleibt gering
+- **Lighthouse** — nicht gemessen; die Ladezeiten (0,07–0,09s) liegen weit unter der PRD-Vorgabe
