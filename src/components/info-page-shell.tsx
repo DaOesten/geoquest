@@ -109,8 +109,16 @@ export function InfoPageShell({
 
       <main className="relative">
         {/* Title block — sits beside the aside/hero from lg up */}
-        <div className={`${CONTAINER} pt-6 sm:pt-12 lg:pt-16`}>
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-14">
+        {/* Der Kopfabstand wächst bis `sm` und bleibt dann stehen: ab `lg`
+            ist die Bildschirmhöhe der knappe Faktor, nicht die Breite
+            (BUG-7). Erst ab `xl` — wo auch flache Laptops genug Höhe
+            haben — darf er wieder großzügiger werden. */}
+        <div className={`${CONTAINER} pt-6 sm:pt-10 xl:pt-16`}>
+          {/* `items-start` statt `items-center` (2026-09-09): Seit der Hero
+              von /about kürzer ist als das Bild daneben, ließ die Zentrierung
+              den Text in der Spalte schweben. Oben bündig lesen sich beide
+              Spalten als ein Block. */}
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-14">
             <div>
               {showLogo && (
                 <Image
@@ -123,7 +131,15 @@ export function InfoPageShell({
                   // The lockup has no alpha channel — it ships on an opaque
                   // near-black plate. Rendered plain, exactly as the start
                   // screen does it, so both entry points look identical.
-                  className="mb-6 w-[220px] sm:w-[280px] lg:w-[320px] h-auto"
+                  //
+                  // Verschwindet ab `lg` (BUG-7, 2026-09-09): Laptops sind
+                  // breit, aber flach — auf 1366×768 und 1280×800 schob das
+                  // Lockup mit 147px den Hero-CTA unter den Falz. Genau dort
+                  // trägt es am wenigsten: Auf dem Desktop stehen Navigation
+                  // und „Zur App“ ohnehin im Header, und die Headline nennt
+                  // die Marke. Auf Handy und Tablet, wo die Höhe reicht und
+                  // der Header schmal ist, bleibt es der Markenanker.
+                  className="mb-6 w-[220px] sm:w-[280px] h-auto lg:hidden"
                 />
               )}
               <p className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-primary">

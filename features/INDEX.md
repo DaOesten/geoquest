@@ -97,6 +97,14 @@ Kontrast gemessen statt geschätzt: schlechtester Wert **6.96:1** bei 4.5:1 Vorg
 
 17 neue Tests in `tests/proj-13-landing-qa.spec.ts` für das, was die Frontend-Phase nicht abdeckte (Kontrast, Tastatur, Semantik, Rhythmus, fünf Viewports, Security). Per Gegenprobe geschärft: mit absichtlich gebrochenem Code fallen genau die zwei zuständigen Tests um. PROJ-13 jetzt **91 Tests**. Suiten: **Chrome 330/330**, **Mobile Safari 317 passed / 2 skipped**, **Unit 186/186**, Build und Lint sauber.
 
+**BUG-7 behoben am 2026-09-09.** Drei Eingriffe: Das Logo-Lockup weicht ab `lg` (`lg:hidden`) — am Desktop stehen Navigation und Marke ohnehin im Header und in der Headline, auf Handy und Tablet bleibt es der Markenanker. Der Kopfabstand steigt erst ab `xl` wieder, weil ab `lg` die Bildschirmhöhe der knappe Faktor ist, nicht die Breite. Und der Hero-Lead ist auf Wunsch des Betreibers über die Bugbehebung hinaus auf das Nötigste gekürzt: Zielgruppen-Aufzählung und Spielmechanik sind raus — zusammen 168px an der teuersten Stelle der Seite, während die Zielgruppen als vier Karten und die Mechanik in den Schritten und der FAQ ohnehin ausführlicher stehen. Der Hero trägt jetzt Headline, Subline, Preiszeile und die beiden CTAs.
+
+Als Folge richtet das Hero-Grid ab `lg` oben aus statt zu zentrieren — das trifft auch `/anleitung` (ebenfalls mit `aside`) und verbessert die Ausrichtung dort ebenso.
+
+**Ergebnis: Der CTA steht auf allen elf geprüften Viewports über dem Falz** (320×568 bis 1920×1080). Vorher waren sechs davon abgeschnitten, darunter 1366×768 mit 140px. Sechs neue Tests halten das fest, per Gegenprobe geschärft; zwei Tests, die auf die gelöschten Absätze prüften, sind umgebaut — einer stellt jetzt sicher, dass die Spielmechanik zwar aus dem Hero, aber nicht von der Seite verschwindet. PROJ-13 jetzt **98 Tests**.
+
+Weiterhin offen: BUG-8 (Sektions-Kicker als `h2`) und BUG-9 (kein `:focus-visible`) — beide vorbestehend und app-weit, ein eigenes Refinement wert.
+
 **Nächster Schritt: `/deploy`.**
 
 ## Next Available ID: PROJ-14

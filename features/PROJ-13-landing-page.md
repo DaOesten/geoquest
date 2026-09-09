@@ -1,9 +1,9 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
 ## Status: Approved
-_Refinement 4 (`/about` als Marketing-Landingpage) ist gebaut und am 2026-09-08 QA-geprüft: 23/23 Acceptance Criteria erfüllt, keine Critical/High-Bugs, produktionsreif. Offen ist BUG-7 (Medium, CTA unter dem Falz auf 1366×768 und 1280×800). Refinement 3 (gemeinsames Burger-Menu) ist deployed und verifiziert._
+_Refinement 4 (`/about` als Marketing-Landingpage) ist gebaut, am 2026-09-08 QA-geprüft (23/23 Acceptance Criteria) und am 2026-09-09 um die BUG-7-Behebung ergänzt: Der Hero-CTA steht jetzt auf allen elf geprüften Viewports über dem Falz. Refinement 3 (gemeinsames Burger-Menu) ist deployed und verifiziert._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-08 (Refinement 4 — QA abgeschlossen, Production-Ready)
+**Last Updated:** 2026-09-09 (BUG-7 behoben — Hero gekürzt, Logo weicht am Desktop)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -1433,3 +1433,53 @@ PROJ-13 damit **91 Tests** (vorher 74).
 ### Produktionsreife: **JA**
 
 Keine Critical- oder High-Bugs. BUG-7 ist ein Conversion-Thema, kein Funktionsfehler — die Seite ist vollständig nutzbar, und auf der laut PRD primären Plattform (mobil) tritt es nicht auf. Die Entscheidung, ob BUG-7 vor oder nach dem Deploy behoben wird, liegt beim Betreiber; behoben werden sollte er, weil er genau den Zweck der Seite schwächt.
+
+---
+
+## BUG-7 behoben + Hero gekürzt (2026-09-09)
+
+### Was BUG-7 war
+Der primäre CTA „Quest erstellen" lag auf verbreiteten Laptop-Auflösungen unter der Bildschirmkante: 1366×768 fehlten 140px, 1280×800 108px, 1440×900 knapp 8px. Ursache war das Höhenbudget des Hero — allein das Logo-Lockup verbrauchte mit Rand 192px, bevor die Headline begann.
+
+### Drei Eingriffe
+
+**1. Das Logo-Lockup weicht ab `lg`** (`lg:hidden` in `InfoPageShell`).
+Genau dort trägt es am wenigsten: Am Desktop stehen Navigation und „Zur App" ohnehin im Header, und die Headline nennt die Marke. Auf Handy und Tablet — wo die Höhe reicht und der Header schmal ist — bleibt es der Markenanker. Es wächst außerdem nicht mehr auf 320px, weil Laptops breit, aber flach sind.
+
+**2. Der Kopfabstand steigt erst ab `xl` wieder** (`pt-6 sm:pt-10 xl:pt-16` statt `sm:pt-12 lg:pt-16`).
+Ab `lg` ist die Bildschirmhöhe der knappe Faktor, nicht die Breite. Erst ab `xl`, wo auch flache Geräte Platz haben, darf der Abstand großzügig sein.
+
+**3. Der Hero-Lead ist auf das Nötigste gekürzt** — auf Wunsch des Betreibers, über die reine Bugbehebung hinaus.
+Zwei Absätze sind entfallen: die Zielgruppen-Aufzählung („Ob mit Freunden, der Familie, in der Schule oder im Verein…") und die Spielmechanik („Laufe zu verschiedenen Orten, löse Aufgaben…"). Zusammen kosteten sie **168px** — mehr als das Logo — an der teuersten Stelle der Seite, ohne dort etwas zu sagen, das nicht später käme: Die Zielgruppen stehen als vier eigene Karten in Sektion 5, die Mechanik in den drei Schritten (Sektion 4) und in der fünften FAQ-Antwort.
+
+Der Hero trägt jetzt Headline, Subline, „Kostenlos. Ohne Abo. Ohne Account." und die beiden CTAs — sonst nichts.
+
+**Als Folge außerdem:** Das Hero-Grid richtet ab `lg` oben aus statt zu zentrieren (`lg:items-start`). Mit dem kürzeren Text schwebte die Textspalte sonst neben dem Bild. Das trifft auch `/anleitung`, die ebenfalls ein `aside` hat — dort verbessert es die Ausrichtung ebenso (Titel und Info-Box stehen jetzt bündig).
+
+### Ergebnis: alle elf geprüften Viewports
+
+| Viewport | CTA-Unterkante | Luft |
+|---|---|---|
+| 1366×768 | 509 | 259px |
+| 1280×800 | 509 | 291px |
+| 1440×900 | 509 | 391px |
+| 1024×768 | 485 | 283px |
+| 1920×1080 | 509 | 571px |
+| 768×1024 | 580 | 444px |
+| 430×932 | 470 | 462px |
+| 390×844 | 470 | 374px |
+| 375×667 | 470 | 197px |
+| 360×640 | 470 | 170px |
+| 320×568 | 486 | 82px |
+
+Vorher waren 1366×768, 1280×800, 1024×768, 375×667, 360×640 und 320×568 abgeschnitten — jetzt keiner.
+
+### Tests
+- **Neu:** sechs Tests im Block „BUG-7: Hero-CTA über dem Falz" — fünf Desktop-Auflösungen plus ein Test, der festhält, dass das Logo auf Handy und Tablet bleibt und nur ab `lg` weicht
+- **Angepasst:** Der Kontrast-Test prüfte den gelöschten Mechanik-Absatz, jetzt die Subline. Der Wächter „Spielmechanik im Hero" ist umgebaut zu zwei Tests: Der Hero bleibt auf das Nötigste beschränkt, **und** die Mechanik ist weiterhin auf der Seite (Schritte + FAQ) — sie darf aus dem Hero verschwinden, aber nicht aus der Seite
+- **Gegenprobe:** Mit zurückgebautem Logo (`lg:w-[320px]` statt `lg:hidden`) fällt genau der zuständige Test um. Anschließend sauber zurückgesetzt
+
+PROJ-13 damit **98 Tests** (vorher 91).
+
+### Nicht behoben
+BUG-8 (Sektions-Kicker als `h2`) und BUG-9 (kein `:focus-visible`) bleiben offen — beide betreffen den gesamten Info-Bereich und nicht nur `/about`; sie gehören in ein eigenes Refinement.

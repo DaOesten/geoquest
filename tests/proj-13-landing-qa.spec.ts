@@ -47,7 +47,7 @@ test.describe("Kontrast (PRD: WCAG AA, 4.5:1)", () => {
 
       const targets: [string, Element | undefined][] = [
         ["Hero Kostenlos-Zeile", byText(/^Kostenlos\. Ohne Abo/)],
-        ["Hero Spielmechanik", byText(/^Laufe zu verschiedenen Orten/)],
+        ["Hero Subline", byText(/^Erstelle deine eigene GPS-Rallye/)],
         ["Orts-Chip", document.querySelector("main section ul li") || undefined],
         ["Orte Fließtext", byText(/^Lege Stationen fest/)],
         ["Merkzeile Spielkarte", byText(/^Die Welt ist deine Spielkarte/)],
@@ -193,6 +193,53 @@ test.describe("Responsive (PRD: 360–430px mobil, Desktop nutzbar)", () => {
       expect(small).toEqual([]);
     });
   }
+});
+
+test.describe("BUG-7: Hero-CTA über dem Falz", () => {
+  // Behoben am 2026-09-09. Der primäre CTA lag auf verbreiteten Laptop-
+  // Auflösungen unter der Bildschirmkante — auf einer Landingpage, deren
+  // Zweck die Conversion ist, der teuerste Platz überhaupt.
+  for (const [w, h, label] of [
+    [1366, 768, "1366x768 (verbreitet Windows)"],
+    [1280, 800, "1280x800"],
+    [1440, 900, "1440x900 (MacBook 13\")"],
+    [1024, 768, "1024x768"],
+    [1920, 1080, "1920x1080"],
+  ] as const) {
+    test(`${label}: „Quest erstellen" ist ohne Scrollen vollständig sichtbar`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: w, height: h });
+      await page.goto("/about");
+
+      const cta = page.getByRole("link", { name: /Quest erstellen/i }).first();
+      const box = await cta.boundingBox();
+      expect(box, "CTA nicht gefunden").not.toBeNull();
+      expect(
+        Math.round(box!.y + box!.height),
+        `CTA-Unterkante liegt ${Math.round(box!.y + box!.height - h)}px unter dem Falz`
+      ).toBeLessThanOrEqual(h);
+    });
+  }
+
+  test("das Logo-Lockup weicht ab lg, bleibt auf Handy und Tablet", async ({
+    page,
+  }) => {
+    const logo = page.locator("main img[alt='Geo Quest']");
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/about");
+    await expect(logo, "auf dem Handy ist das Lockup der Markenanker").toBeVisible();
+
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await expect(logo, "auf dem Tablet reicht die Höhe").toBeVisible();
+
+    await page.setViewportSize({ width: 1366, height: 768 });
+    await expect(
+      logo,
+      "am Laptop kostet es den CTA den Platz — Marke steht im Header und in der Headline"
+    ).toBeHidden();
+  });
 });
 
 test.describe("Sicherheit", () => {

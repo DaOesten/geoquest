@@ -206,30 +206,22 @@ export default function AboutPage() {
             Erstelle deine eigene GPS-Rallye und mach aus jedem Ort ein
             Abenteuer.
           </p>
-          <p className="mt-4">
-            Ob mit Freunden, der Familie, in der Schule oder im Verein: Mit Geo
-            Quest kannst du eigene Rallyes erstellen, draußen spielen und Orte
-            auf eine ganz neue Art entdecken.
-          </p>
-          {/* Die Spielmechanik stand bis 2026-09-08 in einer eigenen Sektion
-              („Draußen spielen. Wie ein Game."). Die ist entfallen — der Hook
-              lag ohnehin schon in der Headline darüber, nur die Erklärung war
-              einmalig. Sie steht jetzt hier, wo sie zuerst gebraucht wird. */}
-          <p className="mt-4">
-            Laufe zu verschiedenen Orten, löse Aufgaben, entdecke Neues und
-            folge deiner Quest mit GPS — die Freiheit der echten Welt mit dem
-            Spielgefühl eines Games.
-          </p>
+          {/* Der Hero trug bis 2026-09-09 zwei weitere Absätze: eine
+              Zielgruppen-Aufzählung und die Spielmechanik. Beide sind
+              entfallen — die Zielgruppen stehen als vier eigene Karten
+              weiter unten, die Mechanik in den drei Schritten und in der
+              FAQ. Zusammen kosteten sie 168px an der teuersten Stelle der
+              Seite, ohne dort etwas zu sagen, das nicht später käme. */}
 
           {/* Das stärkste Einzelargument der Seite — als eigene Zeile über den
               Buttons, damit es nicht im Fließtext untergeht. Teal, nicht Lime:
               Das Design System erlaubt ein Lime-Element pro Screen, und das
               ist die Game-Designer-Karte weiter unten. */}
-          <p className="mt-6 text-tech text-xs sm:text-[13px] tracking-[0.1em] text-gq-teal">
+          <p className="mt-5 text-tech text-xs sm:text-[13px] tracking-[0.1em] text-gq-teal">
             Kostenlos. Ohne Abo. Ohne Account.
           </p>
 
-          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-5 lg:mt-4 flex flex-col gap-3 sm:flex-row">
             {/* Direkt in den Creator statt über den Mode-Switch `/`: wer von
                 einer Landingpage kommt, hat sich für „erstellen" entschieden. */}
             <Link

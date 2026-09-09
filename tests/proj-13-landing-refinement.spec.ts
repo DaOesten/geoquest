@@ -20,18 +20,29 @@ test.describe("Hero", () => {
     ).toBeVisible();
   });
 
-  test("die Spielmechanik steht im Hero, nicht mehr in einer eigenen Sektion", async ({
+  test("der Hero bleibt auf Headline, Subline, Preiszeile und CTAs beschränkt", async ({
     page,
   }) => {
     await page.goto("/about");
 
-    // Mit dem Wegfall von „Draußen spielen. Wie ein Game." (2026-09-08) ist
-    // der Hero die einzige Stelle vor den Schritten, die erklärt, wie
-    // gespielt wird. Wandert der Satz, fällt das hier auf.
-    await expect(
-      page.getByText(/Laufe zu verschiedenen Orten, löse Aufgaben/)
-    ).toBeVisible();
-    await expect(page.getByText(/folge deiner Quest mit GPS/)).toBeVisible();
+    // Am 2026-09-09 auf das Nötigste gekürzt (BUG-7): Zielgruppen-Aufzählung
+    // und Spielmechanik sind raus — beide kosteten 168px an der teuersten
+    // Stelle der Seite und stehen weiter unten ohnehin ausführlicher.
+    await expect(page.getByText(/^Erstelle deine eigene GPS-Rallye/)).toBeVisible();
+    await expect(page.getByText("Kostenlos. Ohne Abo. Ohne Account.")).toBeVisible();
+    await expect(page.getByText(/Ob mit Freunden, der Familie/)).toHaveCount(0);
+    await expect(page.getByText(/Laufe zu verschiedenen Orten/)).toHaveCount(0);
+  });
+
+  test("die Spielmechanik ist weiterhin auf der Seite — in Schritten und FAQ", async ({
+    page,
+  }) => {
+    await page.goto("/about");
+
+    // Sie darf aus dem Hero verschwinden, aber nicht aus der Seite.
+    await expect(page.getByText(/GPS führt euch von Station zu Station/)).toBeVisible();
+    const html = await page.content();
+    expect(html).toContain("Ein Pfeil zeigt die Richtung");
   });
 
   test("primärer CTA führt direkt in den Creator, ohne Umweg über /", async ({
