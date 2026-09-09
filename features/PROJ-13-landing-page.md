@@ -218,6 +218,7 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [ ] Angenommen der Besucher bedient die Seite mit der Tastatur, wenn er durch die Kopfzeile tabbt, dann erhält der Icon-Button einen sichtbaren Fokus und liegt in der Reihenfolge vor „Zur App"
 - [ ] Angenommen die Seite wird im Dark Theme (`/about`) und im jeweiligen Theme von `/anleitung` dargestellt, wenn das Icon sichtbar ist, dann erfüllt es die WCAG-AA-Kontrastvorgabe (4.5:1) in beiden
 - [ ] Angenommen der primäre CTA lag vor diesem Refinement auf allen elf geprüften Viewports über dem Falz (BUG-7), wenn das Icon ergänzt ist, dann gilt das unverändert — der Icon-Button steht in der bestehenden Kopfzeilen-Höhe und erzeugt keine zusätzliche Höhe
+- [ ] Angenommen ein Besucher oder ein KI-System liest das `WebApplication`-JSON-LD auf `/about`, wenn es die `audience` auswertet, dann nennt sie **8 bis 16 Jahre** — dieselbe Spanne wie der sichtbare FAQ-Text, nicht mehr 10–15 (Nachzug 2026-09-09, siehe Technical Requirements)
 
 ### Prompt-Vorlage
 - [x] Angenommen ein Nutzer ist bei der Anleitungs-Sektion, wenn er die Seite betrachtet, dann ist die vollständige Prompt-Vorlage als lesbarer Text sichtbar und manuell markierbar
@@ -264,6 +265,7 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - **Browser Support:** letzte 2 Versionen Chrome, Safari, Firefox, Edge
 - **Externer Link (Refinement 6):** einfaches `<a>` mit `target="_blank"` und `rel="noopener noreferrer"` — kein `next/link`, weil Prefetch auf einer fremden Domain nichts beiträgt. Ziel-URL kommt als Konstante aus `src/lib/app-nav.ts`, damit Kopfzeile und Burger-Menu (PROJ-1) nicht auseinanderlaufen
 - **Sichtbarkeit pro Seite (Refinement 6):** `InfoPageShell` bekommt eine Prop (z.B. `showSupport`, Default `false`), die `/about` und `/anleitung` setzen. Kein Pfad-Abgleich innerhalb der Shell — die Seite weiß selbst, was sie ist, und die Shell bleibt frei von Wissen über konkrete Routen
+- **JSON-LD-Altersangabe nachziehen (Nachzug 2026-09-09):** `src/app/(info)/about/page.tsx` setzt im `WebApplication`-JSON-LD `suggestedMinAge: 10` / `suggestedMaxAge: 15`, während der sichtbare FAQ-Text seit der Copy-Änderung des Betreibers „etwa 8 bis 16 Jahren, aber niemand ist zu alt" sagt. Beide Werte auf **8** und **16** ziehen. Die Spec beansprucht an anderer Stelle ausdrücklich, dass strukturierte Daten nicht vom Seiteninhalt abweichen — für die FAQ ist das durch die geteilte `FAQ`-Konstante gesichert, für die `audience` nicht: sie ist ein freistehendes Literal, das beim Ändern der Copy stillschweigend zurückblieb. „Niemand ist zu alt" lässt sich in `suggestedMaxAge` nicht ausdrücken; 16 ist die ehrlichste Zahl, die das Feld hergibt
 
 ## Open Questions
 - [x] ~~Wie wird die Prompt-Vorlage synchron zu `src/lib/quest-schema.ts` gehalten?~~ → Geklärt in `/architecture`: Handgepflegter Text plus Guard-Test, der ein Beispiel-JSON gegen das echte Schema validiert
@@ -372,6 +374,7 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 | `InfoPageShell` bekommt eine `showSupport`-Prop, statt den Pfad selbst abzufragen | Die Shell weiß heute nichts über konkrete Routen — sie nimmt Titel, Eyebrow und `backHref` entgegen und rendert. Ein `usePathname()`-Vergleich auf zwei feste Strings würde dieses Wissen einbauen und beim nächsten Seitenzuwachs stillschweigend falsch werden. Die Seite weiß selbst, was sie ist | 2026-09-09 |
 | Ko-fi-URL kommt aus `src/lib/app-nav.ts`, nicht als Literal in die Shell | Dieselbe URL steht im Burger-Menu (PROJ-1). Zwei Literale laufen bei der nächsten Änderung auseinander; `app-nav.ts` ist bereits die geteilte Quelle beider Navigationen | 2026-09-09 |
 | Einfaches `<a target="_blank" rel="noopener noreferrer">` statt `next/link` | `next/link` bringt Prefetch und Client-Navigation für interne Routen. Auf einer fremden Domain trägt beides nichts bei. `noopener` verhindert, dass die Zielseite über `window.opener` auf den Tab der App zugreift (Reverse Tabnabbing) | 2026-09-09 |
+| Die `audience`-Altersangabe im JSON-LD zieht auf 8–16 nach, bleibt aber ein Literal | Anders als die FAQ hat die Altersspanne keine geteilte Quelle im Code — der sichtbare Satz steht in der FAQ-Konstante, die Zahlen im JSON-LD. Eine gemeinsame Konstante wäre hier Überbau für zwei Zahlen, die sich selten ändern; entscheidend ist, dass die Abweichung dokumentiert ist und beim nächsten Copy-Wechsel mitgeprüft wird | 2026-09-09 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
