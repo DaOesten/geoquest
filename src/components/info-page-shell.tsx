@@ -1,9 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Coffee } from "lucide-react";
 import { AppNavMenu } from "@/components/app-nav-menu";
 import { InfoFooter } from "@/components/info-footer";
-import { HEADER_NAV_LINKS } from "@/lib/app-nav";
+import { HEADER_NAV_LINKS, KOFI_URL } from "@/lib/app-nav";
 
 interface InfoPageShellProps {
   /** Show the brand lockup above the eyebrow (front page only — subpages go without). */
@@ -29,6 +29,19 @@ interface InfoPageShellProps {
    * tragen, also gar nicht erst als Marketing-Fläche gedacht sind.
    */
   theme?: "dark" | "light";
+  /**
+   * Zeigt den Ko-fi-Icon-Button links neben „Zur App"
+   * (PROJ-13, Refinement 2026-09-09).
+   *
+   * Als Prop und nicht per `usePathname()`-Vergleich in der Shell: Sie weiß
+   * heute nichts über konkrete Routen und soll das auch nicht lernen — ein
+   * Abgleich auf zwei feste Strings würde beim nächsten Seitenzuwachs
+   * stillschweigend falsch. Die Seite weiß selbst, was sie ist.
+   *
+   * Gesetzt auf `/about` und `/anleitung` — den beiden Seiten, die das Produkt
+   * erklären. Rechtstexte liest niemand aus Sympathie.
+   */
+  showSupport?: boolean;
   children: React.ReactNode;
 }
 
@@ -60,6 +73,7 @@ export function InfoPageShell({
   aside,
   backHref,
   theme = "dark",
+  showSupport = false,
   children,
 }: InfoPageShellProps) {
   return (
@@ -94,7 +108,23 @@ export function InfoPageShell({
               </Link>
             ))}
 
-            {/* Reserved for a Ko-fi support link later — the slot stays, the target changes. */}
+{/* Ghost (kein Rahmen, keine Füllung) und ohne Beschriftung: „Zur App"
+                daneben bleibt der stärkere der beiden — zwei gleichgewichtige
+                Buttons ließen den Besucher raten, welcher gemeint ist. Die
+                ausgeschriebene Fassung „Support me" trägt das Burger-Menu, das
+                auf jeder Breite dieselbe Zeile hat. */}
+            {showSupport && (
+              <a
+                href={KOFI_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Support me — auf Ko-fi unterstützen (öffnet neuen Tab)"
+                className="flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-full text-muted-foreground transition-colors duration-base ease-gq hover:text-primary hover:bg-primary/10 active:scale-[0.96]"
+              >
+                <Coffee className="w-5 h-5" aria-hidden="true" />
+              </a>
+            )}
+
             <Link
               href="/"
               className="flex items-center h-11 px-5 rounded-pill border border-primary text-primary text-tech text-[11px] tracking-[0.08em] transition-all duration-base ease-gq hover:bg-primary/10 active:scale-[0.96]"

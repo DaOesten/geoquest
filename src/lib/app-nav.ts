@@ -1,4 +1,13 @@
-import { BookOpen, Gamepad2, Info, Pencil, ScrollText, ShieldCheck, type LucideIcon } from "lucide-react";
+import {
+  BookOpen,
+  Coffee,
+  Gamepad2,
+  Info,
+  Pencil,
+  ScrollText,
+  ShieldCheck,
+  type LucideIcon,
+} from "lucide-react";
 
 /**
  * Die Navigation der gesamten App (PROJ-1, Refinement 2026-09-06).
@@ -22,7 +31,26 @@ export interface AppNavLink {
   href: string;
   label: string;
   icon: LucideIcon;
+  /**
+   * Ziel liegt außerhalb der App (aktuell nur Ko-fi).
+   *
+   * Steuert drei Dinge auf einmal, deshalb ein Flag am Link statt einer
+   * zweiten Datenstruktur: `target`/`rel`, ein `<a>` statt `next/link`
+   * (Prefetch trägt auf fremder Domain nichts bei) und der unterdrückte
+   * `aria-current`-Zweig — ein externes Ziel ist nie „die aktuelle Seite".
+   */
+  external?: boolean;
 }
+
+/**
+ * Freiwillige Unterstützung (PROJ-1 / PROJ-13, Refinement 2026-09-09).
+ *
+ * Steht hier und nicht als Literal an den zwei Einbauorten: Das Burger-Menu
+ * (`app-nav-menu.tsx`) und die Kopfzeile der Info-Seiten
+ * (`info-page-shell.tsx`) zeigen auf dasselbe Ziel und würden beim nächsten
+ * Ändern sonst auseinanderlaufen.
+ */
+export const KOFI_URL = "https://ko-fi.com/technolomagie";
 
 export interface AppNavGroup {
   /** Überschrift der Gruppe im Menu. */
@@ -54,6 +82,15 @@ export const APP_NAV_GROUPS: readonly AppNavGroup[] = [
       { href: "/impressum", label: "Impressum", icon: ScrollText },
       { href: "/datenschutz", label: "Datenschutz", icon: ShieldCheck },
     ],
+  },
+  // Letzte Gruppe, ohne Hervorhebung: Play und Create sind der Zweck der App,
+  // Rechtliches ist Pflicht, Unterstützen ist freiwillig. Adressat sind die
+  // erwachsenen Ersteller (Eltern, Lehrkräfte, Jugendleiter) — nicht der
+  // Spieler, der unterwegs eine Station sucht. Kaffeetasse, weil Ko-fi als
+  // "buy me a coffee" bekannt ist; ein Herz läse sich als "Favorit".
+  {
+    title: "Unterstützen",
+    links: [{ href: KOFI_URL, label: "Support me", icon: Coffee, external: true }],
   },
 ] as const;
 

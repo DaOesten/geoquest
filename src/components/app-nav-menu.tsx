@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu } from "lucide-react";
+import { ExternalLink, Menu } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -17,8 +17,14 @@ import { APP_NAV_GROUPS } from "@/lib/app-nav";
  * Das Burger-Menu der gesamten App (PROJ-1, Refinement 2026-09-06).
  *
  * Ersetzt `info-nav-menu.tsx`, das nur auf den vier Info-Seiten lief und nur
- * vier Ziele kannte. Sechs Links in drei Gruppen, auf jedem Screen dasselbe
+ * vier Ziele kannte. Sieben Links in vier Gruppen, auf jedem Screen dasselbe
  * Menu — inklusive der Info-Seiten, die es über `InfoPageShell` einbinden.
+ *
+ * Die vierte Gruppe „Unterstützen" (Refinement 2026-09-09) trägt den einzigen
+ * Eintrag, der die App verlässt. Er läuft durch dieselbe Render-Schleife wie
+ * die übrigen — gleiche Typografie, gleiche Trennlinie, keine Hervorhebung —
+ * und unterscheidet sich nur im `external`-Zweig: `<a target="_blank">` statt
+ * `next/link`, ein kleines Pfeil-Icon rechts und kein `aria-current`.
  *
  * Radix (via shadcn Sheet) liefert Fokus-Falle, Escape, Scroll-Lock und
  * `aria-expanded` auf dem Trigger; der einzige eigene Zustand ist offen/zu,
@@ -95,21 +101,19 @@ export function AppNavMenu() {
               </p>
 
               <div className="mt-2 flex flex-col">
-                {group.links.map(({ href, label, icon: Icon }) => {
+                {group.links.map(({ href, label, icon: Icon, external }) => {
                   // Auch Unteransichten zählen zum Eintrag: wer in
                   // /create/[id]/station/[x] steckt, ist immer noch im Creator.
-                  const isActive = pathname === href || pathname.startsWith(`${href}/`);
-                  return (
-                    <Link
-                      key={href}
-                      href={href}
-                      onClick={() => setOpen(false)}
-                      aria-current={isActive ? "page" : undefined}
-                      className={
-                        "flex items-center gap-3 h-12 border-b border-border/60 font-display italic text-xl uppercase transition-colors duration-base ease-gq hover:text-primary active:text-primary " +
-                        (isActive ? "text-primary" : "text-foreground")
-                      }
-                    >
+                  // Externe Ziele sind nie "die aktuelle Seite".
+                  const isActive =
+                    !external && (pathname === href || pathname.startsWith(`${href}/`));
+
+                  const className =
+                    "flex items-center gap-3 h-12 border-b border-border/60 font-display italic text-xl uppercase transition-colors duration-base ease-gq hover:text-primary active:text-primary " +
+                    (isActive ? "text-primary" : "text-foreground");
+
+                  const content = (
+                    <>
                       <Icon
                         className={
                           "w-[18px] h-[18px] flex-shrink-0 " +
@@ -117,6 +121,44 @@ export function AppNavMenu() {
                         }
                       />
                       {label}
+                      {external && (
+                        <ExternalLink
+                          className="w-3.5 h-3.5 flex-shrink-0 ml-auto text-muted-foreground"
+                          aria-hidden="true"
+                        />
+                      )}
+                    </>
+                  );
+
+                  // Einfaches <a> statt next/link: Prefetch und
+                  // Client-Navigation tragen auf einer fremden Domain nichts
+                  // bei. `noopener` verhindert, dass die Zielseite über
+                  // window.opener auf den Tab der App zugreift.
+                  if (external) {
+                    return (
+                      <a
+                        key={href}
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setOpen(false)}
+                        className={className}
+                      >
+                        {content}
+                        <span className="sr-only">(öffnet neuen Tab)</span>
+                      </a>
+                    );
+                  }
+
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={() => setOpen(false)}
+                      aria-current={isActive ? "page" : undefined}
+                      className={className}
+                    >
+                      {content}
                     </Link>
                   );
                 })}

@@ -1,7 +1,7 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
 ## Status: In Progress
-_Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und dort verifiziert (Tag `v1.26.0-PROJ-13`). Refinement 6 (Ko-fi-Icon in der Kopfzeile von `/about` und `/anleitung`) ist am 2026-09-09 spezifiziert, aber noch nicht gebaut._
+_Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und dort verifiziert (Tag `v1.26.0-PROJ-13`). Refinement 6 (Ko-fi-Icon in der Kopfzeile von `/about` und `/anleitung`, dazu der JSON-LD-Altersnachzug) ist am 2026-09-09 gebaut, im Browser gemessen und mit E2E-Tests abgesichert — QA steht aus._
 **Created:** 2026-09-04
 **Last Updated:** 2026-09-09 (Refinement 6: Ko-fi-Icon in der Kopfzeile)
 
@@ -1292,6 +1292,56 @@ Eingeklapptes Accordion, gespiegelt im `FAQPage`-JSON-LD. Trägt „Schnitzeljag
 `/anleitung`, `/impressum`, `/datenschutz`, `InfoPageShell`, Header, Burger-Menu (`AppNavMenu`), Footer, Hintergrund, Prompt-Vorlage, Import, Creator, Player. Kein neues Paket, kein Backend, keine Route.
 
 ---
+
+## Implementation Notes (Frontend — Refinement 6: Ko-fi-Icon, 2026-09-09)
+
+Umgesetzt am 2026-09-09, zusammen mit dem Burger-Menu-Eintrag aus PROJ-1
+(gemeinsame Konstante, deshalb ein Durchgang). Drei Dateien:
+
+**`src/components/info-page-shell.tsx`** — neue Prop `showSupport` (Default
+`false`). Der Button steht links neben „Zur App", ist 44×44, trägt
+`aria-label="Support me — auf Ko-fi unterstützen (öffnet neuen Tab)"` und
+öffnet `KOFI_URL` aus `src/lib/app-nav.ts` mit
+`target="_blank" rel="noopener noreferrer"`.
+
+Der reservierte Platzhalter-Kommentar („Reserved for a Ko-fi support link
+later") ist entfallen — „Zur App" bleibt unverändert stehen, Ko-fi bekommt
+einen eigenen Platz daneben statt den fremden zu erben.
+
+Ghost-Optik über `text-muted-foreground` + `hover:text-primary`, ohne Rahmen
+und ohne Füllfläche. Token-Klassen statt `gq-*`-Hex, weil die Shell auch das
+Light-Theme der Rechtstexte trägt (BUG-1 aus der QA vom 2026-09-06).
+
+**`src/app/(info)/about/page.tsx`** und **`.../anleitung/page.tsx`** setzen
+`showSupport`. `/impressum` und `/datenschutz` bleiben unverändert.
+
+**JSON-LD-Nachzug (gleiche Datei, `/about`):** `suggestedMinAge` /
+`suggestedMaxAge` stehen jetzt auf 8 und 16 statt 10 und 15 und decken sich
+damit mit dem sichtbaren FAQ-Text („etwa 8 bis 16 Jahren, aber niemand ist zu
+alt"). Ein Kommentar an der Stelle hält fest, dass diese Spanne — anders als
+die FAQ mit ihrer geteilten `FAQ`-Konstante — keine gemeinsame Quelle mit der
+Copy hat und bei der nächsten Textänderung mitgezogen werden muss.
+
+### Browser-Messung statt Schätzung
+
+Auf 320×568 gemessen: Ko-fi-Icon x=99 (44×44), „Zur App" x=147 (105×44),
+Burger x=256 (44×44) — alle drei auf derselben vertikalen Mitte (28), kein
+horizontaler Überlauf. Der vierte Platz in der Kopfzeile passt also auch auf
+dem schmalsten geprüften Gerät ohne Umbruch und ohne ein Tap-Ziel zu drücken.
+
+BUG-7 bleibt behoben: Der primäre CTA liegt auf 320×568, 1366×768 und
+1440×900 weiterhin vollständig über dem Falz — der Icon-Button steht in der
+bestehenden Kopfzeilen-Höhe und erzeugt keine zusätzliche.
+
+### Tests
+
+Abgedeckt in `tests/proj-1-kofi-support.spec.ts` (20 Tests, gemeinsam mit
+PROJ-1): Sichtbarkeit auf `/about` und `/anleitung`, Abwesenheit auf
+`/impressum` und `/datenschutz`, `target`/`rel`, Accessible Name, Ghost-Optik
+gegen „Zur App", Tab-Reihenfolge, 44px auf 320px, Zeilenumbruch, Fokus,
+BUG-7-Wächter und zwei JSON-LD-Tests (Werte und Deckung mit dem sichtbaren
+Text). Per Gegenprobe geschärft — ohne `showSupport` auf `/anleitung` fällt
+genau der zuständige Test.
 
 ## Implementation Notes (Frontend — Refinement 4, 2026-09-08)
 

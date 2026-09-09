@@ -184,7 +184,17 @@ Nicht in die App-Kopfzeile: Sie hat auf 360px genau zwei Plätze und dazwischen 
 
 Damit ist die seit dem 2026-09-05 offene Frage nach dem Ko-fi-Platzhalter geschlossen — **aber anders als vorgesehen**: Der reservierte Platz war als Tausch gegen „Zur App" gedacht. Das wäre falsch gewesen. „Zur App" ist der Conversion-Weg der Seite, und Refinement 4 hat die Hero-CTAs eigens auf `/create` gezogen, um genau diesen Weg zu verkürzen. Ko-fi bekommt einen eigenen Platz daneben, statt den fremden zu erben.
 
-Beide Specs sind aktualisiert (PROJ-1: User Story 9, 8 Acceptance Criteria, Edge Cases 13–16, 5 Produkt- und 4 technische Entscheidungen; PROJ-13: 11 Acceptance Criteria, 3 Edge Cases, 3 Technical Requirements, 4 Produkt- und 4 technische Entscheidungen, 1 geschlossene Open Question). **Noch nichts gebaut — nächster Schritt: `/frontend`.**
+Beide Specs sind aktualisiert (PROJ-1: User Story 9, 8 Acceptance Criteria, Edge Cases 13–16, 5 Produkt- und 4 technische Entscheidungen; PROJ-13: 11 Acceptance Criteria, 3 Edge Cases, 3 Technical Requirements, 4 Produkt- und 4 technische Entscheidungen, 1 geschlossene Open Question).
+
+**Frontend umgesetzt am 2026-09-09.** Fünf Dateien: `app-nav.ts` (Konstante `KOFI_URL`, `external`-Flag am Link, vierte Gruppe), `app-nav-menu.tsx` (externer Zweig in der bestehenden Render-Schleife — gleiche Typografie, kleines Pfeil-Icon, `sr-only`-Hinweis auf den neuen Tab), `info-page-shell.tsx` (Prop `showSupport`, Ghost-Icon 44×44) sowie `/about` und `/anleitung`, die die Prop setzen.
+
+Auf 320×568 gemessen statt geschätzt: Icon x=99, „Zur App" x=147, Burger x=256 — alle 44px hoch, gleiche vertikale Mitte, kein Überlauf. BUG-7 bleibt behoben.
+
+**Mitgenommen wie geplant:** Der JSON-LD-Nachzug auf `/about` (`suggestedMinAge`/`MaxAge` von 10/15 auf 8/16) deckt sich jetzt mit dem sichtbaren FAQ-Text.
+
+20 neue E2E-Tests in `tests/proj-1-kofi-support.spec.ts`, per Gegenprobe geschärft: ohne `external`-Flag fallen genau die zwei Tests des Externen-Link-Vertrags, ohne `showSupport` auf `/anleitung` genau der zuständige eine. Drei Fehler in den **Tests selbst** wurden dabei gefunden und behoben (deutsche Anführungszeichen in JS-Strings, `@graph`-Struktur des JSON-LD, und ein Ausrichtungstest, der den unter `sm` ausgeblendeten „Anleitung"-Link mitzählte und 28px Versatz meldete, wo keiner war) — das Produkt war in allen drei Fällen richtig.
+
+**Nächster Schritt: `/qa`.**
 
 **Mitzunehmen im selben `/frontend`-Lauf:** Das `WebApplication`-JSON-LD auf `/about` gibt Maschinen `suggestedMinAge: 10` / `suggestedMaxAge: 15`, während der sichtbare FAQ-Text seit der Copy-Änderung des Betreibers „etwa 8 bis 16 Jahren, aber niemand ist zu alt" sagt. Zwei Zahlen in `src/app/(info)/about/page.tsx`, auf 8 und 16 zu ziehen. Aufgefallen beim Angleichen des PRD, das dieselbe veraltete Spanne trug.
 

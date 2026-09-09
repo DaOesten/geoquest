@@ -1,7 +1,7 @@
 # PROJ-1: App Shell & Mode Switch
 
 ## Status: In Progress
-_Deployed; das Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist gebaut und im Browser verifiziert — QA steht aus. Dazu neu das Refinement vom 2026-09-09: „Support me"-Eintrag (Ko-fi) im Burger-Menu — spezifiziert, noch nicht gebaut._
+_Deployed; das Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist gebaut und im Browser verifiziert — QA steht aus. Das Refinement vom 2026-09-09 („Support me" / Ko-fi) ist am 2026-09-09 gebaut, im Browser gemessen und mit 20 E2E-Tests abgesichert — QA steht ebenfalls aus._
 **Created:** 2026-08-23
 **Last Updated:** 2026-09-09
 
@@ -635,6 +635,68 @@ Die Icon-Auswahl trifft `/frontend` aus dem bereits genutzten `lucide-react`-Set
 - Kein kontextabhängiger Menü-Eintrag „Quest bearbeiten": diese Aktion bleibt sichtbar auf der Seite, statt sich hinter zwei Taps zu verstecken
 
 ---
+
+## Implementation Notes (Frontend) — „Support me" / Ko-fi (2026-09-09)
+
+Umgesetzt am 2026-09-09. Drei Dateien für PROJ-1, dazu die zwei Seiten und die
+Shell auf PROJ-13-Seite.
+
+**`src/lib/app-nav.ts`** — die geteilte Quelle beider Navigationen:
+- `KOFI_URL` als exportierte Konstante (`https://ko-fi.com/technolomagie`).
+  Burger-Menu und Info-Kopfzeile lesen beide von hier; zwei Literale wären beim
+  nächsten Ändern auseinandergelaufen.
+- `AppNavLink` bekommt ein optionales `external?: boolean`. Ein Flag statt einer
+  zweiten Datenstruktur, weil es drei Dinge auf einmal steuert: `target`/`rel`,
+  `<a>` statt `next/link`, und den unterdrückten `aria-current`-Zweig.
+- Vierte Gruppe `Unterstützen` mit dem einen Eintrag `Support me` (`Coffee`).
+
+`HEADER_NAV_LINKS` filtert weiterhin auf `/anleitung` und nimmt den neuen
+Eintrag deshalb **nicht** mit auf — geprüft, weil die Konstante über
+`APP_NAV_GROUPS.flatMap()` läuft und sonst still den Ko-fi-Link in die
+Desktop-Textzeile der Info-Seiten gezogen hätte.
+
+**`src/components/app-nav-menu.tsx`** — die Render-Schleife bekommt einen
+`external`-Zweig. Bewusst dieselbe `className` für beide Zweige, damit der
+Eintrag Typografie, Höhe und Trennlinie mit den übrigen teilt (ein Test hält
+das fest). Zusätzlich ein kleines `ExternalLink`-Icon rechts (`aria-hidden`)
+und ein `sr-only`-Zusatz „(öffnet neuen Tab)", damit Screenreader den
+Kontextwechsel angekündigt bekommen.
+
+**`src/components/info-page-shell.tsx`** — neue Prop `showSupport` (Default
+`false`), gesetzt von `/about` und `/anleitung`. Kein `usePathname()`-Vergleich
+in der Shell: Sie weiß heute nichts über konkrete Routen, und ein Abgleich auf
+zwei feste Strings wäre beim nächsten Seitenzuwachs stillschweigend falsch
+geworden. Der Button ist ein Ghost (kein Rahmen, keine Füllung), 44×44,
+`text-muted-foreground` mit `hover:text-primary` — Token-Klassen statt
+`gq-*`-Hex, weil die Shell auch das Light-Theme der Rechtstexte trägt (BUG-1).
+
+### Was die Browser-Messung ergeben hat
+
+Auf 320×568 gemessen statt geschätzt: Ko-fi-Icon bei x=99 (44×44), „Zur App"
+bei x=147 (105×44), Burger bei x=256 (44×44) — alle drei auf derselben
+vertikalen Mitte (28), kein horizontaler Überlauf. Die Kopfzeile trägt den
+vierten Platz also ohne Umbruch; der Textlink „Anleitung" ist unter `sm`
+ohnehin ausgeblendet.
+
+### Tests
+
+20 neue E2E-Tests in `tests/proj-1-kofi-support.spec.ts`, aufgeteilt in
+Burger-Menu (PROJ-1), Kopfzeile (PROJ-13) und JSON-LD.
+
+Per Gegenprobe geschärft: Entfernt man das `external`-Flag, fallen genau die
+zwei Tests um, die den Externen-Link-Vertrag halten (`target`/`rel` und die
+Screenreader-Ankündigung). Entfernt man `showSupport` von `/anleitung`, fällt
+genau der eine Test für diese Seite.
+
+**Drei eigene Testfehler unterwegs gefunden und behoben** — alle drei im Test,
+nicht im Produkt:
+1. Deutsche typografische Anführungszeichen in `test()`-Titeln beenden den
+   umgebenden JS-String. Titel tragen jetzt keine.
+2. Das JSON-LD der Seite ist ein `@graph`, kein Array auf oberster Ebene — die
+   Knotensuche griff daneben.
+3. Der 320px-Ausrichtungstest zählte den unter `sm` ausgeblendeten
+   „Anleitung"-Link mit (Größe 0, Mitte 0) und meldete 28px Versatz, wo keiner
+   war. Filtert jetzt auf sichtbare Elemente.
 
 ## Implementation Notes (Frontend) — App-weite Navigation (2026-09-06)
 

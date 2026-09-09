@@ -89,6 +89,7 @@ const TROUBLESHOOTING = [
 export default function AnleitungPage() {
   return (
     <InfoPageShell
+      showSupport
       eyebrow="Anleitung"
       title={
         <>

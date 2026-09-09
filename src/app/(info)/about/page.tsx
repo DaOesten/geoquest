@@ -121,7 +121,7 @@ const FAQ = [
   {
     question: "Für welches Alter ist das gedacht?",
     answer:
-      "Die Quests richten sich an Kinder und Jugendliche von etwa 10 bis 15 Jahren. Erstellt werden sie meist von Eltern, Lehrkräften oder Jugendleitern.",
+      "Die Quests richten sich vor allem an Kinder und Jugendliche von etwa 8 bis 16 Jahren, aber niemand ist zu alt um eine Quest zu spielen. Erstellt werden sie meist von Eltern, Lehrkräften oder Jugendleitern.",
   },
   {
     question: "Wie lange dauert das Erstellen?",
@@ -155,8 +155,14 @@ const JSON_LD = {
       description: DESCRIPTION,
       audience: {
         "@type": "PeopleAudience",
-        suggestedMinAge: 10,
-        suggestedMaxAge: 15,
+        // Deckt sich mit dem sichtbaren FAQ-Text ("etwa 8 bis 16 Jahren,
+        // aber niemand ist zu alt"). Die Felder nehmen nur Zahlen — das
+        // "niemand ist zu alt" lässt sich hier nicht ausdrücken, 16 ist das
+        // Ehrlichste, was das Format hergibt. Anders als die FAQ (geteilte
+        // FAQ-Konstante) hat diese Spanne keine gemeinsame Quelle mit der
+        // Copy: bei der nächsten Textänderung mitziehen.
+        suggestedMinAge: 8,
+        suggestedMaxAge: 16,
       },
       offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
       featureList: [
@@ -192,6 +198,7 @@ export default function AboutPage() {
   return (
     <InfoPageShell
       showLogo
+      showSupport
       /* Kein Eyebrow (2026-09-09): „Über Geo Quest" beschrieb die Seite,
          statt den Besucher anzusprechen — auf einer Landingpage eine
          verschenkte Zeile über der Headline. Die Shell lässt die Zeile
