@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Roadmap | — | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 
 <!-- Add features above this line -->
 
@@ -107,7 +107,19 @@ Weiterhin offen: BUG-8 (Sektions-Kicker als `h2`) und BUG-9 (kein `:focus-visibl
 
 **Am 2026-09-09 nach Production deployt** (Tag `v1.25.0-PROJ-13`) — live auf https://geoquesty.vercel.app/about und dort verifiziert. **BUG-7 ist in Production bestätigt behoben:** alle elf Viewports von 320×568 bis 1920×1080 zeigen den primären CTA vollständig, die Werte decken sich exakt mit den lokalen Messungen. Alle sieben Routen HTTP 200 mit 0,07–0,09s Ladezeit, Struktur und Inhalte wie gebaut, Konsole ohne einen einzigen fehlgeschlagenen Request, Security-Header aktiv, SEO-Metadaten und `FAQPage`-JSON-LD ausgeliefert. Die Nachbarseiten wurden wegen der Änderung an `InfoPageShell` mitgeprüft und sind unbeschädigt — die Prompt-Vorlage auf `/anleitung` ist mit 6956 Zeichen vollständig.
 
-**PROJ-13 ist abgeschlossen.** Offen bleiben zwei Low-Befunde aus der QA, die den gesamten Info-Bereich betreffen und ein eigenes Refinement wert wären: BUG-8 (Sektions-Kicker als `h2`, die echten Titel als `h3` — Screenreader hören das dekorative Label als Überschrift) und BUG-9 (kein `:focus-visible` in `globals.css`, app-weit).
+## Offenes Refinement 5: Copy-Feinschliff `/about` (2026-09-09)
+**PROJ-13** geht von Deployed zurück auf In Progress — fünf Textänderungen an der live stehenden Seite, vom Betreiber vorgegeben. Kein struktureller Eingriff.
+
+Der Eyebrow „Über Geo Quest" entfällt (er beschrieb die Seite, statt den Besucher anzusprechen). Der Hero bekommt einen zweiten, gleichrangigen Satz zum Spielerlebnis — die Seite adressiert Ersteller, aber wer eine Quest baut, will wissen, was die Gruppe erlebt. Der sekundäre CTA heißt „Mit KI erstellen", die Merkzeile der ersten Karte „Draußen ist das Game.", und die Schul-Karte ist auf zwei Sätze gekürzt.
+
+Zwei Vorgaben habe ich nach Rückfrage angepasst: Der CTA lautet „Mit KI erstellen" statt „Quest mit KI erstellen" — die längere Fassung hätte den sekundären Button breiter gemacht als den primären und ihn optisch zum Haupt-CTA befördert. Und die gestrichenen Fachbeispiele in der Schul-Karte waren in Refinement 4 die Begründung dafür, die eigene Lernpfad-Sektion zu streichen; der Betreiber hat die Kürzung bestätigt.
+
+**Technische Folge:** `eyebrow` in `InfoPageShell` ist jetzt optional — ein leerer String hätte ein leeres `<p>` als Leerraum über der Headline hinterlassen. Die drei anderen Info-Seiten setzen die Prop weiterhin und sind unverändert.
+
+**BUG-7 bleibt behoben:** Der zweite Lead-Satz kostet 51px, alle elf Viewports zeigen den CTA weiterhin vollständig. Knappster Fall ist 320×568 mit 27px Luft (vorher 98px). Zwei neue Tests halten den fehlenden Eyebrow und die gleiche Formatierung beider Hero-Sätze fest; vier Assertions sind auf die neue Copy gezogen. PROJ-13 jetzt **100 Tests**. **Nächster Schritt: `/qa`.**
+
+## Abgeschlossen: Refinement 4 (Marketing-Landingpage)
+Deployt am 2026-09-09 (Tag `v1.25.0-PROJ-13`). Offen bleiben zwei Low-Befunde aus der QA, die den gesamten Info-Bereich betreffen und ein eigenes Refinement wert wären: BUG-8 (Sektions-Kicker als `h2`, die echten Titel als `h3` — Screenreader hören das dekorative Label als Überschrift) und BUG-9 (kein `:focus-visible` in `globals.css`, app-weit).
 
 ## Next Available ID: PROJ-14
 

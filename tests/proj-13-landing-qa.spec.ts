@@ -50,7 +50,7 @@ test.describe("Kontrast (PRD: WCAG AA, 4.5:1)", () => {
         ["Hero Subline", byText(/^Erstelle deine eigene GPS-Rallye/)],
         ["Orts-Chip", document.querySelector("main section ul li") || undefined],
         ["Orte Fließtext", byText(/^Lege Stationen fest/)],
-        ["Merkzeile Spielkarte", byText(/^Die Welt ist deine Spielkarte/)],
+        ["Merkzeile Karte 1", byText(/^Draußen ist das Game/)],
         ["Lime Merkzeile", byText(/^Deine Welt\. Deine Regeln/)],
         ["Schritt-Text", document.querySelector("main ol li p") || undefined],
         ["Zielgruppen-Text", document.querySelector("main dl dd") || undefined],

@@ -45,6 +45,42 @@ test.describe("Hero", () => {
     expect(html).toContain("Ein Pfeil zeigt die Richtung");
   });
 
+  test("kein Eyebrow über der Headline", async ({ page }) => {
+    await page.goto("/about");
+
+    // Entfallen am 2026-09-09: „Über Geo Quest" beschrieb die Seite, statt
+    // den Besucher anzusprechen. Die Shell darf dafür kein leeres <p> als
+    // Leerraum stehen lassen — deshalb hier auch die Position der Headline.
+    await expect(page.getByText("Über Geo Quest")).toHaveCount(0);
+    const h1 = await page.locator("h1").boundingBox();
+    const logo = await page.locator("main img[alt='Geo Quest']").boundingBox();
+    if (logo) {
+      // Zwischen Logo-Unterkante und Headline darf kein leerer Absatz klaffen.
+      expect(h1!.y - (logo.y + logo.height)).toBeLessThan(48);
+    }
+  });
+
+  test("der Hero nennt Erstellen und Spielen gleichwertig", async ({ page }) => {
+    await page.goto("/about");
+
+    const lead = page.locator("main p", {
+      hasText: /^Erstelle deine eigene GPS-Rallye/,
+    });
+    const play = page.locator("main p", {
+      hasText: /^Nimm die Herausforderung an/,
+    });
+    await expect(lead).toBeVisible();
+    await expect(play).toBeVisible();
+
+    // „in der gleichen Formatierung": identische Schriftgröße wie Satz 1.
+    const sizes = await Promise.all(
+      [lead, play].map((l) =>
+        l.evaluate((e) => getComputedStyle(e).fontSize)
+      )
+    );
+    expect(sizes[1]).toBe(sizes[0]);
+  });
+
   test("primärer CTA führt direkt in den Creator, ohne Umweg über /", async ({
     page,
   }) => {
@@ -55,7 +91,7 @@ test.describe("Hero", () => {
 
   test("sekundärer CTA führt zur KI-Anleitung", async ({ page }) => {
     await page.goto("/about");
-    await page.getByRole("link", { name: /Mit KI bauen/i }).click();
+    await page.getByRole("link", { name: /Mit KI erstellen/i }).click();
     await expect(page).toHaveURL(/\/anleitung$/);
   });
 
@@ -131,11 +167,10 @@ test.describe("Orte-Sektion", () => {
     await expect(places).toHaveCount(5);
   });
 
-  test("die Sektion schließt mit „Die Welt ist deine Spielkarte.\"", async ({
-    page,
-  }) => {
+  test("die Sektion schließt mit „Draußen ist das Game.\"", async ({ page }) => {
     await page.goto("/about");
-    await expect(page.getByText("Die Welt ist deine Spielkarte.")).toBeVisible();
+    // Bis 2026-09-09 „Die Welt ist deine Spielkarte."
+    await expect(page.getByText("Draußen ist das Game.")).toBeVisible();
   });
 });
 

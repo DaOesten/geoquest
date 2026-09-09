@@ -90,9 +90,9 @@ const AUDIENCES = [
   {
     icon: GraduationCap,
     title: "Für Schule & Pädagogik",
-    // Trägt mehr Text als die drei anderen — hier ist der Lernpfad-Block
-    // aufgegangen, statt eine eigene Sektion zu bekommen.
-    body: "Gestalte interaktive Lernpfade und bringe Unterricht nach draußen. Statt Arbeitsblättern am Schreibtisch erkunden Kinder Themen draußen und lösen Aufgaben an realen Orten — ob Geschichte, Natur oder Geografie.",
+    // Am 2026-09-09 auf zwei Sätze gekürzt: Die Fachbeispiele sind
+    // entfallen, damit alle vier Zielgruppen-Karten gleich lang sind.
+    body: "Gestalte interaktive Lernpfade und bringe den Unterricht nach draußen. Verbessere das Lernen durch Bewegung.",
   },
   {
     icon: Compass,
@@ -192,7 +192,10 @@ export default function AboutPage() {
   return (
     <InfoPageShell
       showLogo
-      eyebrow="Über Geo Quest"
+      /* Kein Eyebrow (2026-09-09): „Über Geo Quest" beschrieb die Seite,
+         statt den Besucher anzusprechen — auf einer Landingpage eine
+         verschenkte Zeile über der Headline. Die Shell lässt die Zeile
+         seitdem weg, statt ein leeres <p> zu rendern. */
       title={
         <>
           Die reale Welt
@@ -205,6 +208,13 @@ export default function AboutPage() {
           <p className="font-body text-base sm:text-lg lg:text-xl leading-snug text-gq-white">
             Erstelle deine eigene GPS-Rallye und mach aus jedem Ort ein
             Abenteuer.
+          </p>
+          {/* Zweite Zeile in gleicher Größe (2026-09-09): Die erste spricht
+              den Ersteller an, diese den Spieler — beide Rollen stehen so
+              gleichwertig im Hero. */}
+          <p className="mt-3 font-body text-base sm:text-lg lg:text-xl leading-snug text-gq-white">
+            Nimm die Herausforderung an, spiele eine Quest und entdecke Orte
+            auf eine neue Art.
           </p>
           {/* Der Hero trug bis 2026-09-09 zwei weitere Absätze: eine
               Zielgruppen-Aufzählung und die Spielmechanik. Beide sind
@@ -236,7 +246,7 @@ export default function AboutPage() {
               className="flex items-center justify-center gap-2 h-12 px-7 rounded-pill border border-gq-teal text-gq-teal text-tech text-xs tracking-[0.08em] transition-all duration-base ease-gq hover:bg-gq-teal/10 active:scale-[0.96]"
             >
               <Sparkles className="w-4 h-4" />
-              Mit KI bauen
+              Mit KI erstellen
             </Link>
           </div>
         </>
@@ -283,7 +293,7 @@ export default function AboutPage() {
             eigenen Quest. Die Teilnehmenden bewegen sich durch die echte Welt
             und entdecken dabei die nächste Herausforderung.
           </p>
-          <p className={PUNCHLINE}>Die Welt ist deine Spielkarte.</p>
+          <p className={PUNCHLINE}>Draußen ist das Game.</p>
         </div>
       </section>
 

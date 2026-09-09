@@ -1,9 +1,9 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Deployed
-_Refinement 4 (`/about` als Marketing-Landingpage) ist am 2026-09-09 nach Production deployt und dort verifiziert — inklusive BUG-7-Behebung. Live auf https://geoquesty.vercel.app/about (Tag `v1.25.0-PROJ-13`)._
+## Status: In Progress
+_Refinement 4 ist deployt (Tag `v1.25.0-PROJ-13`). Refinement 5 (Copy-Feinschliff am Hero und an zwei Karten) ist am 2026-09-09 gebaut und im Browser verifiziert — QA und Deploy stehen aus._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-09 (nach Production deployt)
+**Last Updated:** 2026-09-09 (Refinement 5 — Copy-Feinschliff)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -51,7 +51,7 @@ Das Feature besteht aus **zwei zusammengehörenden statischen Seiten**, die geme
 
 _Neu gefasst in Refinement 4 (2026-09-07). Die vollständige Copy steht im Abschnitt „Refinement 4" am Ende dieser Spec._
 
-1. **Hero** — „Die reale Welt wird zum Spielfeld.", Subline mit „GPS-Rallye", die Spielmechanik in einem Satz (Laufen, Aufgaben, GPS), „Kostenlos. Ohne Abo. Ohne Account.", zwei CTAs (`Quest erstellen` → `/create`, `Mit KI bauen` → `/anleitung`)
+1. **Hero** — ohne Eyebrow; „Die reale Welt wird zum Spielfeld.", zwei gleichrangige Sätze (Erstellen und Spielen), „Kostenlos. Ohne Abo. Ohne Account.", zwei CTAs (`Quest erstellen` → `/create`, `Mit KI erstellen` → `/anleitung`)
 2. **Jeder Ort kann ein Level sein.** — Karte mit Teal-Rahmen: fünf Orte als Chip-Reihe, Erklärung wie eine Quest entsteht, Merkzeile „Die Welt ist deine Spielkarte."
 3. **Nicht nur spielen. Selber machen.** — Karte mit Lime-Rahmen: Game-Designer-Gedanke, kein Vorwissen nötig
 4. **Eine Quest erstellen? Ganz einfach.** — drei nummerierte Schritte
@@ -306,6 +306,11 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 | Die vier Anlass-Karten (Kindergeburtstag, Schulausflug, …) weichen den vier Zielgruppen-Karten | Inhaltlich vollständig deckungsgleich — beide Blöcke nebeneinander wäre reine Wiederholung. Die Zielgruppen-Fassung ist die bessere: sie adressiert den Leser („Für Familien") statt einen Anlass zu benennen | 2026-09-07 |
 | Schritt 03 sagt „Quest als Datei weitergeben", nicht „teilen" | Ein Teilen-Link existiert nicht; Weitergabe läuft über den JSON-Export (PROJ-9). Eine Landingpage, die eine Funktion suggeriert, die es nicht gibt, erzeugt genau die Enttäuschung, die sie vermeiden soll | 2026-09-07 |
 | Hero-CTAs führen nach `/create` und `/anleitung` statt nach `/anleitung` und `/` | Wer über eine Landingpage kommt, hat sich für „erstellen" entschieden. Der Mode-Switch `/` als Zwischenstopp verlangt eine Entscheidung, die schon gefallen ist. Die KI-Anleitung bleibt als sekundärer Weg sichtbar — sie ist die Abkürzung, nicht der Hauptweg | 2026-09-07 |
+| Der Eyebrow „Über Geo Quest" entfällt auf `/about` | Er beschrieb die Seite, statt den Besucher anzusprechen. Auf einer Landingpage ist die Zeile direkt über der Headline der teuerste Platz überhaupt — sie gehört nicht an eine Navigationshilfe verschenkt, die niemand sucht. Die übrigen Info-Seiten behalten ihren Eyebrow, dort ordnet er tatsächlich ein | 2026-09-09 |
+| Der Hero nennt Erstellen und Spielen in zwei gleichrangigen Sätzen | Die Seite adressiert primär Ersteller, aber wer eine Quest baut, will wissen, was die Gruppe später erlebt. Zwei Sätze in derselben Größe stellen beide Rollen nebeneinander, statt das Spielerlebnis in einen Nebensatz zu drängen | 2026-09-09 |
+| Der sekundäre CTA heißt „Mit KI erstellen", nicht „Quest mit KI erstellen" | Die längere Fassung hätte den sekundären Button breiter gemacht als den primären und ihn damit optisch zum Haupt-CTA befördert — das Gegenteil der Absicht. „Quest" steht bereits im Nachbarbutton | 2026-09-09 |
+| Die Merkzeile der ersten Karte lautet „Draußen ist das Game." | Kürzer, im Gaming-Ton des PRD und näher an dem, was die Seite verspricht. „Die Welt ist deine Spielkarte" war ein Bild; das hier ist eine Ansage | 2026-09-09 |
+| Die Fachbeispiele in der Schul-Karte entfallen | Sie waren in Refinement 4 die Begründung dafür, die eigene Lernpfad-Sektion zu streichen. Der Betreiber hat die Kürzung nach Rückfrage bestätigt: Vier gleich lange Zielgruppen-Karten lesen sich ruhiger, und der Lernpfad-Gedanke bleibt auch ohne Fächerliste stehen | 2026-09-09 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -326,6 +331,7 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 | Burger-Menu als kleine, eigene Client-Komponente im Header | Nur der Menü-Zustand braucht JavaScript. Der Rest des Headers und alle Links bleiben statisches HTML, damit die Navigation auch ohne JS erreichbar ist | 2026-09-05 |
 | `InfoNavMenu` wird durch `AppNavMenu` ersetzt, nicht daneben gestellt | Zwei Menü-Komponenten mit überlappenden Links wären genau die Doppelpflege, die dieses Refinement beseitigt. `InfoNavMenu` und `INFO_NAV_LINKS` entfallen; `HEADER_NAV_LINKS` (die Desktop-Textlink-Teilmenge) bleibt als eigene Ableitung erhalten | 2026-09-06 |
 | Menü-Struktur zieht von `src/lib/info-nav.ts` nach `src/lib/app-nav.ts` | Der Name beschreibt dann, was es ist: die Navigation der App, nicht die der Info-Seiten. Das Muster bleibt dasselbe (Plain-Modul außerhalb der Client-Komponente, damit der Wert nicht als Referenz-Proxy über die Client-Grenze kommt) | 2026-09-06 |
+| `eyebrow` in `InfoPageShell` ist optional und wird nur bei gesetztem Wert gerendert | Ein leerer String hätte ein leeres `<p>` mit voller Zeilenhöhe hinterlassen — sichtbarer Leerraum genau über der Headline. Die bedingte Ausgabe kostet nichts und lässt die drei anderen Info-Seiten unberührt | 2026-09-09 |
 | Menu nutzt die bereits installierte shadcn/ui-Komponente (Sheet oder DropdownMenu) statt Eigenbau | Fokus-Falle, Escape-Handling und `aria-expanded` sind dort gelöst; ein Eigenbau würde genau diese Details verlieren. Kein neues Paket | 2026-09-05 |
 | Häufige Fragen nutzen das bereits installierte Accordion | Gleiche Komponente wie das Troubleshooting auf `/anleitung`; die Antworten bleiben im DOM, das JSON-LD wird weiterhin aus derselben `FAQ`-Konstante erzeugt | 2026-09-05 |
 | `/impressum` und `/datenschutz` liegen in derselben `(info)`-Route-Gruppe | Sie teilen Rahmen, Hintergrund und Navigation mit `/about` und `/anleitung`; nur `robots: noindex` unterscheidet ihre Metadaten | 2026-09-05 |
@@ -1530,3 +1536,58 @@ BUG-8 (Sektions-Kicker als `h2`) und BUG-9 (kein `:focus-visible`) bleiben offen
 - **BUG-2 / BUG-3** aus PROJ-1 — vorbestehend, unverändert
 - **Firefox** — Binary weiterhin nicht lauffähig; die Seite ist statisches HTML/CSS, das Risiko bleibt gering
 - **Lighthouse** — nicht gemessen; die Ladezeiten (0,07–0,09s) liegen weit unter der PRD-Vorgabe
+
+---
+
+## Refinement 5 (2026-09-09) — Copy-Feinschliff
+
+Fünf Textänderungen an der live stehenden Seite, vom Betreiber vorgegeben. Kein struktureller Eingriff: Sektionsfolge, Layout und alle Entscheidungen aus Refinement 4 bleiben.
+
+| # | Änderung | Vorher |
+|---|---|---|
+| 1 | Eyebrow über der Headline entfällt | „Über Geo Quest" |
+| 2 | Zweiter Hero-Satz zum Spielerlebnis, gleiche Formatierung wie der erste | (nur ein Satz) |
+| 3 | Sekundärer CTA heißt „Mit KI erstellen" | „Mit KI bauen" |
+| 4 | Merkzeile der ersten Karte: „Draußen ist das Game." | „Die Welt ist deine Spielkarte." |
+| 5 | Schul-Karte auf zwei Sätze gekürzt | drei Sätze mit Fachbeispielen |
+
+**Der neue Hero-Lead:**
+> Erstelle deine eigene GPS-Rallye und mach aus jedem Ort ein Abenteuer.
+>
+> Nimm die Herausforderung an, spiele eine Quest und entdecke Orte auf eine neue Art.
+
+**Die neue Schul-Karte:**
+> Gestalte interaktive Lernpfade und bringe den Unterricht nach draußen. Verbessere das Lernen durch Bewegung.
+
+### Zwei Punkte, die eine Rückfrage brauchten
+
+**Die Fachbeispiele fallen weg.** „Ob Geschichte, Natur oder Geografie" war in Refinement 4 die Begründung dafür, dass die eigene Lernpfad-Sektion entfallen durfte — sie sollte in dieser Karte aufgehen. Der Betreiber hat die Kürzung bestätigt: Alle vier Zielgruppen-Karten sind jetzt etwa gleich lang, was ruhiger wirkt. Der Lernpfad-Gedanke bleibt erhalten, nur ohne Fächerliste.
+
+**Der CTA heißt „Mit KI erstellen", nicht „Quest mit KI erstellen".** Die Vorgabe war die längere Fassung; sie hätte den sekundären Button mit 22 Zeichen deutlich breiter gemacht als den primären („Quest erstellen", 15) und ihn damit optisch zum Haupt-CTA gemacht. „Quest" steht bereits im Nachbarbutton — die Wiederholung entfällt, die Aussage bleibt.
+
+### Technische Folge: `eyebrow` ist jetzt optional
+
+`InfoPageShell` rendert die Eyebrow-Zeile nur noch, wenn sie gesetzt ist. Ein leerer String hätte ein leeres `<p>` mit voller Zeilenhöhe hinterlassen — sichtbarer Leerraum genau dort, wo die Headline stehen soll. Die Prop ist entsprechend `eyebrow?: string`. `/anleitung`, `/impressum` und `/datenschutz` setzen sie weiterhin und sind unverändert.
+
+### Verifikation
+
+**BUG-7 bleibt behoben.** Der zweite Lead-Satz kostet 51px; alle elf Viewports von 320×568 bis 1920×1080 zeigen den primären CTA weiterhin vollständig. Knappster Fall ist 320×568 mit 27px Luft (vorher 98px) — bei weiterem Wachstum des Hero die Stelle, die zuerst kippt.
+
+| Viewport | CTA-Unterkante | Luft |
+|---|---|---|
+| 1366×768 | 560 | 208px |
+| 1280×800 | 560 | 240px |
+| 1024×768 | 536 | 232px |
+| 390×844 | 503 | 341px |
+| 360×640 | 525 | 115px |
+| 320×568 | 541 | 27px |
+
+Browser geprüft auf 1366×768 und 390×844: Ohne Eyebrow beginnt die Headline bündig mit dem Hero-Bild daneben, und die beiden CTAs sind nun etwa gleich breit.
+
+### Tests
+
+- **Neu:** „kein Eyebrow über der Headline" (prüft zusätzlich, dass kein leerer Absatz als Leerraum bleibt) und „der Hero nennt Erstellen und Spielen gleichwertig" (vergleicht die gerenderte Schriftgröße beider Sätze — „in der gleichen Formatierung" ist damit nachgewiesen, nicht nur behauptet)
+- **Angepasst:** drei CTA-Referenzen auf „Mit KI erstellen", die Merkzeilen-Prüfung auf „Draußen ist das Game.", die Kontrast-Sonde auf dieselbe Zeile
+- Der Test auf „interaktive Lernpfade" bleibt gültig — die Formulierung steht auch im gekürzten Text
+
+PROJ-13 damit **100 Tests** (vorher 98).

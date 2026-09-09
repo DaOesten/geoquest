@@ -36,8 +36,8 @@ test.describe("Seite & Navigation", () => {
 
   test("Verweis auf /about führt zur Anleitung", async ({ page }) => {
     await page.goto("/about");
-    // Seit Refinement 4 heißt der sekundäre Hero-CTA „Mit KI bauen".
-    await page.getByRole("link", { name: /Mit KI bauen/i }).click();
+    // Seit 2026-09-09 heißt der sekundäre Hero-CTA „Mit KI erstellen".
+    await page.getByRole("link", { name: /Mit KI erstellen/i }).click();
     await expect(page).toHaveURL(/\/anleitung$/);
   });
 

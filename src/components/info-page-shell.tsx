@@ -8,8 +8,12 @@ import { HEADER_NAV_LINKS } from "@/lib/app-nav";
 interface InfoPageShellProps {
   /** Show the brand lockup above the eyebrow (front page only — subpages go without). */
   showLogo?: boolean;
-  /** Small category label above the title. */
-  eyebrow: string;
+  /**
+   * Small category label above the title. Optional: `/about` verzichtet
+   * seit 2026-09-09 darauf, weil die Zeile dort die Seite beschrieb,
+   * statt den Besucher anzusprechen.
+   */
+  eyebrow?: string;
   title: React.ReactNode;
   /** Meta line under the title, e.g. a one-line summary. */
   meta?: string;
@@ -142,9 +146,11 @@ export function InfoPageShell({
                   className="mb-6 w-[220px] sm:w-[280px] h-auto lg:hidden"
                 />
               )}
-              <p className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-primary">
-                {eyebrow}
-              </p>
+              {eyebrow && (
+                <p className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-primary">
+                  {eyebrow}
+                </p>
+              )}
               <h1 className="font-display italic text-[clamp(2rem,7vw,4rem)] leading-[0.94] uppercase text-foreground mt-2">
                 {title}
               </h1>
