@@ -1,9 +1,9 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Deployed
-_Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und dort verifiziert. Live auf https://geoquesty.vercel.app/about (Tag `v1.26.0-PROJ-13`)._
+## Status: In Progress
+_Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und dort verifiziert (Tag `v1.26.0-PROJ-13`). Refinement 6 (Ko-fi-Icon in der Kopfzeile von `/about` und `/anleitung`) ist am 2026-09-09 spezifiziert, aber noch nicht gebaut._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-09 (Refinement 5 nach Production deployt)
+**Last Updated:** 2026-09-09 (Refinement 6: Ko-fi-Icon in der Kopfzeile)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -87,7 +87,16 @@ Für die Info-Seiten ändert sich dadurch:
 - Der Sticky-Header der Info-Seiten **bleibt** sticky. Die App-Screens verlieren ihren (PROJ-1), diese hier nicht: es sind lange Fließtext-Seiten, auf denen der Weg zurück nach oben weit ist
 - Der Zurückpfeil bleibt links, das Menu rechts — die Aufteilung, die die Info-Seiten schon haben, wird zum app-weiten Standard
 
-Der Aktions-Button rechts außen zeigt vorerst weiterhin „Zur App" und führt auf `/`. Er ist als Platzhalter für einen späteren Ko-fi-Unterstützungslink vorgesehen (siehe Open Questions) — die Position bleibt, das Ziel ändert sich später.
+Der Aktions-Button rechts außen zeigt „Zur App" und führt auf `/`.
+
+**Refinement 6 (2026-09-09) — Ko-fi-Icon in der Kopfzeile:** Der lange offene Ko-fi-Platz ist besetzt, aber anders als ursprünglich gedacht. „Zur App" bleibt, wo es ist: Es ist der Conversion-Weg dieser Seite, und Refinement 4 hat die Hero-CTAs eigens auf `/create` gezogen, um genau diesen Weg zu verkürzen — ihn gegen einen Spenden-Button zu tauschen, hieße den Zweck der Seite gegen eine Bitte einzutauschen.
+
+Stattdessen kommt **links neben „Zur App" ein Icon-Button ohne Beschriftung**: eine Kaffeetasse, 44×44, die auf https://ko-fi.com/technolomagie in einem neuen Tab führt.
+
+- Nur auf `/about` und `/anleitung` — den beiden Seiten, die das Produkt erklären. `/impressum` und `/datenschutz` bekommen ihn nicht: Rechtstexte liest niemand aus Sympathie
+- **Ohne Text**, weil die Zeile auf schmalen Geräten bereits Zurückpfeil, „Zur App" und Burger trägt. Die Beschriftung „Support me" steht dafür ausgeschrieben im Burger-Menu (PROJ-1), das auf jeder Breite dieselbe Zeile hat
+- Als **Ghost-Button** (nur Icon, kein Rahmen, kein Fill), damit er neben dem umrandeten „Zur App" sichtbar nachrangig bleibt — zwei gleichgewichtige Buttons nebeneinander lassen den Besucher raten, welcher gemeint ist
+- `aria-label="Support me — auf Ko-fi unterstützen (öffnet neuen Tab)"`, weil ein Icon allein für Screenreader nichts sagt
 
 **Zurückpfeil:** Jede Unterseite trägt links im Header einen Zurückpfeil nach `/about`. Bisher hatte nur `/anleitung` einen; `/impressum` und `/datenschutz` gingen leer aus, obwohl der Rahmen das bereits konnte.
 
@@ -198,6 +207,18 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] Angenommen ein Nutzer öffnet `/anleitung`, `/impressum` oder `/datenschutz`, wenn die Seiten laden, dann sind sie durch dieses Refinement unverändert
 - [x] Angenommen ein Nutzer betrachtet den Header von `/about`, wenn er nach rechts schaut, dann steht dort weiterhin der Button „Zur App" sowie das Burger-Menu — beides unverändert aus Refinement 3
 
+### Ko-fi-Icon in der Kopfzeile (Refinement 6, 2026-09-09)
+- [ ] Angenommen ein Besucher öffnet `/about`, wenn er die Kopfzeile betrachtet, dann steht links neben „Zur App" ein Icon-Button mit Kaffeetasse **ohne Textbeschriftung**
+- [ ] Angenommen ein Besucher öffnet `/anleitung`, wenn er die Kopfzeile betrachtet, dann steht derselbe Icon-Button dort
+- [ ] Angenommen ein Besucher öffnet `/impressum` oder `/datenschutz`, wenn er die Kopfzeile betrachtet, dann steht dort **kein** Ko-fi-Icon — diese beiden Seiten bleiben unverändert
+- [ ] Angenommen ein Besucher tippt oder klickt auf das Icon, dann öffnet sich https://ko-fi.com/technolomagie in einem **neuen Tab**, während die Info-Seite im bisherigen Tab stehen bleibt
+- [ ] Angenommen ein Screenreader-Nutzer erreicht den Icon-Button, wenn er ihn vorgelesen bekommt, dann hört er einen sprechenden Namen (nicht nur „Link" oder den Dateinamen) und den Hinweis auf den neuen Tab
+- [ ] Angenommen der Besucher betrachtet Icon-Button und „Zur App" nebeneinander, wenn beide sichtbar sind, dann ist „Zur App" optisch klar der stärkere der beiden — das Icon trägt keinen Rahmen und keine Füllfläche
+- [ ] Angenommen ein Besucher öffnet `/about` auf 320px Breite, wenn die Kopfzeile lädt, dann stehen Zurückpfeil (falls vorhanden), Ko-fi-Icon, „Zur App" und Burger-Menu nebeneinander in einer Zeile, ohne umzubrechen und ohne dass ein Tap-Ziel unter 44px fällt
+- [ ] Angenommen der Besucher bedient die Seite mit der Tastatur, wenn er durch die Kopfzeile tabbt, dann erhält der Icon-Button einen sichtbaren Fokus und liegt in der Reihenfolge vor „Zur App"
+- [ ] Angenommen die Seite wird im Dark Theme (`/about`) und im jeweiligen Theme von `/anleitung` dargestellt, wenn das Icon sichtbar ist, dann erfüllt es die WCAG-AA-Kontrastvorgabe (4.5:1) in beiden
+- [ ] Angenommen der primäre CTA lag vor diesem Refinement auf allen elf geprüften Viewports über dem Falz (BUG-7), wenn das Icon ergänzt ist, dann gilt das unverändert — der Icon-Button steht in der bestehenden Kopfzeilen-Höhe und erzeugt keine zusätzliche Höhe
+
 ### Prompt-Vorlage
 - [x] Angenommen ein Nutzer ist bei der Anleitungs-Sektion, wenn er die Seite betrachtet, dann ist die vollständige Prompt-Vorlage als lesbarer Text sichtbar und manuell markierbar
 - [x] Angenommen ein Nutzer klickt den Kopieren-Button, wenn das Kopieren erfolgreich ist, dann erhält er eine sichtbare Bestätigung (z.B. „Kopiert!")
@@ -229,6 +250,9 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - **Nutzer öffnet die Seite auf dem Desktop** → eigenes mehrspaltiges Layout bis 1100px Container-Breite, Textspalten auf ~52 Zeichen begrenzt; die Seiten sind bewusst NICHT auf die 430px der App-Screens beschränkt, weil Besucher typischerweise über einen geteilten Link am Laptop ankommen
 - **JavaScript deaktiviert** → Seiteninhalt und Prompt bleiben lesbar; nur der Copy-Button funktioniert nicht
 - **Prompt-Vorlage veraltet nach einer Schema-Änderung** → siehe Open Questions; die Vorlage muss bei Änderungen an `quest-schema.ts` mitgepflegt werden
+- **Ko-fi ist gesperrt (Werbeblocker, Schul-WLAN, Netzwerkfilter)** → der neue Tab zeigt die Fehlerseite des Browsers, die Info-Seite bleibt im alten Tab unversehrt. Kein eigenes Fehler-Handling — genau dafür öffnet der Link in einem neuen Tab statt in-place (Refinement 6)
+- **Kopfzeile auf 320px mit vier Elementen** → Zurückpfeil, Ko-fi-Icon, „Zur App" und Burger in einer Zeile. Der Icon-Button ist mit 44×44 das schmalste der vier; wenn es eng wird, gibt der Innenabstand von „Zur App" nach, nie ein Tap-Ziel (Refinement 6)
+- **Nutzer erwartet nach dem Tap auf die Tasse eine Erklärung, keinen Zahlungs-Screen** → Ko-fi zeigt die öffentliche Profilseite, keinen sofortigen Bezahlvorgang. Deshalb ist kein Zwischen-Dialog nötig (Refinement 6)
 
 ## Technical Requirements (optional)
 - **Performance:** Ladezeit < 2s (PRD-Constraint); die Seite ist statischer Inhalt ohne Datenabhängigkeit
@@ -238,6 +262,8 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - **Kein Backend:** rein statische Seite, keine API-Calls, keine Datenspeicherung
 - **Design System:** folgt `docs/design-system.md`
 - **Browser Support:** letzte 2 Versionen Chrome, Safari, Firefox, Edge
+- **Externer Link (Refinement 6):** einfaches `<a>` mit `target="_blank"` und `rel="noopener noreferrer"` — kein `next/link`, weil Prefetch auf einer fremden Domain nichts beiträgt. Ziel-URL kommt als Konstante aus `src/lib/app-nav.ts`, damit Kopfzeile und Burger-Menu (PROJ-1) nicht auseinanderlaufen
+- **Sichtbarkeit pro Seite (Refinement 6):** `InfoPageShell` bekommt eine Prop (z.B. `showSupport`, Default `false`), die `/about` und `/anleitung` setzen. Kein Pfad-Abgleich innerhalb der Shell — die Seite weiß selbst, was sie ist, und die Shell bleibt frei von Wissen über konkrete Routen
 
 ## Open Questions
 - [x] ~~Wie wird die Prompt-Vorlage synchron zu `src/lib/quest-schema.ts` gehalten?~~ → Geklärt in `/architecture`: Handgepflegter Text plus Guard-Test, der ein Beispiel-JSON gegen das echte Schema validiert
@@ -247,7 +273,9 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [ ] Soll die Prompt-Vorlage in mehreren Varianten angeboten werden (z.B. kürzere Version für schwächere Modelle)? Aktuell: nein, eine vollständige Vorlage.
 - [x] ~~Sollen die beiden Seiten zusätzlich einen Einstieg außerhalb des Creator-Empty-States bekommen (z.B. dauerhaft im Creator-Header), sobald ein Nutzer bereits Quests hat?~~ → Ja, gelöst am 2026-09-06: Das app-weite Burger-Menu (PROJ-1) enthält unter „Info" die Links Über und Anleitung und ist auf jedem Screen erreichbar — auch im Creator mit bestehenden Quests
 - [x] ~~Warum sind die Häufigen Fragen ausgeklappt statt als Accordion?~~ → Ursprünglich für bessere Auffindbarkeit durch KI-Systeme ausgeklappt. Annahme war falsch: Accordion-Inhalte stehen vollständig im HTML (Radix blendet sie nur per `hidden` aus) und das `FAQPage`-JSON-LD trägt die Antworten ohnehin. Zurück zum eingeklappten Accordion (2026-09-05)
-- [ ] Wann und wohin genau zeigt der Ko-fi-Link? Der Header-Button bleibt bis dahin „Zur App"; offen sind Ziel-URL, Beschriftung und ob „Zur App" dann in die Navigation rutscht. **Ergänzung 2026-09-06:** Mit Play und Create im Burger-Menu wäre „Zur App" als Button entbehrlich — der Platz könnte früher als gedacht an Ko-fi gehen
+- [x] ~~Wann und wohin genau zeigt der Ko-fi-Link?~~ → Geklärt am 2026-09-09 (Refinement 6): Ziel ist https://ko-fi.com/technolomagie. „Zur App" bleibt als Aktions-Button erhalten — es ist der Conversion-Weg der Seite; Ko-fi bekommt links daneben einen Icon-Button ohne Text, nur auf `/about` und `/anleitung`. Die ausgeschriebene Beschriftung „Support me" trägt das Burger-Menu (PROJ-1)
+- [ ] Bekommt der Icon-Button auf dem Desktop einen sichtbaren Tooltip? Das `aria-label` bedient Screenreader, sehende Maus-Nutzer sehen nur die Tasse — erst am Gerät bewerten (2026-09-09)
+- [ ] Sollen `/impressum` und `/datenschutz` das Icon nachträglich auch bekommen? Zunächst bewusst nicht (2026-09-09)
 - [x] ~~Braucht `/about` zusätzlich einen Footer mit Impressum/Datenschutz für Desktop-Besucher?~~ → Ja, entschieden am 2026-09-05: Footer auf allen Info-Seiten mit Kontakt und Rechtslinks; die Links verlassen dafür den Desktop-Header
 - [x] ~~Welche konkreten Angaben kommen ins Impressum?~~ → Vom Betreiber geliefert und eingetragen (2026-09-05)
 
@@ -310,6 +338,10 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 | Der Hero nennt Erstellen und Spielen in zwei gleichrangigen Sätzen | Die Seite adressiert primär Ersteller, aber wer eine Quest baut, will wissen, was die Gruppe später erlebt. Zwei Sätze in derselben Größe stellen beide Rollen nebeneinander, statt das Spielerlebnis in einen Nebensatz zu drängen | 2026-09-09 |
 | Der sekundäre CTA heißt „Mit KI erstellen", nicht „Quest mit KI erstellen" | Die längere Fassung hätte den sekundären Button breiter gemacht als den primären und ihn damit optisch zum Haupt-CTA befördert — das Gegenteil der Absicht. „Quest" steht bereits im Nachbarbutton | 2026-09-09 |
 | Die Merkzeile der ersten Karte lautet „Draußen ist das Game." | Kürzer, im Gaming-Ton des PRD und näher an dem, was die Seite verspricht. „Die Welt ist deine Spielkarte" war ein Bild; das hier ist eine Ansage | 2026-09-09 |
+| „Zur App" bleibt als Aktions-Button; Ko-fi bekommt daneben ein Icon, statt den Platz zu erben | Der lange reservierte Platzhalter war als Tausch gedacht. Das wäre falsch gewesen: „Zur App" ist der Conversion-Weg dieser Seite, und Refinement 4 hat die Hero-CTAs eigens auf `/create` gezogen, um genau diesen Weg zu verkürzen. Den Button gegen eine Spendenbitte zu tauschen hieße, den Zweck der Seite gegen eine Bitte einzutauschen | 2026-09-09 |
+| Das Ko-fi-Element ist ein Icon ohne Text — die Beschriftung trägt das Burger-Menu | Die Kopfzeile trägt auf schmalen Geräten bereits Zurückpfeil, „Zur App" und Burger. Ein vierter beschrifteter Button hätte entweder umgebrochen oder ein Tap-Ziel unter 44px gedrückt. „Support me" steht dafür ausgeschrieben im Menu (PROJ-1), das auf jeder Breite dieselbe Zeile hat — beide Wege existieren, jeder in der Form, die an seinen Platz passt | 2026-09-09 |
+| Ghost-Optik statt Rahmen oder Füllung | Zwei gleichgewichtige Buttons nebeneinander lassen den Besucher raten, welcher gemeint ist. Ohne Rahmen ist die Rangfolge auf einen Blick klar: „Zur App" führt weiter, die Tasse ist ein Angebot | 2026-09-09 |
+| Nur auf `/about` und `/anleitung`, nicht auf `/impressum` und `/datenschutz` | Die beiden erklären das Produkt und sind die Seiten, auf denen Sympathie entsteht. Rechtstexte liest niemand aus Sympathie — dort wäre das Icon Dekoration mit einer Bitte dran | 2026-09-09 |
 | Die Fachbeispiele in der Schul-Karte entfallen | Sie waren in Refinement 4 die Begründung dafür, die eigene Lernpfad-Sektion zu streichen. Der Betreiber hat die Kürzung nach Rückfrage bestätigt: Vier gleich lange Zielgruppen-Karten lesen sich ruhiger, und der Lernpfad-Gedanke bleibt auch ohne Fächerliste stehen | 2026-09-09 |
 
 ### Technical Decisions
@@ -337,6 +369,9 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 | `/impressum` und `/datenschutz` liegen in derselben `(info)`-Route-Gruppe | Sie teilen Rahmen, Hintergrund und Navigation mit `/about` und `/anleitung`; nur `robots: noindex` unterscheidet ihre Metadaten | 2026-09-05 |
 | Footer wird Teil von `InfoPageShell`, keine eigene Einbindung je Seite | Der Rahmen liefert bereits Header und Container; ein Footer pro Seite einzeln einzuhängen wäre vier Mal derselbe Code und würde beim nächsten Seitenzuwachs vergessen | 2026-09-05 |
 | Anbieterdaten wandern in ein gemeinsames Modul unter `src/lib/` | Name und E-Mail stehen dann sowohl im Impressum als auch im Footer aus einer Quelle; heute liegen sie als `PROVIDER`-Konstante nur in der Impressum-Seite und würden beim Ändern auseinanderlaufen | 2026-09-05 |
+| `InfoPageShell` bekommt eine `showSupport`-Prop, statt den Pfad selbst abzufragen | Die Shell weiß heute nichts über konkrete Routen — sie nimmt Titel, Eyebrow und `backHref` entgegen und rendert. Ein `usePathname()`-Vergleich auf zwei feste Strings würde dieses Wissen einbauen und beim nächsten Seitenzuwachs stillschweigend falsch werden. Die Seite weiß selbst, was sie ist | 2026-09-09 |
+| Ko-fi-URL kommt aus `src/lib/app-nav.ts`, nicht als Literal in die Shell | Dieselbe URL steht im Burger-Menu (PROJ-1). Zwei Literale laufen bei der nächsten Änderung auseinander; `app-nav.ts` ist bereits die geteilte Quelle beider Navigationen | 2026-09-09 |
+| Einfaches `<a target="_blank" rel="noopener noreferrer">` statt `next/link` | `next/link` bringt Prefetch und Client-Navigation für interne Routen. Auf einer fremden Domain trägt beides nichts bei. `noopener` verhindert, dass die Zielseite über `window.opener` auf den Tab der App zugreift (Reverse Tabnabbing) | 2026-09-09 |
 
 ---
 <!-- Sections below are added by subsequent skills -->

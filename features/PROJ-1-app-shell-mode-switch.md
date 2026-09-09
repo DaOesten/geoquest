@@ -1,9 +1,9 @@
 # PROJ-1: App Shell & Mode Switch
 
 ## Status: In Progress
-_Deployed; das Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist gebaut und im Browser verifiziert — QA steht aus._
+_Deployed; das Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist gebaut und im Browser verifiziert — QA steht aus. Dazu neu das Refinement vom 2026-09-09: „Support me"-Eintrag (Ko-fi) im Burger-Menu — spezifiziert, noch nicht gebaut._
 **Created:** 2026-08-23
-**Last Updated:** 2026-09-06
+**Last Updated:** 2026-09-09
 
 ## Dependencies
 - None (PROJ-1 ist das Fundament)
@@ -12,7 +12,9 @@ _Deployed; das Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist gebaut und
 ## Summary
 Der Rahmen der gesamten App: Startscreen mit Modus-Auswahl, eine app-weite Kopfzeile mit Zurück-Pfeil links und Burger-Menu rechts, automatisches Theme-Switching, URL-basiertes Routing, Erststart-Dialog und 404-Seite.
 
-Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der gesamten App — auf `/play`, `/create`, in allen Unteransichten und auf den Info-Seiten (PROJ-13). Es gliedert sich in drei Gruppen: **App** (Play, Create), **Info** (Über, Anleitung) und **Rechtliches** (Impressum, Datenschutz).
+Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der gesamten App — auf `/play`, `/create`, in allen Unteransichten und auf den Info-Seiten (PROJ-13). Es gliedert sich in vier Gruppen: **App** (Play, Create), **Info** (Über, Anleitung), **Rechtliches** (Impressum, Datenschutz) und seit dem 2026-09-09 **Unterstützen** (Support me → Ko-fi).
+
+„Support me" ist der erste Menu-Eintrag, der die App verlässt: Er öffnet https://ko-fi.com/technolomagie in einem neuen Tab. Das Projekt ist laut PRD kostenlos und ohne Abo — freiwillige Unterstützung ist damit die einzige Gegenleistung, die es überhaupt gibt, und sie gehört an eine Stelle, die von jedem Screen aus erreichbar ist, ohne einen einzigen Screen zu bewerben.
 
 ## User Stories
 1. Als Nutzer möchte ich beim Öffnen der App sofort wählen können, ob ich spielen oder eine Quest erstellen will, damit ich ohne Umwege in den gewünschten Modus komme.
@@ -23,6 +25,7 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 6. Als neuer Nutzer, der die App zum ersten Mal über einen geteilten Link öffnet, möchte ich über das Geo-Quest-Logo erfahren können, was diese App überhaupt ist, damit ich mich nicht blind zwischen zwei Modi entscheiden muss.
 7. Als Nutzer möchte ich von jedem Screen aus dieselbe Navigation öffnen können, damit ich von überall zu Play, Create, den Info-Seiten und den Rechtstexten komme, ohne mich erst zurück zum Startscreen durchzuklicken.
 8. Als Spieler möchte ich, dass die Kopfzeile beim Scrollen einer Stationsliste mit nach oben verschwindet, damit der kleine Handy-Bildschirm ganz dem Inhalt gehört.
+9. Als Nutzer, dem Geo Quest gefällt, möchte ich von jedem Screen aus einen Weg finden, dem Entwickler etwas zurückzugeben, damit ich das Projekt unterstützen kann, ohne danach suchen zu müssen. _(Refinement 2026-09-09)_
 
 ## Out of Scope
 - Quest-Listen-Inhalte innerhalb der Modi (PROJ-2, PROJ-3, PROJ-6)
@@ -56,7 +59,7 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 **Kopfzeile & Burger-Menu (Refinement 2026-09-06):**
 - [ ] Angenommen der Nutzer befindet sich auf einem beliebigen Screen der App (`/`, `/play`, `/create`, jede Unteransicht, jede Info-Seite), wenn er die Kopfzeile betrachtet, dann sieht er rechts das Burger-Menu-Icon
 - [ ] Angenommen der Nutzer betrachtet die Kopfzeile eines beliebigen Screens, wenn er nach links schaut, dann sieht er den Zurück-Pfeil — in keinem Fall noch die Pin-Bildmarke. Auf `/play` und `/create` führt er zum Startscreen `/`, in Unteransichten eine Ebene nach oben _(korrigiert 2026-09-06: ursprünglich sollte die linke Seite auf Top-Level leer bleiben — dadurch fehlte dort jeder Weg zurück)_
-- [ ] Angenommen der Nutzer tippt auf das Burger-Menu, wenn sich das Menu öffnet, dann sieht er drei Gruppen mit den Überschriften **App**, **Info** und **Rechtliches**
+- [ ] Angenommen der Nutzer tippt auf das Burger-Menu, wenn sich das Menu öffnet, dann sieht er vier Gruppen mit den Überschriften **App**, **Info**, **Rechtliches** und **Unterstützen** _(vierte Gruppe ergänzt 2026-09-09)_
 - [ ] Angenommen das Menu ist offen, wenn der Nutzer die Gruppe „App" betrachtet, dann enthält sie die Links **Play** (→ `/play`) und **Create** (→ `/create`), jeweils mit passendem Icon
 - [ ] Angenommen das Menu ist offen, wenn der Nutzer die Gruppe „Info" betrachtet, dann enthält sie die Links **Über** (→ `/about`) und **Anleitung** (→ `/anleitung`), jeweils mit passendem Icon
 - [ ] Angenommen das Menu ist offen, wenn der Nutzer die Gruppe „Rechtliches" betrachtet, dann enthält sie die Links **Impressum** (→ `/impressum`) und **Datenschutz** (→ `/datenschutz`), jeweils mit passendem Icon
@@ -66,6 +69,16 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 - [ ] Angenommen der Nutzer befindet sich bereits auf einer der verlinkten Seiten, wenn er das Menu öffnet, dann ist der Eintrag der aktuellen Seite visuell als aktiv erkennbar
 - [ ] Angenommen der Nutzer befindet sich in einer Unteransicht eines Modus (z.B. `/create/[id]` oder `/create/[id]/station/[x]`), wenn er das Menu öffnet, dann ist der übergeordnete Eintrag („Create") als aktiv markiert — nicht nur auf der exakten Top-Level-URL
 - [ ] Angenommen das Menu wird im Creator (Light Theme) geöffnet, wenn es erscheint, dann trägt es das Theme des jeweiligen Modus — es bricht nicht aus dem Farbschema des Screens aus
+
+**„Support me" / Ko-fi (Refinement 2026-09-09):**
+- [ ] Angenommen das Menu ist offen, wenn der Nutzer nach unten schaut, dann steht als letzte Gruppe **Unterstützen** mit dem einzelnen Eintrag **Support me** und einem Kaffeetassen-Icon
+- [ ] Angenommen der Nutzer tippt im Menu auf „Support me", dann öffnet sich https://ko-fi.com/technolomagie in einem **neuen Tab** — die App bleibt im bisherigen Tab unverändert stehen, eine laufende Quest wird nicht verlassen
+- [ ] Angenommen ein Screenreader-Nutzer erreicht den Eintrag „Support me", wenn er ihn vorgelesen bekommt, dann ist erkennbar, dass der Link die Seite in einem neuen Tab verlässt
+- [ ] Angenommen der Eintrag „Support me" ist sichtbar, wenn der Nutzer die übrigen Menu-Einträge daneben betrachtet, dann trägt er dieselbe Typografie, Zeilenhöhe und Trennlinie wie sie — er wird nicht als Werbe-Banner hervorgehoben
+- [ ] Angenommen der Nutzer befindet sich auf einem beliebigen Screen der App, wenn er das Menu öffnet, dann ist „Support me" vorhanden — der Eintrag ist nicht auf einzelne Screens beschränkt
+- [ ] Angenommen das Menu wird im Creator (Light Theme) geöffnet, wenn „Support me" erscheint, dann erfüllt der Eintrag wie alle anderen die WCAG-AA-Kontrastvorgabe (4.5:1) in **beiden** Themes
+- [ ] Angenommen der Nutzer betrachtet `/about` oder `/anleitung` auf dem Desktop, wenn er die Kopfzeile ansieht, dann steht dort zusätzlich ein **Icon-Button ohne Text** (Kaffeetasse) mit demselben Ziel — siehe PROJ-13 für die Kopfzeilen-Variante
+- [ ] Angenommen der Eintrag ist nie aktiv im Sinne der Navigation, wenn der Nutzer das Menu öffnet, dann wird „Support me" **nie** als aktive Seite markiert (`aria-current`), weil das Ziel außerhalb der App liegt
 
 **Scroll-Verhalten der Kopfzeile (Refinement 2026-09-06):**
 - [ ] Angenommen der Nutzer ist auf einem Play- oder Create-Screen, wenn er die Seite nach unten scrollt, dann scrollt die Kopfzeile mit Zurück-Pfeil und Burger-Menu mit nach oben aus dem Bild — sie bleibt nicht am oberen Rand kleben
@@ -99,6 +112,10 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 10. **Menu über der Karte:** Im Stationen-Editor und in der Navigations-Ansicht liegt eine Leaflet-Karte im Screen. Das geöffnete Menu muss darüber liegen (Karten-Panes haben eigene z-index-Stapel) und darf beim Schließen keine Karten-Interaktion auslösen.
 11. **Menu im Play-Modus während einer laufenden Quest:** Ein Tap auf „Create" im Menu verlässt die laufende Quest. Der Fortschritt liegt in localStorage und bleibt erhalten — es braucht keinen Warndialog, aber der Wechsel darf nichts verwerfen.
 12. **Zurück-Pfeil vs. Burger auf 360px:** Beide Tap-Ziele liegen mit je 44px in derselben Zeile an gegenüberliegenden Rändern. Zwischen ihnen steht auf schmalen Geräten ggf. ein Titel — der muss truncaten, nie die Tap-Ziele verkleinern.
+13. **Menu-Höhe durch die vierte Gruppe:** Das Menu-Panel ist bereits `overflow-y-auto`. Mit der vierten Gruppe wächst der Inhalt um eine Überschrift plus eine Zeile (~70px). Auf sehr flachen Geräten (Landscape, 320×568 hochkant unkritisch) muss die Gruppe „Unterstützen" durch Scrollen erreichbar bleiben — sie darf nicht abgeschnitten unter dem Rand liegen.
+14. **Ko-fi nicht erreichbar oder blockiert:** Ein Werbeblocker, ein Netzwerkfilter oder ein Schul-WLAN kann ko-fi.com sperren. Der neue Tab zeigt dann die Fehlerseite des Browsers — die App selbst ist davon unberührt, weil sie im alten Tab weiterläuft. Kein eigenes Fehler-Handling nötig; genau das ist der Grund für `target="_blank"` statt einer In-Place-Navigation.
+15. **Popup-Blocker:** `target="_blank"` auf einem echten Nutzer-Tap wird von keinem gängigen Browser blockiert (Blocker greifen bei skriptgesteuerten `window.open`-Aufrufen ohne Nutzergeste). Der Link ist ein normales `<a>` — kein JavaScript beteiligt.
+16. **Kinder als Zielgruppe:** Das PRD nennt Spieler von 10–15 Jahren. Der Eintrag führt auf eine Seite, auf der Geld gespendet werden kann. Er wird deshalb bewusst **nicht** beworben, nicht animiert und nicht farblich hervorgehoben — er steht als letzter, ruhigster Eintrag am Ende des Menus und richtet sich an Erwachsene, die ihn suchen.
 
 ## URL-Struktur
 
@@ -116,7 +133,9 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 - [ ] Braucht das Logo auf `/` eine sichtbare Beschriftung ("Was ist Geo Quest?"), falls sich zeigt, dass Nutzer den Link nicht finden? Zunächst bewusst ohne — erst nach Beobachtung entscheiden
 - [ ] `docs/design-system.md` sagt unter Motion "keine Ambient-Loops", während sowohl der Partikel-Backdrop als auch jetzt der Card-Glow genau das tun. Regel präzisieren oder streichen?
 - [ ] Braucht der Startscreen `/` selbst das Burger-Menu? Er hat keine Kopfzeile und bietet mit den zwei Mode-Cards plus Logo-Link nach `/about` bereits fünf der sechs Ziele — offen, ob dort eine Kopfzeile ergänzt wird oder `/` die eine Ausnahme bleibt
-- [ ] Soll das Menu perspektivisch einen Eintrag „App installieren" (PROJ-12, PWA) bekommen? Das wäre eine vierte Gruppe oder ein Anhang unter „App" — erst entscheiden, wenn PROJ-12 gebaut wird
+- [ ] Soll das Menu perspektivisch einen Eintrag „App installieren" (PROJ-12, PWA) bekommen? Das wäre ein Anhang unter „App" — erst entscheiden, wenn PROJ-12 gebaut wird. _(Formulierung aktualisiert 2026-09-09: „vierte Gruppe" ist überholt, „Unterstützen" ist jetzt die vierte.)_
+- [ ] Soll „Support me" perspektivisch auch auf `/impressum` und `/datenschutz` als Kopfzeilen-Icon erscheinen? Zunächst bewusst nur `/about` und `/anleitung` — die beiden Seiten, die das Produkt erklären. Rechtstexte liest niemand aus Sympathie (2026-09-09)
+- [ ] Braucht das Kopfzeilen-Icon auf dem Desktop einen sichtbaren Tooltip? Das `aria-label` trägt die Bedeutung für Screenreader, sehende Maus-Nutzer sehen nur die Tasse — erst am Gerät bewerten (2026-09-09)
 
 ## Decision Log
 
@@ -144,6 +163,11 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 | Jeder Menü-Link trägt ein Icon | Das Menu ist für 10–15-Jährige die zentrale Orientierung; Icons machen die sechs Ziele auf einen Blick unterscheidbar und passen zum Gaming-Look aus dem PRD | 2026-09-06 |
 | Zurück-Pfeil links, Burger rechts | Standard-Mobile-Pattern („links = zurück") und identisch zu dem, was die Info-Seiten seit PROJ-13 tun. Der Zurück-Pfeil ist die häufigere Aktion und liegt am Daumen der greifenden Hand | 2026-09-06 |
 | Kein Sticky-Header auf den Play- und Create-Screens | Der Header verdeckte auf 430px dauerhaft Inhalt, ohne dabei etwas beizutragen — beide Screens sind Listen, die man von oben nach unten liest. Die Info-Seiten behalten ihren Sticky-Header, weil das lange Fließtext-Seiten sind, auf denen der Weg zum Seitenanfang weit ist | 2026-09-06 |
+| „Support me" kommt ins Burger-Menu, nicht in die App-Kopfzeile | Die Kopfzeile hat auf 360px genau zwei Plätze (Zurück, Menu) und dazwischen einen Titel, der bereits truncatet. Ein dritter Button hätte entweder das Tap-Ziel oder den Titel gekostet. Im Menu kostet der Eintrag nichts und ist trotzdem von jedem Screen aus erreichbar | 2026-09-09 |
+| Eigene Gruppe „Unterstützen" statt Anhängen an „Info" | Der Eintrag ist der einzige, der die App verlässt, und der einzige, der etwas vom Nutzer will statt ihm etwas zu zeigen. Unter „Info" gemischt sähe er wie eine weitere Unterseite aus — die eigene Überschrift macht ehrlich, worum es geht | 2026-09-09 |
+| Letzte Position im Menu, ohne Hervorhebung | Reihenfolge ist Gewichtung. Play und Create sind der Zweck der App, Rechtliches ist Pflicht, Unterstützen ist freiwillig — und richtet sich an Erwachsene, nicht an die 10–15-jährige Kern-Zielgruppe des PRD. Kein Badge, keine Farbe, keine Animation | 2026-09-09 |
+| Beschriftung „Support me" (englisch) in einer sonst deutschen Navigation | Vom Betreiber so vorgegeben und konsistent mit der Ko-fi-Zielseite, die ebenfalls englisch beschriftet ist. Die App trägt ohnehin englische Begriffe an prominenter Stelle („Play", „Create", „Quest") — der Bruch ist keiner | 2026-09-09 |
+| Kaffeetassen-Icon (`Coffee`) statt Herz oder Münze | Ko-fi ist als „buy me a coffee" bekannt; die Tasse ist die etablierte Bildsprache für den kleinen freiwilligen Betrag. Ein Herz läse sich als „Favorit", eine Münze als Bezahlschranke | 2026-09-09 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -156,6 +180,10 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 | Shared AppHeader-Komponente mit Props | Wiederverwendbar über alle Routes, Props steuern Verhalten | 2026-08-23 |
 | Brush-Stroke-Button als eigene Komponente | Nicht durch shadcn abbildbar — Brand-spezifisches Element mit SVG | 2026-08-23 |
 | shadcn Dialog für Erststart-Hinweis | Bereits installiert, accessible, responsive | 2026-08-23 |
+| Ko-fi-URL als Konstante in `src/lib/app-nav.ts` | Sie wird an zwei Stellen gebraucht (Burger-Menu hier, Kopfzeilen-Icon in PROJ-13). Zwei Literale laufen bei der nächsten Änderung auseinander; die Nav-Datei ist bereits die geteilte Quelle beider Navigationen | 2026-09-09 |
+| Externer Link als Flag (`external: true`) am Nav-Link, nicht als eigene Datenstruktur | `APP_NAV_GROUPS` trägt bereits `href`/`label`/`icon`. Ein Flag genügt, um `target`, `rel` und den unterdrückten `aria-current`-Zweig zu steuern — eine parallele Struktur würde die Render-Schleife verdoppeln | 2026-09-09 |
+| `rel="noopener noreferrer"` | `target="_blank"` gibt der Zielseite sonst über `window.opener` Zugriff auf den Tab der App (Reverse Tabnabbing). Moderne Browser setzen `noopener` implizit — es explizit zu schreiben kostet nichts und deckt ältere Engines ab, die das PRD als unterstützt nennt (letzte 2 Versionen) | 2026-09-09 |
+| Kein `next/link` für das externe Ziel, sondern ein einfaches `<a>` | `next/link` ist für interne Route-Übergänge da (Prefetch, Client-Navigation). Auf eine fremde Domain angewandt bringt es keinen Vorteil und lädt Prefetch-Logik für eine URL, die Next.js nicht kennt | 2026-09-09 |
 | Lucide Icons via lucide-react | Im Design-System definiert, Tree-Shakeable | 2026-08-23 |
 | Glow als CSS-Keyframe auf `box-shadow`, nicht als JS-Animation | Läuft dauerhaft auf dem Startscreen; CSS-Animation bleibt ohne Main-Thread-Last und ist per Media Query abschaltbar | 2026-09-05 |
 | `prefers-reduced-motion: reduce` schaltet nur die Animation ab, nicht den Glow | Der Glow trägt die Farbcodierung der beiden Modi (Teal/Lime) — er ist Information, die Bewegung ist Dekoration | 2026-09-05 |
@@ -259,7 +287,7 @@ src/app/
 | Komponente | Zweck |
 |------------|-------|
 | `AppHeader` | App-weite Kopfzeile: Zurück-Pfeil links (entfällt auf Top-Level), Titel mitte, `AppNavMenu` rechts. `transparent`-Prop (Default `false`) entfernt Background/Blur/Border, damit ein dahinterliegender Partikel-Backdrop (z.B. `quest-list-backdrop.tsx`) nahtlos durchscheint — genutzt auf Quest-Liste (`/play`) und Stationsliste (`station-list.tsx`, PROJ-3). Seit 2026-09-06 **nicht mehr sticky**; die Pin-Bildmarke und die `rightAction`-Prop entfallen, der Platz rechts gehört dem Menu |
-| `AppNavMenu` | Burger-Menu (shadcn `Sheet`) mit den Gruppen App / Info / Rechtliches, je Link ein Icon, aktiver Eintrag über `usePathname()` hervorgehoben. Ersetzt `InfoNavMenu` (PROJ-13) und wird auf allen Screens sowie in `InfoPageShell` eingebunden |
+| `AppNavMenu` | Burger-Menu (shadcn `Sheet`) mit den Gruppen App / Info / Rechtliches / Unterstützen, je Link ein Icon, aktiver Eintrag über `usePathname()` hervorgehoben. Ersetzt `InfoNavMenu` (PROJ-13) und wird auf allen Screens sowie in `InfoPageShell` eingebunden. Seit 2026-09-09 rendert dieselbe Schleife auch externe Links (`target="_blank"`, `rel="noopener noreferrer"`, kein `aria-current`) |
 | `ModeCard` | Große Karte auf Startscreen mit Brush-Stroke-Button |
 | `FirstVisitDialog` | Einmaliger Erststart-Dialog (nutzt shadcn Dialog) |
 | `BrushStrokeButton` | Button mit SVG-Brush-Stroke-Hintergrund (Brand-Element) |

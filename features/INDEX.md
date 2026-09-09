@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Roadmap | — | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 
 <!-- Add features above this line -->
 
@@ -169,3 +169,21 @@ Offen bleiben: **Firefox** (Binary fehlt trotz gegenteiliger `--dry-run`-Meldung
 Zwei Beobachtungen ohne Regressionscharakter: `/play/<id>` liefert serverseitig 404, während der Client korrekt rendert (systembedingt — Quests liegen nur im localStorage; für den Nutzer unsichtbar, aber relevant, falls Sharing/SEO je ein Thema wird). Und Desktop-WebKit mit iPhone-Emulation hat gar kein `requestPermission` — die Erkennung fällt dort korrekt auf den Hinweis zurück.
 
 **PROJ-3 ist abgeschlossen.** Offen im Projekt bleibt die kaputte `playwright.config.ts`: Sie zeigt weiter auf das 428-KB-Chromium-Fragment. Solange das so ist, sieht die Standard-Suite genau die Fehlerklasse nicht, aus der BUG-6 entstand — ein Einzeiler (`channel: 'chrome'`), der nicht in den Scope von QA oder Deploy fällt.
+
+
+## Offenes Refinement: „Support me" — Ko-fi-Link in der Navigation (2026-09-09)
+**PROJ-1** und **PROJ-13** — ein Refinement über zwei Specs, weil die App zwei Kopfzeilen hat. Vom Betreiber angefordert: ein Weg, das Projekt freiwillig zu unterstützen. Geo Quest ist laut PRD kostenlos und ohne Abo — Ko-fi ist damit die einzige Gegenleistung, die es überhaupt gibt.
+
+Das Ziel ist in beiden Fällen dasselbe: https://ko-fi.com/technolomagie, neuer Tab, `rel="noopener noreferrer"`. Die URL liegt als Konstante in `src/lib/app-nav.ts`, damit beide Einbauorte nicht auseinanderlaufen.
+
+**PROJ-1 — Burger-Menu (alle Screens):** neue vierte Gruppe **Unterstützen** mit dem Eintrag **Support me** und Kaffeetassen-Icon (`Coffee` aus lucide, bereits verfügbar). Letzte Position, keine Farbe, kein Badge, keine Animation — der Eintrag richtet sich an Erwachsene, während die Kern-Zielgruppe des PRD 10–15 Jahre alt ist. `APP_NAV_GROUPS` bekommt dafür ein `external`-Flag am Link statt einer zweiten Datenstruktur; das Flag steuert `target`, `rel` und den unterdrückten `aria-current`-Zweig (ein externes Ziel ist nie „die aktuelle Seite").
+
+Nicht in die App-Kopfzeile: Sie hat auf 360px genau zwei Plätze und dazwischen einen Titel, der bereits truncatet.
+
+**PROJ-13 — Kopfzeile von `/about` und `/anleitung`:** ein Icon-Button **ohne Text**, links neben „Zur App", als Ghost (kein Rahmen, keine Füllung). Die ausgeschriebene Beschriftung trägt das Menu; hier wäre ein vierter beschrifteter Button entweder umgebrochen oder hätte ein Tap-Ziel unter 44px gedrückt. `/impressum` und `/datenschutz` bekommen ihn nicht.
+
+Damit ist die seit dem 2026-09-05 offene Frage nach dem Ko-fi-Platzhalter geschlossen — **aber anders als vorgesehen**: Der reservierte Platz war als Tausch gegen „Zur App" gedacht. Das wäre falsch gewesen. „Zur App" ist der Conversion-Weg der Seite, und Refinement 4 hat die Hero-CTAs eigens auf `/create` gezogen, um genau diesen Weg zu verkürzen. Ko-fi bekommt einen eigenen Platz daneben, statt den fremden zu erben.
+
+Beide Specs sind aktualisiert (PROJ-1: User Story 9, 8 Acceptance Criteria, Edge Cases 13–16, 5 Produkt- und 4 technische Entscheidungen; PROJ-13: 10 Acceptance Criteria, 3 Edge Cases, 2 Technical Requirements, 4 Produkt- und 3 technische Entscheidungen, 1 geschlossene Open Question). **Noch nichts gebaut — nächster Schritt: `/frontend`.**
+
+PROJ-13 geht dafür von Deployed zurück auf In Progress. PROJ-1 stand bereits auf In Progress (die QA des Navigations-Refinements vom 2026-09-06 steht weiterhin aus) und bleibt dort.
