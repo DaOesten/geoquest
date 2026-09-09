@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Roadmap | — | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | Approved | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 
 <!-- Add features above this line -->
 
@@ -116,7 +116,17 @@ Zwei Vorgaben habe ich nach Rückfrage angepasst: Der CTA lautet „Mit KI erste
 
 **Technische Folge:** `eyebrow` in `InfoPageShell` ist jetzt optional — ein leerer String hätte ein leeres `<p>` als Leerraum über der Headline hinterlassen. Die drei anderen Info-Seiten setzen die Prop weiterhin und sind unverändert.
 
-**BUG-7 bleibt behoben:** Der zweite Lead-Satz kostet 51px, alle elf Viewports zeigen den CTA weiterhin vollständig. Knappster Fall ist 320×568 mit 27px Luft (vorher 98px). Zwei neue Tests halten den fehlenden Eyebrow und die gleiche Formatierung beider Hero-Sätze fest; vier Assertions sind auf die neue Copy gezogen. PROJ-13 jetzt **100 Tests**. **Nächster Schritt: `/qa`.**
+**BUG-7 bleibt behoben:** Der zweite Lead-Satz kostet 51px, alle elf Viewports zeigen den CTA weiterhin vollständig. Knappster Fall ist 320×568 mit 27px Luft (vorher 98px). Zwei neue Tests halten den fehlenden Eyebrow und die gleiche Formatierung beider Hero-Sätze fest; vier Assertions sind auf die neue Copy gezogen. PROJ-13 jetzt **105 Tests**.
+
+**QA am 2026-09-09 abgeschlossen: alle fünf Änderungen bestätigt, keine Bugs, produktionsreif.** „In der gleichen Formatierung" wurde gemessen statt geschätzt — beide Hero-Sätze sind exakt 20px/w400/lh28/Rubik. Der sekundäre CTA ist mit 225px sogar 7px schmaler als der primäre (232px), die Entscheidung gegen die längere Fassung hat also gegriffen. Die Kürzung der Schul-Karte hat ihr Ziel erreicht: Sie ist mit 108 Zeichen nicht mehr die längste (das ist jetzt „Gruppen & Events" mit 132), die vier Karten stehen paarweise gleich hoch bei 24px Spanne.
+
+Der kritische Regressionspunkt — `eyebrow` wurde in der geteilten `InfoPageShell` optional — ist geprüft: `/anleitung`, `/impressum` und `/datenschutz` behalten ihre Eyebrows. BUG-7 bleibt behoben, alle neun Viewports zeigen den CTA vollständig. Security unverändert ohne Befund.
+
+Fünf neue Tests, per Gegenprobe geschärft: Mit drei absichtlich eingebauten Fehlern (Eyebrow zurück, längerer CTA, Satz 2 kleiner) fallen genau die drei zuständigen um. **Chrome 344/344, Mobile Safari 341 passed / 2 skipped, Unit 186/186, PROJ-13 105/105.**
+
+**Beobachtung ohne Bug-Status:** 320×568 hat nur noch 27px Luft unter dem CTA (vorher 98px) — kein Fehler, aber die Stelle, die zuerst kippt, falls der Hero künftig wächst.
+
+**Nächster Schritt: `/deploy`.**
 
 ## Abgeschlossen: Refinement 4 (Marketing-Landingpage)
 Deployt am 2026-09-09 (Tag `v1.25.0-PROJ-13`). Offen bleiben zwei Low-Befunde aus der QA, die den gesamten Info-Bereich betreffen und ein eigenes Refinement wert wären: BUG-8 (Sektions-Kicker als `h2`, die echten Titel als `h3` — Screenreader hören das dekorative Label als Überschrift) und BUG-9 (kein `:focus-visible` in `globals.css`, app-weit).

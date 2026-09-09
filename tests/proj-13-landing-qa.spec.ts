@@ -286,3 +286,84 @@ test.describe("Regression: Nachbarseiten", () => {
     await expect(page).toHaveURL(/\/anleitung$/);
   });
 });
+
+test.describe("Refinement 5: Copy-Feinschliff (2026-09-09)", () => {
+  test("kein Eyebrow und kein Leerraum an seiner Stelle", async ({ page }) => {
+    await page.goto("/about");
+
+    await expect(page.getByText("Über Geo Quest")).toHaveCount(0);
+    // Ein leerer String in der Shell hätte ein leeres <p> mit voller
+    // Zeilenhöhe hinterlassen — genau über der Headline.
+    const emptyEyebrow = await page.evaluate(
+      () =>
+        [...document.querySelectorAll("main p.text-tech")].filter(
+          (e) => !(e.textContent || "").trim()
+        ).length
+    );
+    expect(emptyEyebrow).toBe(0);
+  });
+
+  test("die beiden Hero-Sätze sind identisch formatiert", async ({ page }) => {
+    await page.goto("/about");
+
+    const style = (re: RegExp) =>
+      page
+        .locator("main p", { hasText: re })
+        .first()
+        .evaluate((e) => {
+          const cs = getComputedStyle(e);
+          return `${cs.fontSize}|${cs.fontWeight}|${cs.lineHeight}|${cs.fontFamily}`;
+        });
+
+    const a = await style(/^Erstelle deine eigene GPS-Rallye/);
+    const b = await style(/^Nimm die Herausforderung an/);
+    expect(b, "Satz 2 muss wie Satz 1 gesetzt sein").toBe(a);
+  });
+
+  test("der sekundäre CTA ist nicht breiter als der primäre", async ({ page }) => {
+    await page.goto("/about");
+
+    // Sonst würde der Zweit-Button optisch zum Haupt-CTA — der Grund,
+    // warum er „Mit KI erstellen" heißt und nicht „Quest mit KI erstellen".
+    const primary = await page
+      .getByRole("link", { name: /^Quest erstellen/ })
+      .first()
+      .boundingBox();
+    const secondary = await page
+      .getByRole("link", { name: /Mit KI erstellen/ })
+      .first()
+      .boundingBox();
+
+    expect(secondary!.width).toBeLessThanOrEqual(primary!.width);
+  });
+
+  test("die neue Copy steht, die alte ist weg", async ({ page }) => {
+    await page.goto("/about");
+
+    await expect(page.getByText(/^Nimm die Herausforderung an/)).toBeVisible();
+    await expect(page.getByText("Draußen ist das Game.")).toBeVisible();
+    await expect(
+      page.getByText(/Verbessere das Lernen durch Bewegung/)
+    ).toBeVisible();
+
+    await expect(page.getByText("Die Welt ist deine Spielkarte.")).toHaveCount(0);
+    await expect(page.getByText(/Mit KI bauen/)).toHaveCount(0);
+    await expect(page.getByText(/Geschichte, Natur oder Geografie/)).toHaveCount(0);
+  });
+
+  test("die Nachbarseiten behalten ihren Eyebrow", async ({ page }) => {
+    // `eyebrow` wurde optional gemacht — die drei anderen Info-Seiten
+    // setzen die Prop weiterhin und dürfen sie nicht verlieren.
+    for (const [path, expected] of [
+      ["/anleitung", "Anleitung"],
+      ["/impressum", "Rechtliches"],
+      ["/datenschutz", "Rechtliches"],
+    ] as const) {
+      await page.goto(path);
+      await expect(
+        page.locator("main p.text-tech").first(),
+        `${path} hat keinen Eyebrow mehr`
+      ).toHaveText(expected);
+    }
+  });
+});

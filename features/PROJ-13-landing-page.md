@@ -1,9 +1,9 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: In Progress
-_Refinement 4 ist deployt (Tag `v1.25.0-PROJ-13`). Refinement 5 (Copy-Feinschliff am Hero und an zwei Karten) ist am 2026-09-09 gebaut und im Browser verifiziert — QA und Deploy stehen aus._
+## Status: Approved
+_Refinement 4 ist deployt (Tag `v1.25.0-PROJ-13`). Refinement 5 (Copy-Feinschliff) ist gebaut und am 2026-09-09 QA-geprüft: alle fünf Änderungen bestätigt, keine Bugs, produktionsreif — Deploy steht aus._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-09 (Refinement 5 — Copy-Feinschliff)
+**Last Updated:** 2026-09-09 (Refinement 5 — QA abgeschlossen, Production-Ready)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -1591,3 +1591,112 @@ Browser geprüft auf 1366×768 und 390×844: Ohne Eyebrow beginnt die Headline b
 - Der Test auf „interaktive Lernpfade" bleibt gültig — die Formulierung steht auch im gekürzten Text
 
 PROJ-13 damit **100 Tests** (vorher 98).
+---
+
+## QA Test Results — Refinement 5: Copy-Feinschliff (2026-09-09)
+
+**Getestet:** `/about` nach Commit `fc18198`
+**Engines:** Desktop Chrome 152, WebKit. Firefox weiterhin nicht lauffähig (Binary fehlt).
+**Viewports:** 320, 360, 375, 430, 768, 1024, 1366, 1440, 1920 px
+
+### Die fünf Änderungen
+
+| # | Änderung | Ergebnis |
+|---|---|---|
+| 1 | Eyebrow „Über Geo Quest" entfällt | **PASS** — 0 Treffer im ausgelieferten HTML, und **kein leeres `<p>`** an seiner Stelle |
+| 2 | Zweiter Hero-Satz zum Spielerlebnis | **PASS** — gemessen identisch zu Satz 1: 20px, w400, lh 28px, Rubik |
+| 3 | Sekundärer CTA „Mit KI erstellen" | **PASS** — und mit 225px sogar 7px **schmaler** als der primäre (232px) |
+| 4 | Merkzeile „Draußen ist das Game." | **PASS** — alte Fassung 0 Treffer |
+| 5 | Schul-Karte auf zwei Sätze gekürzt | **PASS** — Fachbeispiele 0 Treffer |
+
+„In der gleichen Formatierung" (Punkt 2) wurde nicht nach Augenschein beurteilt, sondern über `getComputedStyle` verglichen: Schriftgröße, Gewicht, Zeilenhöhe und Familie stimmen exakt überein.
+
+### Die Kürzung hat ihr Ziel erreicht
+
+Die Schul-Karte war vor Refinement 5 die mit Abstand längste. Jetzt:
+
+| Karte | Höhe | Zeichen |
+|---|---|---|
+| Für Familien | 171px | 74 |
+| Für Schule & Pädagogik | 171px | 108 |
+| Für Kinder & Jugendliche | 195px | 89 |
+| Für Gruppen & Events | 195px | 132 |
+
+Die Karten stehen paarweise gleich hoch, die Spanne beträgt 24px. Längste Karte ist nun „Gruppen & Events", nicht mehr die Schul-Karte.
+
+### Zusätzlich geprüft
+
+- **BUG-7 bleibt behoben.** Der zweite Lead-Satz kostet 51px; alle neun Viewports zeigen den primären CTA weiterhin vollständig. Knappster Fall ist **320×568 mit 27px Luft** (vor Refinement 5: 98px).
+- **Kontrast:** Satz 2 bei 19.40:1, die neue Merkzeile bei 10.15:1 (25.6px, Vorgabe 3:1). Beide deutlich über der PRD-Vorgabe.
+- **Überschriften-Hierarchie:** unverändert ohne Sprünge. Der entfallene Eyebrow war ein `<p>`, kein Heading — es entsteht keine Lücke.
+- **Tastatur:** Tab-Reihenfolge im Hero korrekt (primärer CTA → sekundärer CTA → FAQ), FAQ per Enter bedienbar.
+- **CTA-Ziele:** „Quest erstellen" → `/create`, „Mit KI erstellen" → `/anleitung`.
+- **JSON-LD:** unverändert gültig, fünf Fragen, kein `</` enthalten.
+- **Cross-Browser:** WebKit und Chrome zeigen alle fünf Änderungen identisch.
+- **Responsive:** kein horizontaler Überlauf, kein Touch-Target unter 44px auf keinem der neun Viewports.
+
+### Regression: die Nachbarseiten behalten ihren Eyebrow
+
+Der kritische Punkt dieses Refinements, weil `eyebrow` in der geteilten `InfoPageShell` optional wurde. Geprüft und bestätigt:
+
+| Seite | Eyebrow |
+|---|---|
+| `/anleitung` | „Anleitung" |
+| `/impressum` | „Rechtliches" |
+| `/datenschutz` | „Rechtliches" |
+
+Alle drei ohne Überlauf, mit Footer, ohne JS-Fehler.
+
+### Security-Audit (Red Team)
+
+Unverändert gegenüber Refinement 4 — die Änderungen sind reine Textersetzungen ohne neue Angriffsfläche:
+
+| Prüfung | Ergebnis |
+|---|---|
+| Nutzereingaben / Client-State | 0 Treffer für `useState`, `useEffect`, `onChange`, `localStorage`, `searchParams` |
+| `dangerouslySetInnerHTML` | genau eine Verwendung (JSON-LD), `<` weiterhin escaped |
+| Security-Header | `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy` aktiv |
+
+**Keine Befunde.**
+
+### Bugs
+
+**Keine.** Weder Critical, High, Medium noch Low.
+
+### Beobachtung ohne Bug-Status
+
+**320×568 hat nur noch 27px Luft** unter dem primären CTA (vorher 98px). Das ist kein Fehler — der CTA ist vollständig sichtbar — aber es ist die Stelle, die als erste kippt, falls der Hero künftig wächst. Wer dort etwas hinzufügt, sollte diesen Viewport messen.
+
+### Neue Tests
+
+Fünf Tests im Block „Refinement 5: Copy-Feinschliff" in `tests/proj-13-landing-qa.spec.ts`:
+- kein Eyebrow **und** kein leeres `<p>` an seiner Stelle
+- beide Hero-Sätze identisch formatiert (Vergleich der gerenderten Werte)
+- sekundärer CTA nicht breiter als der primäre — hält die Begründung für die kürzere Fassung fest
+- neue Copy steht, alte ist weg (sechs Assertions)
+- Nachbarseiten behalten ihren Eyebrow
+
+**Gegenprobe durchgeführt:** Mit drei absichtlich eingebauten Fehlern (Eyebrow zurück, längerer CTA-Text, Satz 2 kleiner gesetzt) fallen genau die drei zuständigen Tests um. Anschließend sauber zurückgesetzt und verifiziert, dass keine Reste blieben.
+
+PROJ-13 damit **105 Tests** (vorher 100).
+
+### Nicht abgedeckt
+- **Firefox** — Binary weiterhin nicht lauffähig
+- **Echte Geräte** — geprüft mit gesetzten Viewports
+
+### Suiten
+
+| Suite | Ergebnis |
+|---|---|
+| Unit (Vitest) | **186 passed** |
+| E2E Desktop Chrome 152 | **344 passed / 0 failed** |
+| E2E Mobile Safari (Standard-Config) | **341 passed / 2 skipped / 0 failed** |
+| PROJ-13 allein | **105 passed** |
+| Build | sauber |
+| Lint | 0 Fehler (6 vorbestehende `<img>`-Warnungen in anderen Dateien) |
+
+### Produktionsreife: **JA**
+
+Keine Bugs. Die fünf Änderungen sind reine Textersetzungen an einer bereits abgenommenen Seite; die einzige strukturelle Folge — `eyebrow` als optionale Prop — ist geprüft und lässt die drei Nachbarseiten unberührt. BUG-7 bleibt behoben.
+
+Weiterhin offen aus früheren Runden: **BUG-8** (Sektions-Kicker als `h2`, die echten Titel als `h3`) und **BUG-9** (kein `:focus-visible` in `globals.css`) — beide vorbestehend, app-weit und nicht Gegenstand dieses Refinements.
