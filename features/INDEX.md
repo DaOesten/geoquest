@@ -176,7 +176,7 @@ Zwei Beobachtungen ohne Regressionscharakter: `/play/<id>` liefert serverseitig 
 
 Das Ziel ist in beiden Fällen dasselbe: https://ko-fi.com/technolomagie, neuer Tab, `rel="noopener noreferrer"`. Die URL liegt als Konstante in `src/lib/app-nav.ts`, damit beide Einbauorte nicht auseinanderlaufen.
 
-**PROJ-1 — Burger-Menu (alle Screens):** neue vierte Gruppe **Unterstützen** mit dem Eintrag **Support me** und Kaffeetassen-Icon (`Coffee` aus lucide, bereits verfügbar). Letzte Position, keine Farbe, kein Badge, keine Animation — der Eintrag richtet sich an Erwachsene, während die Kern-Zielgruppe des PRD 10–15 Jahre alt ist. `APP_NAV_GROUPS` bekommt dafür ein `external`-Flag am Link statt einer zweiten Datenstruktur; das Flag steuert `target`, `rel` und den unterdrückten `aria-current`-Zweig (ein externes Ziel ist nie „die aktuelle Seite").
+**PROJ-1 — Burger-Menu (alle Screens):** neue vierte Gruppe **Unterstützen** mit dem Eintrag **Support me** und Kaffeetassen-Icon (`Coffee` aus lucide, bereits verfügbar). Letzte Position, keine Farbe, kein Badge, keine Animation — Adressat sind die erwachsenen Ersteller (Eltern, Lehrkräfte, Jugendleiter), nicht die Spieler, die eine fertige Quest laufen. `APP_NAV_GROUPS` bekommt dafür ein `external`-Flag am Link statt einer zweiten Datenstruktur; das Flag steuert `target`, `rel` und den unterdrückten `aria-current`-Zweig (ein externes Ziel ist nie „die aktuelle Seite").
 
 Nicht in die App-Kopfzeile: Sie hat auf 360px genau zwei Plätze und dazwischen einen Titel, der bereits truncatet.
 

@@ -1,11 +1,11 @@
 # Product Requirements Document
 
 ## Vision
-Geo Quest ist eine Mobile-First-Web-App (PWA), die Kinder und Jugendliche (10–15 Jahre) nach draußen bringt, indem sie GPS-basierte Schnitzeljagden in ein spannendes Gaming-Erlebnis verwandelt. Nutzer können interaktive Quests mit Rätseln, Multimedia-Inhalten und GPS-Navigation erstellen und spielen — ohne Account, ohne Backend, komplett frei und offen.
+Geo Quest ist eine Mobile-First-Web-App (PWA), die Kinder und Jugendliche (etwa 8–16 Jahre) nach draußen bringt, indem sie GPS-basierte Schnitzeljagden in ein spannendes Gaming-Erlebnis verwandelt. Nutzer können interaktive Quests mit Rätseln, Multimedia-Inhalten und GPS-Navigation erstellen und spielen — ohne Account, ohne Backend, komplett frei und offen.
 
 ## Target Users
-- **Spieler (10–15 Jahre):** Wollen Abenteuer erleben, Rätsel lösen, sich draußen bewegen — aber mit dem Reiz eines Handy-Games. Pain Point: "Draußen ist langweilig" vs. Bildschirmzeit.
-- **Ersteller (Kinder, Eltern, Lehrer, Jugendleiter):** Wollen Schnitzeljagden für Geburtstage, Schulausflüge oder Ferienprogramme bauen. Pain Point: Bestehende Tools sind teuer (Actionbound-Abo) oder zu nüchtern.
+- **Spieler (etwa 8–16 Jahre, aber niemand ist zu alt):** Wollen Abenteuer erleben, Rätsel lösen, sich draußen bewegen — aber mit dem Reiz eines Handy-Games. Pain Point: "Draußen ist langweilig" vs. Bildschirmzeit. Die Altersangabe ist der Schwerpunkt, keine Grenze — Quests werden auch von Erwachsenen gespielt.
+- **Ersteller (überwiegend Erwachsene: Eltern, Lehrkräfte, Jugendleiter — Kinder ebenfalls möglich):** Wollen Schnitzeljagden für Geburtstage, Schulausflüge oder Ferienprogramme bauen. Pain Point: Bestehende Tools sind teuer (Actionbound-Abo) oder zu nüchtern. Sie sind die Gruppe, die den Nutzen der App bewertet — und damit auch Adressat der freiwilligen Unterstützung (siehe Finanzierung).
 
 ## Core Features (Roadmap)
 
@@ -53,7 +53,7 @@ Geo Quest ist eine Mobile-First-Web-App (PWA), die Kinder und Jugendliche (10–
 - Hinweis auf Datenverlust durch Browser-Löschung bei erstem Start
 
 ## Finanzierung
-Geo Quest bleibt kostenlos und ohne Abo (siehe Differenzierung). Die einzige Einnahmeform ist eine **freiwillige Unterstützung über Ko-fi** (https://ko-fi.com/technolomagie), erreichbar über das Burger-Menu und die Kopfzeile der Info-Seiten. Bewusst zurückhaltend platziert: keine Werbung, keine Bezahlschranke, kein Hinweis im Spielverlauf — die Kern-Zielgruppe ist 10–15 Jahre alt, das Angebot richtet sich an die Erwachsenen dahinter.
+Geo Quest bleibt kostenlos und ohne Abo (siehe Differenzierung). Die einzige Einnahmeform ist eine **freiwillige Unterstützung über Ko-fi** (https://ko-fi.com/technolomagie), erreichbar über das Burger-Menu und die Kopfzeile der Info-Seiten. Adressat sind die **erwachsenen Ersteller** — Eltern, Lehrkräfte, Jugendleiter —, die den Nutzen der App kennen und für die eine Unterstützung überhaupt in Frage kommt. Bewusst zurückhaltend platziert: keine Werbung, keine Bezahlschranke, kein Hinweis im Spielverlauf. Gespielt wird in jedem Alter; wer unterwegs eine Station sucht, ist nicht der Adressat.
 
 ## Non-Goals
 - Kein Benutzer-Account / Login
@@ -68,4 +68,4 @@ Geo Quest bleibt kostenlos und ohne Abo (siehe Differenzierung). Die einzige Ein
 - Komplett kostenlos und offen (kein Abo)
 - Gaming-Look statt nüchternem Bildungs-Tool-Design
 - Kein Account-Zwang
-- Fokus auf die Zielgruppe 10–15 Jahre
+- Fokus auf die Zielgruppe der 8–16-Jährigen (Schwerpunkt, keine Grenze)
