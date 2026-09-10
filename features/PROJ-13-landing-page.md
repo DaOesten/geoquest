@@ -1,9 +1,9 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: In Progress
-_Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und dort verifiziert (Tag `v1.26.0-PROJ-13`). Refinement 6 (Ko-fi-Icon in der Kopfzeile von `/about` und `/anleitung`, dazu der JSON-LD-Altersnachzug) ist am 2026-09-09 gebaut, im Browser gemessen und mit E2E-Tests abgesichert — QA steht aus._
+## Status: Approved
+_Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und dort verifiziert (Tag `v1.26.0-PROJ-13`). Refinement 6 (Ko-fi-Icon in der Kopfzeile, Tooltip, JSON-LD-Altersnachzug) ist **am 2026-09-10 QA-geprüft: 14/14 Acceptance Criteria, keine Bugs, Production-Ready** — bereit für `/deploy`._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-09 (Refinement 6: Ko-fi-Icon in der Kopfzeile)
+**Last Updated:** 2026-09-10 (QA Refinement 6 abgeschlossen)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -208,20 +208,20 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] Angenommen ein Nutzer betrachtet den Header von `/about`, wenn er nach rechts schaut, dann steht dort weiterhin der Button „Zur App" sowie das Burger-Menu — beides unverändert aus Refinement 3
 
 ### Ko-fi-Icon in der Kopfzeile (Refinement 6, 2026-09-09)
-- [ ] Angenommen ein Besucher öffnet `/about`, wenn er die Kopfzeile betrachtet, dann steht links neben „Zur App" ein Icon-Button mit Kaffeetasse **ohne Textbeschriftung**
-- [ ] Angenommen ein Besucher öffnet `/anleitung`, wenn er die Kopfzeile betrachtet, dann steht derselbe Icon-Button dort
-- [ ] Angenommen ein Besucher öffnet `/impressum` oder `/datenschutz`, wenn er die Kopfzeile betrachtet, dann steht dort **kein** Ko-fi-Icon — diese beiden Seiten bleiben unverändert
-- [ ] Angenommen ein Besucher tippt oder klickt auf das Icon, dann öffnet sich https://ko-fi.com/technolomagie in einem **neuen Tab**, während die Info-Seite im bisherigen Tab stehen bleibt
-- [ ] Angenommen ein Screenreader-Nutzer erreicht den Icon-Button, wenn er ihn vorgelesen bekommt, dann hört er einen sprechenden Namen (nicht nur „Link" oder den Dateinamen) und den Hinweis auf den neuen Tab
-- [ ] Angenommen der Besucher betrachtet Icon-Button und „Zur App" nebeneinander, wenn beide sichtbar sind, dann ist „Zur App" optisch klar der stärkere der beiden — das Icon trägt keinen Rahmen und keine Füllfläche
-- [ ] Angenommen ein Besucher öffnet `/about` auf 320px Breite, wenn die Kopfzeile lädt, dann stehen Zurückpfeil (falls vorhanden), Ko-fi-Icon, „Zur App" und Burger-Menu nebeneinander in einer Zeile, ohne umzubrechen und ohne dass ein Tap-Ziel unter 44px fällt
-- [ ] Angenommen der Besucher bedient die Seite mit der Tastatur, wenn er durch die Kopfzeile tabbt, dann erhält der Icon-Button einen sichtbaren Fokus und liegt in der Reihenfolge vor „Zur App"
-- [ ] Angenommen die Seite wird im Dark Theme (`/about`) und im jeweiligen Theme von `/anleitung` dargestellt, wenn das Icon sichtbar ist, dann erfüllt es die WCAG-AA-Kontrastvorgabe (4.5:1) in beiden
-- [ ] Angenommen der primäre CTA lag vor diesem Refinement auf allen elf geprüften Viewports über dem Falz (BUG-7), wenn das Icon ergänzt ist, dann gilt das unverändert — der Icon-Button steht in der bestehenden Kopfzeilen-Höhe und erzeugt keine zusätzliche Höhe
-- [ ] Angenommen ein Besucher oder ein KI-System liest das `WebApplication`-JSON-LD auf `/about`, wenn es die `audience` auswertet, dann nennt sie **8 bis 16 Jahre** — dieselbe Spanne wie der sichtbare FAQ-Text, nicht mehr 10–15 (Nachzug 2026-09-09, siehe Technical Requirements)
-- [ ] Angenommen ein Besucher fährt am Desktop mit der Maus über das Kaffeetassen-Icon, wenn er kurz verweilt, dann erscheint ein Tooltip mit dem Text **„Unterstütze mich"**
-- [ ] Angenommen ein Besucher erreicht das Icon per Tastatur, wenn es den Fokus hat, dann erscheint derselbe Tooltip — er ist nicht auf Maus-Hover beschränkt
-- [ ] Angenommen ein Besucher nutzt ein Touch-Gerät, wenn er die Seite betrachtet, dann trägt das Icon seine Bedeutung weiterhin über das `aria-label` — der Tooltip ist eine Ergänzung, kein Ersatz
+- [x] Angenommen ein Besucher öffnet `/about`, wenn er die Kopfzeile betrachtet, dann steht links neben „Zur App" ein Icon-Button mit Kaffeetasse **ohne Textbeschriftung**
+- [x] Angenommen ein Besucher öffnet `/anleitung`, wenn er die Kopfzeile betrachtet, dann steht derselbe Icon-Button dort
+- [x] Angenommen ein Besucher öffnet `/impressum` oder `/datenschutz`, wenn er die Kopfzeile betrachtet, dann steht dort **kein** Ko-fi-Icon — diese beiden Seiten bleiben unverändert
+- [x] Angenommen ein Besucher tippt oder klickt auf das Icon, dann öffnet sich https://ko-fi.com/technolomagie in einem **neuen Tab**, während die Info-Seite im bisherigen Tab stehen bleibt
+- [x] Angenommen ein Screenreader-Nutzer erreicht den Icon-Button, wenn er ihn vorgelesen bekommt, dann hört er einen sprechenden Namen (nicht nur „Link" oder den Dateinamen) und den Hinweis auf den neuen Tab
+- [x] Angenommen der Besucher betrachtet Icon-Button und „Zur App" nebeneinander, wenn beide sichtbar sind, dann ist „Zur App" optisch klar der stärkere der beiden — das Icon trägt keinen Rahmen und keine Füllfläche
+- [x] Angenommen ein Besucher öffnet `/about` auf 320px Breite, wenn die Kopfzeile lädt, dann stehen Zurückpfeil (falls vorhanden), Ko-fi-Icon, „Zur App" und Burger-Menu nebeneinander in einer Zeile, ohne umzubrechen und ohne dass ein Tap-Ziel unter 44px fällt
+- [x] Angenommen der Besucher bedient die Seite mit der Tastatur, wenn er durch die Kopfzeile tabbt, dann erhält der Icon-Button einen sichtbaren Fokus und liegt in der Reihenfolge vor „Zur App"
+- [x] Angenommen die Seite wird im Dark Theme (`/about`) und im jeweiligen Theme von `/anleitung` dargestellt, wenn das Icon sichtbar ist, dann erfüllt es die WCAG-AA-Kontrastvorgabe (4.5:1) in beiden
+- [x] Angenommen der primäre CTA lag vor diesem Refinement auf allen elf geprüften Viewports über dem Falz (BUG-7), wenn das Icon ergänzt ist, dann gilt das unverändert — der Icon-Button steht in der bestehenden Kopfzeilen-Höhe und erzeugt keine zusätzliche Höhe
+- [x] Angenommen ein Besucher oder ein KI-System liest das `WebApplication`-JSON-LD auf `/about`, wenn es die `audience` auswertet, dann nennt sie **8 bis 16 Jahre** — dieselbe Spanne wie der sichtbare FAQ-Text, nicht mehr 10–15 (Nachzug 2026-09-09, siehe Technical Requirements)
+- [x] Angenommen ein Besucher fährt am Desktop mit der Maus über das Kaffeetassen-Icon, wenn er kurz verweilt, dann erscheint ein Tooltip mit dem Text **„Unterstütze mich"**
+- [x] Angenommen ein Besucher erreicht das Icon per Tastatur, wenn es den Fokus hat, dann erscheint derselbe Tooltip — er ist nicht auf Maus-Hover beschränkt
+- [x] Angenommen ein Besucher nutzt ein Touch-Gerät, wenn er die Seite betrachtet, dann trägt das Icon seine Bedeutung weiterhin über das `aria-label` — der Tooltip ist eine Ergänzung, kein Ersatz
 
 ### Prompt-Vorlage
 - [x] Angenommen ein Nutzer ist bei der Anleitungs-Sektion, wenn er die Seite betrachtet, dann ist die vollständige Prompt-Vorlage als lesbarer Text sichtbar und manuell markierbar
@@ -1297,6 +1297,59 @@ Eingeklapptes Accordion, gespiegelt im `FAQPage`-JSON-LD. Trägt „Schnitzeljag
 `/anleitung`, `/impressum`, `/datenschutz`, `InfoPageShell`, Header, Burger-Menu (`AppNavMenu`), Footer, Hintergrund, Prompt-Vorlage, Import, Creator, Player. Kein neues Paket, kein Backend, keine Route.
 
 ---
+
+## QA Test Results — Refinement 6: Ko-fi-Icon & Tooltip (2026-09-10)
+
+**Date:** 2026-09-10
+**Tester:** AI QA (Claude)
+**Build:** Production build, gegen `next start` getestet (nicht gegen den Dev-Server)
+**E2E:** Chrome 152 **368/368** · Mobile Safari **366 passed / 2 skipped / 0 failed**
+**Unit:** 186/186 ✓ · **Lint:** ✓ · `/about` und `/anleitung` weiterhin statisch (`○`)
+
+### Acceptance Criteria
+
+| # | Kriterium | Status | Messung |
+|---|-----------|--------|---------|
+| 1 | `/about`: Icon-Button ohne Textbeschriftung | ✅ Pass | 1 Element, Textinhalt leer, 1 SVG |
+| 2 | `/anleitung`: derselbe Button | ✅ Pass | identisch |
+| 3 | `/impressum` und `/datenschutz` ohne Icon | ✅ Pass | beide 0 Treffer |
+| 4 | Klick öffnet neuen Tab, Info-Seite bleibt stehen | ✅ Pass | Neuer Tab geöffnet, Ursprungs-URL unverändert |
+| 5 | Sprechender Accessible Name mit Tab-Hinweis | ✅ Pass | „Support me — auf Ko-fi unterstützen (öffnet neuen Tab)" |
+| 6 | „Zur App" optisch stärker, Icon ohne Rahmen/Fläche | ✅ Pass | Ruhezustand Icon `border 0px` / `transparent`; „Zur App" `border 1px` |
+| 7 | 320px: eine Zeile, kein Tap-Ziel unter 44px | ✅ Pass | Icon 44×44, „Zur App" 105×44, Burger 44×44 — alle auf Mitte 28, kein Overflow |
+| 8 | Sichtbarer Tastatur-Fokus, Reihenfolge vor „Zur App" | ✅ Pass | Fokus gesetzt, `outline: auto 1px`, Index 1 vs. 2 |
+| 9 | AA-Kontrast in beiden Themes | ✅ Pass | siehe PROJ-1: Dark 19.40:1 · Light 18.21:1 |
+| 10 | BUG-7 bleibt behoben | ✅ Pass | CTA auf 320×568, 1366×768 und 1440×900 vollständig über dem Falz |
+| 11 | JSON-LD nennt 8–16 Jahre | ✅ Pass | `suggestedMinAge: 8`, `suggestedMaxAge: 16`, deckungsgleich mit dem sichtbaren FAQ-Text |
+| 12 | Tooltip „Unterstütze mich" bei Hover | ✅ Pass | Text exakt „Unterstütze mich" |
+| 13 | Tooltip auch bei Tastatur-Fokus | ✅ Pass | erscheint ohne Maus |
+| 14 | Auf Touch trägt das `aria-label` die Bedeutung | ✅ Pass | WebKit/Touch: Label vollständig, Tap-Ziel 44×44 |
+
+**14/14 erfüllt.**
+
+### Responsive (Checkliste 375 / 768 / 1440)
+
+| Breite | Kopfzeile | Overflow |
+|--------|-----------|----------|
+| 375px | Icon 44×44 · Zur App 105×44 · Burger 44×44 | nein |
+| 768px | + Textlink „Anleitung" 114×44 | nein |
+| 1440px | + Textlink „Anleitung" 114×44 | nein |
+
+Der Textlink „Anleitung" erscheint wie vorgesehen erst ab `sm`.
+
+### Security Audit
+
+Keine Befunde — Details in der QA-Sektion von PROJ-1. Kernpunkt: `window.opener === null` und leerer `document.referrer` im geöffneten Tab **gemessen**, nicht nur die Attribute geprüft. 0 externe Requests im Production-Build.
+
+### Regression
+
+Nachbarseiten und geteilte Komponenten mitgeprüft, weil `InfoPageShell` von allen vier Info-Seiten genutzt wird: **368/368 auf Chrome**, alle PROJ-13-Suiten grün. Die zwei Tests, die in der Frontend-Phase gegen den Dev-Server fehlschlugen, bestehen gegen den Production-Build — die Ursache (Vercel-Analytics-Debug-Skript) existiert dort nicht.
+
+### Bugs
+
+**Keine.**
+
+### Production-Ready: **JA**
 
 ## Implementation Notes (Frontend — Refinement 6: Ko-fi-Icon, 2026-09-09)
 

@@ -16,7 +16,7 @@
 
 | ID | Feature | Priority | Dependencies | Status | Spec | Created |
 |----|---------|----------|--------------|--------|------|---------|
-| PROJ-1 | App Shell & Mode Switch | P0 | None | Deployed | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
+| PROJ-1 | App Shell & Mode Switch | P0 | None | In Progress | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
 | PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Roadmap | — | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | Approved | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 
 <!-- Add features above this line -->
 
@@ -202,7 +202,19 @@ Auf 320×568 gemessen statt geschätzt: Icon x=99, „Zur App" x=147, Burger x=2
 1. `proj-13-info-refinement.spec.ts` prüfte auf „10 bis 15 Jahren", den Wortlaut vor der Copy-Änderung des Betreibers vom 2026-09-09. Assertion auf „8 bis 16 Jahren" gezogen — dieselbe Drift, die auch im PRD und im JSON-LD steckte.
 2. `proj-13-landing-qa.spec.ts` („keine fremden Hosts") schlägt **nur gegen `npm run dev`** fehl: Vercel Analytics lädt dort ein Debug-Skript. Gegen den Production-Build gemessen: **0 externe Requests**. Als Kommentar im Test festgehalten.
 
-**Nächster Schritt: `/qa`.**
+**QA am 2026-09-10 abgeschlossen: 22/22 Acceptance Criteria erfüllt (8 in PROJ-1, 14 in PROJ-13), keine Bugs, Production-Ready.**
+
+Erstmals **gegen den Production-Build** getestet statt gegen den Dev-Server — das erledigt nebenbei die beiden Testfehler aus der Frontend-Phase: Beide Suiten sind gegen `next start` grün, weil das Vercel-Analytics-Debug-Skript dort nicht existiert. **Chrome 152: 368/368. Mobile Safari: 366 passed / 2 skipped / 0 failed** (beide Skips sind vorbestehende Plattform-Grenzen: kein Hover auf Touch, keine Clipboard-Berechtigung in WebKit). Der Lauf dauert gegen Production 43 Sekunden statt Stunden gegen den Dev-Server — für künftige QA-Läufe der bessere Weg.
+
+Gemessen statt geschätzt: **Kontrast 19.40:1 (Dark) und 18.21:1 (Light)** bei 4.5:1 Vorgabe. Der Menu-Eintrag ist typografisch identisch zu „Play" (20px Anton, 48px Zeilenhöhe, 1px Trennlinie). Kopfzeile auf 375/768/1440px ohne Overflow, alle Tap-Ziele 44px.
+
+**Security-Audit ohne Befund.** Kernpunkt: `window.opener === null` und leerer `document.referrer` im geöffneten Tab **tatsächlich gemessen** — `noopener noreferrer` wirkt, statt nur als Attribut dazustehen. 0 externe Requests im Production-Build.
+
+Edge Case 14 (Ko-fi blockiert) ist in der Testumgebung real eingetreten — der Proxy liefert für ko-fi.com 403. Das Verhalten war exakt wie spezifiziert: Der neue Tab zeigt den Fehler, die App im Ursprungstab bleibt unversehrt. Genau dafür öffnet der Link in einem neuen Tab.
+
+Zwei Auffälligkeiten im ersten Messdurchlauf waren **Fehler in meiner Messung**, nicht im Produkt: Der „Teal-Hintergrund" des Icons war der Hover-Zustand (die Sonde maß mit dem Mauszeiger darauf), und der „fehlende neue Tab" war die 403-Sperre.
+
+**PROJ-13 ist Approved. Nächster Schritt: `/deploy`.** PROJ-1 bleibt auf In Progress — nicht wegen dieses Refinements, sondern weil die QA des Navigations-Umbaus vom 2026-09-06 dort weiterhin aussteht.
 
 **Mitzunehmen im selben `/frontend`-Lauf:** Das `WebApplication`-JSON-LD auf `/about` gibt Maschinen `suggestedMinAge: 10` / `suggestedMaxAge: 15`, während der sichtbare FAQ-Text seit der Copy-Änderung des Betreibers „etwa 8 bis 16 Jahren, aber niemand ist zu alt" sagt. Zwei Zahlen in `src/app/(info)/about/page.tsx`, auf 8 und 16 zu ziehen. Aufgefallen beim Angleichen des PRD, das dieselbe veraltete Spanne trug.
 

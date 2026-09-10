@@ -1,9 +1,9 @@
 # PROJ-1: App Shell & Mode Switch
 
 ## Status: In Progress
-_Deployed; das Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist gebaut und im Browser verifiziert — QA steht aus. Das Refinement vom 2026-09-09 („Support me" / Ko-fi) ist am 2026-09-09 gebaut, im Browser gemessen und mit 20 E2E-Tests abgesichert — QA steht ebenfalls aus._
+_Deployed; das Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist gebaut und im Browser verifiziert — QA dafür steht weiterhin aus. Das Refinement vom 2026-09-09 („Support me" / Ko-fi) ist **am 2026-09-10 QA-geprüft: 8/8 Acceptance Criteria, keine Bugs, Production-Ready**._
 **Created:** 2026-08-23
-**Last Updated:** 2026-09-09
+**Last Updated:** 2026-09-10 (QA Ko-fi)
 
 ## Dependencies
 - None (PROJ-1 ist das Fundament)
@@ -71,14 +71,14 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 - [ ] Angenommen das Menu wird im Creator (Light Theme) geöffnet, wenn es erscheint, dann trägt es das Theme des jeweiligen Modus — es bricht nicht aus dem Farbschema des Screens aus
 
 **„Support me" / Ko-fi (Refinement 2026-09-09):**
-- [ ] Angenommen das Menu ist offen, wenn der Nutzer nach unten schaut, dann steht als letzte Gruppe **Unterstützen** mit dem einzelnen Eintrag **Support me** und einem Kaffeetassen-Icon
-- [ ] Angenommen der Nutzer tippt im Menu auf „Support me", dann öffnet sich https://ko-fi.com/technolomagie in einem **neuen Tab** — die App bleibt im bisherigen Tab unverändert stehen, eine laufende Quest wird nicht verlassen
-- [ ] Angenommen ein Screenreader-Nutzer erreicht den Eintrag „Support me", wenn er ihn vorgelesen bekommt, dann ist erkennbar, dass der Link die Seite in einem neuen Tab verlässt
-- [ ] Angenommen der Eintrag „Support me" ist sichtbar, wenn der Nutzer die übrigen Menu-Einträge daneben betrachtet, dann trägt er dieselbe Typografie, Zeilenhöhe und Trennlinie wie sie — er wird nicht als Werbe-Banner hervorgehoben
-- [ ] Angenommen der Nutzer befindet sich auf einem beliebigen Screen der App, wenn er das Menu öffnet, dann ist „Support me" vorhanden — der Eintrag ist nicht auf einzelne Screens beschränkt
-- [ ] Angenommen das Menu wird im Creator (Light Theme) geöffnet, wenn „Support me" erscheint, dann erfüllt der Eintrag wie alle anderen die WCAG-AA-Kontrastvorgabe (4.5:1) in **beiden** Themes
-- [ ] Angenommen der Nutzer betrachtet `/about` oder `/anleitung` auf dem Desktop, wenn er die Kopfzeile ansieht, dann steht dort zusätzlich ein **Icon-Button ohne Text** (Kaffeetasse) mit demselben Ziel — siehe PROJ-13 für die Kopfzeilen-Variante
-- [ ] Angenommen der Eintrag ist nie aktiv im Sinne der Navigation, wenn der Nutzer das Menu öffnet, dann wird „Support me" **nie** als aktive Seite markiert (`aria-current`), weil das Ziel außerhalb der App liegt
+- [x] Angenommen das Menu ist offen, wenn der Nutzer nach unten schaut, dann steht als letzte Gruppe **Unterstützen** mit dem einzelnen Eintrag **Support me** und einem Kaffeetassen-Icon
+- [x] Angenommen der Nutzer tippt im Menu auf „Support me", dann öffnet sich https://ko-fi.com/technolomagie in einem **neuen Tab** — die App bleibt im bisherigen Tab unverändert stehen, eine laufende Quest wird nicht verlassen
+- [x] Angenommen ein Screenreader-Nutzer erreicht den Eintrag „Support me", wenn er ihn vorgelesen bekommt, dann ist erkennbar, dass der Link die Seite in einem neuen Tab verlässt
+- [x] Angenommen der Eintrag „Support me" ist sichtbar, wenn der Nutzer die übrigen Menu-Einträge daneben betrachtet, dann trägt er dieselbe Typografie, Zeilenhöhe und Trennlinie wie sie — er wird nicht als Werbe-Banner hervorgehoben
+- [x] Angenommen der Nutzer befindet sich auf einem beliebigen Screen der App, wenn er das Menu öffnet, dann ist „Support me" vorhanden — der Eintrag ist nicht auf einzelne Screens beschränkt
+- [x] Angenommen das Menu wird im Creator (Light Theme) geöffnet, wenn „Support me" erscheint, dann erfüllt der Eintrag wie alle anderen die WCAG-AA-Kontrastvorgabe (4.5:1) in **beiden** Themes
+- [x] Angenommen der Nutzer betrachtet `/about` oder `/anleitung` auf dem Desktop, wenn er die Kopfzeile ansieht, dann steht dort zusätzlich ein **Icon-Button ohne Text** (Kaffeetasse) mit demselben Ziel — siehe PROJ-13 für die Kopfzeilen-Variante
+- [x] Angenommen der Eintrag ist nie aktiv im Sinne der Navigation, wenn der Nutzer das Menu öffnet, dann wird „Support me" **nie** als aktive Seite markiert (`aria-current`), weil das Ziel außerhalb der App liegt
 
 **Scroll-Verhalten der Kopfzeile (Refinement 2026-09-06):**
 - [ ] Angenommen der Nutzer ist auf einem Play- oder Create-Screen, wenn er die Seite nach unten scrollt, dann scrollt die Kopfzeile mit Zurück-Pfeil und Burger-Menu mit nach oben aus dem Bild — sie bleibt nicht am oberen Rand kleben
@@ -635,6 +635,61 @@ Die Icon-Auswahl trifft `/frontend` aus dem bereits genutzten `lucide-react`-Set
 - Kein kontextabhängiger Menü-Eintrag „Quest bearbeiten": diese Aktion bleibt sichtbar auf der Seite, statt sich hinter zwei Taps zu verstecken
 
 ---
+
+## QA Test Results — „Support me" / Ko-fi (2026-09-10)
+
+**Date:** 2026-09-10
+**Tester:** AI QA (Claude)
+**Build:** Production build (`npm run build` ✓) — **gegen `next start` getestet, nicht gegen den Dev-Server**
+**Lint:** `npm run lint` ✓ (0 Fehler, 6 vorbestehende `<img>`-Warnungen)
+**Unit Tests:** 186/186 ✓
+**E2E:** Chrome 152 **368/368** · Mobile Safari **366 passed / 2 skipped / 0 failed**
+
+### Acceptance Criteria (PROJ-1, Burger-Menu)
+
+| # | Kriterium | Status | Messung |
+|---|-----------|--------|---------|
+| 1 | Vierte Gruppe „Unterstützen", Eintrag „Support me" mit Kaffeetassen-Icon | ✅ Pass | Gruppen `["App","Info","Rechtliches","Unterstützen"]`, Icon vorhanden |
+| 2 | Öffnet Ko-fi im neuen Tab, App bleibt stehen | ✅ Pass | Neuer Tab bestätigt, `/play` unverändert im Ursprungstab |
+| 3 | Screenreader erkennt den Tab-Wechsel | ✅ Pass | Accessible Name „Support me(öffnet neuen Tab)" |
+| 4 | Gleiche Typografie/Zeilenhöhe/Trennlinie wie die übrigen Einträge | ✅ Pass | Identisch zu „Play": 20px Anton, 48px hoch, 1px Border, uppercase italic |
+| 5 | Auf jedem Screen vorhanden | ✅ Pass | Auf allen 6 Screens genau 1× |
+| 6 | AA-Kontrast in beiden Themes | ✅ Pass | **Dark 19.40:1 · Light 18.21:1** (Vorgabe 4.5:1) |
+| 7 | Kopfzeilen-Variante auf `/about` und `/anleitung` | ✅ Pass | Siehe PROJ-13 |
+| 8 | Nie als aktive Seite markiert | ✅ Pass | `aria-current` = `null` |
+
+**8/8 erfüllt.**
+
+### Edge Cases
+
+| # | Fall | Status | Messung |
+|---|------|--------|---------|
+| 13 | Menu-Höhe durch die vierte Gruppe | ✅ Pass | 360×640 und 390×844: **kein Scrollen nötig**. 320×568: 37px scrollen (Eintrag 13px unter dem Falz). Landscape 844×390: 215px — in allen Fällen über `overflow-y-auto` erreichbar |
+| 14 | Ko-fi nicht erreichbar/blockiert | ✅ Pass | In der Testumgebung real eingetreten (Proxy liefert 403): Der neue Tab zeigt den Fehler, **die App im Ursprungstab bleibt unversehrt** — genau das beabsichtigte Verhalten |
+| 15 | Popup-Blocker | ✅ Pass | Normales `<a>` auf Nutzergeste, kein `window.open` — kein Blocker greift |
+| 16 | Spieler vs. Ersteller | ✅ Pass | Letzte Position, keine Farbe, kein Badge, keine Animation |
+
+### Security Audit (Red Team)
+
+| Prüfung | Ergebnis |
+|---------|----------|
+| Reverse Tabnabbing | ✅ **`window.opener === null` im geöffneten Tab gemessen** — `noopener` ist wirksam, nicht nur als Attribut vorhanden |
+| Referrer-Leck | ✅ `document.referrer` im neuen Tab **leer** — `noreferrer` wirkt |
+| Protokoll | ✅ Alle Ko-fi-Links `https://`, keine `javascript:`/`data:`-URLs im DOM |
+| Fremde Hosts | ✅ **0 externe Requests** im Production-Build auf `/about` und `/anleitung` |
+| Injection | ✅ Kein Nutzereingabe-Pfad — URL und Label sind Konstanten im Bundle |
+
+**Keine Befunde.**
+
+### Bugs
+
+**Keine.** Zwei Auffälligkeiten im ersten Messdurchlauf haben sich als **Fehler in der Messung** erwiesen, nicht im Produkt:
+1. „Icon hat Teal-Hintergrund" — die Sonde maß, während der Mauszeiger auf dem Icon stand. Im Ruhezustand: `border 0px`, `background transparent`. Der Teal-Schimmer ist die gewollte Hover-Rückmeldung.
+2. „Kein neuer Tab beim Klick" — ko-fi.com ist aus der Testumgebung nicht erreichbar (403 vom Proxy). Mit erreichbarem Ziel gegengeprüft: neuer Tab öffnet, Ursprungsseite bleibt, `opener` null.
+
+### Production-Ready: **JA**
+
+Keine Critical- oder High-Bugs. Kein Backend beteiligt, keine Datenhaltung, keine Nutzereingabe.
 
 ## Implementation Notes (Frontend) — „Support me" / Ko-fi (2026-09-09)
 
