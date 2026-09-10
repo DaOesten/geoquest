@@ -1,9 +1,9 @@
 # PROJ-1: App Shell & Mode Switch
 
-## Status: Approved
-_Deployed; das Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist am 2026-09-10 QA-geprüft (14/15 Acceptance Criteria, keine Critical/High-Bugs). **BUG-10 ist am 2026-09-10 entschieden, gebaut und QA-geprüft: 7/7 Acceptance Criteria, 0px Layout-Kosten unabhängig gegen den Vorgänger-Commit auf sechs Viewports bestätigt, keine Bugs, Production-Ready.** Das Refinement vom 2026-09-09 („Support me" / Ko-fi) ist **am 2026-09-10 nach Production deployt und dort verifiziert** (Tag `v1.27.0-PROJ-13`, 8/8 Acceptance Criteria, keine Bugs) — der Menu-Eintrag ist auf https://geoquesty.vercel.app live._
+## Status: Deployed
+_Deployed; das Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist am 2026-09-10 QA-geprüft (14/15 Acceptance Criteria, keine Critical/High-Bugs). **BUG-10 ist am 2026-09-10 entschieden, gebaut, QA-geprüft und nach Production deployt** (Tag `v1.28.0-PROJ-1`): 7/7 Acceptance Criteria, 0px Layout-Kosten in Production auf vier Viewports bestätigt, alle sieben Ziele von `/` aus in einem Tap erreichbar. Das Refinement vom 2026-09-09 („Support me" / Ko-fi) ist **am 2026-09-10 nach Production deployt und dort verifiziert** (Tag `v1.27.0-PROJ-13`, 8/8 Acceptance Criteria, keine Bugs) — der Menu-Eintrag ist auf https://geoquesty.vercel.app live._
 **Created:** 2026-08-23
-**Last Updated:** 2026-09-10 (QA Navigations-Refinement)
+**Last Updated:** 2026-09-10 (BUG-10 deployt)
 
 ## Dependencies
 - None (PROJ-1 ist das Fundament)
@@ -650,6 +650,59 @@ Die Icon-Auswahl trifft `/frontend` aus dem bereits genutzten `lucide-react`-Set
 - Kein kontextabhängiger Menü-Eintrag „Quest bearbeiten": diese Aktion bleibt sichtbar auf der Seite, statt sich hinter zwei Taps zu verstecken
 
 ---
+
+## Deployment — Burger-Menu auf dem Startscreen (BUG-10, 2026-09-10)
+
+**Production URL:** https://geoquesty.vercel.app/
+**Deployed:** 2026-09-10
+**Tag:** `v1.28.0-PROJ-1`
+**Commits:** `38b7247` → `5472646` (4 Commits: QA Navigation, Refinement, Frontend, QA BUG-10)
+
+### Pre-Deployment
+- `npm run build` ✓ · `npm run lint` ✓ (0 Fehler, 6 vorbestehende `<img>`-Warnungen)
+- QA freigegeben: 7/7 Acceptance Criteria, keine Bugs
+- Keine Secrets im Repo (nur `.env.local.example` getrackt)
+- Vercel deployt automatisch von `main` — live nach ~60 Sekunden
+
+### Verifikation in Production
+
+**Routen** — alle HTTP 200, weit unter der 2s-Vorgabe des PRD:
+
+| Route | Status | Zeit |
+|-------|--------|------|
+| `/` | 200 | 0,19s |
+| `/play` | 200 | 0,21s |
+| `/create` | 200 | 0,08s |
+| `/about` | 200 | 0,07s |
+| `/anleitung` | 200 | 0,13s |
+| `/impressum` | 200 | 0,08s |
+| `/datenschutz` | 200 | 0,11s |
+
+**Die 0px-Behauptung in Production bestätigt.** Die vier Referenz-Viewports aus
+der QA gegen die Live-Seite nachgemessen — **alle 16 Werte identisch**:
+
+| Viewport | logoY | playY | createEnd | scrollt | Icon |
+|----------|-------|-------|-----------|---------|------|
+| 320×568 | 24 ✓ | 247 ✓ | 557 ✓ | true ✓ | 44×44 `absolute` |
+| 360×640 | 24 ✓ | 268 ✓ | 559 ✓ | false ✓ | 44×44 `absolute` |
+| 390×844 | 24 ✓ | 283 ✓ | 574 ✓ | false ✓ | 44×44 `absolute` |
+| 430×932 | 24 ✓ | 297 ✓ | 588 ✓ | false ✓ | 44×44 `absolute` |
+
+Keine Überlappung mit den Mode-Cards auf keinem Viewport.
+
+**Der Zweck von BUG-10 ist eingelöst:** Von `/` aus sind jetzt **alle sieben
+Ziele in einem Tap** erreichbar — `/play`, `/create`, `/about`, `/anleitung`,
+`/impressum`, `/datenschutz` und der Ko-fi-Link. Impressum und Datenschutz
+waren vorher von dort **gar nicht** verlinkt (erst in 2 Taps über Logo →
+`/about` → Footer). Ein Tap auf „Impressum" im Menu führt live nach
+`/impressum`.
+
+**Weiter geprüft:**
+- Menu auf `/`: vier Gruppen, sieben Links, **0** aktiv markiert
+- **0 Konsolenfehler, 0 fehlgeschlagene Requests**
+- WebKit gleichwertig: Icon 44×44, vier Gruppen
+- Security-Header aktiv: `x-frame-options: DENY`, `nosniff`,
+  `referrer-policy`, HSTS mit `preload`
 
 ## QA Test Results — Burger-Menu auf dem Startscreen (BUG-10), geprüft 2026-09-10
 

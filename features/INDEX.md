@@ -16,7 +16,7 @@
 
 | ID | Feature | Priority | Dependencies | Status | Spec | Created |
 |----|---------|----------|--------------|--------|------|---------|
-| PROJ-1 | App Shell & Mode Switch | P0 | None | Approved | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
+| PROJ-1 | App Shell & Mode Switch | P0 | None | Deployed | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
 | PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
@@ -276,4 +276,12 @@ Zwei Fehlspuren sind dokumentiert, damit sie niemand erneut verfolgt: Playwright
 
 Suite **776 passed / 2 skipped / 0 failed**, Unit 186/186, Build und Lint sauber.
 
-**PROJ-1 ist Approved. Nächster Schritt: `/deploy`.**
+**Am 2026-09-10 nach Production deployt** (Tag `v1.28.0-PROJ-1`) — live auf https://geoquesty.vercel.app und dort verifiziert. Vercel deployte automatisch von `main`, live nach ~60 Sekunden.
+
+**Die 0px-Behauptung ist auch in Production bestätigt:** Die vier Referenz-Viewports aus der QA gegen die Live-Seite nachgemessen, **alle 16 Werte identisch** (logoY, playY, createEnd, Scroll-Verhalten von 320×568 bis 430×932). Icon überall 44×44 und `absolute`, keine Überlappung.
+
+**Der Zweck von BUG-10 ist eingelöst:** Von `/` aus sind jetzt **alle sieben Ziele in einem Tap** erreichbar. Impressum und Datenschutz waren dort vorher gar nicht verlinkt — erst in 2 Taps über Logo → `/about` → Footer. Live getestet: Ein Tap auf „Impressum" im Menu führt nach `/impressum`.
+
+Alle sieben Routen HTTP 200 mit 0,07–0,21s. Menu auf `/` mit vier Gruppen, sieben Links, 0 aktiv markiert. **0 Konsolenfehler, 0 fehlgeschlagene Requests.** WebKit gleichwertig, Security-Header aktiv.
+
+**PROJ-1 ist damit vollständig abgeschlossen** — Navigations-Refinement, Ko-fi-Eintrag und BUG-10 sind gebaut, QA-geprüft und live. Offen bleiben nur die beiden vorbestehenden, nicht blockierenden Befunde BUG-2 (16px-Schließen-X in allen Sheets) und BUG-9 (kein `:focus-visible` app-weit), beide unabhängig von diesem Feature.
