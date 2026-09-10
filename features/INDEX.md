@@ -192,7 +192,9 @@ Auf 320×568 gemessen statt geschätzt: Icon x=99, „Zur App" x=147, Burger x=2
 
 **Mitgenommen wie geplant:** Der JSON-LD-Nachzug auf `/about` (`suggestedMinAge`/`MaxAge` von 10/15 auf 8/16) deckt sich jetzt mit dem sichtbaren FAQ-Text.
 
-20 neue E2E-Tests in `tests/proj-1-kofi-support.spec.ts`, per Gegenprobe geschärft: ohne `external`-Flag fallen genau die zwei Tests des Externen-Link-Vertrags, ohne `showSupport` auf `/anleitung` genau der zuständige eine. Drei Fehler in den **Tests selbst** wurden dabei gefunden und behoben (deutsche Anführungszeichen in JS-Strings, `@graph`-Struktur des JSON-LD, und ein Ausrichtungstest, der den unter `sm` ausgeblendeten „Anleitung"-Link mitzählte und 28px Versatz meldete, wo keiner war) — das Produkt war in allen drei Fällen richtig.
+20 neue E2E-Tests in `tests/proj-1-kofi-support.spec.ts` — **20/20 auf Desktop Chrome 152 und 20/20 auf Mobile Safari**, dazu Unit 186/186, Build und Lint sauber. Per Gegenprobe geschärft: ohne `external`-Flag fallen genau die zwei Tests des Externen-Link-Vertrags, ohne `showSupport` auf `/anleitung` genau der zuständige eine. Drei Fehler in den **Tests selbst** wurden dabei gefunden und behoben (deutsche Anführungszeichen in JS-Strings, `@graph`-Struktur des JSON-LD, und ein Ausrichtungstest, der den unter `sm` ausgeblendeten „Anleitung"-Link mitzählte und 28px Versatz meldete, wo keiner war) — das Produkt war in allen drei Fällen richtig.
+
+**Beim Testen gelernt (für künftige Läufe relevant):** Zwei gleichzeitig gegen denselben Dev-Server laufende Playwright-Suiten erzeugen `page.goto`-Timeouts, die wie echte Produktfehler aussehen — ein Zwischenlauf meldete so 5 WebKit-Fehler bei 15,7 Minuten Laufzeit, dieselbe Datei allein läuft in 11 Sekunden grün durch. Immer nur eine Suite gleichzeitig starten.
 
 **Nächster Schritt: `/qa`.**
 

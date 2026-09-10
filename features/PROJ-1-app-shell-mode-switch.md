@@ -688,6 +688,16 @@ zwei Tests um, die den Externen-Link-Vertrag halten (`target`/`rel` und die
 Screenreader-Ankündigung). Entfernt man `showSupport` von `/anleitung`, fällt
 genau der eine Test für diese Seite.
 
+**Beide Engines grün:** 20/20 auf Desktop Chrome 152 (5,9s) und 20/20 auf
+Mobile Safari / WebKit (11,0s).
+
+Ein Zwischenlauf meldete auf WebKit 5 Fehler, alle als `page.goto`-Timeout bei
+15,7 Minuten Gesamtlaufzeit. Ursache war nicht das Produkt, sondern zwei
+gleichzeitig gegen denselben Dev-Server laufende Suiten — allein ausgeführt
+läuft dieselbe Datei in 11 Sekunden durch. Für künftige Läufe: **nur eine
+Playwright-Suite gleichzeitig**, sonst erzeugt der Dev-Server Timeouts, die wie
+echte Fehler aussehen.
+
 **Drei eigene Testfehler unterwegs gefunden und behoben** — alle drei im Test,
 nicht im Produkt:
 1. Deutsche typografische Anführungszeichen in `test()`-Titeln beenden den
