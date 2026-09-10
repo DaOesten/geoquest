@@ -196,6 +196,12 @@ Auf 320×568 gemessen statt geschätzt: Icon x=99, „Zur App" x=147, Burger x=2
 
 **Beim Testen gelernt (für künftige Läufe relevant):** Zwei gleichzeitig gegen denselben Dev-Server laufende Playwright-Suiten erzeugen `page.goto`-Timeouts, die wie echte Produktfehler aussehen — ein Zwischenlauf meldete so 5 WebKit-Fehler bei 15,7 Minuten Laufzeit, dieselbe Datei allein läuft in 11 Sekunden grün durch. Immer nur eine Suite gleichzeitig starten.
 
+**Nachtrag 2026-09-10 — Tooltip:** Das Kaffeetassen-Icon in der Kopfzeile zeigt bei Hover und Tastatur-Fokus „Unterstütze mich". Neue Client-Komponente `src/components/support-link.tsx`, damit `InfoPageShell` eine Server-Komponente bleibt — `/about` und `/anleitung` stehen im Build weiterhin als statisch (`○`). Das `aria-label` bleibt, weil der Tooltip auf Touch unsichtbar ist. Damit ist die entsprechende Open Question in beiden Specs geschlossen. Spec-Suite jetzt **24 Tests, 24/24 auf Chrome und 24/24 auf Mobile Safari**.
+
+**Zwei vorbestehende Testfehler dabei gefunden und behoben** — beide in Nachbarsuiten, beide unabhängig vom Ko-fi-Refinement:
+1. `proj-13-info-refinement.spec.ts` prüfte auf „10 bis 15 Jahren", den Wortlaut vor der Copy-Änderung des Betreibers vom 2026-09-09. Assertion auf „8 bis 16 Jahren" gezogen — dieselbe Drift, die auch im PRD und im JSON-LD steckte.
+2. `proj-13-landing-qa.spec.ts` („keine fremden Hosts") schlägt **nur gegen `npm run dev`** fehl: Vercel Analytics lädt dort ein Debug-Skript. Gegen den Production-Build gemessen: **0 externe Requests**. Als Kommentar im Test festgehalten.
+
 **Nächster Schritt: `/qa`.**
 
 **Mitzunehmen im selben `/frontend`-Lauf:** Das `WebApplication`-JSON-LD auf `/about` gibt Maschinen `suggestedMinAge: 10` / `suggestedMaxAge: 15`, während der sichtbare FAQ-Text seit der Copy-Änderung des Betreibers „etwa 8 bis 16 Jahren, aber niemand ist zu alt" sagt. Zwei Zahlen in `src/app/(info)/about/page.tsx`, auf 8 und 16 zu ziehen. Aufgefallen beim Angleichen des PRD, das dieselbe veraltete Spanne trug.

@@ -241,6 +241,40 @@ test.describe('Kopfzeile — Ko-fi-Icon (PROJ-13)', () => {
     expect(overflow).toBe(false);
   });
 
+  test('bei Hover erscheint der Tooltip Unterstütze mich', async ({ page }) => {
+    await page.goto('/about');
+
+    await supportIcon(page).hover();
+    const tip = page.getByRole('tooltip');
+    await expect(tip).toBeVisible();
+    await expect(tip).toHaveText('Unterstütze mich');
+  });
+
+  test('der Tooltip erscheint auch bei Tastatur-Fokus', async ({ page }) => {
+    await page.goto('/about');
+
+    // Radix zeigt den Tooltip auch auf Fokus — sonst bekämen
+    // Tastatur-Nutzer den Hinweis nie zu sehen.
+    await supportIcon(page).focus();
+    await expect(page.getByRole('tooltip')).toBeVisible();
+  });
+
+  test('der Tooltip ersetzt das aria-label nicht', async ({ page }) => {
+    await page.goto('/about');
+
+    // Der Tooltip ist Hover-/Fokus-gebunden und auf Touch unsichtbar.
+    // Die Bedeutung des Icons muss deshalb weiterhin im Accessible Name
+    // stehen, sonst verlieren Touch- und Screenreader-Nutzer sie.
+    await expect(supportIcon(page)).toHaveAccessibleName(/Support me/);
+    await expect(supportIcon(page)).toHaveAccessibleName(/öffnet neuen Tab/);
+  });
+
+  test('ohne Hover ist kein Tooltip im Weg', async ({ page }) => {
+    await page.goto('/about');
+
+    await expect(page.getByRole('tooltip')).toHaveCount(0);
+  });
+
   test('das Icon erhält sichtbaren Tastatur-Fokus', async ({ page }) => {
     await page.goto('/about');
 

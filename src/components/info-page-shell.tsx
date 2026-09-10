@@ -1,9 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, Coffee } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { AppNavMenu } from "@/components/app-nav-menu";
+import { SupportLink } from "@/components/support-link";
 import { InfoFooter } from "@/components/info-footer";
-import { HEADER_NAV_LINKS, KOFI_URL } from "@/lib/app-nav";
+import { HEADER_NAV_LINKS } from "@/lib/app-nav";
 
 interface InfoPageShellProps {
   /** Show the brand lockup above the eyebrow (front page only — subpages go without). */
@@ -112,18 +113,11 @@ export function InfoPageShell({
                 daneben bleibt der stärkere der beiden — zwei gleichgewichtige
                 Buttons ließen den Besucher raten, welcher gemeint ist. Die
                 ausgeschriebene Fassung „Support me" trägt das Burger-Menu, das
-                auf jeder Breite dieselbe Zeile hat. */}
-            {showSupport && (
-              <a
-                href={KOFI_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Support me — auf Ko-fi unterstützen (öffnet neuen Tab)"
-                className="flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-full text-muted-foreground transition-colors duration-base ease-gq hover:text-primary hover:bg-primary/10 active:scale-[0.96]"
-              >
-                <Coffee className="w-5 h-5" aria-hidden="true" />
-              </a>
-            )}
+                auf jeder Breite dieselbe Zeile hat.
+
+                Ausgelagert in `support-link.tsx`, weil der Tooltip Client-JS
+                braucht — diese Shell bleibt dadurch eine Server-Komponente. */}
+            {showSupport && <SupportLink />}
 
             <Link
               href="/"

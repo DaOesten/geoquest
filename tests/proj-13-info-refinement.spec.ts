@@ -130,7 +130,9 @@ test.describe("Häufige Fragen (Accordion)", () => {
     for (const needle of [
       "vollständig kostenlos",
       "keine E-Mail-Abfrage",
-      "10 bis 15 Jahren",
+      // Am 2026-09-09 vom Betreiber auf "etwa 8 bis 16 Jahren, aber niemand
+      // ist zu alt" geändert; die Assertion hing noch am alten Wortlaut.
+      "8 bis 16 Jahren",
       "etwa eine halbe Stunde",
     ]) {
       expect(html, `Antwort fehlt im HTML: ${needle}`).toContain(needle);

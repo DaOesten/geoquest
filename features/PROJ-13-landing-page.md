@@ -219,6 +219,9 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [ ] Angenommen die Seite wird im Dark Theme (`/about`) und im jeweiligen Theme von `/anleitung` dargestellt, wenn das Icon sichtbar ist, dann erfüllt es die WCAG-AA-Kontrastvorgabe (4.5:1) in beiden
 - [ ] Angenommen der primäre CTA lag vor diesem Refinement auf allen elf geprüften Viewports über dem Falz (BUG-7), wenn das Icon ergänzt ist, dann gilt das unverändert — der Icon-Button steht in der bestehenden Kopfzeilen-Höhe und erzeugt keine zusätzliche Höhe
 - [ ] Angenommen ein Besucher oder ein KI-System liest das `WebApplication`-JSON-LD auf `/about`, wenn es die `audience` auswertet, dann nennt sie **8 bis 16 Jahre** — dieselbe Spanne wie der sichtbare FAQ-Text, nicht mehr 10–15 (Nachzug 2026-09-09, siehe Technical Requirements)
+- [ ] Angenommen ein Besucher fährt am Desktop mit der Maus über das Kaffeetassen-Icon, wenn er kurz verweilt, dann erscheint ein Tooltip mit dem Text **„Unterstütze mich"**
+- [ ] Angenommen ein Besucher erreicht das Icon per Tastatur, wenn es den Fokus hat, dann erscheint derselbe Tooltip — er ist nicht auf Maus-Hover beschränkt
+- [ ] Angenommen ein Besucher nutzt ein Touch-Gerät, wenn er die Seite betrachtet, dann trägt das Icon seine Bedeutung weiterhin über das `aria-label` — der Tooltip ist eine Ergänzung, kein Ersatz
 
 ### Prompt-Vorlage
 - [x] Angenommen ein Nutzer ist bei der Anleitungs-Sektion, wenn er die Seite betrachtet, dann ist die vollständige Prompt-Vorlage als lesbarer Text sichtbar und manuell markierbar
@@ -276,7 +279,7 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] ~~Sollen die beiden Seiten zusätzlich einen Einstieg außerhalb des Creator-Empty-States bekommen (z.B. dauerhaft im Creator-Header), sobald ein Nutzer bereits Quests hat?~~ → Ja, gelöst am 2026-09-06: Das app-weite Burger-Menu (PROJ-1) enthält unter „Info" die Links Über und Anleitung und ist auf jedem Screen erreichbar — auch im Creator mit bestehenden Quests
 - [x] ~~Warum sind die Häufigen Fragen ausgeklappt statt als Accordion?~~ → Ursprünglich für bessere Auffindbarkeit durch KI-Systeme ausgeklappt. Annahme war falsch: Accordion-Inhalte stehen vollständig im HTML (Radix blendet sie nur per `hidden` aus) und das `FAQPage`-JSON-LD trägt die Antworten ohnehin. Zurück zum eingeklappten Accordion (2026-09-05)
 - [x] ~~Wann und wohin genau zeigt der Ko-fi-Link?~~ → Geklärt am 2026-09-09 (Refinement 6): Ziel ist https://ko-fi.com/technolomagie. „Zur App" bleibt als Aktions-Button erhalten — es ist der Conversion-Weg der Seite; Ko-fi bekommt links daneben einen Icon-Button ohne Text, nur auf `/about` und `/anleitung`. Die ausgeschriebene Beschriftung „Support me" trägt das Burger-Menu (PROJ-1)
-- [ ] Bekommt der Icon-Button auf dem Desktop einen sichtbaren Tooltip? Das `aria-label` bedient Screenreader, sehende Maus-Nutzer sehen nur die Tasse — erst am Gerät bewerten (2026-09-09)
+- [x] ~~Bekommt der Icon-Button auf dem Desktop einen sichtbaren Tooltip?~~ → Ja, umgesetzt am 2026-09-10: Tooltip „Unterstütze mich" bei Hover und Tastatur-Fokus, als eigene Client-Komponente `support-link.tsx`, damit die Shell serverseitig bleibt. Das `aria-label` bleibt daneben bestehen — auf Touch ist der Tooltip unsichtbar
 - [ ] Sollen `/impressum` und `/datenschutz` das Icon nachträglich auch bekommen? Zunächst bewusst nicht (2026-09-09)
 - [x] ~~Braucht `/about` zusätzlich einen Footer mit Impressum/Datenschutz für Desktop-Besucher?~~ → Ja, entschieden am 2026-09-05: Footer auf allen Info-Seiten mit Kontakt und Rechtslinks; die Links verlassen dafür den Desktop-Header
 - [x] ~~Welche konkreten Angaben kommen ins Impressum?~~ → Vom Betreiber geliefert und eingetragen (2026-09-05)
@@ -375,6 +378,8 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 | Ko-fi-URL kommt aus `src/lib/app-nav.ts`, nicht als Literal in die Shell | Dieselbe URL steht im Burger-Menu (PROJ-1). Zwei Literale laufen bei der nächsten Änderung auseinander; `app-nav.ts` ist bereits die geteilte Quelle beider Navigationen | 2026-09-09 |
 | Einfaches `<a target="_blank" rel="noopener noreferrer">` statt `next/link` | `next/link` bringt Prefetch und Client-Navigation für interne Routen. Auf einer fremden Domain trägt beides nichts bei. `noopener` verhindert, dass die Zielseite über `window.opener` auf den Tab der App zugreift (Reverse Tabnabbing) | 2026-09-09 |
 | Die `audience`-Altersangabe im JSON-LD zieht auf 8–16 nach, bleibt aber ein Literal | Anders als die FAQ hat die Altersspanne keine geteilte Quelle im Code — der sichtbare Satz steht in der FAQ-Konstante, die Zahlen im JSON-LD. Eine gemeinsame Konstante wäre hier Überbau für zwei Zahlen, die sich selten ändern; entscheidend ist, dass die Abweichung dokumentiert ist und beim nächsten Copy-Wechsel mitgeprüft wird | 2026-09-09 |
+| Der Tooltip lebt in einer eigenen Client-Komponente `support-link.tsx` | Radix' Tooltip braucht Client-JS (Hover-State, Portal, Positionierung). Inline in `InfoPageShell` hätte das die ganze Shell — und damit vier statische Textseiten — zur Client-Komponente gemacht. So bleibt genau der eine Button interaktiv; `/about` und `/anleitung` werden im Build weiterhin als statisch (`○`) ausgewiesen | 2026-09-10 |
+| Der Tooltip ergänzt das `aria-label`, ersetzt es nicht | Ein Tooltip ist an Hover und Fokus gebunden und auf Touch-Geräten unsichtbar — also für den Großteil der Zielgruppe gar nicht vorhanden. Die Bedeutung des Icons muss deshalb im Accessible Name stehen bleiben; ein Test hält das fest | 2026-09-10 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
@@ -1335,13 +1340,49 @@ bestehenden Kopfzeilen-Höhe und erzeugt keine zusätzliche.
 
 ### Tests
 
-Abgedeckt in `tests/proj-1-kofi-support.spec.ts` (20 Tests, gemeinsam mit
+### Nachtrag 2026-09-10: Tooltip „Unterstütze mich"
+
+Das Icon bekommt am Desktop einen Tooltip — damit ist die Open Question aus
+dem Refinement („Braucht der Icon-Button einen sichtbaren Tooltip?") mit Ja
+beantwortet.
+
+Neue Komponente `src/components/support-link.tsx` (Client), die den Button aus
+`InfoPageShell` übernimmt und in shadcns `Tooltip` wickelt. Die Shell bleibt
+dadurch eine **Server**-Komponente; im Build stehen `/about` und `/anleitung`
+weiterhin als statisch (`○`). `Coffee` und `KOFI_URL` sind aus der Shell
+entfallen, sie leben jetzt in der neuen Komponente.
+
+Der Tooltip erscheint bei Hover **und** bei Tastatur-Fokus (Radix liefert
+beides), trägt `text-tech`-Typografie wie die übrigen Kopfzeilen-Labels und
+nutzt Farbtokens, damit er in beiden Themes trägt. Das `aria-label` bleibt
+unverändert — der Tooltip ist auf Touch unsichtbar und darf die Bedeutung
+nicht allein tragen.
+
+Im Browser auf 1280×800 verifiziert: „UNTERSTÜTZE MICH" erscheint unter dem
+Icon, in derselben Schrift wie das Label „ANLEITUNG" daneben, und schiebt
+nichts in der Kopfzeile.
+
+### Tests
+
+Abgedeckt in `tests/proj-1-kofi-support.spec.ts` (24 Tests, gemeinsam mit
 PROJ-1): Sichtbarkeit auf `/about` und `/anleitung`, Abwesenheit auf
 `/impressum` und `/datenschutz`, `target`/`rel`, Accessible Name, Ghost-Optik
 gegen „Zur App", Tab-Reihenfolge, 44px auf 320px, Zeilenumbruch, Fokus,
 BUG-7-Wächter und zwei JSON-LD-Tests (Werte und Deckung mit dem sichtbaren
-Text). Per Gegenprobe geschärft — ohne `showSupport` auf `/anleitung` fällt
-genau der zuständige Test.
+Text), dazu vier Tooltip-Tests (Hover, Tastatur-Fokus, Koexistenz mit dem
+`aria-label`, Abwesenheit ohne Hover). Per Gegenprobe geschärft — ohne
+`showSupport` auf `/anleitung` fällt genau der zuständige Test, und mit
+geändertem Tooltip-Text genau der zuständige Tooltip-Test.
+
+**Zwei vorbestehende Testfehler dabei gefunden** (beide unabhängig von diesem
+Refinement, beide in den Nachbarsuiten):
+1. `proj-13-info-refinement.spec.ts` prüfte auf „10 bis 15 Jahren" — den
+   Wortlaut, den der Betreiber am 2026-09-09 auf „8 bis 16 Jahren" geändert
+   hat. Assertion nachgezogen.
+2. `proj-13-landing-qa.spec.ts` („keine fremden Hosts") schlägt **nur gegen
+   `npm run dev`** fehl, weil Vercel Analytics dort ein Debug-Skript nachlädt.
+   Gegen den Production-Build gemessen: **0 externe Requests**. Als Kommentar
+   im Test festgehalten, damit der nächste Lauf das nicht erneut untersucht.
 
 ## Implementation Notes (Frontend — Refinement 4, 2026-09-08)
 

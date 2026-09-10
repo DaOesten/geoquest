@@ -135,7 +135,7 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 - [ ] Braucht der Startscreen `/` selbst das Burger-Menu? Er hat keine Kopfzeile und bietet mit den zwei Mode-Cards plus Logo-Link nach `/about` bereits fünf der sechs Ziele — offen, ob dort eine Kopfzeile ergänzt wird oder `/` die eine Ausnahme bleibt
 - [ ] Soll das Menu perspektivisch einen Eintrag „App installieren" (PROJ-12, PWA) bekommen? Das wäre ein Anhang unter „App" — erst entscheiden, wenn PROJ-12 gebaut wird. _(Formulierung aktualisiert 2026-09-09: „vierte Gruppe" ist überholt, „Unterstützen" ist jetzt die vierte.)_
 - [ ] Soll „Support me" perspektivisch auch auf `/impressum` und `/datenschutz` als Kopfzeilen-Icon erscheinen? Zunächst bewusst nur `/about` und `/anleitung` — die beiden Seiten, die das Produkt erklären. Rechtstexte liest niemand aus Sympathie (2026-09-09)
-- [ ] Braucht das Kopfzeilen-Icon auf dem Desktop einen sichtbaren Tooltip? Das `aria-label` trägt die Bedeutung für Screenreader, sehende Maus-Nutzer sehen nur die Tasse — erst am Gerät bewerten (2026-09-09)
+- [x] ~~Braucht das Kopfzeilen-Icon auf dem Desktop einen sichtbaren Tooltip?~~ → Ja, umgesetzt am 2026-09-10 (Details in PROJ-13): Tooltip „Unterstütze mich" bei Hover und Tastatur-Fokus. Betrifft nur die Kopfzeile der Info-Seiten; der Menu-Eintrag ist ausgeschrieben und braucht keinen
 
 ## Decision Log
 

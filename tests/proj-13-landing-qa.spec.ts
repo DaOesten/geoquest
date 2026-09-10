@@ -253,6 +253,12 @@ test.describe("Sicherheit", () => {
   });
 
   test("die Seite lädt keine fremden Hosts nach", async ({ page }) => {
+    // Gilt für den Production-Build (dort gemessen: 0 externe Requests).
+    // Gegen `npm run dev` schlägt dieser Test fehl, weil Vercel Analytics
+    // dann `va.vercel-scripts.com/v1/script.debug.js` nachlädt — ein reines
+    // Entwicklungs-Artefakt, das im Production-Bundle nicht vorkommt.
+    // Der Ko-fi-Link (2026-09-09) erzeugt keinen Request: ein `href` mit
+    // `target="_blank"` lädt erst beim Klick, und dann in einem neuen Tab.
     const external: string[] = [];
     page.on("request", (r) => {
       const u = new URL(r.url());
