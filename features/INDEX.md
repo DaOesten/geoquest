@@ -16,7 +16,7 @@
 
 | ID | Feature | Priority | Dependencies | Status | Spec | Created |
 |----|---------|----------|--------------|--------|------|---------|
-| PROJ-1 | App Shell & Mode Switch | P0 | None | In Progress | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
+| PROJ-1 | App Shell & Mode Switch | P0 | None | Approved | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
 | PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
@@ -264,4 +264,16 @@ Der Kern der Entscheidung — 0px Layout-Kosten — ist vorher/nachher gemessen:
 
 6 neue Tests. **Dabei ein Fehler in den Tests gefunden:** Die erste Gegenprobe (Icon in eine normale Zeile umgebaut) ließ alle Tests bestehen — kein Test prüfte die tatsächliche Layout-Position. Ergänzt um einen Wächter auf die y-Position des Logos; damit fällt bei der Gegenprobe genau der zuständige Test. Suite **776 passed / 2 skipped / 0 failed** (vorher 762), Unit 186/186, Build und Lint sauber.
 
-**Nächster Schritt: `/qa`.**
+**QA am 2026-09-10 abgeschlossen: 7/7 Acceptance Criteria, keine Bugs, Production-Ready.**
+
+Die 0px-Behauptung habe ich **nicht** aus der Frontend-Phase übernommen, sondern unabhängig geprüft: alte `page.tsx` (Commit `4e6a081`) eingespielt, gebaut, gemessen — dann dasselbe mit der neuen Fassung. Sechs Viewports, drei Messpunkte je Viewport, **alle 24 Werte identisch**. Die Entscheidung, das Icon schweben zu lassen statt eine 56px-Zeile zu bauen, ist damit nachweislich eingelöst.
+
+Tab-Reihenfolge folgt der visuellen Ordnung (Burger, Logo, beide Cards), Menu auf `/` vollständig bedienbar, Erststart-Dialog verträgt sich, WebKit gleichwertig, Security-Header aktiv.
+
+**Ein Befund, im Test statt im Produkt:** Der Test „Tap neben das Menu" schlug reproduzierbar fehl. Ursache ist ein Zeitfenster von unter 100ms, in dem Radix' Sheet sichtbar ist, aber sein Dismiss-Handler noch nicht hängt (gemessen: 0ms Wartezeit → 0/3 erfolgreich, 100ms → 3/3). Für Menschen unerreichbar — nach dem Tap auf den Burger vergehen 200–300ms, bis wieder getippt wird. Test wartet jetzt explizit, dreimal seriell grün.
+
+Zwei Fehlspuren sind dokumentiert, damit sie niemand erneut verfolgt: Playwrights Snapshot rendert **SVGs als `img`**, wodurch der Zurück-Pfeil wie eine zurückgekehrte Pin-Bildmarke aussah; und der Test schlug seriell fehl, aber parallel nicht — das sah nach Test-Interaktion aus, war aber reine Zeitabhängigkeit.
+
+Suite **776 passed / 2 skipped / 0 failed**, Unit 186/186, Build und Lint sauber.
+
+**PROJ-1 ist Approved. Nächster Schritt: `/deploy`.**

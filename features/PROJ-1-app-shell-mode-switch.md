@@ -1,7 +1,7 @@
 # PROJ-1: App Shell & Mode Switch
 
-## Status: In Progress
-_Deployed; das Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist am 2026-09-10 QA-geprüft (14/15 Acceptance Criteria, keine Critical/High-Bugs). **BUG-10 ist am 2026-09-10 entschieden und gebaut: `/` trägt das Burger-Menu als schwebendes Icon, im Browser auf vier Viewports mit 0px Layout-Kosten verifiziert — QA steht aus.** Das Refinement vom 2026-09-09 („Support me" / Ko-fi) ist **am 2026-09-10 nach Production deployt und dort verifiziert** (Tag `v1.27.0-PROJ-13`, 8/8 Acceptance Criteria, keine Bugs) — der Menu-Eintrag ist auf https://geoquesty.vercel.app live._
+## Status: Approved
+_Deployed; das Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist am 2026-09-10 QA-geprüft (14/15 Acceptance Criteria, keine Critical/High-Bugs). **BUG-10 ist am 2026-09-10 entschieden, gebaut und QA-geprüft: 7/7 Acceptance Criteria, 0px Layout-Kosten unabhängig gegen den Vorgänger-Commit auf sechs Viewports bestätigt, keine Bugs, Production-Ready.** Das Refinement vom 2026-09-09 („Support me" / Ko-fi) ist **am 2026-09-10 nach Production deployt und dort verifiziert** (Tag `v1.27.0-PROJ-13`, 8/8 Acceptance Criteria, keine Bugs) — der Menu-Eintrag ist auf https://geoquesty.vercel.app live._
 **Created:** 2026-08-23
 **Last Updated:** 2026-09-10 (QA Navigations-Refinement)
 
@@ -61,13 +61,13 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 - [x] Angenommen der Nutzer befindet sich auf einem beliebigen Screen mit Kopfzeile (`/play`, `/create`, jede Unteransicht, jede Info-Seite), wenn er die Kopfzeile betrachtet, dann sieht er rechts das Burger-Menu-Icon
 
 **Burger-Menu auf dem Startscreen (BUG-10, entschieden 2026-09-10):**
-- [ ] Angenommen der Nutzer befindet sich auf dem Startscreen `/`, wenn er nach oben rechts schaut, dann sieht er dasselbe Burger-Menu-Icon — **schwebend über dem Layout, ohne eigene Kopfzeilen-Zeile**
-- [ ] Angenommen der Nutzer öffnet das Menu auf `/`, wenn es erscheint, dann enthält es dieselben vier Gruppen und sieben Ziele wie auf jedem anderen Screen
-- [ ] Angenommen der Startscreen wird auf 320×568 und 360×640 angezeigt, wenn das Burger-Icon ergänzt ist, dann bleibt der vertikale Platzbedarf des Inhalts **unverändert** — das Icon kostet 0px Layout-Höhe und schiebt weder Logo noch Mode-Cards nach unten
-- [ ] Angenommen der Startscreen wird auf 360×640 angezeigt, wenn das Icon ergänzt ist, dann sind Logo, Headline und beide Mode-Cards **weiterhin ohne Scrollen sichtbar** — das bestehende Kriterium bleibt unangetastet
-- [ ] Angenommen der Nutzer tippt auf das Burger-Icon auf `/`, wenn er es trifft, dann ist das Tap-Ziel mindestens 44×44px groß und überlappt keine Mode-Card
-- [ ] Angenommen `/` hat keinen Zurück-Pfeil (es ist die oberste Ebene), wenn der Nutzer die Ecke oben links betrachtet, dann steht dort nichts — das Menu ist die einzige Kopfzeilen-Bedienung des Startscreens
-- [ ] Angenommen der Nutzer öffnet das Menu auf `/`, wenn er die Gruppe „App" betrachtet, dann ist **kein** Eintrag als aktiv markiert — `/` ist selbst kein Menu-Ziel
+- [x] Angenommen der Nutzer befindet sich auf dem Startscreen `/`, wenn er nach oben rechts schaut, dann sieht er dasselbe Burger-Menu-Icon — **schwebend über dem Layout, ohne eigene Kopfzeilen-Zeile**
+- [x] Angenommen der Nutzer öffnet das Menu auf `/`, wenn es erscheint, dann enthält es dieselben vier Gruppen und sieben Ziele wie auf jedem anderen Screen
+- [x] Angenommen der Startscreen wird auf 320×568 und 360×640 angezeigt, wenn das Burger-Icon ergänzt ist, dann bleibt der vertikale Platzbedarf des Inhalts **unverändert** — das Icon kostet 0px Layout-Höhe und schiebt weder Logo noch Mode-Cards nach unten
+- [x] Angenommen der Startscreen wird auf 360×640 angezeigt, wenn das Icon ergänzt ist, dann sind Logo, Headline und beide Mode-Cards **weiterhin ohne Scrollen sichtbar** — das bestehende Kriterium bleibt unangetastet
+- [x] Angenommen der Nutzer tippt auf das Burger-Icon auf `/`, wenn er es trifft, dann ist das Tap-Ziel mindestens 44×44px groß und überlappt keine Mode-Card
+- [x] Angenommen `/` hat keinen Zurück-Pfeil (es ist die oberste Ebene), wenn der Nutzer die Ecke oben links betrachtet, dann steht dort nichts — das Menu ist die einzige Kopfzeilen-Bedienung des Startscreens
+- [x] Angenommen der Nutzer öffnet das Menu auf `/`, wenn er die Gruppe „App" betrachtet, dann ist **kein** Eintrag als aktiv markiert — `/` ist selbst kein Menu-Ziel
 - [x] Angenommen der Nutzer betrachtet die Kopfzeile eines beliebigen Screens, wenn er nach links schaut, dann sieht er den Zurück-Pfeil — in keinem Fall noch die Pin-Bildmarke. Auf `/play` und `/create` führt er zum Startscreen `/`, in Unteransichten eine Ebene nach oben _(korrigiert 2026-09-06: ursprünglich sollte die linke Seite auf Top-Level leer bleiben — dadurch fehlte dort jeder Weg zurück)_
 - [x] Angenommen der Nutzer tippt auf das Burger-Menu, wenn sich das Menu öffnet, dann sieht er vier Gruppen mit den Überschriften **App**, **Info**, **Rechtliches** und **Unterstützen** _(vierte Gruppe ergänzt 2026-09-09)_
 - [x] Angenommen das Menu ist offen, wenn der Nutzer die Gruppe „App" betrachtet, dann enthält sie die Links **Play** (→ `/play`) und **Create** (→ `/create`), jeweils mit passendem Icon
@@ -650,6 +650,86 @@ Die Icon-Auswahl trifft `/frontend` aus dem bereits genutzten `lucide-react`-Set
 - Kein kontextabhängiger Menü-Eintrag „Quest bearbeiten": diese Aktion bleibt sichtbar auf der Seite, statt sich hinter zwei Taps zu verstecken
 
 ---
+
+## QA Test Results — Burger-Menu auf dem Startscreen (BUG-10), geprüft 2026-09-10
+
+**Date:** 2026-09-10
+**Tester:** AI QA (Claude)
+**Build:** Production build, gegen `next start` getestet
+**Unit:** 186/186 ✓ · **Lint:** ✓ (0 Fehler, 6 vorbestehende `<img>`-Warnungen)
+**E2E:** **776 passed / 2 skipped / 0 failed** über beide Engines
+
+### Acceptance Criteria
+
+| # | Kriterium | Status | Messung |
+|---|-----------|--------|---------|
+| 1 | Icon oben rechts, schwebend ohne Kopfzeilen-Zeile | ✅ Pass | `position: absolute`, Box `334,12 44×44`, **nicht** in einem `<header>` |
+| 2 | Dieselben vier Gruppen und sieben Ziele wie anderswo | ✅ Pass | Gruppen **und** Link-Liste byte-identisch zum Menu auf `/play` |
+| 3 | 0px Layout-Höhe, schiebt nichts nach unten | ✅ Pass | **Unabhängig gegen den Vorgänger-Commit gemessen** — siehe Tabelle unten |
+| 4 | Auf 360×640 weiterhin ohne Scrollen sichtbar | ✅ Pass | `scrollt = false`, unverändert gegenüber vorher |
+| 5 | Tap-Ziel ≥ 44×44, keine Überlappung mit Cards | ✅ Pass | 44×44 auf allen **6** geprüften Viewports, 0 Überlappungen |
+| 6 | Kein Zurück-Pfeil auf `/` | ✅ Pass | 0 Elemente mit `aria-label="Zurück"` |
+| 7 | Kein Eintrag aktiv markiert | ✅ Pass | 0 Elemente mit `aria-current="page"` |
+
+**7/7 erfüllt.**
+
+### Die 0px-Behauptung unabhängig geprüft
+
+Statt die Zahlen der Frontend-Phase zu übernehmen, habe ich die alte
+`page.tsx` (Commit `4e6a081`) eingespielt, gebaut, gemessen — und dann dasselbe
+mit der neuen Fassung. Sechs Viewports, drei Messpunkte je Viewport:
+
+| Viewport | logoY | playY | createEnd | scrollt |
+|----------|-------|-------|-----------|---------|
+| 320×568 | 24 → 24 | 247 → 247 | 557 → 557 | true → true |
+| 360×640 | 24 → 24 | 268 → 268 | 559 → 559 | false → false |
+| 390×844 | 24 → 24 | 283 → 283 | 574 → 574 | false → false |
+| 430×932 | 24 → 24 | 297 → 297 | 588 → 588 | false → false |
+| 768×1024 | 24 → 24 | 297 → 297 | 588 → 588 | false → false |
+| 1440×900 | 24 → 24 | 297 → 297 | 588 → 588 | false → false |
+
+**Alle 24 Werte identisch.** Die Entscheidung, das Icon schweben zu lassen
+statt eine 56px-Zeile zu bauen, ist damit nachweislich eingelöst. (Das
+Scrollen auf 320×568 ist vorbestehend und kommt nicht von dieser Änderung.)
+
+### Weitere Prüfungen
+
+| Prüfung | Ergebnis |
+|---------|----------|
+| Tab-Reihenfolge | ✅ Burger zuerst (y=12), dann Logo (y=24), dann beide Cards — folgt der visuellen Ordnung |
+| Fokus sichtbar | ✅ `outline: auto 1px` (Browser-Standard, wie app-weit — BUG-9 bleibt davon unberührt) |
+| Menu vollständig bedienbar auf `/` | ✅ Öffnen, Navigieren nach `/create`, Escape — alles wie auf den anderen Screens |
+| Erststart-Dialog | ✅ Erscheint weiterhin; er verdeckt den Burger korrekt als Modal |
+| `z-index` | ✅ `10` — über den Cards, unter dem Sheet-Overlay (`1100`) |
+| WebKit | ✅ Icon 44×44, vier Gruppen |
+| Security-Header auf `/` | ✅ `x-frame-options: DENY`, `nosniff` |
+| Konsole | ⚠️ Ein 404 auf `/_vercel/insights/script.js` — **nur lokal**; in Production HTTP 200 geprüft. Vorbestehend, aus `<Analytics />` im Root-Layout, unabhängig von dieser Änderung |
+
+### Bugs
+
+**Keine im Produkt.**
+
+#### Befund im Test (behoben) — Dismiss-Handler-Zeitfenster
+
+Der Test „ein Tap neben das Menu schließt es" schlug im Gesamtlauf reproduzierbar fehl. Untersucht statt weggeklickt:
+
+**Ursache:** Radix hängt den Dismiss-Handler erst nach dem ersten Paint an. Zwischen „Dialog ist sichtbar" und „Overlay nimmt Klicks an" liegen unter 100ms, in denen ein Klick verpufft. Gemessen: mit 0ms Wartezeit **0 von 3** Durchläufen erfolgreich, mit 100ms **3 von 3**.
+
+**Nutzerauswirkung: keine.** Nach dem Tap auf den Burger vergehen 200–300ms, bis Hand oder Maus wieder tippen — das Fenster ist für Menschen nicht erreichbar. Nur ein Automat trifft es.
+
+**Zwei Fehlspuren unterwegs**, beide dokumentiert, damit sie niemand erneut verfolgt:
+1. Der Playwright-Snapshot zeigte `banner: link /url: / img` und sah nach einer zurückgekehrten Pin-Bildmarke aus. Tatsächlich rendert Playwright **SVGs als `img`** — es ist der Zurück-Pfeil. Im DOM geprüft: genau ein Header-Link, `aria-label="Zurück"`, kein `<img>`.
+2. Der Test schlug seriell fehl und parallel nicht — das sah nach Test-Interaktion aus, war aber reine Zeitabhängigkeit.
+
+Der Test wartet jetzt explizit 150ms und ist dreimal seriell hintereinander grün.
+
+### Regression
+
+Volle Suite über beide Engines: **776 passed / 2 skipped / 0 failed**. Beide Skips sind vorbestehende Plattform-Grenzen.
+
+### Production-Ready: **JA**
+
+Keine Critical- oder High-Bugs. Kein Backend, keine Datenhaltung, keine Nutzereingabe.
 
 ## Implementation Notes (Frontend) — Burger-Menu auf dem Startscreen (BUG-10, 2026-09-10)
 

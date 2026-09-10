@@ -111,6 +111,16 @@ test.describe("Burger-Menu — Verhalten", () => {
     await openMenu(page, "/play");
     const before = page.url();
 
+    // Radix hängt den Dismiss-Handler erst nach dem ersten Paint an: Zwischen
+    // "Dialog sichtbar" und "Overlay nimmt Klicks an" liegen unter 100ms, in
+    // denen ein Klick verpufft (gemessen 2026-09-10: mit 0ms Wartezeit 0/3
+    // Durchläufe erfolgreich, mit 100ms 3/3). Für Menschen unerreichbar — nach
+    // dem Tap auf den Burger vergehen 200-300ms, bis Hand oder Maus wieder
+    // tippen. Der Test wartet deshalb explizit, statt eine Bedingung zu
+    // prüfen, die nur er selbst treffen kann.
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.waitForTimeout(150);
+
     await page.mouse.click(20, 400);
     await expect(page.getByRole("dialog")).toHaveCount(0);
     expect(page.url()).toBe(before);
