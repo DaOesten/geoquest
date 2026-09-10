@@ -1,9 +1,9 @@
 # PROJ-1: App Shell & Mode Switch
 
-## Status: In Progress
-_Deployed; das Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist gebaut und im Browser verifiziert — QA dafür steht weiterhin aus. Das Refinement vom 2026-09-09 („Support me" / Ko-fi) ist **am 2026-09-10 nach Production deployt und dort verifiziert** (Tag `v1.27.0-PROJ-13`, 8/8 Acceptance Criteria, keine Bugs) — der Menu-Eintrag ist auf https://geoquesty.vercel.app live._
+## Status: Approved
+_Deployed; das Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist **am 2026-09-10 QA-geprüft: 14/15 Acceptance Criteria erfüllt, 1 Spec-Widerspruch (BUG-10, Low), keine Critical/High-Bugs, Production-Ready**. Das Refinement vom 2026-09-09 („Support me" / Ko-fi) ist **am 2026-09-10 nach Production deployt und dort verifiziert** (Tag `v1.27.0-PROJ-13`, 8/8 Acceptance Criteria, keine Bugs) — der Menu-Eintrag ist auf https://geoquesty.vercel.app live._
 **Created:** 2026-08-23
-**Last Updated:** 2026-09-10 (QA Ko-fi)
+**Last Updated:** 2026-09-10 (QA Navigations-Refinement)
 
 ## Dependencies
 - None (PROJ-1 ist das Fundament)
@@ -57,18 +57,18 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 - [ ] Angenommen der Nutzer befindet sich in einer tieferen Ansicht, wenn er den Browser-Zurück-Button drückt, dann wird er eine Ebene nach oben navigiert
 
 **Kopfzeile & Burger-Menu (Refinement 2026-09-06):**
-- [ ] Angenommen der Nutzer befindet sich auf einem beliebigen Screen der App (`/`, `/play`, `/create`, jede Unteransicht, jede Info-Seite), wenn er die Kopfzeile betrachtet, dann sieht er rechts das Burger-Menu-Icon
-- [ ] Angenommen der Nutzer betrachtet die Kopfzeile eines beliebigen Screens, wenn er nach links schaut, dann sieht er den Zurück-Pfeil — in keinem Fall noch die Pin-Bildmarke. Auf `/play` und `/create` führt er zum Startscreen `/`, in Unteransichten eine Ebene nach oben _(korrigiert 2026-09-06: ursprünglich sollte die linke Seite auf Top-Level leer bleiben — dadurch fehlte dort jeder Weg zurück)_
-- [ ] Angenommen der Nutzer tippt auf das Burger-Menu, wenn sich das Menu öffnet, dann sieht er vier Gruppen mit den Überschriften **App**, **Info**, **Rechtliches** und **Unterstützen** _(vierte Gruppe ergänzt 2026-09-09)_
-- [ ] Angenommen das Menu ist offen, wenn der Nutzer die Gruppe „App" betrachtet, dann enthält sie die Links **Play** (→ `/play`) und **Create** (→ `/create`), jeweils mit passendem Icon
-- [ ] Angenommen das Menu ist offen, wenn der Nutzer die Gruppe „Info" betrachtet, dann enthält sie die Links **Über** (→ `/about`) und **Anleitung** (→ `/anleitung`), jeweils mit passendem Icon
-- [ ] Angenommen das Menu ist offen, wenn der Nutzer die Gruppe „Rechtliches" betrachtet, dann enthält sie die Links **Impressum** (→ `/impressum`) und **Datenschutz** (→ `/datenschutz`), jeweils mit passendem Icon
-- [ ] Angenommen das Menu ist offen, wenn der Nutzer einen Eintrag antippt, dann schließt sich das Menu und er landet auf der gewählten Seite
-- [ ] Angenommen das Menu ist offen, wenn der Nutzer die Escape-Taste drückt oder neben das Menu tippt, dann schließt es sich, ohne zu navigieren
-- [ ] Angenommen der Nutzer bedient die App mit der Tastatur, wenn er das Burger-Menu öffnet, dann liegt der Fokus im Menu und der Auslöser meldet seinen Zustand (`aria-expanded`) an Screenreader
-- [ ] Angenommen der Nutzer befindet sich bereits auf einer der verlinkten Seiten, wenn er das Menu öffnet, dann ist der Eintrag der aktuellen Seite visuell als aktiv erkennbar
-- [ ] Angenommen der Nutzer befindet sich in einer Unteransicht eines Modus (z.B. `/create/[id]` oder `/create/[id]/station/[x]`), wenn er das Menu öffnet, dann ist der übergeordnete Eintrag („Create") als aktiv markiert — nicht nur auf der exakten Top-Level-URL
-- [ ] Angenommen das Menu wird im Creator (Light Theme) geöffnet, wenn es erscheint, dann trägt es das Theme des jeweiligen Modus — es bricht nicht aus dem Farbschema des Screens aus
+- [ ] Angenommen der Nutzer befindet sich auf einem beliebigen Screen der App (`/`, `/play`, `/create`, jede Unteransicht, jede Info-Seite), wenn er die Kopfzeile betrachtet, dann sieht er rechts das Burger-Menu-Icon _(QA 2026-09-10: auf 8 von 9 Screens erfüllt; `/` hat bewusst keine Kopfzeile — siehe BUG-10 und Open Questions)_
+- [x] Angenommen der Nutzer betrachtet die Kopfzeile eines beliebigen Screens, wenn er nach links schaut, dann sieht er den Zurück-Pfeil — in keinem Fall noch die Pin-Bildmarke. Auf `/play` und `/create` führt er zum Startscreen `/`, in Unteransichten eine Ebene nach oben _(korrigiert 2026-09-06: ursprünglich sollte die linke Seite auf Top-Level leer bleiben — dadurch fehlte dort jeder Weg zurück)_
+- [x] Angenommen der Nutzer tippt auf das Burger-Menu, wenn sich das Menu öffnet, dann sieht er vier Gruppen mit den Überschriften **App**, **Info**, **Rechtliches** und **Unterstützen** _(vierte Gruppe ergänzt 2026-09-09)_
+- [x] Angenommen das Menu ist offen, wenn der Nutzer die Gruppe „App" betrachtet, dann enthält sie die Links **Play** (→ `/play`) und **Create** (→ `/create`), jeweils mit passendem Icon
+- [x] Angenommen das Menu ist offen, wenn der Nutzer die Gruppe „Info" betrachtet, dann enthält sie die Links **Über** (→ `/about`) und **Anleitung** (→ `/anleitung`), jeweils mit passendem Icon
+- [x] Angenommen das Menu ist offen, wenn der Nutzer die Gruppe „Rechtliches" betrachtet, dann enthält sie die Links **Impressum** (→ `/impressum`) und **Datenschutz** (→ `/datenschutz`), jeweils mit passendem Icon
+- [x] Angenommen das Menu ist offen, wenn der Nutzer einen Eintrag antippt, dann schließt sich das Menu und er landet auf der gewählten Seite
+- [x] Angenommen das Menu ist offen, wenn der Nutzer die Escape-Taste drückt oder neben das Menu tippt, dann schließt es sich, ohne zu navigieren
+- [x] Angenommen der Nutzer bedient die App mit der Tastatur, wenn er das Burger-Menu öffnet, dann liegt der Fokus im Menu und der Auslöser meldet seinen Zustand (`aria-expanded`) an Screenreader
+- [x] Angenommen der Nutzer befindet sich bereits auf einer der verlinkten Seiten, wenn er das Menu öffnet, dann ist der Eintrag der aktuellen Seite visuell als aktiv erkennbar
+- [x] Angenommen der Nutzer befindet sich in einer Unteransicht eines Modus (z.B. `/create/[id]` oder `/create/[id]/station/[x]`), wenn er das Menu öffnet, dann ist der übergeordnete Eintrag („Create") als aktiv markiert — nicht nur auf der exakten Top-Level-URL
+- [x] Angenommen das Menu wird im Creator (Light Theme) geöffnet, wenn es erscheint, dann trägt es das Theme des jeweiligen Modus — es bricht nicht aus dem Farbschema des Screens aus
 
 **„Support me" / Ko-fi (Refinement 2026-09-09):**
 - [x] Angenommen das Menu ist offen, wenn der Nutzer nach unten schaut, dann steht als letzte Gruppe **Unterstützen** mit dem einzelnen Eintrag **Support me** und einem Kaffeetassen-Icon
@@ -81,9 +81,9 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 - [x] Angenommen der Eintrag ist nie aktiv im Sinne der Navigation, wenn der Nutzer das Menu öffnet, dann wird „Support me" **nie** als aktive Seite markiert (`aria-current`), weil das Ziel außerhalb der App liegt
 
 **Scroll-Verhalten der Kopfzeile (Refinement 2026-09-06):**
-- [ ] Angenommen der Nutzer ist auf einem Play- oder Create-Screen, wenn er die Seite nach unten scrollt, dann scrollt die Kopfzeile mit Zurück-Pfeil und Burger-Menu mit nach oben aus dem Bild — sie bleibt nicht am oberen Rand kleben
-- [ ] Angenommen die Kopfzeile ist aus dem Bild gescrollt, wenn der Nutzer wieder ganz nach oben scrollt, dann ist sie unverändert vorhanden und bedienbar
-- [ ] Angenommen der Nutzer betrachtet eine Info-Seite (`/about`, `/anleitung`, `/impressum`, `/datenschutz`), wenn er scrollt, dann bleibt deren Kopfzeile weiterhin sticky — die Info-Seiten sind lange Textseiten und behalten ihr bisheriges Verhalten
+- [x] Angenommen der Nutzer ist auf einem Play- oder Create-Screen, wenn er die Seite nach unten scrollt, dann scrollt die Kopfzeile mit Zurück-Pfeil und Burger-Menu mit nach oben aus dem Bild — sie bleibt nicht am oberen Rand kleben
+- [x] Angenommen die Kopfzeile ist aus dem Bild gescrollt, wenn der Nutzer wieder ganz nach oben scrollt, dann ist sie unverändert vorhanden und bedienbar
+- [x] Angenommen der Nutzer betrachtet eine Info-Seite (`/about`, `/anleitung`, `/impressum`, `/datenschutz`), wenn er scrollt, dann bleibt deren Kopfzeile weiterhin sticky — die Info-Seiten sind lange Textseiten und behalten ihr bisheriges Verhalten
 
 **Theme:**
 - [ ] Angenommen der Nutzer befindet sich im Player-Modus (`/play/*`), wenn die Seite gerendert wird, dann ist das Dark Theme aktiv
@@ -132,7 +132,7 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 - [x] Soll der Startscreen später eine dezente Background-Animation erhalten? → Ja, aber nicht als Backdrop: die Bewegung sitzt im ruhenden Glow der beiden Mode-Cards (langsames, versetztes Pulsieren). Ein zusätzlicher Partikel-Backdrop wie auf den Listen-Screens bleibt Out of Scope, damit der Startscreen ruhig bleibt (2026-09-05)
 - [ ] Braucht das Logo auf `/` eine sichtbare Beschriftung ("Was ist Geo Quest?"), falls sich zeigt, dass Nutzer den Link nicht finden? Zunächst bewusst ohne — erst nach Beobachtung entscheiden
 - [ ] `docs/design-system.md` sagt unter Motion "keine Ambient-Loops", während sowohl der Partikel-Backdrop als auch jetzt der Card-Glow genau das tun. Regel präzisieren oder streichen?
-- [ ] Braucht der Startscreen `/` selbst das Burger-Menu? Er hat keine Kopfzeile und bietet mit den zwei Mode-Cards plus Logo-Link nach `/about` bereits fünf der sechs Ziele — offen, ob dort eine Kopfzeile ergänzt wird oder `/` die eine Ausnahme bleibt
+- [ ] Braucht der Startscreen `/` selbst das Burger-Menu? Er hat keine Kopfzeile und bietet mit den zwei Mode-Cards plus Logo-Link nach `/about` bereits fünf der sechs Ziele — offen, ob dort eine Kopfzeile ergänzt wird oder `/` die eine Ausnahme bleibt. **QA 2026-09-10 (BUG-10):** Gemessen sind es 3 von 7 Zielen; Impressum und Datenschutz fehlen auf `/` ganz, sind aber in 2 Taps über Logo → `/about` → Footer erreichbar. Solange die Frage offen ist, widerspricht das erste Acceptance Criterion („auf jedem Screen … `/`") der Implementierung — entweder das Kriterium präzisieren oder `/` eine Kopfzeile geben
 - [ ] Soll das Menu perspektivisch einen Eintrag „App installieren" (PROJ-12, PWA) bekommen? Das wäre ein Anhang unter „App" — erst entscheiden, wenn PROJ-12 gebaut wird. _(Formulierung aktualisiert 2026-09-09: „vierte Gruppe" ist überholt, „Unterstützen" ist jetzt die vierte.)_
 - [ ] Soll „Support me" perspektivisch auch auf `/impressum` und `/datenschutz` als Kopfzeilen-Icon erscheinen? Zunächst bewusst nur `/about` und `/anleitung` — die beiden Seiten, die das Produkt erklären. Rechtstexte liest niemand aus Sympathie (2026-09-09)
 - [x] ~~Braucht das Kopfzeilen-Icon auf dem Desktop einen sichtbaren Tooltip?~~ → Ja, umgesetzt am 2026-09-10 (Details in PROJ-13): Tooltip „Unterstütze mich" bei Hover und Tastatur-Fokus. Betrifft nur die Kopfzeile der Info-Seiten; der Menu-Eintrag ist ausgeschrieben und braucht keinen
@@ -635,6 +635,89 @@ Die Icon-Auswahl trifft `/frontend` aus dem bereits genutzten `lucide-react`-Set
 - Kein kontextabhängiger Menü-Eintrag „Quest bearbeiten": diese Aktion bleibt sichtbar auf der Seite, statt sich hinter zwei Taps zu verstecken
 
 ---
+
+## QA Test Results — Navigation & Kopfzeile (Refinement 2026-09-06), geprüft 2026-09-10
+
+**Date:** 2026-09-10
+**Tester:** AI QA (Claude)
+**Build:** Production build, gegen `next start` getestet
+**Unit:** 186/186 ✓ · **Lint:** ✓ (0 Fehler, 6 vorbestehende `<img>`-Warnungen)
+**E2E:** **762 passed / 2 skipped / 0 failed** über beide Engines (Chrome 152 + Mobile Safari) — inklusive **28 neuer Tests** aus dieser QA
+
+Damit ist die seit dem 2026-09-06 offene QA des Navigations-Umbaus nachgeholt.
+
+### Acceptance Criteria (15 aus dem Refinement)
+
+| # | Kriterium | Status | Messung |
+|---|-----------|--------|---------|
+| 1 | Burger-Menu auf **jedem** Screen | ⚠️ **Teilweise** | Auf 8 von 9 geprüften Screens vorhanden. **`/` hat keine Kopfzeile** — bewusste Entscheidung, aber das Kriterium nennt `/` ausdrücklich. Siehe BUG-10 |
+| 2 | Zurück-Pfeil links, keine Pin-Bildmarke | ✅ Pass | `/play`→`/`, `/create`→`/`, `/create/[id]`→`/create`, Station→`/create/[id]`; **0 Pin-Marken** in allen Kopfzeilen |
+| 3 | Vier Gruppen App/Info/Rechtliches/Unterstützen | ✅ Pass | Reihenfolge exakt wie spezifiziert |
+| 4 | Gruppe „App": Play, Create mit Icon | ✅ Pass | `Play→/play (1 Icon)`, `Create→/create (1 Icon)` |
+| 5 | Gruppe „Info": Über, Anleitung mit Icon | ✅ Pass | `Über→/about`, `Anleitung→/anleitung`, je 1 Icon |
+| 6 | Gruppe „Rechtliches": Impressum, Datenschutz mit Icon | ✅ Pass | beide korrekt verlinkt, je 1 Icon |
+| 7 | Eintrag antippen → Menu schließt, Navigation erfolgt | ✅ Pass | `/play` → Tap „Create" → `/create`, 0 offene Dialoge |
+| 8 | Escape und Klick daneben schließen ohne Navigation | ✅ Pass | beide Wege: Dialog zu, URL unverändert |
+| 9 | Fokus im Menu, `aria-expanded` am Auslöser | ✅ Pass | `false`→`true`, Fokus im Dialog, Hintergrund korrekt `aria-hidden` |
+| 10 | Aktuelle Seite visuell aktiv | ✅ Pass | auf `/play`: `Play=page`, `Create=null` |
+| 11 | Unteransicht markiert den Elternteil | ✅ Pass | `/create/[id]` **und** `/create/[id]/station/[x]` → `Create=page` |
+| 12 | Menu trägt das Theme des Modus | ✅ Pass | Dark `rgb(10,14,15)` · Light `data-theme="light"`, `rgb(246,248,249)` |
+| 13 | Kopfzeile scrollt auf Play/Create mit | ✅ Pass | `position: static`, nach 600px Scroll bei `top: -600` |
+| 14 | Nach Zurückscrollen unverändert bedienbar | ✅ Pass | `top` zurück auf 0, Burger bedienbar |
+| 15 | Info-Seiten bleiben sticky | ✅ Pass | alle vier `position: sticky`, `top: 0` nach 800px Scroll |
+
+**14/15 erfüllt, 1 mit Einschränkung.**
+
+### Responsive (375 / 768 / 1440px)
+
+Auf allen drei Breiten: Zurück-Pfeil und Burger je **44×44**, kein horizontaler Überlauf, Menu-Panel 280px mit 7 Links. WebKit-Gegenprobe: identische Gruppenstruktur.
+
+### Security Audit (Red Team)
+
+| Prüfung | Ergebnis |
+|---------|----------|
+| XSS über Route-Parameter | ✅ **Kein Befund.** `/create/<img src=x onerror=alert(1)>` löst kein `alert()` aus, erzeugt kein `img[onerror]` und landet korrekt auf der 404-Seite. Der Payload erscheint nur JSON-escaped in Next.js' Flight-Daten — Daten, kein ausführbares Markup |
+| Offene Weiterleitungen im Menu | ✅ Keine unerwarteten externen Ziele, keine `javascript:`/`data:`-Protokolle |
+| Secrets im Client-Bundle | ✅ Keine Treffer (15 Bundles auf `sk_live`, `service_role`, Private Keys, AWS-Keys geprüft) |
+| Clickjacking | ✅ `x-frame-options: DENY`, `x-content-type-options: nosniff` |
+
+**Keine sicherheitsrelevanten Befunde.**
+
+### Bugs
+
+#### BUG-10 (Low, neu) — Acceptance Criterion nennt `/`, der Startscreen hat aber keine Kopfzeile
+
+**Schweregrad:** Low — **Spec-Widerspruch, kein Produktfehler**
+
+Das Kriterium fordert das Burger-Menu auf „einem beliebigen Screen der App (`/`, `/play`, `/create`, …)" und nennt `/` ausdrücklich. Der Startscreen hat jedoch bewusst keine Kopfzeile — dokumentiert in den Open Questions („Braucht der Startscreen `/` selbst das Burger-Menu?") und in den Implementation Notes („bekommt vorerst keine Kopfzeile").
+
+**Gemessene Auswirkung:** Von `/` sind 3 der 7 Ziele direkt erreichbar (`/about` über das Logo, `/play` und `/create` über die Mode-Cards). **Impressum und Datenschutz sind von `/` aus nicht direkt verlinkt** — aber in **2 Taps** erreichbar (Logo → `/about` → Footer) bzw. 3 Taps über Play → Burger. Damit kein rechtliches Problem und kein blockierender Mangel.
+
+**Empfehlung:** Entweder das Kriterium präzisieren (`/` als dokumentierte Ausnahme ausnehmen) oder die offene Frage entscheiden und `/` eine Kopfzeile geben. Eine Entscheidung, kein Fix — deshalb Low.
+
+#### BUG-2 (Medium, vorbestehend) — bestätigt weiterhin offen
+
+Gemessen: Schließen-Button des Sheets **16×16px**, Icon 16×16px — die PRD-Vorgabe von 44px ist um 28px verfehlt. Betrifft alle Sheets der App (shadcn-Standard). Unverändert gegenüber der QA vom 2026-09-06.
+
+#### BUG-3 (Medium, vorbestehend) — **konnte nicht reproduziert werden**
+
+Der Kontrast-Scan meldete zunächst zwei Verstöße auf `/create` (Ratio 1.0 und 3.21). **Beides Messfehler:** Meine Sonde lief den `parentElement`-Baum hoch und fand die dekorative Hintergrundebene nicht, fiel deshalb auf den dunklen `body` zurück. Der Screenshot zeigt dunkle Schrift auf hellem Grund, einwandfrei lesbar. BUG-3 sollte bei nächster Gelegenheit mit einer pixelbasierten Messung neu bewertet werden.
+
+### Neue Tests
+
+Der Navigations-Umbau hatte Regressionslücken: `proj-1-app-shell.spec.ts` deckte Aktiv-Markierung, Kontrast und Sticky-Verhalten ab, aber weder die Gruppenstruktur des Menus noch das Schließverhalten, den Fokus, die Abwesenheit der Pin-Marke oder das Scroll-Verhalten beider Kopfzeilen-Varianten.
+
+**28 neue Tests** in `tests/proj-1-navigation-qa.spec.ts` (14 pro Engine) schließen diese Lücken.
+
+**Per Gegenprobe geschärft:** Wird die Menu-Gruppe „Rechtliches" umbenannt, fällt der Struktur-Test. Wird die App-Kopfzeile `sticky` gemacht, fällt der Scroll-Test. Die Suite erkennt diese Regressionen also tatsächlich.
+
+### Regression
+
+Volle Suite über beide Engines: **762 passed / 2 skipped / 0 failed**. Beide Skips sind vorbestehende Plattform-Grenzen (kein Hover auf Touch, keine Clipboard-Berechtigung in WebKit).
+
+### Production-Ready: **JA**
+
+Keine Critical- oder High-Bugs. BUG-10 ist eine Spec-Präzisierung, BUG-2 ein vorbestehender Medium-Befund, der bereits am 2026-09-06 bewusst vom Deployment entkoppelt wurde.
 
 ## QA Test Results — „Support me" / Ko-fi (2026-09-10)
 

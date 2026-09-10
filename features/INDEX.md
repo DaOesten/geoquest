@@ -16,7 +16,7 @@
 
 | ID | Feature | Priority | Dependencies | Status | Spec | Created |
 |----|---------|----------|--------------|--------|------|---------|
-| PROJ-1 | App Shell & Mode Switch | P0 | None | In Progress | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
+| PROJ-1 | App Shell & Mode Switch | P0 | None | Approved | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
 | PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
@@ -227,3 +227,21 @@ BUG-7 bleibt behoben (CTA auf 1366×768 und 1440×900 über dem Falz). Die Nachb
 **Mitzunehmen im selben `/frontend`-Lauf:** Das `WebApplication`-JSON-LD auf `/about` gibt Maschinen `suggestedMinAge: 10` / `suggestedMaxAge: 15`, während der sichtbare FAQ-Text seit der Copy-Änderung des Betreibers „etwa 8 bis 16 Jahren, aber niemand ist zu alt" sagt. Zwei Zahlen in `src/app/(info)/about/page.tsx`, auf 8 und 16 zu ziehen. Aufgefallen beim Angleichen des PRD, das dieselbe veraltete Spanne trug.
 
 PROJ-13 geht dafür von Deployed zurück auf In Progress. PROJ-1 stand bereits auf In Progress (die QA des Navigations-Refinements vom 2026-09-06 steht weiterhin aus) und bleibt dort.
+
+
+## Abgeschlossen: QA des Navigations-Refinements (2026-09-10)
+Die seit dem 2026-09-06 offene QA von **PROJ-1** ist nachgeholt — der Punkt, der in mehreren Einträgen oben als „QA steht aus" vermerkt war.
+
+**14 von 15 Acceptance Criteria erfüllt, keine Critical- oder High-Bugs, Production-Ready.** Gegen den Production-Build geprüft, nicht gegen den Dev-Server. Gemessen statt geschätzt: Zurück-Pfeil-Ziele auf allen vier Ebenen, vier Menu-Gruppen in fester Reihenfolge, `aria-current` nur auf der aktiven Seite (auch aus Unteransichten heraus), Theme-Wechsel Dark `rgb(10,14,15)` / Light `rgb(246,248,249)`, App-Kopfzeile `position: static` (scrollt bei -600px mit), Info-Kopfzeilen `sticky` bei `top: 0`. Responsive auf 375/768/1440px je 44×44-Tap-Ziele ohne Überlauf.
+
+**Security-Audit ohne Befund:** Ein Markup-Payload in der Route (`/create/<img src=x onerror=alert(1)>`) löst kein `alert()` aus und erzeugt kein Element — die App fängt ihn mit ihrer 404-Seite ab. Keine offenen Weiterleitungen im Menu, keine Secrets in 15 geprüften Client-Bundles, Clickjacking-Schutz aktiv.
+
+**BUG-10 (Low, neu):** Das erste Acceptance Criterion nennt `/` ausdrücklich als Screen mit Burger-Menu, der Startscreen hat aber bewusst keine Kopfzeile — ein **Widerspruch zwischen Spec und Implementierung, kein Produktfehler**. Gemessene Auswirkung: Von `/` sind 3 der 7 Ziele direkt erreichbar; Impressum und Datenschutz fehlen dort, sind aber in 2 Taps über Logo → `/about` → Footer erreichbar. Kein rechtliches Problem. Zu entscheiden ist die längst offene Frage, ob `/` eine Kopfzeile bekommt — dann folgt das Kriterium, oder es wird um die Ausnahme präzisiert.
+
+**BUG-2 (Medium, vorbestehend) bestätigt:** Das Schließen-X der Sheets misst weiterhin 16×16px statt der geforderten 44px.
+
+**BUG-3 (Medium, vorbestehend) ließ sich nicht reproduzieren** — mein Kontrast-Scan meldete zwei Verstöße auf `/create`, beide waren Messfehler (die Sonde fand die dekorative Hintergrundebene nicht und fiel auf den dunklen `body` zurück). Der Screenshot zeigt dunkle Schrift auf hellem Grund, einwandfrei lesbar. Sollte mit einer pixelbasierten Messung neu bewertet werden.
+
+**28 neue E2E-Tests** in `tests/proj-1-navigation-qa.spec.ts` schließen die Regressionslücken des Refinements (Gruppenstruktur, Schließverhalten per Escape und Klick daneben, Fokus und `aria-expanded`, Abwesenheit der Pin-Marke, Scroll-Verhalten beider Kopfzeilen-Varianten, XSS-Wächter). Per Gegenprobe geschärft: Eine umbenannte Menu-Gruppe und eine sticky gemachte App-Kopfzeile lassen jeweils die zuständigen Tests fallen.
+
+Gesamtsuite jetzt **762 passed / 2 skipped / 0 failed** über beide Engines (vorher 734), Unit 186/186, Build und Lint sauber.
