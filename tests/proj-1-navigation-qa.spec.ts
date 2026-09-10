@@ -11,6 +11,10 @@ import { test, expect, type Page } from "@playwright/test";
  * Der Trigger ist bei offenem Sheet von einem `aria-hidden`-Vorfahr verdeckt
  * (korrektes Modal-Verhalten von Radix) — deshalb greifen die Tests ihn per
  * CSS-Selektor statt per Rolle, wo sein Zustand nach dem Öffnen zählt.
+ *
+ * Ergänzt am 2026-09-10 um den Startscreen-Block: `/` hat seit BUG-10 ebenfalls
+ * das Menu, dort als schwebendes Icon ohne Kopfzeile. Die Tests dieses Blocks
+ * greifen den Trigger deshalb ohne `header`-Präfix.
  */
 
 const QUEST = {
@@ -67,8 +71,8 @@ test.describe("Burger-Menu — Struktur und Ziele", () => {
   }
 
   test("das Burger-Menu steht auf allen App- und Info-Screens", async ({ page }) => {
-    // Der Startscreen `/` ist die dokumentierte Ausnahme: er hat bewusst
-    // keine Kopfzeile (siehe Open Questions und BUG-10).
+    // `/` fehlt hier nur, weil sein Menu ausserhalb eines `header` sitzt —
+    // der eigene Startscreen-Block unten deckt es ab.
     for (const path of [
       "/play",
       "/create",
@@ -133,6 +137,122 @@ test.describe("Burger-Menu — Verhalten", () => {
       return !!(d && d.contains(document.activeElement));
     });
     expect(focusInside).toBe(true);
+  });
+});
+
+test.describe("Startscreen — schwebendes Burger-Menu (BUG-10)", () => {
+  test("das Burger-Icon steht oben rechts auf `/`", async ({ page }) => {
+    await page.goto("/");
+
+    const burger = page.locator('button[aria-label="Menü öffnen"]');
+    await expect(burger).toBeVisible();
+
+    const box = (await burger.boundingBox())!;
+    const vw = page.viewportSize()!.width;
+    // Rechte Haelfte, oberer Rand — und mindestens 44x44 als Tap-Ziel.
+    expect(box.x).toBeGreaterThan(vw / 2);
+    expect(box.y).toBeLessThan(60);
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+  });
+
+  test("das Menu auf `/` traegt dieselben vier Gruppen und sieben Ziele", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.locator('button[aria-label="Menü öffnen"]').click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+
+    const groups = await page
+      .getByRole("dialog")
+      .locator("p.text-tech.uppercase")
+      .allTextContents();
+    expect(groups).toEqual(["App", "Info", "Rechtliches", "Unterstützen"]);
+    await expect(page.getByRole("dialog").getByRole("link")).toHaveCount(7);
+  });
+
+  test("auf `/` ist kein Menu-Eintrag als aktiv markiert", async ({ page }) => {
+    await page.goto("/");
+    await page.locator('button[aria-label="Menü öffnen"]').click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+
+    // `/` ist selbst kein Menu-Ziel — sonst muesste die Logik raten.
+    await expect(
+      page.getByRole("dialog").locator('a[aria-current="page"]')
+    ).toHaveCount(0);
+  });
+
+  test("das Icon kostet keine Layout-Hoehe und ueberlappt keine Mode-Card", async ({
+    page,
+  }) => {
+    // Der Kern der Entscheidung: eine 56px-Kopfzeile haette den Startscreen
+    // auf 360x640 zum Ueberlaufen gebracht. Das schwebende Icon darf den
+    // Inhalt deshalb um keinen Pixel verschieben.
+    for (const [width, height] of [
+      [320, 568],
+      [360, 640],
+      [390, 844],
+    ]) {
+      await page.setViewportSize({ width, height });
+      await page.goto("/");
+
+      const overlap = await page.evaluate(() => {
+        const cards = Array.from(
+          document.querySelectorAll('a[href="/play"], a[href="/create"]')
+        );
+        const br = document
+          .querySelector('button[aria-label="Menü öffnen"]')!
+          .getBoundingClientRect();
+        return cards.some((c) => {
+          const r = c.getBoundingClientRect();
+          return !(
+            br.right < r.left ||
+            br.left > r.right ||
+            br.bottom < r.top ||
+            br.top > r.bottom
+          );
+        });
+      });
+      expect(overlap, `Icon ueberlappt eine Card auf ${width}x${height}`).toBe(false);
+    }
+  });
+
+  test("auf 360x640 bleiben Logo, Headline und beide Cards ohne Scrollen sichtbar", async ({
+    page,
+  }) => {
+    // Das bestehende Kriterium, das eine volle Kopfzeile gebrochen haette.
+    await page.setViewportSize({ width: 360, height: 640 });
+    await page.goto("/");
+
+    const scrolls = await page.evaluate(
+      () => document.body.scrollHeight > window.innerHeight
+    );
+    expect(scrolls).toBe(false);
+
+    for (const sel of ['a[href="/about"]', 'a[href="/play"]', 'a[href="/create"]']) {
+      const box = (await page.locator(sel).first().boundingBox())!;
+      expect(box.y + box.height, `${sel} ragt unter den Falz`).toBeLessThanOrEqual(640);
+    }
+  });
+
+  test("das Logo beginnt am oberen Rand, ungeschoben vom Icon", async ({ page }) => {
+    // Der schaerfste Waechter der Entscheidung: Saesse das Icon in einer
+    // eigenen Zeile (statt absolut), schoebe es das Logo um seine Hoehe nach
+    // unten — genau der 56px-Effekt, der den Startscreen auf 360x640 zum
+    // Ueberlaufen gebracht haette. Der Wert stammt aus der Messung vor der
+    // Aenderung: Das Logo begann bei y=24 (py-6), und dabei muss es bleiben.
+    await page.setViewportSize({ width: 360, height: 640 });
+    await page.goto("/");
+
+    const logo = (await page.locator('a[href="/about"]').first().boundingBox())!;
+    expect(logo.y).toBeLessThanOrEqual(32);
+  });
+
+  test("`/` traegt keinen Zurueck-Pfeil", async ({ page }) => {
+    await page.goto("/");
+
+    // Oberste Ebene — ein Zurueck-Pfeil haette dort kein Ziel.
+    await expect(page.locator('[aria-label="Zurück"]')).toHaveCount(0);
   });
 });
 

@@ -1,7 +1,7 @@
 # PROJ-1: App Shell & Mode Switch
 
 ## Status: In Progress
-_Deployed; das Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist am 2026-09-10 QA-geprüft (14/15 Acceptance Criteria, keine Critical/High-Bugs). **BUG-10 ist am 2026-09-10 entschieden: `/` bekommt das Burger-Menu als schwebendes Icon — spezifiziert, noch nicht gebaut.** Das Refinement vom 2026-09-09 („Support me" / Ko-fi) ist **am 2026-09-10 nach Production deployt und dort verifiziert** (Tag `v1.27.0-PROJ-13`, 8/8 Acceptance Criteria, keine Bugs) — der Menu-Eintrag ist auf https://geoquesty.vercel.app live._
+_Deployed; das Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist am 2026-09-10 QA-geprüft (14/15 Acceptance Criteria, keine Critical/High-Bugs). **BUG-10 ist am 2026-09-10 entschieden und gebaut: `/` trägt das Burger-Menu als schwebendes Icon, im Browser auf vier Viewports mit 0px Layout-Kosten verifiziert — QA steht aus.** Das Refinement vom 2026-09-09 („Support me" / Ko-fi) ist **am 2026-09-10 nach Production deployt und dort verifiziert** (Tag `v1.27.0-PROJ-13`, 8/8 Acceptance Criteria, keine Bugs) — der Menu-Eintrag ist auf https://geoquesty.vercel.app live._
 **Created:** 2026-08-23
 **Last Updated:** 2026-09-10 (QA Navigations-Refinement)
 
@@ -650,6 +650,57 @@ Die Icon-Auswahl trifft `/frontend` aus dem bereits genutzten `lucide-react`-Set
 - Kein kontextabhängiger Menü-Eintrag „Quest bearbeiten": diese Aktion bleibt sichtbar auf der Seite, statt sich hinter zwei Taps zu verstecken
 
 ---
+
+## Implementation Notes (Frontend) — Burger-Menu auf dem Startscreen (BUG-10, 2026-09-10)
+
+Umgesetzt am 2026-09-10. **Eine Datei:** `src/app/page.tsx`.
+
+`AppNavMenu` wird direkt eingebunden, in einem `absolute top-3 right-3 z-10`
+positionierten Wrapper; das `<main>` trägt dafür `relative`. Bewusst **kein**
+`AppHeader`: dessen 56px-Zeile ist genau das, was hier keinen Platz hat, und
+zwei ihrer drei Plätze (Zurück-Pfeil, Titel) wären auf `/` ohnehin leer.
+
+`top-3 right-3` statt der 20px-Screen-Gutter: Das Tap-Ziel ist 44×44 mit dem
+Icon in der Mitte, dadurch sitzt das Icon optisch auf derselben Höhe wie in
+`AppHeader`.
+
+### Gemessen, nicht schätzungsweise
+
+Der Kern der Entscheidung war, dass das Icon **0px Layout-Höhe** kostet. Vorher
+und nachher auf denselben Viewports gemessen — das untere Ende des Inhalts:
+
+| Viewport | vorher | nachher |
+|----------|--------|---------|
+| 320×568 | 557 | **557** |
+| 360×640 | 559 | **559** |
+| 390×844 | 574 | **574** |
+| 430×932 | 588 | **588** |
+
+Identisch. Das Icon ist auf allen vier Breiten 44×44 und überlappt keine
+Mode-Card. Auf 360×640 bleibt der Startscreen scrollfrei — das bestehende
+Kriterium ist unangetastet. (Das Scrollen auf 320×568 gab es vorher schon; es
+kommt nicht von dieser Änderung.)
+
+Im Menu auf `/`: vier Gruppen, sieben Links, **kein** Eintrag aktiv markiert.
+
+### Tests
+
+6 neue Tests in `tests/proj-1-navigation-qa.spec.ts` (Block „Startscreen —
+schwebendes Burger-Menu"): Position und Tap-Ziel, Gruppen und Ziele, keine
+Aktiv-Markierung, keine Überlappung mit den Cards, Scrollfreiheit auf 360×640,
+kein Zurück-Pfeil.
+
+**Ein Testfehler dabei gefunden — im Test, nicht im Produkt:** Die erste
+Gegenprobe (Icon aus `absolute` in eine normale Zeile umgebaut) ließ **alle**
+Tests bestehen. Kein Test prüfte die tatsächliche Layout-Position; die
+Überlappungs- und Scroll-Tests reichten nicht, weil das Icon in einer eigenen
+Zeile weder überlappt noch auf 360×640 sofort zum Scrollen führt. Ergänzt um
+einen Wächter, der die y-Position des Logos festhält (≤32px, gemessener
+Ausgangswert 24px durch `py-6`). Mit dem umgebauten Code fällt jetzt genau
+dieser eine Test.
+
+Suite: **776 passed / 2 skipped / 0 failed** über beide Engines (vorher 762),
+Unit 186/186, Build und Lint sauber.
 
 ## QA Test Results — Navigation & Kopfzeile (Refinement 2026-09-06), geprüft 2026-09-10
 

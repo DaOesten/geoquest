@@ -3,10 +3,29 @@ import Link from "next/link";
 import { Gamepad2, Pencil } from "lucide-react";
 import { ModeCard } from "@/components/mode-card";
 import { FirstVisitDialog } from "@/components/first-visit-dialog";
+import { AppNavMenu } from "@/components/app-nav-menu";
 
 export default function StartScreen() {
   return (
-    <main className="flex flex-col min-h-dvh bg-gq-black overflow-y-auto px-5 py-6 mx-auto w-full max-w-[430px]">
+    /* `relative` traegt den Positionierungs-Kontext fuer das Menu unten: ohne
+       ihn bezoege sich `absolute` auf den Viewport, und das Icon saesse bei
+       zentriertem Layout am Bildschirm- statt am Container-Rand. */
+    <main className="relative flex flex-col min-h-dvh bg-gq-black overflow-y-auto px-5 py-6 mx-auto w-full max-w-[430px]">
+      {/* Burger-Menu (BUG-10, 2026-09-10). Bewusst KEIN `AppHeader`: dessen
+          56px-Zeile haette den Startscreen auf 360x640 zum Ueberlaufen
+          gebracht (gemessen: Inhalt endet dann bei 615/640) und das Kriterium
+          "ohne Scrollen sichtbar" gebrochen. `/` braucht ohnehin weder
+          Zurueck-Pfeil (oberste Ebene) noch Titel — also auch keine Zeile fuer
+          beides. Absolut positioniert kostet das Icon 0px Layout-Hoehe; die
+          Zone oben rechts ist auf 320-390px Breite frei.
+
+          `top-3 right-3` statt der Screen-Gutter von 20px: das Tap-Ziel ist
+          44x44 mit dem Icon in der Mitte, damit sitzt das Icon optisch auf
+          derselben Hoehe wie in `AppHeader`. */}
+      <div className="absolute top-3 right-3 z-10">
+        <AppNavMenu />
+      </div>
+
       {/* Logo — fuehrt zur Landing Page (PROJ-13). Bewusst ohne sichtbaren
           Link-Hinweis: das Lockup ist ein Markenelement, der Link ein
           Bonus-Pfad neben den beiden Mode-Cards. */}

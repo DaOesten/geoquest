@@ -258,4 +258,10 @@ Stattdessen: **nur das Burger-Icon, absolut positioniert oben rechts, 0px Layout
 
 Spec ist aktualisiert: 7 neue Acceptance Criteria (eigener Block), 3 Produkt- und 2 technische Entscheidungen, Out of Scope um die volle Kopfzeile ergänzt, die seit dem 2026-09-06 offene Frage geschlossen, und die überholte Implementation Note von damals als solche markiert.
 
-**Noch nichts gebaut — nächster Schritt: `/frontend`.**
+**Frontend umgesetzt am 2026-09-10.** Eine Datei: `src/app/page.tsx`. `AppNavMenu` direkt eingebunden, `absolute top-3 right-3` über dem bestehenden Layout, `<main>` bekommt `relative`.
+
+Der Kern der Entscheidung — 0px Layout-Kosten — ist vorher/nachher gemessen: Das untere Ende des Inhalts liegt auf 320×568 bei 557, auf 360×640 bei 559, auf 390×844 bei 574 und auf 430×932 bei 588 — **identisch zu den Werten vor der Änderung**. Icon überall 44×44, keine Überlappung mit den Mode-Cards, `/` weiterhin scrollfrei auf 360×640. Im Menu: vier Gruppen, sieben Links, kein Eintrag aktiv markiert.
+
+6 neue Tests. **Dabei ein Fehler in den Tests gefunden:** Die erste Gegenprobe (Icon in eine normale Zeile umgebaut) ließ alle Tests bestehen — kein Test prüfte die tatsächliche Layout-Position. Ergänzt um einen Wächter auf die y-Position des Logos; damit fällt bei der Gegenprobe genau der zuständige Test. Suite **776 passed / 2 skipped / 0 failed** (vorher 762), Unit 186/186, Build und Lint sauber.
+
+**Nächster Schritt: `/qa`.**
