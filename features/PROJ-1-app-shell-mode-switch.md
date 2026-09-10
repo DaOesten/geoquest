@@ -1,7 +1,7 @@
 # PROJ-1: App Shell & Mode Switch
 
-## Status: Approved
-_Deployed; das Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist **am 2026-09-10 QA-geprüft: 14/15 Acceptance Criteria erfüllt, 1 Spec-Widerspruch (BUG-10, Low), keine Critical/High-Bugs, Production-Ready**. Das Refinement vom 2026-09-09 („Support me" / Ko-fi) ist **am 2026-09-10 nach Production deployt und dort verifiziert** (Tag `v1.27.0-PROJ-13`, 8/8 Acceptance Criteria, keine Bugs) — der Menu-Eintrag ist auf https://geoquesty.vercel.app live._
+## Status: In Progress
+_Deployed; das Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist am 2026-09-10 QA-geprüft (14/15 Acceptance Criteria, keine Critical/High-Bugs). **BUG-10 ist am 2026-09-10 entschieden: `/` bekommt das Burger-Menu als schwebendes Icon — spezifiziert, noch nicht gebaut.** Das Refinement vom 2026-09-09 („Support me" / Ko-fi) ist **am 2026-09-10 nach Production deployt und dort verifiziert** (Tag `v1.27.0-PROJ-13`, 8/8 Acceptance Criteria, keine Bugs) — der Menu-Eintrag ist auf https://geoquesty.vercel.app live._
 **Created:** 2026-08-23
 **Last Updated:** 2026-09-10 (QA Navigations-Refinement)
 
@@ -12,7 +12,7 @@ _Deployed; das Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist **am 2026-
 ## Summary
 Der Rahmen der gesamten App: Startscreen mit Modus-Auswahl, eine app-weite Kopfzeile mit Zurück-Pfeil links und Burger-Menu rechts, automatisches Theme-Switching, URL-basiertes Routing, Erststart-Dialog und 404-Seite.
 
-Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der gesamten App — auf `/play`, `/create`, in allen Unteransichten und auf den Info-Seiten (PROJ-13). Es gliedert sich in vier Gruppen: **App** (Play, Create), **Info** (Über, Anleitung), **Rechtliches** (Impressum, Datenschutz) und seit dem 2026-09-09 **Unterstützen** (Support me → Ko-fi).
+Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der gesamten App — auf `/play`, `/create`, in allen Unteransichten und auf den Info-Seiten (PROJ-13). Seit dem 2026-09-10 auch auf dem Startscreen `/`, dort als schwebendes Icon ohne eigene Kopfzeile (BUG-10). Es gliedert sich in vier Gruppen: **App** (Play, Create), **Info** (Über, Anleitung), **Rechtliches** (Impressum, Datenschutz) und seit dem 2026-09-09 **Unterstützen** (Support me → Ko-fi).
 
 „Support me" ist der erste Menu-Eintrag, der die App verlässt: Er öffnet https://ko-fi.com/technolomagie in einem neuen Tab. Das Projekt ist laut PRD kostenlos und ohne Abo — freiwillige Unterstützung ist damit die einzige Gegenleistung, die es überhaupt gibt, und sie gehört an eine Stelle, die von jedem Screen aus erreichbar ist, ohne einen einzigen Screen zu bewerben.
 
@@ -34,6 +34,7 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 - Animierte Übergänge zwischen Seiten (kann später ergänzt werden)
 - Responsive Desktop-Layout (Mobile-First, Desktop-Anpassung bei Bedarf später)
 - Background-Animation auf dem Startscreen (ggf. spätere Iteration)
+- **Eine volle Kopfzeile auf `/`** (Zurück-Pfeil, Titel-Zeile, 56px Höhe) — der Startscreen bekommt nur das schwebende Burger-Icon. Eine Zeile hätte ihn auf 360×640 zum Scrollen gebracht; ein Zurück-Pfeil hat auf der obersten Ebene ohnehin kein Ziel (2026-09-10)
 
 ## Acceptance Criteria
 
@@ -57,7 +58,16 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 - [ ] Angenommen der Nutzer befindet sich in einer tieferen Ansicht, wenn er den Browser-Zurück-Button drückt, dann wird er eine Ebene nach oben navigiert
 
 **Kopfzeile & Burger-Menu (Refinement 2026-09-06):**
-- [ ] Angenommen der Nutzer befindet sich auf einem beliebigen Screen der App (`/`, `/play`, `/create`, jede Unteransicht, jede Info-Seite), wenn er die Kopfzeile betrachtet, dann sieht er rechts das Burger-Menu-Icon _(QA 2026-09-10: auf 8 von 9 Screens erfüllt; `/` hat bewusst keine Kopfzeile — siehe BUG-10 und Open Questions)_
+- [x] Angenommen der Nutzer befindet sich auf einem beliebigen Screen mit Kopfzeile (`/play`, `/create`, jede Unteransicht, jede Info-Seite), wenn er die Kopfzeile betrachtet, dann sieht er rechts das Burger-Menu-Icon
+
+**Burger-Menu auf dem Startscreen (BUG-10, entschieden 2026-09-10):**
+- [ ] Angenommen der Nutzer befindet sich auf dem Startscreen `/`, wenn er nach oben rechts schaut, dann sieht er dasselbe Burger-Menu-Icon — **schwebend über dem Layout, ohne eigene Kopfzeilen-Zeile**
+- [ ] Angenommen der Nutzer öffnet das Menu auf `/`, wenn es erscheint, dann enthält es dieselben vier Gruppen und sieben Ziele wie auf jedem anderen Screen
+- [ ] Angenommen der Startscreen wird auf 320×568 und 360×640 angezeigt, wenn das Burger-Icon ergänzt ist, dann bleibt der vertikale Platzbedarf des Inhalts **unverändert** — das Icon kostet 0px Layout-Höhe und schiebt weder Logo noch Mode-Cards nach unten
+- [ ] Angenommen der Startscreen wird auf 360×640 angezeigt, wenn das Icon ergänzt ist, dann sind Logo, Headline und beide Mode-Cards **weiterhin ohne Scrollen sichtbar** — das bestehende Kriterium bleibt unangetastet
+- [ ] Angenommen der Nutzer tippt auf das Burger-Icon auf `/`, wenn er es trifft, dann ist das Tap-Ziel mindestens 44×44px groß und überlappt keine Mode-Card
+- [ ] Angenommen `/` hat keinen Zurück-Pfeil (es ist die oberste Ebene), wenn der Nutzer die Ecke oben links betrachtet, dann steht dort nichts — das Menu ist die einzige Kopfzeilen-Bedienung des Startscreens
+- [ ] Angenommen der Nutzer öffnet das Menu auf `/`, wenn er die Gruppe „App" betrachtet, dann ist **kein** Eintrag als aktiv markiert — `/` ist selbst kein Menu-Ziel
 - [x] Angenommen der Nutzer betrachtet die Kopfzeile eines beliebigen Screens, wenn er nach links schaut, dann sieht er den Zurück-Pfeil — in keinem Fall noch die Pin-Bildmarke. Auf `/play` und `/create` führt er zum Startscreen `/`, in Unteransichten eine Ebene nach oben _(korrigiert 2026-09-06: ursprünglich sollte die linke Seite auf Top-Level leer bleiben — dadurch fehlte dort jeder Weg zurück)_
 - [x] Angenommen der Nutzer tippt auf das Burger-Menu, wenn sich das Menu öffnet, dann sieht er vier Gruppen mit den Überschriften **App**, **Info**, **Rechtliches** und **Unterstützen** _(vierte Gruppe ergänzt 2026-09-09)_
 - [x] Angenommen das Menu ist offen, wenn der Nutzer die Gruppe „App" betrachtet, dann enthält sie die Links **Play** (→ `/play`) und **Create** (→ `/create`), jeweils mit passendem Icon
@@ -132,7 +142,7 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 - [x] Soll der Startscreen später eine dezente Background-Animation erhalten? → Ja, aber nicht als Backdrop: die Bewegung sitzt im ruhenden Glow der beiden Mode-Cards (langsames, versetztes Pulsieren). Ein zusätzlicher Partikel-Backdrop wie auf den Listen-Screens bleibt Out of Scope, damit der Startscreen ruhig bleibt (2026-09-05)
 - [ ] Braucht das Logo auf `/` eine sichtbare Beschriftung ("Was ist Geo Quest?"), falls sich zeigt, dass Nutzer den Link nicht finden? Zunächst bewusst ohne — erst nach Beobachtung entscheiden
 - [ ] `docs/design-system.md` sagt unter Motion "keine Ambient-Loops", während sowohl der Partikel-Backdrop als auch jetzt der Card-Glow genau das tun. Regel präzisieren oder streichen?
-- [ ] Braucht der Startscreen `/` selbst das Burger-Menu? Er hat keine Kopfzeile und bietet mit den zwei Mode-Cards plus Logo-Link nach `/about` bereits fünf der sechs Ziele — offen, ob dort eine Kopfzeile ergänzt wird oder `/` die eine Ausnahme bleibt. **QA 2026-09-10 (BUG-10):** Gemessen sind es 3 von 7 Zielen; Impressum und Datenschutz fehlen auf `/` ganz, sind aber in 2 Taps über Logo → `/about` → Footer erreichbar. Solange die Frage offen ist, widerspricht das erste Acceptance Criterion („auf jedem Screen … `/`") der Implementierung — entweder das Kriterium präzisieren oder `/` eine Kopfzeile geben
+- [x] ~~Braucht der Startscreen `/` selbst das Burger-Menu?~~ → **Ja, entschieden am 2026-09-10** (löst BUG-10). Aber **ohne Kopfzeilen-Zeile**: nur das Burger-Icon, absolut positioniert oben rechts, 0px Layout-Höhe. Gemessen war der Anlass: Von `/` waren nur 3 der 7 Ziele direkt erreichbar, Impressum und Datenschutz gar nicht. Eine volle 56px-Kopfzeile hätte den Startscreen aber auf 360×640 zum Scrollen gebracht (gemessen: Inhalt endet dann bei 615/640, Seite überläuft) und damit ein bestehendes Acceptance Criterion gebrochen. Die schwebende Variante liefert alle sieben Ziele in 1 Tap, ohne einen einzigen Pixel Layout zu kosten
 - [ ] Soll das Menu perspektivisch einen Eintrag „App installieren" (PROJ-12, PWA) bekommen? Das wäre ein Anhang unter „App" — erst entscheiden, wenn PROJ-12 gebaut wird. _(Formulierung aktualisiert 2026-09-09: „vierte Gruppe" ist überholt, „Unterstützen" ist jetzt die vierte.)_
 - [ ] Soll „Support me" perspektivisch auch auf `/impressum` und `/datenschutz` als Kopfzeilen-Icon erscheinen? Zunächst bewusst nur `/about` und `/anleitung` — die beiden Seiten, die das Produkt erklären. Rechtstexte liest niemand aus Sympathie (2026-09-09)
 - [x] ~~Braucht das Kopfzeilen-Icon auf dem Desktop einen sichtbaren Tooltip?~~ → Ja, umgesetzt am 2026-09-10 (Details in PROJ-13): Tooltip „Unterstütze mich" bei Hover und Tastatur-Fokus. Betrifft nur die Kopfzeile der Info-Seiten; der Menu-Eintrag ist ausgeschrieben und braucht keinen
@@ -168,6 +178,9 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 | Letzte Position im Menu, ohne Hervorhebung | Reihenfolge ist Gewichtung. Play und Create sind der Zweck der App, Rechtliches ist Pflicht, Unterstützen ist freiwillig. Adressat sind die erwachsenen Ersteller (Eltern, Lehrkräfte, Jugendleiter) — nicht der Spieler, der unterwegs eine Station sucht. Kein Badge, keine Farbe, keine Animation | 2026-09-09 |
 | Beschriftung „Support me" (englisch) in einer sonst deutschen Navigation | Vom Betreiber so vorgegeben und konsistent mit der Ko-fi-Zielseite, die ebenfalls englisch beschriftet ist. Die App trägt ohnehin englische Begriffe an prominenter Stelle („Play", „Create", „Quest") — der Bruch ist keiner | 2026-09-09 |
 | Kaffeetassen-Icon (`Coffee`) statt Herz oder Münze | Ko-fi ist als „buy me a coffee" bekannt; die Tasse ist die etablierte Bildsprache für den kleinen freiwilligen Betrag. Ein Herz läse sich als „Favorit", eine Münze als Bezahlschranke | 2026-09-09 |
+| Der Startscreen `/` bekommt das Burger-Menu doch — die frühere Ausnahme entfällt | Die QA vom 2026-09-10 hat gemessen, was die Ausnahme kostet: Von `/` waren nur 3 der 7 Ziele direkt erreichbar, Impressum und Datenschutz überhaupt nicht (erst in 2 Taps über Logo → `/about` → Footer). „Eine Navigation für die ganze App" war damit auf dem einen Screen nicht eingelöst, den jeder Nutzer zuerst sieht | 2026-09-10 |
+| Auf `/` schwebt nur das Icon, statt eine volle Kopfzeile zu tragen | Gemessen: Eine 56px-Zeile lässt den Startscreen auf 360×640 überlaufen (Inhalt endet bei 615/640) und schneidet auf 320×568 45px ab — das hätte das AC „Logo, Headline und beide Mode-Cards ohne Scrollen sichtbar" gebrochen. Ein Kriterium gegen ein anderes zu tauschen wäre kein Fortschritt. `/` braucht ohnehin weder Zurück-Pfeil noch Titel, also auch keine Zeile für beides | 2026-09-10 |
+| Kein Menu-Eintrag für `/` selbst, auch jetzt nicht | Der Startscreen bietet nichts als die Wahl zwischen Play und Create, und beide stehen im Menu direkt darüber. Ein Eintrag „Start" wäre ein Ziel, das nichts kann, was das Menu nicht schon kann — entsprechend ist auf `/` auch kein Eintrag aktiv markiert | 2026-09-10 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -184,6 +197,8 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 | Externer Link als Flag (`external: true`) am Nav-Link, nicht als eigene Datenstruktur | `APP_NAV_GROUPS` trägt bereits `href`/`label`/`icon`. Ein Flag genügt, um `target`, `rel` und den unterdrückten `aria-current`-Zweig zu steuern — eine parallele Struktur würde die Render-Schleife verdoppeln | 2026-09-09 |
 | `rel="noopener noreferrer"` | `target="_blank"` gibt der Zielseite sonst über `window.opener` Zugriff auf den Tab der App (Reverse Tabnabbing). Moderne Browser setzen `noopener` implizit — es explizit zu schreiben kostet nichts und deckt ältere Engines ab, die das PRD als unterstützt nennt (letzte 2 Versionen) | 2026-09-09 |
 | Kein `next/link` für das externe Ziel, sondern ein einfaches `<a>` | `next/link` ist für interne Route-Übergänge da (Prefetch, Client-Navigation). Auf eine fremde Domain angewandt bringt es keinen Vorteil und lädt Prefetch-Logik für eine URL, die Next.js nicht kennt | 2026-09-09 |
+| Das Burger-Icon auf `/` kommt als absolut positioniertes Element, nicht über `AppHeader` | `AppHeader` ist eine 56px hohe Flex-Zeile mit Zurück-Pfeil, Titel und Menu — auf `/` wären zwei der drei Plätze leer, und die Zeile selbst ist genau das, was hier keinen Platz hat. Der Startscreen bindet stattdessen `AppNavMenu` direkt ein und positioniert es `absolute top-3 right-3` über dem bestehenden Layout | 2026-09-10 |
+| Der Startscreen-Container braucht dafür `relative` | Ohne Positionierungs-Kontext bezöge sich `absolute` auf den nächsten positionierten Vorfahr oder den Viewport — bei einem zentrierten Layout mit `max-w` säße das Icon dann am Bildschirmrand statt am Container-Rand | 2026-09-10 |
 | Lucide Icons via lucide-react | Im Design-System definiert, Tree-Shakeable | 2026-08-23 |
 | Glow als CSS-Keyframe auf `box-shadow`, nicht als JS-Animation | Läuft dauerhaft auf dem Startscreen; CSS-Animation bleibt ohne Main-Thread-Last und ist per Media Query abschaltbar | 2026-09-05 |
 | `prefers-reduced-motion: reduce` schaltet nur die Animation ab, nicht den Glow | Der Glow trägt die Farbcodierung der beiden Modi (Teal/Lime) — er ist Information, die Bewegung ist Dekoration | 2026-09-05 |
@@ -629,7 +644,7 @@ Die Icon-Auswahl trifft `/frontend` aus dem bereits genutzten `lucide-react`-Set
 | Tests | `aria-label="Zurück zum Start"` (Pin-Marke) verschwindet — die E2E-Suite referenziert Header-Selektoren, siehe die bekannten stale Tests im QA-Abschnitt |
 
 ### Bewusst nicht Teil dieser Änderung
-- Der Startscreen `/` bekommt vorerst keine Kopfzeile (siehe Open Questions) — er bietet mit den Mode-Cards und dem Logo-Link bereits fünf der sechs Ziele
+- Der Startscreen `/` bekommt vorerst keine Kopfzeile (siehe Open Questions) — er bietet mit den Mode-Cards und dem Logo-Link bereits fünf der sechs Ziele _(**überholt am 2026-09-10:** Die QA hat nachgemessen, dass es tatsächlich 3 von 7 Zielen sind — Impressum und Datenschutz fehlten ganz. `/` bekommt jetzt das Burger-Icon, schwebend statt in einer Zeile. Siehe BUG-10 und Decision Log.)_
 - Kein Auto-Hide-Header, kein schwebender Menu-Button: „nicht sticky" heißt, die Kopfzeile scrollt schlicht mit
 - Kein PWA-Eintrag im Menu — das gehört zu PROJ-12
 - Kein kontextabhängiger Menü-Eintrag „Quest bearbeiten": diese Aktion bleibt sichtbar auf der Seite, statt sich hinter zwei Taps zu verstecken
@@ -694,6 +709,8 @@ Das Kriterium fordert das Burger-Menu auf „einem beliebigen Screen der App (`/
 **Gemessene Auswirkung:** Von `/` sind 3 der 7 Ziele direkt erreichbar (`/about` über das Logo, `/play` und `/create` über die Mode-Cards). **Impressum und Datenschutz sind von `/` aus nicht direkt verlinkt** — aber in **2 Taps** erreichbar (Logo → `/about` → Footer) bzw. 3 Taps über Play → Burger. Damit kein rechtliches Problem und kein blockierender Mangel.
 
 **Empfehlung:** Entweder das Kriterium präzisieren (`/` als dokumentierte Ausnahme ausnehmen) oder die offene Frage entscheiden und `/` eine Kopfzeile geben. Eine Entscheidung, kein Fix — deshalb Low.
+
+> **Aufgelöst am 2026-09-10 (Refinement):** Der Betreiber hat entschieden, `/` das Menu zu geben. Nicht als volle Kopfzeile — eine 56px-Zeile hätte den Startscreen auf 360×640 zum Überlaufen gebracht (gemessen: Inhalt endet dann bei 615/640) — sondern als **schwebendes Burger-Icon oben rechts mit 0px Layout-Höhe**. Damit sind alle sieben Ziele von `/` aus in 1 Tap erreichbar, und das AC zur Scrollfreiheit bleibt unangetastet. Sieben neue Acceptance Criteria, Umsetzung steht aus (`/frontend`).
 
 #### BUG-2 (Medium, vorbestehend) — bestätigt weiterhin offen
 

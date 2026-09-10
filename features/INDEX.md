@@ -16,7 +16,7 @@
 
 | ID | Feature | Priority | Dependencies | Status | Spec | Created |
 |----|---------|----------|--------------|--------|------|---------|
-| PROJ-1 | App Shell & Mode Switch | P0 | None | Approved | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
+| PROJ-1 | App Shell & Mode Switch | P0 | None | In Progress | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
 | PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
@@ -245,3 +245,17 @@ Die seit dem 2026-09-06 offene QA von **PROJ-1** ist nachgeholt — der Punkt, d
 **28 neue E2E-Tests** in `tests/proj-1-navigation-qa.spec.ts` schließen die Regressionslücken des Refinements (Gruppenstruktur, Schließverhalten per Escape und Klick daneben, Fokus und `aria-expanded`, Abwesenheit der Pin-Marke, Scroll-Verhalten beider Kopfzeilen-Varianten, XSS-Wächter). Per Gegenprobe geschärft: Eine umbenannte Menu-Gruppe und eine sticky gemachte App-Kopfzeile lassen jeweils die zuständigen Tests fallen.
 
 Gesamtsuite jetzt **762 passed / 2 skipped / 0 failed** über beide Engines (vorher 734), Unit 186/186, Build und Lint sauber.
+
+
+## Offenes Refinement: BUG-10 — Burger-Menu auch auf dem Startscreen (2026-09-10)
+**PROJ-1** geht von Approved zurück auf In Progress. Die QA vom selben Tag hatte BUG-10 aufgedeckt: Das erste Acceptance Criterion nennt `/` ausdrücklich als Screen mit Burger-Menu, der Startscreen hat aber bewusst keine Kopfzeile. Der Betreiber hat entschieden — **`/` bekommt das Menu**, die frühere Ausnahme entfällt.
+
+**Der Anlass, gemessen statt vermutet:** Von `/` waren nur 3 der 7 Ziele direkt erreichbar (`/about` über das Logo, `/play` und `/create` über die Mode-Cards). Impressum und Datenschutz fehlten dort ganz — erst in 2 Taps über Logo → `/about` → Footer erreichbar. Der Anspruch „eine Navigation für die ganze App" war ausgerechnet auf dem Screen nicht eingelöst, den jeder Nutzer zuerst sieht.
+
+**Die Umsetzung ist bewusst nicht die naheliegende:** Eine volle 56px-Kopfzeile wie auf allen anderen Screens hätte ein bestehendes Acceptance Criterion gebrochen. Gemessen: Der Startscreen-Inhalt endet auf 360×640 bei 559px von 640 — mit einer Kopfzeile bei 615px, die Seite läuft über; auf 320×568 fehlten 45px. Das AC „Logo, Headline und beide Mode-Cards ohne Scrollen sichtbar" wäre gefallen.
+
+Stattdessen: **nur das Burger-Icon, absolut positioniert oben rechts, 0px Layout-Höhe.** Die Zone oben rechts ist auf allen drei geprüften Breiten frei. `/` braucht ohnehin weder Zurück-Pfeil (oberste Ebene) noch Titel — also auch keine Zeile für beides. Alle sieben Ziele in 1 Tap, kein Pixel Layout-Kosten, kein gebrochenes Kriterium.
+
+Spec ist aktualisiert: 7 neue Acceptance Criteria (eigener Block), 3 Produkt- und 2 technische Entscheidungen, Out of Scope um die volle Kopfzeile ergänzt, die seit dem 2026-09-06 offene Frage geschlossen, und die überholte Implementation Note von damals als solche markiert.
+
+**Noch nichts gebaut — nächster Schritt: `/frontend`.**
