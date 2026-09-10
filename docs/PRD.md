@@ -24,7 +24,7 @@ Geo Quest ist eine Mobile-First-Web-App (PWA), die Kinder und Jugendliche (etwa 
 | P0 (MVP) | PWA-Installation (Add to Homescreen) | Planned |
 | P1 | Landing Page mit App-Link & KI-Anleitung zur Quest-Erstellung | Deployed |
 | P1 | Impressum & Datenschutzerklärung (Teil von PROJ-13) | Deployed |
-| P1 | „Support me" — Ko-fi-Link in Burger-Menu & Info-Kopfzeile (PROJ-1, PROJ-13) | Planned |
+| P1 | „Support me" — Ko-fi-Link in Burger-Menu & Info-Kopfzeile (PROJ-1, PROJ-13) | Deployed |
 
 ## Produktziele
 1. Intuitive Benutzerführung für beide Modi (Creator/Player)

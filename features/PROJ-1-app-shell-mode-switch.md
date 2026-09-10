@@ -1,7 +1,7 @@
 # PROJ-1: App Shell & Mode Switch
 
 ## Status: In Progress
-_Deployed; das Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist gebaut und im Browser verifiziert — QA dafür steht weiterhin aus. Das Refinement vom 2026-09-09 („Support me" / Ko-fi) ist **am 2026-09-10 QA-geprüft: 8/8 Acceptance Criteria, keine Bugs, Production-Ready**._
+_Deployed; das Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist gebaut und im Browser verifiziert — QA dafür steht weiterhin aus. Das Refinement vom 2026-09-09 („Support me" / Ko-fi) ist **am 2026-09-10 nach Production deployt und dort verifiziert** (Tag `v1.27.0-PROJ-13`, 8/8 Acceptance Criteria, keine Bugs) — der Menu-Eintrag ist auf https://geoquesty.vercel.app live._
 **Created:** 2026-08-23
 **Last Updated:** 2026-09-10 (QA Ko-fi)
 

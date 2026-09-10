@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Roadmap | — | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | Approved | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 
 <!-- Add features above this line -->
 
@@ -214,7 +214,15 @@ Edge Case 14 (Ko-fi blockiert) ist in der Testumgebung real eingetreten — der 
 
 Zwei Auffälligkeiten im ersten Messdurchlauf waren **Fehler in meiner Messung**, nicht im Produkt: Der „Teal-Hintergrund" des Icons war der Hover-Zustand (die Sonde maß mit dem Mauszeiger darauf), und der „fehlende neue Tab" war die 403-Sperre.
 
-**PROJ-13 ist Approved. Nächster Schritt: `/deploy`.** PROJ-1 bleibt auf In Progress — nicht wegen dieses Refinements, sondern weil die QA des Navigations-Umbaus vom 2026-09-06 dort weiterhin aussteht.
+**Am 2026-09-10 nach Production deployt** (Tag `v1.27.0-PROJ-13`) — live auf https://geoquesty.vercel.app und dort verifiziert. Vercel deployte automatisch von `main`, live nach ~60 Sekunden.
+
+Alle sieben Routen HTTP 200 mit 0,08–0,46s Ladezeit. Die Ko-fi-Platzierung im ausgelieferten HTML gezählt: `/about` und `/anleitung` je 1×, `/impressum` und `/datenschutz` **0×**. Der JSON-LD-Nachzug ist im Markup nachgewiesen (`suggestedMinAge: 8`, `suggestedMaxAge: 16`), deckungsgleich mit dem sichtbaren FAQ-Text.
+
+**Im Live-Browser bestätigt:** Tooltip „Unterstütze mich" bei Hover, Menu-Gruppen `["App","Info","Rechtliches","Unterstützen"]`, `aria-current` null, Tap-Ziele 44×44 auf 320px ohne Überlauf — und ein **echter Klick öffnet einen neuen Tab mit `window.opener === null`**, die Ursprungsseite bleibt stehen. 0 fehlgeschlagene Requests, keine 4xx/5xx. Security-Header aktiv.
+
+BUG-7 bleibt behoben (CTA auf 1366×768 und 1440×900 über dem Falz). Die Nachbarseiten wurden wegen der Änderung an `InfoPageShell` mitgeprüft und sind unbeschädigt — die Prompt-Vorlage auf `/anleitung` ist mit 6956 Zeichen vollständig, identisch zum vorigen Deploy.
+
+**PROJ-13 ist Deployed.** PROJ-1 bleibt auf In Progress — nicht wegen dieses Refinements (dessen Ko-fi-Teil ist live und verifiziert), sondern weil die QA des Navigations-Umbaus vom 2026-09-06 dort weiterhin aussteht.
 
 **Mitzunehmen im selben `/frontend`-Lauf:** Das `WebApplication`-JSON-LD auf `/about` gibt Maschinen `suggestedMinAge: 10` / `suggestedMaxAge: 15`, während der sichtbare FAQ-Text seit der Copy-Änderung des Betreibers „etwa 8 bis 16 Jahren, aber niemand ist zu alt" sagt. Zwei Zahlen in `src/app/(info)/about/page.tsx`, auf 8 und 16 zu ziehen. Aufgefallen beim Angleichen des PRD, das dieselbe veraltete Spanne trug.
 

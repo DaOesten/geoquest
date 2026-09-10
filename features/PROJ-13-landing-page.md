@@ -1,9 +1,9 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Approved
-_Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und dort verifiziert (Tag `v1.26.0-PROJ-13`). Refinement 6 (Ko-fi-Icon in der Kopfzeile, Tooltip, JSON-LD-Altersnachzug) ist **am 2026-09-10 QA-geprüft: 14/14 Acceptance Criteria, keine Bugs, Production-Ready** — bereit für `/deploy`._
+## Status: Deployed
+_Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und dort verifiziert (Tag `v1.26.0-PROJ-13`). Refinement 6 (Ko-fi-Icon in der Kopfzeile, Tooltip, JSON-LD-Altersnachzug) ist **am 2026-09-10 nach Production deployt und dort verifiziert** (Tag `v1.27.0-PROJ-13`)._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-10 (QA Refinement 6 abgeschlossen)
+**Last Updated:** 2026-09-10 (Refinement 6 deployt)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -1297,6 +1297,59 @@ Eingeklapptes Accordion, gespiegelt im `FAQPage`-JSON-LD. Trägt „Schnitzeljag
 `/anleitung`, `/impressum`, `/datenschutz`, `InfoPageShell`, Header, Burger-Menu (`AppNavMenu`), Footer, Hintergrund, Prompt-Vorlage, Import, Creator, Player. Kein neues Paket, kein Backend, keine Route.
 
 ---
+
+## Deployment — Refinement 6: Ko-fi „Support me" (2026-09-10)
+
+**Production URL:** https://geoquesty.vercel.app/about
+**Deployed:** 2026-09-10
+**Tag:** `v1.27.0-PROJ-13`
+**Commits:** `2ce7a42` → `3f41cbe` (7 Commits: Spec, Implementierung, Tooltip, QA)
+
+### Pre-Deployment
+- `npm run build` ✓ · `npm run lint` ✓ (0 Fehler, 6 vorbestehende `<img>`-Warnungen)
+- QA freigegeben: 14/14 Acceptance Criteria, keine Bugs
+- Keine Secrets im Repo (nur `.env.local.example` getrackt)
+- Security-Header in `next.config.ts` bereits konfiguriert
+- Vercel deployt automatisch von `main` — live nach ~60 Sekunden
+
+### Verifikation in Production
+
+**Routen** — alle HTTP 200, deutlich unter der 2s-Vorgabe des PRD:
+
+| Route | Status | Zeit |
+|-------|--------|------|
+| `/` | 200 | 0,46s |
+| `/play` | 200 | 0,30s |
+| `/create` | 200 | 0,44s |
+| `/about` | 200 | **0,08s** |
+| `/anleitung` | 200 | 0,43s |
+| `/impressum` | 200 | 0,31s |
+| `/datenschutz` | 200 | 0,31s |
+
+**Ko-fi-Platzierung** — im ausgelieferten HTML gezählt: `/about` 1×, `/anleitung` 1×, `/impressum` **0×**, `/datenschutz` **0×**. Genau wie spezifiziert.
+
+**Im Live-Browser geprüft:**
+- Icon sichtbar, Tap-Ziel **44×44**, Ruhezustand `border 0px` / `background transparent`
+- Tooltip bei Hover: **„Unterstütze mich"**
+- Menu-Gruppen: `["App","Info","Rechtliches","Unterstützen"]`
+- `aria-current` = `null` (externes Ziel ist nie die aktuelle Seite)
+- **Echter Klick öffnet einen neuen Tab, `window.opener === null`** — `noopener` wirkt in Production
+- Ursprungsseite bleibt unverändert stehen
+- **0 fehlgeschlagene Requests, keine 4xx/5xx** auf `/about` und `/play`
+
+**JSON-LD-Nachzug bestätigt:** `suggestedMinAge: 8` / `suggestedMaxAge: 16` im ausgelieferten Markup, deckungsgleich mit dem sichtbaren FAQ-Text „8 bis 16 Jahren".
+
+**Security-Header aktiv:** `x-frame-options: DENY`, `x-content-type-options: nosniff`, `referrer-policy: origin-when-cross-origin`, `strict-transport-security: max-age=63072000; includeSubDomains; preload`.
+
+**Responsive:** 320px-Kopfzeile in einer Zeile (Icon 44×44, „Zur App" 105×44, Burger 44×44 — alle auf Mitte 28), kein horizontaler Überlauf. WebKit/Touch auf 390px: Icon 44×44, `aria-label` vollständig.
+
+**BUG-7 bleibt behoben:** CTA endet auf 1366×768 bei 560/768 und auf 1440×900 bei 560/900 — auf beiden vollständig über dem Falz.
+
+**Nachbarseiten unbeschädigt** (`InfoPageShell` ist geteilt): `/anleitung`, `/impressum` und `/datenschutz` tragen ihre korrekten H1, und die Prompt-Vorlage auf `/anleitung` ist mit **6956 Zeichen** vollständig — identisch zum Wert beim vorigen Deploy.
+
+### Anmerkung
+
+Der geöffnete Ko-fi-Tab zeigte im Test „Just a moment…" (Cloudflare-Prüfung). Das ist ein Artefakt der Testumgebung, deren Proxy ko-fi.com abfängt — für echte Besucher nicht relevant. Die App-seitige Mechanik (neuer Tab, `opener` null, Ursprungsseite bleibt) ist davon unabhängig bestätigt.
 
 ## QA Test Results — Refinement 6: Ko-fi-Icon & Tooltip (2026-09-10)
 
