@@ -1,8 +1,8 @@
 # PROJ-14: KI-Anleitung — „Coming soon" zum Launch
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-09-17
-**Last Updated:** 2026-09-18 (QA abgeschlossen)
+**Last Updated:** 2026-09-18 (deployt, Tag `v1.29.0-PROJ-14`)
 
 ## Dependencies
 - Requires: PROJ-13 (Landing Page) — die Seite `/anleitung`, ihre Einstiegspunkte und der geteilte Seitenrahmen `InfoPageShell` stammen von dort
@@ -499,4 +499,48 @@ Gelaufen über `playwright.prod.config.ts` (Chrome 152 via `channel: 'chrome'`, 
 
 
 ## Deployment
-_To be added by /deploy_
+
+**Deployt: 2026-09-18** — Tag `v1.29.0-PROJ-14`, Commit `18007e0`
+**Production-URL:** https://geoquesty.vercel.app/anleitung
+
+Vercel deployte automatisch von `main`, live nach ~42 Sekunden.
+
+### In Production verifiziert
+
+**Der Prompt ist nicht ausgeliefert.** 0 Treffer im HTML für „BITTE-ERSETZEN", „Du hilfst mir", „Aufbau der JSON-Datei", „HIER EINTRAGEN", „Prompt", „Kopieren", „So geht es", „Zwei Pflichtschritte", „Die Datei wird nicht angenommen" — und **alle 15 ausgelieferten JS-Bundles einzeln abgerufen**, kein Treffer. Die Ankündigung steht (Eyebrow, Ausblick-Kasten, CTA, ChatGPT/Claude).
+
+**Alle sieben Routen HTTP 200** mit 0,07–0,20 s.
+
+**Die Einstiegspunkte:** `/about` ohne „Mit KI erstellen" (0), `/create` ohne „Quest mit KI bauen" (0), **kein Header-Textlink auf allen vier Info-Seiten** (je 0).
+
+**Das Menu im Live-Browser:** 7 Links, Eintrag „AnleitungBald", ARIA-Name `link "Anleitung Bald"`, `aria-current="page"` auf der eigenen Seite, Tap-Ziel 231×48, **Badge-Kontrast 8.02:1**. Ein echter Klick führt auf die Ankündigung.
+
+**Die FAQ:** „Wie lange dauert" (0), „halbe Stunde" (0), „Wie erstelle ich eine Quest?" sichtbar. Das `FAQPage`-JSON-LD trägt alle fünf Fragen mit der neuen Antwort und **ohne Zeitangabe** — deckungsgleich mit der sichtbaren Seite.
+
+**BUG-7 bleibt behoben:** acht Viewports von 320×568 bis 1920×1080 nachgemessen, der primäre CTA steht überall vollständig über dem Falz. Die Werte decken sich **exakt** mit den lokalen Messungen (320×568: +27px, 1366×768: +208px, 1440×900: +340px).
+
+**Nachbarseiten unbeschädigt** — wichtig, weil `HEADER_NAV_LINKS` aus dem geteilten Seitenrahmen kommt: `/impressum` und `/datenschutz` behalten Eyebrow „Rechtliches" und ihre H1.
+
+**WebKit strukturgleich:** Eyebrow „Bald verfügbar", keine Prompt-Reste im Text.
+
+**Security-Header aktiv:** `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: origin-when-cross-origin`, `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload` (HSTS gibt es nur in Production). Der Ko-fi-Link trägt `rel="noopener noreferrer"`.
+
+**0 fehlgeschlagene Requests, 0 Konsolenfehler** bei frischem Erstbesuch ohne Cache — die lokalen Vercel-Analytics-404 sind in Production wie erwartet verschwunden.
+
+### Eine Fehlspur, damit sie niemand erneut verfolgt
+
+Ein erster Messdurchlauf meldete **einen** Konsolenfehler (404) auf `/anleitung`, den die unveränderte `/impressum` nicht hatte — das sah nach einem Deploy-Schaden aus. Nachgestellt mit frischem Kontext ohne Cache: **0 Antworten ≥400 auf beiden Seiten.** Der Fehler stammte aus dem vorherigen Navigationsschritt desselben Skripts (dem Menu-Klick), nicht aus dem Laden der Seite. Kein Produktfehler.
+
+Ebenso irreführend: `grep -c` meldete „Wie erstelle ich eine Quest?" in Production nur **1×** statt lokal 2×. Ursache ist das Zählen von *Zeilen* — das Production-HTML ist minifiziert. Tatsächlich sechs Vorkommen (sichtbare Seite + JSON-LD).
+
+### Mit ausgeliefert
+
+Auf Entscheidung des Betreibers sind zwei Werkzeugdateien mit eingecheckt:
+
+- **`playwright.prod.config.ts`** — läuft auf dem vorhandenen Chrome 152 (`channel: 'chrome'`) gegen den Production-Build und umgeht damit das projektlange 428-KB-Chromium-Fragment
+- **`scripts/test-anleitung-freigeschaltet.mjs`** (`npm run test:e2e:freigeschaltet`) — der einzige Weg, die zurückgehaltene Anleitung am Leben zu halten. Legt den Schalter um, baut, testet, stellt zurück — auch bei Fehlschlag oder Abbruch (`finally` + SIGINT/SIGTERM). Bricht ab, wenn der Schalter nicht auf `false` steht, statt etwas zu überschreiben.
+
+### Zum Freischalten
+
+`ANLEITUNG_VERFUEGBAR = true` in `src/lib/app-nav.ts`, committen, pushen. Seite, Menu-Kennzeichnung, Header-Link und beide CTAs kommen gleichzeitig zurück. Vorher `npm run test:e2e:freigeschaltet` laufen lassen — 22 Tests prüfen genau diesen Zustand.
+

@@ -29,7 +29,7 @@
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Roadmap | — | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
-| PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Approved | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
+| PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
 <!-- Add features above this line -->
 
@@ -276,6 +276,20 @@ Per Gegenprobe geschärft: Eine wieder eingebaute Zeitangabe in der FAQ lässt 2
 Suiten gegen den Production-Build: **Chrome 152: 405 passed / 22 skipped / 0 failed. Mobile Safari: 404 passed / 23 skipped / 0 failed. Freigeschalteter Zustand: 22/22 auf beiden Engines. Unit 186/186.**
 
 **Drei Beobachtungen ohne Bug-Status:** „Quest importieren" misst 42px statt der geforderten 44px — **vorbestehend aus PROJ-6**, in dieser Session unverändert, aber ein eigenes Refinement wert (zusammen mit BUG-2). 320×568 hat weiterhin nur 27px Luft unter dem CTA (unverändert). Und die lokalen Konsolenfehler stammen von Vercel Analytics, das nur in Production existiert — sie treten auf allen Routen auf, auch auf unveränderten. PROJ-13 und PROJ-1 bleiben auf Deployed — dieses Feature ändert sie, ohne ihren Stand zurückzusetzen.
+
+**Am 2026-09-18 nach Production deployt** (Tag `v1.29.0-PROJ-14`, Commit `18007e0`) — live auf https://geoquesty.vercel.app/anleitung und dort verifiziert. Vercel deployte automatisch von `main`, live nach ~42 Sekunden.
+
+**Der Kern ist in Production bestätigt:** Der Prompt steht in keinem der **15 ausgelieferten JS-Bundles** (alle einzeln abgerufen) und in keiner Zeile des HTML. Alle sieben Routen HTTP 200 mit 0,07–0,20 s. Die Einstiegspunkte sind weg (`/about`, `/create`, Header-Textlink auf allen vier Info-Seiten je 0×), das Menu zeigt „AnleitungBald" mit ARIA-Namen `link "Anleitung Bald"` und **8.02:1 Kontrast**, ein echter Klick führt auf die Ankündigung. Das `FAQPage`-JSON-LD trägt die neue Antwort ohne Zeitangabe.
+
+**BUG-7 bleibt behoben** — acht Viewports nachgemessen, die Werte decken sich **exakt** mit den lokalen (320×568: +27px, 1366×768: +208px, 1440×900: +340px). Nachbarseiten unbeschädigt, WebKit strukturgleich, Security-Header aktiv inkl. HSTS. **0 fehlgeschlagene Requests, 0 Konsolenfehler** bei frischem Erstbesuch.
+
+Zwei Fehlspuren sind in der Spec dokumentiert, damit sie niemand erneut verfolgt: ein vermeintlicher 404 auf `/anleitung` (kam aus dem vorherigen Navigationsschritt desselben Skripts, nicht aus dem Seitenaufruf) und eine scheinbar fehlende JSON-LD-Frage (`grep -c` zählt Zeilen, das Production-HTML ist minifiziert).
+
+Mit ausgeliefert: `playwright.prod.config.ts` (löst das projektlange Chromium-Problem über das vorhandene Chrome 152) und `scripts/test-anleitung-freigeschaltet.mjs` — der einzige Weg, die zurückgehaltene Anleitung am Leben zu halten.
+
+**Zum Freischalten:** `ANLEITUNG_VERFUEGBAR = true` in `src/lib/app-nav.ts`. Vorher `npm run test:e2e:freigeschaltet` laufen lassen.
+
+**PROJ-14 ist abgeschlossen.**
 
 ## Abgeschlossen: QA des Navigations-Refinements (2026-09-10)
 Die seit dem 2026-09-06 offene QA von **PROJ-1** ist nachgeholt — der Punkt, der in mehreren Einträgen oben als „QA steht aus" vermerkt war.
