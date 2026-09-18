@@ -11,16 +11,16 @@ Geo Quest ist eine Mobile-First-Web-App (PWA), die Kinder und Jugendliche (etwa 
 
 | Priority | Feature | Status |
 |----------|---------|--------|
-| P0 (MVP) | Quest Player — GPS-Navigation & Stationen | Planned |
-| P0 (MVP) | Quest Player — Modulsystem (Text, Bild, Audio, Video, Tasks) | Planned |
-| P0 (MVP) | Quest Player — Fortschritt & Abschluss | Planned |
-| P0 (MVP) | Quest Creator — Quest-Verwaltung | Planned |
+| P0 (MVP) | Quest Player — GPS-Navigation & Stationen | Deployed |
+| P0 (MVP) | Quest Player — Modulsystem (Text, Bild, Audio, Video, Tasks) | Deployed |
+| P0 (MVP) | Quest Player — Fortschritt & Abschluss | Deployed |
+| P0 (MVP) | Quest Creator — Quest-Verwaltung | Deployed |
 | P0 (MVP) | Quest Creator — Stationen-Editor mit Karte | Deployed |
 | P0 (MVP) | Quest Creator — Modul-Editor (alle 5 Typen) | Deployed |
-| P0 (MVP) | Quest Creator — JSON-Export | Planned |
+| P0 (MVP) | Quest Creator — JSON-Export | Deployed |
 | ~~P0 (MVP)~~ | Quest Creator — Vorschau / Testmodus | Verworfen |
-| P0 (MVP) | Quest Data Model & JSON Import | Planned |
-| P0 (MVP) | Quest Import — Passwortschutz zum Bearbeiten/Testen | Planned |
+| P0 (MVP) | Quest Data Model & JSON Import | Deployed |
+| P0 (MVP) | Quest Import — Passwortschutz zum Bearbeiten/Testen | Deployed |
 | P0 (MVP) | PWA-Installation (Add to Homescreen) | Planned |
 | P1 | Landing Page mit App-Link (KI-Anleitung angekündigt, siehe PROJ-14) | Deployed |
 | P0 (MVP) | KI-Anleitung — „Coming soon“ zum Launch (PROJ-14) | Deployed |

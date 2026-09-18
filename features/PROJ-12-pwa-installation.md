@@ -1,0 +1,196 @@
+# PROJ-12: PWA-Installation (Add to Homescreen)
+
+## Status: Planned
+**Created:** 2026-09-18
+**Last Updated:** 2026-09-18
+
+## Dependencies
+- Requires: PROJ-1 (App Shell & Mode Switch) — der Startscreen `/` trägt einen der beiden Hinweis-Orte, und das Wurzel-Layout (`src/app/layout.tsx`) hält heute schon `themeColor` und `viewportFit: "cover"`
+- Berührt: PROJ-5 (Player — Fortschritt & Abschluss) — die Quest-Liste `/play` trägt den zweiten Hinweis-Ort
+- Berührt: PROJ-3 (Player — GPS-Navigation) — die Standortfreigabe verhält sich in der installierten App als eigener Ursprungskontext (siehe Edge Case 7)
+
+_Keine Datenabhängigkeit: Dieses Feature ändert nichts am Quest-Modell, an Import/Export oder am Editor. Es fügt Metadaten, Icons und einen Hinweis hinzu._
+
+## Kontext
+
+Das PRD nennt Geo Quest in seinem allerersten Satz eine **PWA** und führt „PWA-Installation (Add to Homescreen)" als P0-Feature. Technisch ist davon bisher **nichts vorhanden**: kein Manifest, kein Service Worker, keine App-Icons (`git ls-files` findet nur die Leaflet-Marker). Wer die Seite heute auf dem Homescreen ablegt, bekommt ein Browser-Lesezeichen mit einem Screenshot-Icon — kein Vollbild, keine Marke.
+
+Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-Adressleiste gewinnt der Player-Screen rund 100px Höhe — Platz, der auf 360×640 direkt der Karte und dem Richtungspfeil zugutekommt. Dazu ein echtes Icon auf dem Homescreen statt eines Lesezeichens, das zwischen Tabs verloren geht.
+
+**Der Rahmen, den das PRD setzt, und der Konflikt darin:** Das PRD sagt „PWA-fähig" und zugleich „Kein Offline-Modus" als ausdrückliches Non-Goal. Beides gilt weiter. Dieses Feature macht die App **installierbar**, nicht offlinefähig — die App braucht zum Starten weiterhin Internet, genau wie heute.
+
+**Die eine Stelle, an der das nicht ohne Weiteres aufgeht:** Chrome/Android feuert `beforeinstallprompt` nur, wenn neben dem Manifest auch ein **Service Worker mit fetch-Handler** registriert ist. Ohne ihn gäbe es auf Android überhaupt keinen Installationsweg — und Android Chrome ist laut PRD eine der beiden Hauptplattformen. Der Service Worker dieses Features ist deshalb bewusst **minimal**: Er hält genau eine Datei vor, die Offline-Fallback-Seite. Alles andere geht ungefiltert ins Netz. Das ist die Eintrittskarte zur Installierbarkeit, kein Offline-Modus durch die Hintertür.
+
+**Warum die Fallback-Seite trotzdem sein muss:** Eine installierte App sieht aus wie eine echte App. Tippt ein Spieler draußen ohne Empfang auf das Icon und bekommt Chromes Dinosaurier-Fehlerseite, wirkt das Produkt kaputt — nicht das Netz. Eine eigene Seite im Geo-Quest-Look, die ehrlich sagt „Geo Quest braucht Internet zum Starten" und einen „Erneut versuchen"-Button anbietet, kostet wenig und rettet genau diesen Moment.
+
+**Ausgangsmaterial für die Icons:** Der Betreiber hat `public/assets/geoquest_pwaIcon.jpeg` geliefert — 1024×1024, markengetreu. Es ist als Quelle brauchbar, aber **nicht direkt einsetzbar** (siehe Product Decisions): Es trägt einen weißen Rand um eine bereits abgerundete Kachel, und der volle Schriftzug ist bei 48px unleserlich.
+
+## User Stories
+
+- Als **Spieler** möchte ich Geo Quest wie eine App auf meinem Homescreen haben, damit ich sie draußen mit einem Tap starte, statt im Browser nach dem Tab zu suchen.
+- Als **Spieler** möchte ich die Quest im Vollbild ohne Browser-Leiste spielen, damit Karte und Richtungspfeil den vollen Bildschirm bekommen.
+- Als **Ersteller** möchte ich Geo Quest ebenfalls installieren können, damit ich unterwegs schnell in meine Quests komme.
+- Als **Spieler**, der ohne Empfang auf das App-Icon tippt, möchte ich eine verständliche Meldung statt einer Browser-Fehlerseite sehen, damit ich weiß, dass mein Netz das Problem ist und nicht die App.
+- Als **Nutzer**, der die App nicht installieren will, möchte ich den Hinweis wegklicken können und in Ruhe gelassen werden, damit er mich nicht bei jedem Besuch stört.
+- Als **Betreiber** möchte ich, dass eine neue Version sofort bei allen installierten Nutzern ankommt, damit niemand mit einer veralteten App unterwegs ist, die er nicht per Adressleiste neu laden kann.
+
+## Out of Scope
+
+- **Caching von App-Shell, HTML, CSS, JS oder Schriften** — bewusst verworfen. Der Service Worker cacht **ausschließlich** die Offline-Fallback-Seite. Alles andere kommt bei jedem Aufruf aus dem Netz. Das hält das PRD-Non-Goal „Kein Offline-Modus" ein und vermeidet die Klasse von Fehlern, bei der Nutzer eine alte Version festhalten.
+- **Offline spielbare Quests** — Kartenkacheln (OSM) und Multimedia-Module (externe URLs) vorab laden wäre ein eigenes, großes Feature und widerspricht dem PRD direkt („Multimedia-Module brauchen Internetverbindung", „Kein Offline-Modus").
+- **Push-Benachrichtigungen** — erfordern Backend und Einwilligung; das PRD schließt ein Backend aus.
+- **Background Sync / periodische Hintergrundaktualisierung** — kein Anwendungsfall ohne Backend.
+- **App-Store-Veröffentlichung (TWA, Play Store, App Store)** — PRD-Non-Goal: „Keine native App (nur PWA)".
+- **Ein „Neue Version verfügbar"-Banner** — unnötig, weil der Service Worker sofort übernimmt und nichts außer der Fehlerseite hält (siehe Technical Decisions).
+- **Ein Menu-Eintrag „App installieren" im Burger-Menu** — verworfen; der Hinweis auf `/` und `/play` genügt, und das Menu trägt seit PROJ-1 bereits sieben Ziele in vier Gruppen.
+- **Installations-Hinweis im Creator-Bereich (`/create`, Editoren)** — der Ersteller arbeitet überwiegend am Desktop, wo Installation kaum Nutzen bringt. Installieren kann er trotzdem jederzeit über die Browser-Funktion.
+- **Installations-Hinweis während einer laufenden Quest** (`/play/[id]`, Navigation, Module, Outro) — analog zur Ko-fi-Regel des PRD: kein Hinweis im Spielverlauf.
+- **Screenshots im Manifest** (für die erweiterte Android-Installations-Ansicht) — nice-to-have, erfordert gepflegte Bildmaterialien und ist für die Installierbarkeit nicht nötig.
+- **Shortcuts im Manifest** (Direktsprung zu `/play` / `/create` per Icon-Longpress) — als spätere Ergänzung denkbar, nicht MVP-relevant.
+- **Querformat-Unterstützung** — das Manifest legt Portrait fest (siehe Product Decisions); Player-Screens sind nie für Querformat gestaltet worden.
+- **Ein Deinstallations- oder „Auf Update prüfen"-Weg in der App** — Sache des Betriebssystems.
+- **BUG-2 (16px-Schließen-X in Sheets) und BUG-9 (kein `:focus-visible` app-weit)** — vorbestehend, app-weit und unabhängig von diesem Feature.
+
+## Acceptance Criteria
+
+**Format:** Angenommen [Vorbedingung] / Wenn [Aktion] / Dann [Ergebnis]
+
+### Installierbarkeit
+
+- [ ] Angenommen ein Besucher ruft eine beliebige Seite der App auf, wenn der Browser das Dokument lädt, dann findet er ein verlinktes Web-App-Manifest, das Name, Kurzname, Start-URL, Anzeigemodus, Ausrichtung, Hintergrund-, Themenfarbe und Icons deklariert
+- [ ] Angenommen ein Nutzer öffnet die App in Chrome auf Android, wenn Manifest und Service Worker geladen sind, dann erfüllt die App die Installationsbedingungen des Browsers und ein Installationsweg wird angeboten
+- [ ] Angenommen ein Nutzer öffnet die App in Safari auf iOS, wenn er „Teilen → Zum Home-Bildschirm" wählt, dann wird die App mit dem Geo-Quest-Icon und dem Namen „Geo Quest" abgelegt
+- [ ] Angenommen die App wurde installiert, wenn der Nutzer sie über das Homescreen-Icon startet, dann öffnet sie im Vollbild ohne Browser-Adressleiste (`display: standalone`)
+- [ ] Angenommen die App wurde installiert, wenn sie startet, dann zeigt sie den Startscreen `/` mit beiden Mode-Cards und dem Burger-Menu
+- [ ] Angenommen die App läuft installiert, wenn der Nutzer das Gerät dreht, dann bleibt die Anzeige im Hochformat
+- [ ] Angenommen die App wurde installiert, wenn der Nutzer sie startet, dann sind seine im Browser angelegten Quests und Fortschritte vorhanden (gleicher Ursprung, gleicher localStorage)
+
+### App-Icons
+
+- [ ] Angenommen ein Nutzer hat die App installiert, wenn er seinen Homescreen betrachtet, dann sieht er ein Geo-Quest-Icon ohne weißen Rand und ohne sichtbare doppelte Abrundung
+- [ ] Angenommen das Betriebssystem beschneidet Icons zu Kreis oder Squircle (Android), wenn es das Geo-Quest-Icon maskiert, dann bleibt das Pin-Motiv vollständig und mittig sichtbar
+- [ ] Angenommen ein Nutzer betrachtet das Icon in kleiner Darstellung (etwa 48×48), wenn er es ansieht, dann ist das Pin-Motiv als solches erkennbar
+- [ ] Angenommen das Manifest wird geprüft, wenn seine Icon-Liste gelesen wird, dann enthält sie mindestens eine Grafik mit 192×192 und eine mit 512×512 sowie eine eigens als `maskable` gekennzeichnete Variante
+- [ ] Angenommen ein iOS-Nutzer legt die App ab, wenn das Icon gesetzt wird, dann greift ein `apple-touch-icon` (iOS wertet das Manifest-Icon nicht in allen Versionen aus)
+
+### Hinweis auf die Installation
+
+- [ ] Angenommen ein Nutzer besucht `/` oder `/play` in einem Browser, der die App installieren kann, und hat sie noch nicht installiert, wenn die Seite geladen ist, dann sieht er einen zurückhaltenden Hinweis, dass er Geo Quest als App installieren kann
+- [ ] Angenommen der Hinweis wird auf Android angezeigt, wenn der Nutzer den Installations-Button antippt, dann öffnet der Browser seinen nativen Installationsdialog
+- [ ] Angenommen der Hinweis wird auf iOS Safari angezeigt (wo es keinen nativen Dialog gibt), wenn der Nutzer ihn betrachtet, dann erklärt er in kurzen Worten den Weg „Teilen → Zum Home-Bildschirm"
+- [ ] Angenommen der Nutzer hat die App bereits installiert und ruft sie im Standalone-Modus auf, wenn `/` oder `/play` laden, dann erscheint **kein** Installations-Hinweis
+- [ ] Angenommen ein Nutzer sieht den Hinweis, wenn er ihn wegklickt, dann verschwindet er sofort und erscheint bei den nächsten Besuchen **30 Tage lang nicht wieder**
+- [ ] Angenommen ein Nutzer hat den Hinweis vor mehr als 30 Tagen weggeklickt und die App immer noch nicht installiert, wenn er `/` oder `/play` erneut besucht, dann wird ihm der Hinweis erneut angeboten
+- [ ] Angenommen ein Nutzer befindet sich in einer laufenden Quest (`/play/[id]`) oder im Creator (`/create` und Unterseiten), wenn er diese Screens betrachtet, dann erscheint **kein** Installations-Hinweis
+- [ ] Angenommen der Hinweis wird angezeigt, wenn seine Bedienelemente gemessen werden, dann ist jedes Tap-Ziel mindestens 44×44px groß und der Textkontrast erreicht mindestens 4.5:1
+- [ ] Angenommen der Hinweis erscheint auf `/`, wenn der Startscreen auf 360×640 betrachtet wird, dann bleiben Logo, Headline und beide Mode-Cards ohne Scrollen sichtbar (Kriterium aus PROJ-1 bleibt erfüllt)
+
+### Verhalten ohne Netz
+
+- [ ] Angenommen die App ist installiert und der Service Worker aktiv, wenn der Nutzer sie ohne Internetverbindung startet, dann sieht er eine Geo-Quest-eigene Seite mit der Aussage, dass die App eine Internetverbindung zum Starten braucht — nicht die Fehlerseite des Browsers
+- [ ] Angenommen der Nutzer sieht die Offline-Seite, wenn er den „Erneut versuchen"-Button antippt, dann versucht die App erneut zu laden
+- [ ] Angenommen der Nutzer sieht die Offline-Seite und stellt die Verbindung wieder her, wenn er „Erneut versuchen" antippt, dann startet die App normal
+- [ ] Angenommen die Offline-Seite wird angezeigt, wenn sie betrachtet wird, dann verspricht sie **nicht**, dass Quests offline spielbar seien
+
+### Aktualisierung
+
+- [ ] Angenommen eine neue Version wurde deployt, wenn ein Nutzer die installierte App das nächste Mal startet, dann erhält er die neue Version, ohne die App deinstallieren oder alle Fenster schließen zu müssen
+- [ ] Angenommen der Service Worker ist registriert, wenn eine beliebige Seite oder ein Asset angefragt wird, dann liefert er sie aus dem Netz aus und nicht aus einem Cache (einzige Ausnahme: die Offline-Fallback-Seite, wenn das Netz ausfällt)
+
+### Keine Regression
+
+- [ ] Angenommen die PWA-Metadaten wurden ergänzt, wenn alle sieben Routen aufgerufen werden, dann antworten sie weiterhin mit HTTP 200 und unverändertem Inhalt
+- [ ] Angenommen das Wurzel-Layout wurde geändert, wenn `/about`, `/anleitung`, `/impressum` und `/datenschutz` geprüft werden, dann sind ihre Metadaten, ihr JSON-LD und ihr Seitenrahmen unverändert
+- [ ] Angenommen der Service Worker ist aktiv, wenn ein Spieler eine Quest mit GPS, Karte und Multimedia-Modulen spielt, dann funktioniert alles wie zuvor (Kartenkacheln, externe Medien, Standortabfrage)
+- [ ] Angenommen ein Besucher ruft die Seite in einem Browser ohne Service-Worker-Unterstützung auf, wenn die App lädt, dann funktioniert sie vollständig wie bisher, nur ohne Installationsangebot
+- [ ] Angenommen die neuen Dateien werden ausgeliefert, wenn die Security-Header geprüft werden, dann sind sie unverändert aktiv
+
+## Edge Cases
+
+1. **Nutzer besucht die Seite in einem Browser ohne `beforeinstallprompt` und ohne iOS-Homescreen-Funktion** (z.B. Desktop-Firefox) → Es erscheint kein Hinweis. Die App funktioniert normal. Der Hinweis erscheint nur, wenn ein Installationsweg tatsächlich existiert.
+
+2. **Nutzer hat die App bereits installiert, besucht die Seite aber zusätzlich im normalen Browser-Tab** → Der Browser meldet die App in der Regel als bereits installiert (`getInstalledRelatedApps` bzw. ausbleibendes `beforeinstallprompt`); dann erscheint kein Hinweis. Lässt sich das nicht sicher feststellen, ist ein einmalig angezeigter und wegklickbarer Hinweis hinnehmbar — er wird nicht erzwungen erneut gezeigt.
+
+3. **Nutzer bricht den nativen Installationsdialog ab** → Der Hinweis verschwindet trotzdem und gilt für 30 Tage als weggeklickt. Begründung: Wer aktiv abbricht, hat eine Entscheidung getroffen; ihn im selben Besuch erneut zu fragen wäre aufdringlich.
+
+4. **localStorage ist blockiert oder voll** (privater Modus, Speicher erschöpft) → Der Hinweis lässt sich trotzdem wegklicken und verschwindet für die laufende Sitzung; beim nächsten Besuch kann er erneut erscheinen. Kein Fehler, keine Fehlermeldung — genauso verhält sich heute schon der Erststart-Dialog.
+
+5. **Netz fällt mitten in einer laufenden Quest aus** (nicht beim Start) → Die Offline-Seite erscheint **nicht**. Die App bleibt geladen, Quest-Daten liegen lokal vor, das Spiel läuft weiter. Nur Kartenkacheln und externe Medien fehlen — unverändertes Verhalten wie ohne PWA.
+
+6. **Nutzer startet die installierte App ohne Netz, stellt die Verbindung her, tippt aber nicht „Erneut versuchen"** → Er bleibt auf der Offline-Seite, bis er den Button benutzt oder die App neu startet. Die Seite lädt nicht von selbst neu.
+
+7. **Standortfreigabe in der installierten App** → Die installierte PWA kann vom Betriebssystem als eigener Kontext behandelt werden; die Standortfreigabe muss dann einmalig erneut erteilt werden. Das ist erwartetes Plattformverhalten. Wichtig ist, dass der bestehende Permission-Screen aus PROJ-3 dabei greift und kein stiller Ausfall entsteht.
+
+8. **Alte Service-Worker-Version bleibt nach einem Deploy aktiv** → Ausgeschlossen durch sofortige Übernahme (siehe Technical Decisions). Der Nutzer bekommt beim nächsten Start die aktuelle Version, ohne etwas zu tun.
+
+9. **Nutzer installiert die App aus einer Unterseite heraus** (z.B. `/play`) → Die installierte App startet trotzdem immer auf `/`, weil die Start-URL im Manifest festgelegt ist.
+
+10. **Icon-Motiv wird vom Betriebssystem stark beschnitten** (kreisrunde Maske auf manchen Android-Launchern) → Deshalb die eigene `maskable`-Variante mit Sicherheitsrand. Innerhalb der inneren 80% des Bildes steht nichts, was verloren gehen darf.
+
+11. **Nutzer hat die App installiert und deinstalliert sie wieder** → Beim nächsten Besuch im Browser kann der Hinweis wieder erscheinen, sofern die 30-Tage-Frist abgelaufen ist. Kein Sonderfall.
+
+12. **Service Worker kann nicht registriert werden** (Browser blockiert ihn, unsicherer Kontext, Nutzer hat ihn abgeschaltet) → Die App funktioniert vollständig weiter; nur die Offline-Seite und der Android-Installationsweg entfallen. Kein Fehler für den Nutzer sichtbar.
+
+13. **Erststart-Dialog (PROJ-1) und Installations-Hinweis treffen auf demselben Screen zusammen** → Sie dürfen sich nicht überlagern. Der Erststart-Dialog hat Vorrang; der Installations-Hinweis wird erst sichtbar, wenn der Dialog geschlossen ist.
+
+14. **Nutzer öffnet die App über einen geteilten `/play/[id]`-Link auf einem Gerät, auf dem sie installiert ist** → Verhalten ist plattformabhängig (Browser oder App). Kein Anspruch dieses Features; der Link muss lediglich weiterhin funktionieren.
+
+## Technical Requirements
+
+- **Kein Backend, keine neuen Netzabhängigkeiten** — alle neuen Dateien werden von der eigenen Domain ausgeliefert
+- **Kein neues Laufzeit-Paket**, sofern vermeidbar — das Projekt hält seine Abhängigkeiten bewusst klein
+- **Die Startzeit darf nicht steigen** — PRD-Vorgabe: < 2s Ladezeit. Die Info-Seiten sind heute statisch (0,07–0,09s); das muss so bleiben
+- **Der Service Worker cacht ausschließlich die Offline-Fallback-Seite** — kein HTML, CSS, JS, keine Schriften, keine Kartenkacheln, keine Medien
+- **Der Service Worker übernimmt bei jedem Deploy sofort die Kontrolle** — kein Warten auf geschlossene Tabs
+- **HTTPS** — Service Worker laufen nur im sicheren Kontext; in der Produktion durch Vercel gegeben, lokal über `localhost`
+- **Browser-Support:** Chrome (Android/Desktop) und Safari (iOS/macOS) müssen den Installationsweg bieten; Firefox und Edge müssen die App **fehlerfrei ohne** Installationsangebot darstellen
+- **Kontrast mindestens 4.5:1 und Tap-Ziele mindestens 44×44px** für alle neuen Bedienelemente (PRD/WCAG-AA-Vorgabe) — auch auf der Offline-Seite
+- **Die Offline-Seite kommt ohne JavaScript-Framework aus** — sie muss funktionieren, wenn die App gar nicht geladen werden konnte, und darf deshalb nicht von React oder Next.js abhängen
+- **Icons als PNG**, abgeleitet aus `public/assets/geoquest_pwaIcon.jpeg`; das Quellbild bleibt im Repository
+- **Das `maskable`-Icon hält die inneren 80% als Sicherheitszone frei** (Android-Maskierung)
+- **Die bestehenden Security-Header bleiben unverändert** und müssen auch für Manifest, Service Worker und Icons gelten
+
+## Open Questions
+
+- [ ] Lässt sich der Pin sauber aus `geoquest_pwaIcon.jpeg` freistellen, oder braucht es eine Zulieferung des Betreibers mit transparentem Hintergrund? Erst beim tatsächlichen Freistellen zu beurteilen (JPEG-Artefakte an den Kanten).
+- [ ] Soll die Themenfarbe (Statusleiste der installierten App) bei `#0B0F12` bleiben oder das Teal aufnehmen? Vorschlag: Deep Black beibehalten, damit die Statusleiste nahtlos in den App-Hintergrund übergeht. Am echten Gerät zu beurteilen.
+- [ ] Verhält sich die Standortfreigabe in der installierten iOS-PWA wie im Safari-Tab, oder muss sie neu erteilt werden? (Edge Case 7) — nur auf einem echten iPhone abschließend zu klären; für die Korrektheit des Features unkritisch, weil der Permission-Screen aus PROJ-3 greift.
+- [ ] Bleibt es dauerhaft bei „keine Screenshots im Manifest"? Sie würden die Android-Installations-Ansicht aufwerten, erfordern aber gepflegtes Bildmaterial.
+
+## Decision Log
+
+### Product Decisions
+
+| Decision | Rationale | Date |
+|----------|-----------|------|
+| Nur Installierbarkeit, **kein** Offline-Modus | Das PRD führt „Kein Offline-Modus" als ausdrückliches Non-Goal und zugleich „PWA-fähig" als Constraint. Beides ist erfüllbar: Installierbarkeit ist Metadaten plus Icons, Offlinefähigkeit wäre eine Caching-Strategie, die jeden Screen berührt. | 2026-09-18 |
+| **Doch** ein minimaler Service Worker | Chrome/Android installiert nur mit registriertem Service Worker mit fetch-Handler. Ohne ihn gäbe es auf einer der beiden PRD-Hauptplattformen gar keinen Installationsweg — das Feature verfehlte sein Ziel. Er cacht nichts außer der Fehlerseite, das Non-Goal bleibt gewahrt. | 2026-09-18 |
+| Eigene Offline-Fallback-Seite statt Browser-Fehlerseite | Eine installierte App sieht aus wie eine echte App. Chromes Dinosaurier lässt das Produkt kaputt wirken, nicht das Netz. Genau der Moment — draußen, wenig Empfang, Tap aufs Icon — ist der, für den die App existiert. | 2026-09-18 |
+| Hinweis nur auf `/` und `/play` | Die beiden Screens vor dem Loslaufen. Nicht im Spielverlauf (analog zur Ko-fi-Regel des PRD: „kein Hinweis im Spielverlauf") und nicht im Creator, der überwiegend am Desktop läuft. | 2026-09-18 |
+| Hinweis ist dezent und wegklickbar, kein Modal | Das Projekt tritt durchgehend zurückhaltend auf — keine Werbung, keine Bezahlschranke, Ko-fi nur am Rand. Ein aufdringliches Install-Interstitial widerspräche dieser Haltung. | 2026-09-18 |
+| Weggeklickt = 30 Tage Ruhe, dann erneut | Lang genug, um nicht zu nörgeln; kurz genug, dass jemand, der die App ein zweites Mal für einen Ausflug nutzt, das Angebot noch einmal bekommt. Bewusst abweichend vom Erststart-Dialog, der dauerhaft verschwindet — der ist eine Pflichtinformation, das hier ein Angebot. | 2026-09-18 |
+| Schwerpunkt Spieler, Ersteller aber nicht ausgeschlossen | Der Vollbildgewinn (~100px) nützt dem Player-Screen am meisten. Der Ersteller kann jederzeit über die Browser-Funktion installieren, bekommt nur keinen Hinweis dazu. | 2026-09-18 |
+| Icon zeigt **nur den Pin**, nicht den vollen Schriftzug | Bei 48×48 auf dem Homescreen wird „GEO QUEST" unleserlich. Das Design System sieht den Pin ohnehin ausdrücklich als „Standalone App-Icon" vor. Der Produktname steht auf dem Homescreen als Text unter dem Icon — er muss nicht zusätzlich im Bild stehen. | 2026-09-18 |
+| `geoquest_pwaIcon.jpeg` als Quelle, nicht als fertiges Icon | 1024×1024 und markengetreu, aber mit weißem Rand um eine bereits abgerundete Kachel: iOS und Android runden selbst nochmal ab, das Ergebnis wäre ein Icon im Icon mit weißen Ecken. Der Pin wird daraus freigestellt und randlos auf Deep Black gesetzt. | 2026-09-18 |
+| Manifest erzwingt Hochformat | Die App ist Mobile-First auf 360–430px gebaut; Kompass, Karte und Module sind nie für Querformat gestaltet worden. Querformat zuzulassen hieße, alle Player-Screens dafür zu prüfen — Aufwand, den keine Spec vorsieht. | 2026-09-18 |
+| Start-URL ist `/`, nicht `/play` | Die installierte App verhält sich wie die Website. `/` trägt seit BUG-10 das vollständige Burger-Menu und beide Mode-Cards; von dort sind Play und Create je einen Tap entfernt. Ein Start auf `/play` würde den Creator in der installierten App verstecken, obwohl die Installation laut PRD auch ihm offensteht. | 2026-09-18 |
+| Kein Menu-Eintrag „App installieren" | Das Burger-Menu trägt bereits sieben Ziele in vier Gruppen. Ein achter Eintrag, der auf den meisten Geräten nichts tun kann (iOS bietet keinen programmatischen Weg), wäre mehr Last als Nutzen. | 2026-09-18 |
+| Offline-Seite verspricht ausdrücklich **keine** Offline-Fähigkeit | Sie sagt, dass Internet zum Starten nötig ist. Eine Formulierung wie „du bist offline" könnte als „sonst ginge es auch offline" gelesen werden — und würde ein Versprechen erzeugen, das das Produkt nicht hält. | 2026-09-18 |
+
+### Technical Decisions
+<!-- Added by /architecture -->
+| Decision | Rationale | Date |
+|----------|-----------|------|
+| Service Worker übernimmt sofort (`skipWaiting` + `clients.claim` o.ä.) | Die installierte App hat keine Adressleiste — der Nutzer kann ein hängengebliebenes Update nicht selbst erzwingen. Da nichts außer der Fehlerseite gecacht wird, ist die sofortige Übernahme risikofrei; ein „Neue Version"-Banner wäre unnötige Komplexität. | 2026-09-18 |
+
+---
+<!-- Sections below are added by subsequent skills -->
+
+## Tech Design (Solution Architect)
+_To be added by /architecture_
+
+## QA Test Results
+_To be added by /qa_
+
+## Deployment
+_To be added by /deploy_
