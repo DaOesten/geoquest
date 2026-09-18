@@ -24,21 +24,22 @@ test.describe("Seite & Navigation", () => {
     ).toBeVisible();
   });
 
-  test("/anleitung lädt direkt mit Ablauf und vollständiger Prompt-Vorlage", async ({ page }) => {
+  // PROJ-14: Die Anleitung ist angekündigt, nicht ausgeliefert. Der volle
+  // Ablauf wird in tests/proj-14-anleitung-freigeschaltet.spec.ts geprüft.
+  test("/anleitung lädt direkt als Ankündigung", async ({ page }) => {
     await page.goto("/anleitung");
 
-    await expect(page.getByRole("heading", { name: "So geht es" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Prompt kopieren" })).toBeVisible();
-    // Der Prompt steht als Text auf der Seite, nicht hinter einem Klick
-    await expect(page.getByText("Du hilfst mir, eine Schnitzeljagd")).toBeVisible();
-    await expect(page.getByText("## Aufbau der JSON-Datei")).toBeVisible();
+    await expect(page.locator("main").getByText("Bald verfügbar").first()).toBeVisible();
+    await expect(page.getByText("Was dabei herauskommen wird")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "So geht es" })).toHaveCount(0);
   });
 
-  test("Verweis auf /about führt zur Anleitung", async ({ page }) => {
+  // PROJ-14: Der sekundäre Hero-CTA entfällt, solange die Anleitung nur
+  // angekündigt ist — ein CTA, der auf "gibt's noch nicht" führt, beschädigt
+  // den Conversion-Weg. Der Weg zur Anleitung läuft übers Burger-Menu.
+  test("/about führt keinen KI-CTA mehr", async ({ page }) => {
     await page.goto("/about");
-    // Seit 2026-09-09 heißt der sekundäre Hero-CTA „Mit KI erstellen".
-    await page.getByRole("link", { name: /Mit KI erstellen/i }).click();
-    await expect(page).toHaveURL(/\/anleitung$/);
+    await expect(page.getByRole("link", { name: /Mit KI erstellen/i })).toHaveCount(0);
   });
 
   test("„Zur App\" führt zum Start-Screen", async ({ page }) => {
@@ -50,12 +51,12 @@ test.describe("Seite & Navigation", () => {
     await expect(page.getByRole("heading", { name: "Bist du bereit" })).toBeVisible();
   });
 
-  test("Creator-Empty-State verlinkt auf die Anleitung", async ({ page }) => {
+  // PROJ-14: entfällt wie der Hero-CTA. Es bleiben "Neue Quest erstellen"
+  // und "Quest importieren" — beide funktionieren vollständig.
+  test("Creator-Empty-State führt keinen KI-Link mehr", async ({ page }) => {
     await page.goto("/create");
-    const link = page.getByRole("link", { name: /Quest mit KI bauen/i });
-    await expect(link).toBeVisible();
-    await link.click();
-    await expect(page).toHaveURL(/\/anleitung$/);
+    await expect(page.getByRole("link", { name: /Quest mit KI bauen/i })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /Neue Quest erstellen/i })).toBeVisible();
   });
 
   test("Root-Route bleibt der unveränderte Mode-Switch aus PROJ-1", async ({ page }) => {
@@ -94,6 +95,15 @@ test.describe("Seite & Navigation", () => {
 });
 
 test.describe("Prompt-Vorlage", () => {
+  // PROJ-14: Diese Prüfungen beschreiben die ausgelieferte Anleitung. Solange
+  // sie nur angekündigt ist, gibt es nichts zu prüfen — beim Freischalten
+  // müssen sie wieder greifen, deshalb bleiben sie hier stehen statt gelöscht
+  // zu werden. Der Lauf mit umgelegtem Schalter: npm run test:e2e:freigeschaltet
+  test.skip(
+    process.env.ANLEITUNG_FREIGESCHALTET !== "1",
+    "Anleitung ist angekündigt, nicht ausgeliefert (PROJ-14)"
+  );
+
   test("Prompt ist sichtbar und markierbar", async ({ page }) => {
     await page.goto("/anleitung");
 
@@ -148,6 +158,15 @@ test.describe("Prompt-Vorlage", () => {
 });
 
 test.describe("Anleitung & Erwartungsmanagement", () => {
+  // PROJ-14: Diese Prüfungen beschreiben die ausgelieferte Anleitung. Solange
+  // sie nur angekündigt ist, gibt es nichts zu prüfen — beim Freischalten
+  // müssen sie wieder greifen, deshalb bleiben sie hier stehen statt gelöscht
+  // zu werden. Der Lauf mit umgelegtem Schalter: npm run test:e2e:freigeschaltet
+  test.skip(
+    process.env.ANLEITUNG_FREIGESCHALTET !== "1",
+    "Anleitung ist angekündigt, nicht ausgeliefert (PROJ-14)"
+  );
+
   test("Import-Schritt erklärt den Weg über die .json-Datei", async ({ page }) => {
     await page.goto("/anleitung");
     await expect(page.getByText(/Endung \.json/)).toBeVisible();
@@ -174,6 +193,15 @@ test.describe("Anleitung & Erwartungsmanagement", () => {
 });
 
 test.describe("Fehlerfälle & Troubleshooting", () => {
+  // PROJ-14: Diese Prüfungen beschreiben die ausgelieferte Anleitung. Solange
+  // sie nur angekündigt ist, gibt es nichts zu prüfen — beim Freischalten
+  // müssen sie wieder greifen, deshalb bleiben sie hier stehen statt gelöscht
+  // zu werden. Der Lauf mit umgelegtem Schalter: npm run test:e2e:freigeschaltet
+  test.skip(
+    process.env.ANLEITUNG_FREIGESCHALTET !== "1",
+    "Anleitung ist angekündigt, nicht ausgeliefert (PROJ-14)"
+  );
+
   test("Troubleshooting nennt die häufigsten Import-Ursachen", async ({ page }) => {
     await page.goto("/anleitung");
 
@@ -195,7 +223,7 @@ test.describe("Teilen & Auffindbarkeit", () => {
     // Der OG-Titel von /about zieht seit Refinement 4 die neue Positionierung
     // nach; „Schnitzeljagd" bleibt im <title> für die Suche (dort geprüft).
     ["/about", "die reale Welt wird zum Spielfeld"],
-    ["/anleitung", "Quest mit KI erstellen"],
+    ["/anleitung", "Quest mit KI erstellen — bald verfügbar"],  // PROJ-14
   ] as const) {
     test(`${path} liefert eigene Open-Graph-Daten`, async ({ page }) => {
       await page.goto(path);

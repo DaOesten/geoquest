@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { PenTool, Plus, Sparkles, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { ANLEITUNG_VERFUEGBAR } from "@/lib/app-nav";
 import { AppHeader } from "@/components/app-header";
 import { CreatorBackdrop } from "@/components/creator-backdrop";
 import { QuestImportButton } from "@/components/quest-import-button";
@@ -158,13 +159,18 @@ export default function CreatePage() {
                 Neue Quest erstellen
               </Button>
               <QuestImportButton variant="light" onImportSuccess={refreshQuests} />
-              <Link
-                href="/anleitung"
-                className="flex items-center gap-2 h-11 px-4 text-tech text-[11px] tracking-[0.08em] text-primary transition-colors duration-base ease-gq hover:text-primary/70"
-              >
-                <Sparkles className="w-4 h-4" />
-                Quest mit KI bauen
-              </Link>
+              {/* Entfällt, solange die KI-Anleitung nur angekündigt ist
+                  (PROJ-14). Es bleiben "Neue Quest erstellen" und "Quest
+                  importieren" — beide funktionieren vollständig. */}
+              {ANLEITUNG_VERFUEGBAR && (
+                <Link
+                  href="/anleitung"
+                  className="flex items-center gap-2 h-11 px-4 text-tech text-[11px] tracking-[0.08em] text-primary transition-colors duration-base ease-gq hover:text-primary/70"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Quest mit KI bauen
+                </Link>
+              )}
             </div>
           </div>
         ) : (

@@ -10,6 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import { InfoPageShell } from "@/components/info-page-shell";
+import { ANLEITUNG_VERFUEGBAR } from "@/lib/app-nav";
 import {
   Accordion,
   AccordionContent,
@@ -124,9 +125,16 @@ const FAQ = [
       "Die Quests richten sich vor allem an Kinder und Jugendliche von etwa 8 bis 16 Jahren, aber niemand ist zu alt um eine Quest zu spielen. Erstellt werden sie meist von Eltern, Lehrkräften oder Jugendleitern.",
   },
   {
-    question: "Wie lange dauert das Erstellen?",
+    // Frage und Antwort umformuliert (PROJ-14): Die alte Fassung beschrieb die
+    // KI-Anleitung als verfügbaren Weg — zum Launch gibt es sie nicht. Keine
+    // Zeitangabe mehr (Betreiber-Entscheidung): Die bisherige halbe Stunde galt
+    // mit KI-Hilfe, und manuell hängt die Dauer stark vom Umfang ab. Eine
+    // erfundene Zahl enttäuscht beim ersten Versuch. Die Frage zielt deshalb
+    // neu auf das WAS statt auf das WIE LANGE — eine Frage nach der Dauer, die
+    // keine Dauer nennt, wirkt ausweichend.
+    question: "Wie erstelle ich eine Quest?",
     answer:
-      "Mit der KI-Anleitung entsteht ein erster Entwurf in wenigen Minuten. Danach setzt man die Ziele auf der Karte — insgesamt etwa eine halbe Stunde.",
+      "Im Creator: Quest anlegen, Ziele auf der Karte setzen und zu jedem Ziel Rätsel, Aufgaben oder Medien hinzufügen. Danach exportierst du sie als Datei und teilst sie.",
   },
   {
     // Fängt auf, was mit der gestrichenen Sektion „Was drin steckt" wegfällt:
@@ -248,13 +256,23 @@ export default function AboutPage() {
               Quest erstellen
               <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link
-              href="/anleitung"
-              className="flex items-center justify-center gap-2 h-12 px-7 rounded-pill border border-gq-teal text-gq-teal text-tech text-xs tracking-[0.08em] transition-all duration-base ease-gq hover:bg-gq-teal/10 active:scale-[0.96]"
-            >
-              <Sparkles className="w-4 h-4" />
-              Mit KI erstellen
-            </Link>
+            {/* Entfällt, solange die KI-Anleitung nur angekündigt ist
+                (PROJ-14). Ein Call-to-Action ist ein Versprechen auf eine
+                Handlung — führt er auf "gibt's noch nicht", beschädigt er den
+                Conversion-Weg an der teuersten Stelle der Seite. Refinement 4
+                hat die Hero-CTAs eigens auf /create gezogen, um diesen Weg zu
+                verkürzen; ihn jetzt mit einer Sackgasse zu teilen, wäre ein
+                Rückschritt. Nebeneffekt: Der Hero wird kürzer, was BUG-7 (CTA
+                über dem Falz) weiter entschärft. */}
+            {ANLEITUNG_VERFUEGBAR && (
+              <Link
+                href="/anleitung"
+                className="flex items-center justify-center gap-2 h-12 px-7 rounded-pill border border-gq-teal text-gq-teal text-tech text-xs tracking-[0.08em] transition-all duration-base ease-gq hover:bg-gq-teal/10 active:scale-[0.96]"
+              >
+                <Sparkles className="w-4 h-4" />
+                Mit KI erstellen
+              </Link>
+            )}
           </div>
         </>
       }

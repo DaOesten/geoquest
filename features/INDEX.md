@@ -29,6 +29,7 @@
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Roadmap | — | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Approved | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
 <!-- Add features above this line -->
 
@@ -135,7 +136,7 @@ Der kritische Regressionspunkt ist in Production bestätigt: `eyebrow` wurde in 
 ## Abgeschlossen: Refinement 4 (Marketing-Landingpage)
 Deployt am 2026-09-09 (Tag `v1.25.0-PROJ-13`). Offen bleiben zwei Low-Befunde aus der QA, die den gesamten Info-Bereich betreffen und ein eigenes Refinement wert wären: BUG-8 (Sektions-Kicker als `h2`, die echten Titel als `h3` — Screenreader hören das dekorative Label als Überschrift) und BUG-9 (kein `:focus-visible` in `globals.css`, app-weit).
 
-## Next Available ID: PROJ-14
+## Next Available ID: PROJ-15
 
 ## Offenes Refinement: BUG-6 — falsche iOS-Erkennung beim Kompass (2026-09-07)
 **PROJ-3** geht von Deployed zurück auf In Progress. BUG-6 stand als vermutliches Testumgebungs-Artefakt in den Notizen ("Playwright liefert unter Chrome keinen Fix, `position` bleibt null"). Auf echtem Chrome 152 reproduziert und instrumentiert — **diese Diagnose ist widerlegt**: Die Position liegt vor, die Distanz rendert mit `12514m`, der Nachbartest im selben Block besteht.
@@ -228,6 +229,53 @@ BUG-7 bleibt behoben (CTA auf 1366×768 und 1440×900 über dem Falz). Die Nachb
 
 PROJ-13 geht dafür von Deployed zurück auf In Progress. PROJ-1 stand bereits auf In Progress (die QA des Navigations-Refinements vom 2026-09-06 steht weiterhin aus) und bleibt dort.
 
+
+## Offenes Feature: PROJ-14 — KI-Anleitung wird zu „Coming soon“ (2026-09-17)
+Der Betreiber hat entschieden, **die App ohne die KI-Anleitung zu launchen**, die Funktion aber anzukündigen. Die Seite `/anleitung` ist fertig gebaut und deployt (Tag `v1.27.0-PROJ-13`) — sie wird nicht gelöscht, sondern ausgeblendet.
+
+Der Grund für ein eigenes Feature statt eines Refinements: Die Anleitung ist an **fünf Stellen** eingewoben, drei davon werblich — Burger-Menu (PROJ-1), Hero-CTA auf `/about` und Leeransicht von `/create` (PROJ-6), dazu der einzige Textlink im Desktop-Header aller Info-Seiten. Das reicht über drei bestehende Features und wird später als Ganzes zurückgenommen.
+
+Entschieden: Route bleibt erreichbar und zeigt eine Ankündigung (HTTP 200 statt 404, damit geteilte Links und QR-Codes nicht ins Leere laufen); der Menu-Eintrag bleibt mit „Bald“-Kennzeichnung klickbar; die beiden werblichen CTAs entfallen ersatzlos; der Header-Textlink entfällt ohne Ersatz. Kein Datum, kein Zeitraum — ein verpasster Termin auf einer Live-Seite kostet mehr, als die Angabe einbringt. Die Ankündigung zeigt einen kurzen Ausblick inkl. der vorhandenen vier „Was dabei herauskommt“-Punkte, aber **weder Prompt noch Schritte**.
+
+Mitgenommen: Die FAQ-Antwort „Wie lange dauert das Erstellen?“ auf `/about` beschreibt heute die KI-Anleitung als verfügbaren Weg und wird auf das manuelle Erstellen umgeschrieben. Da die FAQ-Konstante zugleich das `FAQPage`-JSON-LD speist, zieht die strukturierte Angabe automatisch mit.
+
+**Architektur am 2026-09-17 entworfen.** Die Schaltstelle ist ein fester Wahrheitswert in `src/lib/app-nav.ts` — der Datei, die heute schon Burger-Menu und Info-Kopfzeile gemeinsam speist. Auf Wunsch des Betreibers steuert er **alle fünf** Stellen, nicht nur die von der Spec geforderten zwei: Freischalten kostet damit eine Zeile statt eines Wiedereinbaus aus der Git-History. Preis ist Code für die entfernten CTAs, der zum Launch nicht ausgeführt wird.
+
+Bewusst keine Umgebungsvariable: Die betroffenen Seiten sind statisch (0,07–0,09 s) und blieben es nur mit einem festen Wert. Nebeneffekt, der ein Spec-Kriterium erfüllt — der Prompt landet gar nicht erst im ausgelieferten HTML, statt nur versteckt zu werden. Kein neues Paket; die vorhandene `badge.tsx` wird bewusst **nicht** genutzt (gefüllte Pille, zu kräftig neben der kursiven Menu-Schrift). Kein Backend, keine gespeicherten Daten.
+
+Zu beachten in `/frontend`: Die bestehenden Suiten prüfen `/anleitung` an 41 Stellen über sechs Dateien — diese Tests werden absichtlich falsch und sind auf den neuen Zustand zu ziehen, nicht zu löschen.
+
+**Frontend umgesetzt am 2026-09-17.** Sechs Dateien, kein neues Paket, keine neue Komponente, keine neue Route. `info-page-shell.tsx` musste entgegen der Architektur-Annahme **gar nicht** angefasst werden: Es rendert `HEADER_NAV_LINKS` in einer Schleife, eine leere Liste ergibt von selbst keine Ausgabe — die Kopfzeile bleibt damit auch Server-Komponente.
+
+Der Kern ist gemessen statt behauptet: **Der Prompt ist nicht ausgeliefert, nicht bloß versteckt** — 0 Treffer im gebauten HTML von `/anleitung` und 0 im gesamten Client-Bundle. Die Kennzeichnung im Menu misst `rgb(160,168,171)`, 11px, rechtsbündig; das Tap-Ziel bleibt 231×48px. `/anleitung` bleibt statisch (`○`), alle sieben Routen HTTP 200. Das `FAQPage`-JSON-LD zog automatisch mit, weil die FAQ-Konstante beides speist.
+
+**Der freigeschaltete Zustand ist geprüft** (Betreiber-Entscheidung): `npm run test:e2e:freigeschaltet` legt den Schalter um, baut, testet und stellt ihn zurück — auch bei Abbruch. **22/22 auf beiden Engines.** Damit ist die zentrale Behauptung belegt: Eine Zeile bringt Seite, Prompt, Schritte, Troubleshooting, beide CTAs und den Header-Link gleichzeitig zurück.
+
+Per Gegenprobe geschärft: Mit entferntem Badge fallen genau die 2 zuständigen Tests; lässt man `HEADER_NAV_LINKS` den Schalter ignorieren — der „stille Fehler", den das Feature verhindern soll — fallen 4, darunter der Kopfzeilen-Test.
+
+Die 41 bestehenden Assertions sind **gezogen, nicht gelöscht**: 11 Tests zu den Anleitungs-Inhalten hängen jetzt per `test.skip` am Schalter (sie müssen beim Freischalten wieder greifen), der Rest prüft den neuen Zustand. Zwei Stellen fielen erst im Lauf auf — `getByRole("link", { name: "Anleitung", exact: true })` trifft nicht mehr, weil der Eintrag „AnleitungBald" heißt.
+
+**Drei Fehler in den Tests selbst gefunden und behoben** (das Produkt war jeweils richtig): ein mehrdeutiger Locator, eine Jahres-Regex, die auf dem Copyright-Jahr der Fußzeile ansprang, und `nav a`, das die Fußzeilen-Navigation mitzählte (11 statt 7). Dazu zwei Messfehler in der Browser-Sonde, die wie Produktfehler aussahen.
+
+Suiten: **Chrome 152: 405 passed / 22 skipped / 0 failed. Mobile Safari: 404 passed / 23 skipped / 0 failed. Freigeschalteter Zustand: 22/22 auf beiden Engines. Unit 186/186.** Build und Lint sauber. Neu: 27 Tests in `proj-14-anleitung-coming-soon.spec.ts`, 11 in `proj-14-anleitung-freigeschaltet.spec.ts`.
+
+Gelaufen über `playwright.prod.config.ts` (Chrome + Production-Build) — die reguläre Config zeigt weiterhin auf das kaputte Chromium-Binary.
+
+**QA am 2026-09-18 abgeschlossen: 25/25 Acceptance Criteria erfüllt, keine Bugs, Production-Ready.**
+
+Die beiden zentralen Behauptungen habe ich **nicht** aus der Frontend-Phase übernommen, sondern unabhängig nachgemessen. Erstens: Der Prompt ist nicht ausgeliefert, nicht bloß versteckt — live vom Server geprüft, dazu **alle 15 JS-Dateien einzeln abgerufen**, die die Seite lädt, und das gesamte `static`-Verzeichnis; kein Treffer. Zweitens: Ich habe den Schalter selbst umgelegt, gebaut und gemessen — die volle Anleitung kommt zurück, die Ankündigung verschwindet, alle drei Einstiegspunkte sind wieder da; danach zurückgesetzt und per `diff` als byte-identisch bestätigt.
+
+Kontrast gemessen statt geschätzt: Die Kennzeichnung erreicht **8.02:1 (Dark)** und **5.30:1 (Light)**. Der Light-Wert ist der interessante — der naheliegende feste Hex-Wert `text-gq-grey` hätte dort **2.29:1** ergeben und WCAG AA verfehlt, exakt die als BUG-1 dokumentierte Falle. Die Token-Wahl hat einen latenten Wiederholungsfehler vermieden.
+
+**BUG-7 bleibt behoben** — weil der Hero einen Button verliert, auf allen elf Referenz-Viewports nachgemessen (320×568 bis 1920×1080), überall vollständig über dem Falz. Edge Cases 3, 4, 5, 6, 7, 9 und 10 geprüft; zusätzlich die Tastaturbedienung, die in der Spec nicht stand.
+
+**Security-Audit ohne Befund:** Header aktiv, keine Eingabefelder, keine Secrets in den Bundles, Markup in Route und Query-String wird nicht reflektiert, als externer Host nur Ko-fi mit `noopener noreferrer`.
+
+Per Gegenprobe geschärft: Eine wieder eingebaute Zeitangabe in der FAQ lässt 2 Tests fallen; lässt man die Seite den Schalter ignorieren — die volle Anleitung ginge live, während die App sie ankündigt — fallen 6. Die 22 bzw. 23 Skips sind nachvollzogen und keine stillgelegten Tests.
+
+Suiten gegen den Production-Build: **Chrome 152: 405 passed / 22 skipped / 0 failed. Mobile Safari: 404 passed / 23 skipped / 0 failed. Freigeschalteter Zustand: 22/22 auf beiden Engines. Unit 186/186.**
+
+**Drei Beobachtungen ohne Bug-Status:** „Quest importieren" misst 42px statt der geforderten 44px — **vorbestehend aus PROJ-6**, in dieser Session unverändert, aber ein eigenes Refinement wert (zusammen mit BUG-2). 320×568 hat weiterhin nur 27px Luft unter dem CTA (unverändert). Und die lokalen Konsolenfehler stammen von Vercel Analytics, das nur in Production existiert — sie treten auf allen Routen auf, auch auf unveränderten. PROJ-13 und PROJ-1 bleiben auf Deployed — dieses Feature ändert sie, ohne ihren Stand zurückzusetzen.
 
 ## Abgeschlossen: QA des Navigations-Refinements (2026-09-10)
 Die seit dem 2026-09-06 offene QA von **PROJ-1** ist nachgeholt — der Punkt, der in mehreren Einträgen oben als „QA steht aus" vermerkt war.

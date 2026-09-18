@@ -89,10 +89,11 @@ test.describe("Hero", () => {
     await expect(page).toHaveURL(/\/create$/);
   });
 
-  test("sekundärer CTA führt zur KI-Anleitung", async ({ page }) => {
+  // PROJ-14: Der sekundäre CTA entfällt, solange die Anleitung nur
+  // angekündigt ist.
+  test("kein sekundärer KI-CTA im Hero", async ({ page }) => {
     await page.goto("/about");
-    await page.getByRole("link", { name: /Mit KI erstellen/i }).click();
-    await expect(page).toHaveURL(/\/anleitung$/);
+    await expect(page.getByRole("link", { name: /Mit KI erstellen/i })).toHaveCount(0);
   });
 
   test("Abschluss-CTA trägt die neue Überschrift und führt nach /create", async ({
@@ -234,7 +235,7 @@ test.describe("FAQ nach dem Refinement", () => {
       /Was kostet Geo Quest/,
       /Brauche ich ein Benutzerkonto/,
       /Für welches Alter/,
-      /Wie lange dauert das Erstellen/,
+      /Wie erstelle ich eine Quest/,  // PROJ-14: keine Dauer-Frage mehr
     ]) {
       await expect(page.getByRole("button", { name: frage })).toBeVisible();
     }

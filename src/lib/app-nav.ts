@@ -27,6 +27,31 @@ import {
  * zwischen Play und Create, und beide stehen hier direkt darüber.
  */
 
+/**
+ * Ist die KI-Anleitung (`/anleitung`) freigeschaltet? (PROJ-14)
+ *
+ * **Der eine Schalter für fünf Stellen.** Die App wird ohne die KI-Anleitung
+ * gelauncht, kündigt sie aber an. Fünf Stellen müssen davon wissen:
+ *
+ *   1. die Seite selbst          — Ankündigung statt Prompt und Schritten
+ *   2. dieses Modul, Menu-Gruppe — Eintrag trägt die Kennzeichnung "Bald"
+ *   3. dieses Modul, `HEADER_NAV_LINKS` — kein Textlink in der Info-Kopfzeile
+ *   4. `/about`, zweiter Hero-CTA — "Mit KI erstellen" entfällt
+ *   5. `/create`, Leeransicht     — "Quest mit KI bauen" entfällt
+ *
+ * Alle fünf lesen diesen Wert. Zum Freischalten genügt `true` — Seite, Menu,
+ * Kopfzeile und beide CTAs kommen gleichzeitig zurück. Ohne diesen
+ * gemeinsamen Ursprung wäre der Fehler beim Freischalten *still*: eine
+ * funktionierende Anleitung, deren Menu-Eintrag weiterhin "Bald" sagt —
+ * nichts stürzt ab, nichts warnt.
+ *
+ * Bewusst eine Konstante und keine Umgebungsvariable: Die betroffenen Seiten
+ * sind statisch (0,07–0,09 s) und blieben es nur so. Nebeneffekt, der ein
+ * Spec-Kriterium erfüllt — bei `false` landet die Prompt-Vorlage gar nicht
+ * erst im ausgelieferten HTML, statt dort nur versteckt zu liegen.
+ */
+export const ANLEITUNG_VERFUEGBAR = false;
+
 export interface AppNavLink {
   href: string;
   label: string;
@@ -40,6 +65,14 @@ export interface AppNavLink {
    * `aria-current`-Zweig — ein externes Ziel ist nie „die aktuelle Seite".
    */
   external?: boolean;
+  /**
+   * Kennzeichnung rechts im Menu-Eintrag, z.B. "Bald" für eine angekündigte,
+   * noch nicht verfügbare Funktion (PROJ-14).
+   *
+   * Echter Text statt Farbe oder Icon, damit Screenreader ihn vorlesen:
+   * "Anleitung, Bald". Ein rein visuelles Signal erfüllte das nicht.
+   */
+  badge?: string;
 }
 
 /**
@@ -73,7 +106,16 @@ export const APP_NAV_GROUPS: readonly AppNavGroup[] = [
     title: "Info",
     links: [
       { href: "/about", label: "Über", icon: Info },
-      { href: "/anleitung", label: "Anleitung", icon: BookOpen },
+      // Bleibt sichtbar und klickbar, solange die Anleitung nicht
+      // freigeschaltet ist — der Eintrag IST die Ankündigung. Ein
+      // ausgegrauter, toter Eintrag kündigt an, ohne zu erklären; der Klick
+      // führt auf die Seite, die die Ankündigung ausführt.
+      {
+        href: "/anleitung",
+        label: "Anleitung",
+        icon: BookOpen,
+        ...(ANLEITUNG_VERFUEGBAR ? {} : { badge: "Bald" }),
+      },
     ],
   },
   {
@@ -102,6 +144,13 @@ export const APP_NAV_GROUPS: readonly AppNavGroup[] = [
  * Impressum/Datenschutz stehen im Footer, wo Besucher Rechtstexte zuerst
  * suchen. Im Burger-Menu bleiben dagegen alle sechs Ziele.
  */
-export const HEADER_NAV_LINKS = APP_NAV_GROUPS.flatMap((group) => group.links).filter(
-  ({ href }) => href === "/anleitung"
-);
+export const HEADER_NAV_LINKS = ANLEITUNG_VERFUEGBAR
+  ? APP_NAV_GROUPS.flatMap((group) => group.links).filter(
+      ({ href }) => href === "/anleitung"
+    )
+  : // Solange die Anleitung nur angekündigt ist, führt die Kopfzeile keinen
+    // Textlink (PROJ-14). Kein Ersatzziel rückt nach: Ein anderes Ziel hier
+    // einzusetzen würde die Navigation über die Ankündigung hinaus ändern.
+    // Die Kopfzeile trägt dann nur noch Ko-fi-Icon und "Zur App", beide
+    // rechtsbündig — die leere Liste hinterlässt keine Lücke.
+    [];

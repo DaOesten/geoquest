@@ -282,14 +282,10 @@ test.describe("Regression: Nachbarseiten", () => {
     });
   }
 
-  test("der Creator-Empty-State verlinkt weiterhin auf die Anleitung", async ({
-    page,
-  }) => {
+  // PROJ-14: Der KI-Link entfällt, solange die Anleitung nur angekündigt ist.
+  test("der Creator-Empty-State führt keinen KI-Link mehr", async ({ page }) => {
     await page.goto("/create");
-    const link = page.getByRole("link", { name: /Quest mit KI bauen/i });
-    await expect(link).toBeVisible();
-    await link.click();
-    await expect(page).toHaveURL(/\/anleitung$/);
+    await expect(page.getByRole("link", { name: /Quest mit KI bauen/i })).toHaveCount(0);
   });
 });
 
@@ -326,21 +322,14 @@ test.describe("Refinement 5: Copy-Feinschliff (2026-09-09)", () => {
     expect(b, "Satz 2 muss wie Satz 1 gesetzt sein").toBe(a);
   });
 
-  test("der sekundäre CTA ist nicht breiter als der primäre", async ({ page }) => {
+  // PROJ-14: Es gibt keinen sekundären CTA mehr, solange die Anleitung nur
+  // angekündigt ist. Die Breitenregel greift wieder, wenn er zurückkommt —
+  // festgehalten in tests/proj-14-anleitung-freigeschaltet.spec.ts.
+  test("der Hero führt genau einen CTA", async ({ page }) => {
     await page.goto("/about");
 
-    // Sonst würde der Zweit-Button optisch zum Haupt-CTA — der Grund,
-    // warum er „Mit KI erstellen" heißt und nicht „Quest mit KI erstellen".
-    const primary = await page
-      .getByRole("link", { name: /^Quest erstellen/ })
-      .first()
-      .boundingBox();
-    const secondary = await page
-      .getByRole("link", { name: /Mit KI erstellen/ })
-      .first()
-      .boundingBox();
-
-    expect(secondary!.width).toBeLessThanOrEqual(primary!.width);
+    await expect(page.getByRole("link", { name: /Mit KI erstellen/ })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /^Quest erstellen/ }).first()).toBeVisible();
   });
 
   test("die neue Copy steht, die alte ist weg", async ({ page }) => {
@@ -361,7 +350,7 @@ test.describe("Refinement 5: Copy-Feinschliff (2026-09-09)", () => {
     // `eyebrow` wurde optional gemacht — die drei anderen Info-Seiten
     // setzen die Prop weiterhin und dürfen sie nicht verlieren.
     for (const [path, expected] of [
-      ["/anleitung", "Anleitung"],
+      ["/anleitung", "Bald verfügbar"],  // PROJ-14: Eyebrow der Ankündigung
       ["/impressum", "Rechtliches"],
       ["/datenschutz", "Rechtliches"],
     ] as const) {

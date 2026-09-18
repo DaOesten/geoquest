@@ -61,7 +61,12 @@ test.describe("Burger-Menu — Struktur und Ziele", () => {
       await openMenu(page, "/play");
 
       for (const [label, href] of links) {
-        const link = page.getByRole("dialog").getByRole("link", { name: label, exact: true });
+        // PROJ-14: "Anleitung" trägt die Kennzeichnung "Bald" und ist damit
+        // kein exakter Namenstreffer mehr — über href ansprechen.
+        const link =
+          href === "/anleitung"
+            ? page.getByRole("dialog").locator('a[href="/anleitung"]')
+            : page.getByRole("dialog").getByRole("link", { name: label, exact: true });
         await expect(link).toHaveAttribute("href", href);
         // Jeder Eintrag trägt ein Icon — für die Zielgruppe die schnellste
         // Unterscheidung der sieben Ziele.

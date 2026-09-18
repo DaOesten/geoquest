@@ -65,9 +65,12 @@ test.describe("Burger-Menu (mobil)", () => {
     const menu = page.getByRole("dialog");
     // Seit 2026-09-06 das app-weite Menu (PROJ-1): sechs Ziele in drei Gruppen,
     // "App" ist jetzt eine Gruppen-Überschrift statt eines Links.
-    for (const label of ["Play", "Create", "Über", "Anleitung", "Impressum", "Datenschutz"]) {
+    // PROJ-14: "Anleitung" trägt die Kennzeichnung "Bald" und wird unten
+    // separat per href geprüft — ein exakter Namenstreffer greift nicht mehr.
+    for (const label of ["Play", "Create", "Über", "Impressum", "Datenschutz"]) {
       await expect(menu.getByRole("link", { name: label, exact: true })).toBeVisible();
     }
+    await expect(menu.locator('a[href="/anleitung"]')).toBeVisible();
     for (const group of ["App", "Info", "Rechtliches"]) {
       await expect(menu.getByText(group, { exact: true })).toBeVisible();
     }
@@ -133,7 +136,7 @@ test.describe("Häufige Fragen (Accordion)", () => {
       // Am 2026-09-09 vom Betreiber auf "etwa 8 bis 16 Jahren, aber niemand
       // ist zu alt" geändert; die Assertion hing noch am alten Wortlaut.
       "8 bis 16 Jahren",
-      "etwa eine halbe Stunde",
+      "Ziele auf der Karte",  // PROJ-14: FAQ ohne Zeitangabe
     ]) {
       expect(html, `Antwort fehlt im HTML: ${needle}`).toContain(needle);
     }
@@ -262,6 +265,13 @@ test.describe("Responsive", () => {
   }
 
   test("Desktop zeigt die Navigationslinks UND das Burger-Menu", async ({ page }) => {
+    // PROJ-14: Der Textlink "Anleitung" ist der einzige der Desktop-Zeile und
+    // entfällt, solange die Anleitung nur angekündigt ist. Die Prüfung greift
+    // wieder, wenn sie freigeschaltet wird.
+    test.skip(
+      process.env.ANLEITUNG_FREIGESCHALTET !== "1",
+      "Header-Textlink gibt es erst mit freigeschalteter Anleitung (PROJ-14)"
+    );
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/about");
 
@@ -323,7 +333,9 @@ test.describe("Zurückpfeil & Footer (Refinement 2)", () => {
     const nav = page.locator("header nav");
     await expect(nav.getByRole("link", { name: "Impressum" })).toHaveCount(0);
     await expect(nav.getByRole("link", { name: "Datenschutz" })).toHaveCount(0);
-    await expect(nav.getByRole("link", { name: "Anleitung" })).toBeVisible();
+    // PROJ-14: Solange die Anleitung nur angekündigt ist, führt die
+    // Desktop-Zeile gar keinen Textlink mehr — "Anleitung" war der einzige.
+    await expect(nav.getByRole("link", { name: "Anleitung" })).toHaveCount(0);
   });
 
   test("Burger-Menü behält die Rechtslinks (jetzt neben Play/Create)", async ({ page }) => {
@@ -331,9 +343,12 @@ test.describe("Zurückpfeil & Footer (Refinement 2)", () => {
     await page.goto("/about");
     await page.getByRole("button", { name: "Menü öffnen" }).click();
     const menu = page.getByRole("dialog");
-    for (const label of ["Play", "Create", "Über", "Anleitung", "Impressum", "Datenschutz"]) {
+    for (const label of ["Play", "Create", "Über", "Impressum", "Datenschutz"]) {
       await expect(menu.getByRole("link", { name: label, exact: true })).toBeVisible();
     }
+    // PROJ-14: "Anleitung" trägt jetzt die Kennzeichnung "Bald" und ist
+    // deshalb kein exakter Namenstreffer mehr.
+    await expect(menu.locator('a[href="/anleitung"]')).toBeVisible();
   });
 
   test("Impressum und Datenschutz laufen im Light-Theme, /about und /anleitung dunkel", async ({ page }) => {

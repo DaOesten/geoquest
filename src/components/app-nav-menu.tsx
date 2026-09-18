@@ -101,7 +101,7 @@ export function AppNavMenu() {
               </p>
 
               <div className="mt-2 flex flex-col">
-                {group.links.map(({ href, label, icon: Icon, external }) => {
+                {group.links.map(({ href, label, icon: Icon, external, badge }) => {
                   // Auch Unteransichten zählen zum Eintrag: wer in
                   // /create/[id]/station/[x] steckt, ist immer noch im Creator.
                   // Externe Ziele sind nie "die aktuelle Seite".
@@ -121,6 +121,26 @@ export function AppNavMenu() {
                         }
                       />
                       {label}
+                      {/* Kennzeichnung einer angekündigten Funktion (PROJ-14).
+                          Sitzt INNERHALB der bestehenden 48px-Zeile, damit sie
+                          das 44px-Tap-Ziel nicht verkleinert und auf 320px nicht
+                          umbricht. Rechtsbündig an derselben Stelle, an der der
+                          Ko-fi-Eintrag sein Pfeil-Icon trägt.
+
+                          `text-muted-foreground` statt `text-gq-grey`: Das Menu
+                          läuft in beiden Themes; der feste Hex-Wert fiele auf
+                          hellem Grund auf 2.29:1 und verfehlte die
+                          WCAG-AA-Vorgabe (BUG-1 im QA vom 2026-09-06).
+
+                          Kein Lime, kein Teal: Teal ist hier bereits für den
+                          aktiven Eintrag belegt, und das Design System erlaubt
+                          nur ein Lime-Element pro Screen. Die Kennzeichnung soll
+                          ankündigen, nicht um Aufmerksamkeit konkurrieren. */}
+                      {badge && (
+                        <span className="ml-auto flex-shrink-0 font-body text-[11px] normal-case not-italic tracking-normal text-muted-foreground">
+                          {badge}
+                        </span>
+                      )}
                       {external && (
                         <ExternalLink
                           className="w-3.5 h-3.5 flex-shrink-0 ml-auto text-muted-foreground"

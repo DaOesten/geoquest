@@ -10,6 +10,7 @@ import {
   Puzzle,
 } from "lucide-react";
 import { InfoPageShell } from "@/components/info-page-shell";
+import { ANLEITUNG_VERFUEGBAR } from "@/lib/app-nav";
 import { PromptCopyBox } from "@/components/prompt-copy-box";
 import { QUEST_AI_PROMPT } from "@/lib/quest-ai-prompt";
 import {
@@ -19,14 +20,32 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
-export const metadata: Metadata = {
+/**
+ * Metadaten folgen dem Schalter (PROJ-14): Solange die Anleitung nur
+ * angekündigt ist, darf weder Suchergebnis noch geteilte Vorschau eine
+ * fertige Schritt-für-Schritt-Anleitung versprechen. Sonst bliebe die
+ * Diskrepanz bis zum nächsten Crawl bestehen (Edge Case 2).
+ */
+const META_VERFUEGBAR = {
   title: "Quest mit KI erstellen",
   description:
     "Prompt kopieren, in ChatGPT oder Claude einfügen, fertige Quest importieren. Schritt-für-Schritt-Anleitung für Geo Quest.",
+};
+
+const META_ANGEKUENDIGT = {
+  title: "Quest mit KI erstellen — bald verfügbar",
+  description:
+    "Bald lässt du dir deine Quest von ChatGPT oder Claude bauen — mit Story, Zielen und Rätseln. Quests erstellst du schon heute selbst im Creator.",
+};
+
+const META = ANLEITUNG_VERFUEGBAR ? META_VERFUEGBAR : META_ANGEKUENDIGT;
+
+export const metadata: Metadata = {
+  title: META.title,
+  description: META.description,
   openGraph: {
-    title: "Quest mit KI erstellen — Geo Quest",
-    description:
-      "Prompt kopieren, in ChatGPT oder Claude einfügen, fertige Quest importieren. Schritt-für-Schritt-Anleitung für Geo Quest.",
+    title: `${META.title} — Geo Quest`,
+    description: META.description,
     images: ["/assets/urbanquest.png"],
     type: "article",
   },
@@ -87,6 +106,111 @@ const TROUBLESHOOTING = [
 ];
 
 export default function AnleitungPage() {
+  // Zwei Zustände, ein Schalter (PROJ-14). Die volle Anleitung unten bleibt
+  // vollständig im Code — sie wird nur nicht gerendert. Beim Freischalten
+  // genügt `ANLEITUNG_VERFUEGBAR = true` in `src/lib/app-nav.ts`.
+  //
+  // Bei `false` steht weder der Prompt noch eine der Schritt-Beschreibungen im
+  // ausgelieferten HTML: Der Wert ist zur Bauzeit bekannt, der Zweig wird gar
+  // nicht erst gerendert. Das ist der Unterschied zwischen "nicht ausgeliefert"
+  // und "nur versteckt".
+  if (!ANLEITUNG_VERFUEGBAR) {
+    return <AnleitungAngekuendigt />;
+  }
+
+  return <AnleitungVollstaendig />;
+}
+
+/**
+ * Der angekündigte Zustand — was zum Launch ausgeliefert wird (PROJ-14).
+ *
+ * Zeigt bewusst NICHT: Prompt, Kopieren-Button, die vier Schritte,
+ * Troubleshooting. Wer das sähe, hätte die Funktion faktisch — und die
+ * Entscheidung gegen den Launch wäre ausgehebelt.
+ *
+ * Zeigt dafür: was kommen wird (damit der Besucher weiß, worauf er wartet)
+ * und einen Weg zum manuellen Erstellen (denn wer hier landet, will eine
+ * Quest bauen — und das geht heute schon vollständig).
+ */
+function AnleitungAngekuendigt() {
+  return (
+    <InfoPageShell
+      showSupport
+      eyebrow="Bald verfügbar"
+      title={
+        <>
+          Quest bauen
+          <br />
+          <span className="text-gq-teal">mit KI.</span>
+        </>
+      }
+      backHref="/about"
+      lead={
+        <>
+          <p>
+            Bald lässt du dir deine Quest von ChatGPT oder Claude bauen — mit
+            Story, Zielen und Rätseln. Du gibst Thema, Ort und Alter vor, die KI
+            schreibt den Rest.
+          </p>
+          <p className="mt-4">
+            Wir arbeiten noch daran. Bis dahin baust du deine Quest im Creator
+            selbst zusammen — das geht schon heute vollständig.
+          </p>
+        </>
+      }
+      aside={
+        <div className="rounded-card border border-border bg-gq-dark-teal/70 p-6 shadow-card">
+          <p className="text-tech text-[10px] tracking-[0.12em] text-gq-teal">
+            Was dabei herauskommen wird
+          </p>
+          <ul className="mt-4 flex flex-col gap-3">
+            {OUTCOME.map(({ icon: Icon, label }) => (
+              <li key={label} className="flex items-center gap-3">
+                <Icon className="w-5 h-5 flex-shrink-0 text-gq-teal" />
+                <span className="font-body text-sm lg:text-[15px] leading-relaxed text-[#E7EAEC]">
+                  {label}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-5 border-t border-border pt-4 font-body text-sm leading-relaxed text-gq-grey">
+            Die Ziele auf der Karte setzt du auch dann selbst — echte
+            GPS-Koordinaten kennt keine KI.
+          </p>
+        </div>
+      }
+    >
+      {/* Weg zum manuellen Erstellen. Wer die Anleitung sucht, will eine Quest
+          bauen — ihn mit "geht noch nicht" allein zu lassen, verschenkt genau
+          den Besucher, der am ehesten Ersteller wird. */}
+      <section className="mt-12 sm:mt-20 rounded-card border border-gq-teal/40 bg-gq-dark-teal/70 p-6 sm:p-10 text-center shadow-card">
+        <h2 className="font-display italic text-[clamp(1.5rem,4vw,2.4rem)] uppercase leading-[1] text-gq-white">
+          Nicht warten?
+        </h2>
+        <p className="mx-auto mt-3 max-w-[46ch] font-body text-sm lg:text-base leading-relaxed text-gq-grey">
+          Im Creator baust du deine Quest schon heute — Ziele auf der Karte,
+          Rätsel und Aufgaben, Bilder und Ton.
+        </p>
+        <Link
+          href="/create"
+          className="mx-auto mt-6 inline-flex items-center justify-center gap-2 h-12 px-8 rounded-pill bg-gq-teal text-gq-black text-tech text-xs tracking-[0.08em] transition-all duration-base ease-gq hover:bg-gq-teal-hover active:scale-[0.96]"
+        >
+          <PenTool className="w-4 h-4" />
+          Zum Creator
+        </Link>
+      </section>
+    </InfoPageShell>
+  );
+}
+
+/**
+ * Die vollständige Anleitung — fertig, QA-geprüft, deployt gewesen (PROJ-13).
+ *
+ * Wird zum Launch nicht gerendert (PROJ-14), bleibt aber unverändert im Code:
+ * Beim Freischalten soll nichts neu geschrieben werden müssen. Die Tests
+ * prüfen diesen Zustand weiterhin mit, damit er nicht still verrottet.
+ */
+function AnleitungVollstaendig() {
   return (
     <InfoPageShell
       showSupport
