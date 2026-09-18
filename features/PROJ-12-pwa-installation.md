@@ -1,8 +1,8 @@
 # PROJ-12: PWA-Installation (Add to Homescreen)
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-09-18
-**Last Updated:** 2026-09-18
+**Last Updated:** 2026-09-18 (Architektur entworfen)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — der Startscreen `/` trägt einen der beiden Hinweis-Orte, und das Wurzel-Layout (`src/app/layout.tsx`) hält heute schon `themeColor` und `viewportFit: "cover"`
@@ -152,10 +152,11 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 
 ## Open Questions
 
-- [ ] Lässt sich der Pin sauber aus `geoquest_pwaIcon.jpeg` freistellen, oder braucht es eine Zulieferung des Betreibers mit transparentem Hintergrund? Erst beim tatsächlichen Freistellen zu beurteilen (JPEG-Artefakte an den Kanten).
+- [x] ~~Lässt sich der Pin sauber aus `geoquest_pwaIcon.jpeg` freistellen, oder braucht es eine Zulieferung des Betreibers?~~ **Geschlossen in `/architecture` (2026-09-18): ja, keine Zulieferung nötig.** Das Quellbild wurde vermessen — weißer Rand 55/54/61px, und zwischen Pin-Gruppe und Schriftzug liegt eine motivfreie Spalte bei x 392..401. Ein Probeschnitt (330×420 ab x=62, y=250) zeigt Pin, gestrichelte Route und X vollständig, ohne Buchstabenrest und ohne weißen Rand. Werkzeug: `sips` (Teil von macOS).
 - [ ] Soll die Themenfarbe (Statusleiste der installierten App) bei `#0B0F12` bleiben oder das Teal aufnehmen? Vorschlag: Deep Black beibehalten, damit die Statusleiste nahtlos in den App-Hintergrund übergeht. Am echten Gerät zu beurteilen.
 - [ ] Verhält sich die Standortfreigabe in der installierten iOS-PWA wie im Safari-Tab, oder muss sie neu erteilt werden? (Edge Case 7) — nur auf einem echten iPhone abschließend zu klären; für die Korrektheit des Features unkritisch, weil der Permission-Screen aus PROJ-3 greift.
 - [ ] Bleibt es dauerhaft bei „keine Screenshots im Manifest"? Sie würden die Android-Installations-Ansicht aufwerten, erfordern aber gepflegtes Bildmaterial.
+- [ ] Wie weit soll der Pin die `any`-Icons ausfüllen? Randlos wirkt kräftig, kann auf iOS aber gedrungen aussehen, weil dort kein Sicherheitsrand abgezogen wird. Beim Erzeugen der PNGs im Augenschein zu entscheiden — betrifft nur die Optik, nicht die Installierbarkeit.
 
 ## Decision Log
 
@@ -182,12 +183,201 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 | Decision | Rationale | Date |
 |----------|-----------|------|
 | Service Worker übernimmt sofort (`skipWaiting` + `clients.claim` o.ä.) | Die installierte App hat keine Adressleiste — der Nutzer kann ein hängengebliebenes Update nicht selbst erzwingen. Da nichts außer der Fehlerseite gecacht wird, ist die sofortige Übernahme risikofrei; ein „Neue Version"-Banner wäre unnötige Komplexität. | 2026-09-18 |
+| Manifest als `src/app/manifest.ts`, nicht als statische JSON-Datei | Next.js 16 kennt diese Datei als eigene Metadaten-Route und prüft die Feldnamen beim Bauen. Ein Tippfehler fällt damit im Build auf statt erst im Browser, wo ein ungültiges Manifest still die Installierbarkeit kostet. Das `<link rel="manifest">` wird automatisch gesetzt. | 2026-09-18 |
+| Kein PWA-Paket (serwist, next-pwa, Workbox) | Wären ~15 neue Pakete plus Build-Plugin, um **eine** Datei zu cachen. Beide cachen zudem standardmäßig die App-Shell — genau das PRD-Non-Goal — und müssten erst in ihrer Kernfunktion abgeschaltet werden. Ein handgeschriebener Service Worker von ~40 Zeilen ist hier kleiner, vollständig lesbar und im Review prüfbar. Das Projekt hält seine 41 Dependencies bewusst klein. | 2026-09-18 |
+| Service Worker als statische `public/sw.js`, nicht als gebündeltes Modul | Er muss unter einer stabilen URL im Wurzel-Scope liegen, damit er die ganze App abdeckt. Eine Datei in `public/` wird unverändert ausgeliefert; ein Bundle bekäme bei jedem Build einen neuen Namen. | 2026-09-18 |
+| Offline-Seite als eigenständige `public/offline.html` mit eingebettetem CSS | Sie wird genau dann gezeigt, wenn die App **nicht** laden konnte — sie darf also nicht von React, Next.js oder den selbst gehosteten Google-Schriften abhängen, die in diesem Moment ebenfalls fehlen. Preis: Die Farbwerte stehen dort ein zweites Mal und können bei einem Redesign auseinanderlaufen. Akzeptiert, weil die Alternative (App-Shell cachen) das Non-Goal bricht. | 2026-09-18 |
+| Der Cache enthält ausschließlich `offline.html` | Macht das Non-Goal strukturell unverletzbar statt nur absichtlich eingehalten: Es gibt nichts im Cache, woraus die App offline zusammengesetzt werden könnte. Zugleich entfällt die ganze Fehlerklasse „Nutzer hängt auf alter Version fest". | 2026-09-18 |
+| Icons einmalig mit `sips` erzeugt und eingecheckt | `sips` ist Teil von macOS — keine Dependency, kein `sharp`, keine verlängerte Build-Zeit für Dateien, die sich praktisch nie ändern. Das Ergebnis liegt sichtbar im Repository und ändert sich nie unbemerkt. | 2026-09-18 |
+| Pin bei x 62..392 aus dem Quellbild geschnitten | Gemessen, nicht geschätzt: Der weiße Rand liegt bei 55/54/61px, und zwischen Pin-Gruppe und Schriftzug gibt es eine motivfreie Spalte bei **x 392..401** — eine saubere Schnittkante. Ein Probeschnitt zeigt Pin, Route und X vollständig ohne Buchstabenrest. | 2026-09-18 |
+| Eigener `apple-touch-icon` neben den Manifest-Icons | iOS wertet die Manifest-Icon-Liste nicht in allen Versionen aus. Ohne dieses Icon nimmt Safari einen Screenshot der Seite — auf dem Homescreen unter den echten App-Icons sofort erkennbar. | 2026-09-18 |
+| Anzeige-Logik in einem eigenen Hook `use-install-prompt.ts` | „Darf der Hinweis erscheinen?" hängt an vier Bedingungen (installiert? weggeklickt? Frist um? Weg vorhanden?) und wird an zwei Orten gebraucht. Als Hook steht die Regel einmal da und ist ohne Browser testbar — **die Lücke, durch die BUG-6 live gehen konnte, war ein ungetesteter Hook** (`use-device-orientation.ts` hatte keine Unit-Tests). | 2026-09-18 |
+| iOS-Erkennung über mehrere Signale, im Zweifel nichts anzeigen | Direkte Lehre aus BUG-6 (PROJ-3, 2026-09-07): Dort schloss `isIOS()` allein aus der Existenz von `requestPermission` auf iOS und lag auf Desktop-Chrome falsch — der Spieler bekam einen Button, der garantiert fehlschlug. Ein ausbleibender Hinweis ist harmlos; eine Anleitung, die auf dem Gerät nicht funktioniert, ist der eigentliche Fehler. | 2026-09-18 |
+| Hinweis im Seitenfluss statt fixiert am unteren Rand | Das Design System verbietet ausdrücklich Bottom-Navigation und Tab-Bars; ein fixierter Banner läse sich als solche. Als normale Karte im Fluss verdeckt er nichts und schiebt nichts weg. | 2026-09-18 |
+| Auf `/` steht der Hinweis **hinter** den Mode-Cards | Das PROJ-1-Kriterium verlangt Logo, Headline und beide Cards ohne Scrollen auf 360×640; gemessen endet der Inhalt dort bei 559/640px. Davor würde der Hinweis dieses Kriterium brechen, dahinter kostet er nichts. | 2026-09-18 |
+| Speicherschlüssel `gq_install_hint_dismissed` mit Zeitstempel | Gleiches Präfix und gleicher Mechanismus wie `gq_first_visit_done` (PROJ-1). Ein Zeitstempel statt eines Wahrheitswerts, weil die 30-Tage-Frist sonst nicht berechenbar wäre. | 2026-09-18 |
+| Konstanten (Frist, Speicherschlüssel) in `src/lib/app-nav.ts` | Dort liegen bereits die app-weiten Navigations- und Schalterkonstanten (`KOFI_URL`, `ANLEITUNG_VERFUEGBAR`). Das Modul ist bewusst kein Client-Modul und aus Server- wie Client-Komponenten importierbar. | 2026-09-18 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+**Entworfen am:** 2026-09-18
+
+### Der Kern in einem Satz
+
+Vier neue Dateien und zwei kleine Ergänzungen an bestehenden Dateien — **kein neues Paket, kein Backend, keine neue Route im App-Router**. Die App bleibt, was sie ist; sie bekommt Metadaten, Icons und einen Hinweis.
+
+### Was gebaut wird (Struktur)
+
+```
+Manifest & Metadaten
++-- src/app/manifest.ts              [NEU]  Name, Icons, Start-URL, Portrait, Farben
++-- src/app/layout.tsx               [ERW]  apple-touch-icon fuer iOS
+
+App-Icons (einmalig erzeugt, eingecheckt)
++-- public/icons/icon-192.png        [NEU]  Homescreen, kleine Darstellung
++-- public/icons/icon-512.png        [NEU]  Splash, Store-Ansichten
++-- public/icons/icon-maskable.png   [NEU]  Android-Maskierung, mit Sicherheitsrand
++-- public/icons/apple-touch-icon.png[NEU]  iOS (wertet Manifest-Icons nicht aus)
+
+Service Worker & Offline-Seite
++-- public/sw.js                     [NEU]  ~40 Zeilen, cacht NUR offline.html
++-- public/offline.html              [NEU]  Eigenstaendig, ohne React/Next/Schriften
+
+Installations-Hinweis
++-- src/hooks/use-install-prompt.ts  [NEU]  Wann darf der Hinweis erscheinen?
++-- src/components/install-hint.tsx  [NEU]  Die Karte selbst (Android + iOS)
++-- src/lib/app-nav.ts               [ERW]  Konstanten (Frist, Speicherschluessel)
++-- src/app/page.tsx                 [ERW]  Hinweis auf dem Startscreen
++-- src/app/play/page.tsx            [ERW]  Hinweis in der Quest-Liste
+```
+
+### Wo der Hinweis im Bild sitzt
+
+```
+Startscreen /                        Quest-Liste /play
++-- Burger-Menu (absolut)            +-- Backdrop
++-- Logo-Lockup                      +-- Kopfzeile (Zurueck)
++-- Headline                         +-- "Meine Quests" + Meta
++-- Mode-Card "Deine Quests"         +-- >> Installations-Hinweis <<
++-- Mode-Card "Quest Creator"        +-- Filter-Tabs
++-- >> Installations-Hinweis <<      +-- Quest-Karten
++-- Erststart-Dialog (Vorrang)       +-- Import-Button (schwebend)
+```
+
+**Unten im Fluss, nicht schwebend.** Das Design System verbietet Bottom-Navigation und Tab-Bars; ein fixierter Banner am unteren Rand laese sich genau als solche. Der Hinweis ist eine normale Karte im Seitenfluss — er schiebt nichts weg und verdeckt nichts.
+
+Auf `/` steht er **hinter** den Mode-Cards. Grund: Das Kriterium aus PROJ-1 verlangt Logo, Headline und beide Cards ohne Scrollen auf 360x640; gemessen endet der Inhalt dort heute bei 559 von 640px. Ein Hinweis davor wuerde dieses Kriterium brechen, dahinter kostet er nichts — wer ihn sehen will, scrollt, und wer spielen will, tippt vorher.
+
+### Die drei Zustaende des Hinweises
+
+```
+                      Kann der Browser installieren?
+                       /                          \
+                     ja                           nein
+                     |                              |
+        Android/Chrome        iOS Safari         (nichts anzeigen)
+        (beforeinstallprompt) (kein Event)
+                     |              |
+        [Installieren]-Button   Kurzanleitung
+        oeffnet nativen Dialog  "Teilen -> Zum Home-Bildschirm"
+```
+
+Erkennung in drei Stufen, jede fuer sich pruefbar:
+
+1. **Laeuft die App schon installiert?** (`display-mode: standalone`) -> Hinweis nie zeigen.
+2. **Wurde er weggeklickt und ist die Frist noch nicht um?** -> nicht zeigen.
+3. **Gibt es einen Weg?** Android liefert das Event; iOS wird an Plattform-Signalen erkannt. Sonst: nichts zeigen.
+
+**Die iOS-Erkennung nutzt bewusst dieselbe Lehre wie BUG-6** (PROJ-3, 2026-09-07): Ein einzelnes Merkmal genuegt nicht. Dort schloss `isIOS()` allein aus der Existenz von `requestPermission` auf iOS — und lag auf Desktop-Chrome falsch, was dem Spieler einen Button anbot, der garantiert fehlschlug. Hier gilt dasselbe Muster: iOS wird an mehreren Signalen zusammen erkannt (Plattform-Kennung, Touch-Punkte, Abwesenheit des Android-Events), und im Zweifel wird **nichts** angezeigt. Ein ausbleibender Hinweis ist harmlos; ein Hinweis mit einer Anleitung, die auf dem Geraet nicht funktioniert, ist der Fehler, den BUG-6 beschrieb.
+
+### Daten — was gespeichert wird
+
+```
+Ein einziger Eintrag im Browser-Speicher:
+
+  Schluessel:  gq_install_hint_dismissed
+  Inhalt:      Zeitpunkt des Wegklickens
+  Lebensdauer: 30 Tage, danach darf der Hinweis erneut erscheinen
+
+Kein Server. Keine Uebertragung. Keine Geraete-Kennung.
+Gleicher Ort und gleiches Muster wie `gq_first_visit_done` (PROJ-1).
+```
+
+Ist der Browser-Speicher blockiert oder voll, faellt der Hinweis still auf „fuer diese Sitzung weg" zurueck — genau wie der Erststart-Dialog heute (Edge Case 4).
+
+**Das Manifest speichert nichts.** Es beschreibt die App: Name „Geo Quest", Start-URL `/`, Anzeige im Vollbild, Hochformat, Hintergrund und Statusleiste in Deep Black, dazu die Icon-Liste.
+
+### Der Service Worker — was er tut und was ausdruecklich nicht
+
+```
+Anfrage vom Browser
+        |
+        v
+  Ist es eine Seitennavigation?
+    /                    \
+  nein                   ja
+   |                      |
+  durchreichen       aus dem Netz holen
+  (nichts anfassen)        |
+                      klappt es?
+                       /      \
+                     ja       nein (kein Netz)
+                     |          |
+                 ausliefern   offline.html aus dem Cache
+```
+
+**Der Cache enthaelt genau eine Datei: `offline.html`.** Kein HTML der App, kein CSS, kein JavaScript, keine Schriften, keine Kartenkacheln, keine Medien. Damit ist das PRD-Non-Goal „Kein Offline-Modus" nicht nur eingehalten, sondern strukturell unmoeglich zu verletzen — es gibt nichts, woraus die App offline zusammengesetzt werden koennte.
+
+**Warum es ihn trotzdem gibt:** Chrome auf Android bietet den Installationsweg nur an, wenn ein Service Worker mit Netz-Handler registriert ist. Ohne ihn waere eine der beiden PRD-Hauptplattformen gar nicht installierbar.
+
+**Aktualisierung:** Der Service Worker uebernimmt bei jedem Deploy sofort. Er haelt nichts fest, was veralten koennte, und die installierte App hat keine Adressleiste, mit der ein Nutzer ein haengendes Update erzwingen koennte.
+
+### Die Offline-Seite
+
+Eine eigenstaendige HTML-Datei mit eingebettetem CSS. Sie darf **nichts** nachladen — nicht React, nicht Next.js, nicht die Google-Schriften (die in genau diesem Moment ebenfalls nicht laden wuerden). Deshalb: Systemschriften, Farben als feste Werte, ein Button.
+
+Inhalt: Pin-Icon, die Aussage „Geo Quest braucht eine Internetverbindung zum Starten", ein „Erneut versuchen"-Button. Sie sagt ausdruecklich nicht „du bist offline" — das laese sich als „sonst ginge es auch offline" verstehen und waere ein Versprechen, das das Produkt nicht haelt.
+
+Preis dieser Entscheidung, offen benannt: Die Farben stehen dort ein zweites Mal und koennen bei einem Redesign auseinanderlaufen. Akzeptiert, weil die Alternative (die App-Shell cachen) das Non-Goal bricht.
+
+### Die Icons — gemessen, nicht geschaetzt
+
+Das gelieferte `geoquest_pwaIcon.jpeg` (1024x1024) wurde vermessen:
+
+| Befund | Messwert |
+|--------|----------|
+| Weisser Rand um die Kachel | links 55px, rechts 54px, oben 61px |
+| Kachel bereits abgerundet | ja — wuerde nach der OS-Maskierung als Icon-im-Icon erscheinen |
+| Pin-Motiv (mit Route und X) | x 62..392, y 250..670 |
+| Freie Spalte zwischen Pin und Schriftzug | **x 392..401** — saubere Schnittkante |
+
+**Ergebnis: Der Pin laesst sich sauber freistellen** — mit `sips`, das auf jedem Mac vorhanden ist. Ein Probeschnitt (330x420 ab x=62, y=250) zeigt Pin, gestrichelte Route und X vollstaendig, ohne einen Buchstabenrest und ohne weissen Rand. **Damit ist Open Question 1 der Spec geschlossen: keine Zulieferung noetig.**
+
+Daraus entstehen vier PNGs auf Deep Black:
+
+```
+icon-192 / icon-512 (purpose "any")
++-- Pin randlos, fuellt die Flaeche weitgehend aus
+
+icon-maskable (purpose "maskable")
++-- Pin kleiner, innerhalb der inneren 80%
++-- Aussen ringsum Deep Black als Opferzone fuer die OS-Maskierung
+
+apple-touch-icon
++-- wie icon-192, weil iOS die Manifest-Icons nicht in allen Versionen auswertet
+```
+
+Erzeugt wird einmalig; die Dateien werden eingecheckt. Kein `sharp`, keine Build-Zeit-Generierung fuer Dateien, die sich praktisch nie aendern.
+
+### Technologie-Entscheidungen, PM-lesbar
+
+| Entscheidung | Warum |
+|---|---|
+| **Manifest als `manifest.ts`, nicht als JSON-Datei** | Next.js 16 kennt diese Datei als eigene Metadaten-Route. Vorteil gegenueber einer handgepflegten JSON-Datei: Tippfehler in Feldnamen fallen beim Bauen auf, nicht erst im Browser. Die Datei bleibt im Code neben dem Rest der App. |
+| **Kein PWA-Paket (serwist, next-pwa)** | Waeren ~15 neue Pakete plus Build-Plugin, um eine einzige Datei zu cachen. Beide cachen ausserdem standardmaessig die App-Shell — also genau das, was das PRD ausschliesst; man muesste ihre Kernfunktion erst abschalten. Ein handgeschriebener Service Worker von ~40 Zeilen ist hier kleiner, lesbarer und pruefbar. |
+| **Icons eingecheckt statt zur Build-Zeit erzeugt** | Der Build bleibt unveraendert schnell, das Ergebnis ist im Repository sichtbar und aenderst sich nie unbemerkt. |
+| **Offline-Seite als statische HTML-Datei** | Sie muss funktionieren, wenn die App gar nicht geladen werden konnte — also ohne React, ohne Next.js, ohne nachgeladene Schriften. |
+| **Hinweis im Seitenfluss, nicht fixiert** | Das Design System verbietet Bottom-Navigation; ein fixierter Banner laese sich als solche. |
+| **Ein eigener Hook fuer die Anzeige-Logik** | „Darf der Hinweis erscheinen?" haengt an vier Bedingungen und wird an zwei Orten gebraucht. Als Hook steht die Regel einmal da und ist ohne Browser testbar — die Luecke, durch die BUG-6 live gehen konnte, war ein ungetesteter Hook. |
+
+### Abhaengigkeiten
+
+**Keine.** Keine neue Laufzeit-Abhaengigkeit, keine neue Entwicklungs-Abhaengigkeit. Die Icon-Erzeugung nutzt `sips` (Teil von macOS) und laeuft einmalig von Hand, nicht im Build.
+
+Das Projekt haelt seine 41 Abhaengigkeiten bewusst klein; dieses Feature erhoeht die Zahl nicht.
+
+### Was das Frontend beachten muss
+
+1. **Erststart-Dialog hat Vorrang** (Edge Case 13). Der Hinweis erscheint erst, wenn der Dialog geschlossen ist — sonst liegen zwei Aufforderungen uebereinander.
+2. **PROJ-1-Kriterium bleibt messbar.** Nach dem Einbau auf 360x640 pruefen, dass Logo, Headline und beide Mode-Cards weiter ohne Scrollen sichtbar sind.
+3. **Der Hook braucht Unit-Tests.** Vier Bedingungen, davon eine zeitabhaengig (30-Tage-Frist) — genau die Art Logik, die im Browser schwer und im Test leicht zu pruefen ist.
+4. **Die iOS-Erkennung nicht an einem einzigen Merkmal aufhaengen** (BUG-6). Im Zweifel nichts anzeigen.
+5. **Service Worker nur im sicheren Kontext registrieren.** Lokal ueber `localhost`, in Produktion ueber HTTPS; sonst still nichts tun (Edge Case 12).
+6. **`public/assets/geoquest_pwaIcon.jpeg` ist noch nicht eingecheckt** — gehoert mit ins Repository, weil die Icons daraus stammen.
+7. **Playwright kann den Standalone-Modus nicht vollstaendig nachstellen.** Pruefbar sind Manifest-Inhalt, Icon-Erreichbarkeit, Service-Worker-Registrierung, Offline-Verhalten und die Anzeige-Logik des Hinweises. Das echte Homescreen-Icon bleibt Augenschein.
 
 ## QA Test Results
 _To be added by /qa_
