@@ -19,7 +19,18 @@ import { useEffect } from "react";
  */
 export function ServiceWorkerRegistration() {
   useEffect(() => {
-    if (!("serviceWorker" in navigator)) return;
+    /**
+     * Auf den **Wert** prüfen, nicht auf die Existenz der Eigenschaft (BUG-11).
+     *
+     * Vorher stand hier `!("serviceWorker" in navigator)`. Das fragt nur, ob
+     * die Eigenschaft da ist — nicht, ob sie etwas enthält. Härtungs-
+     * Erweiterungen und datenschutzorientierte Browser setzen solche APIs
+     * gelegentlich auf `undefined`, statt sie zu löschen; dann bestand die
+     * Prüfung, und `.register()` warf bei jedem Seitenaufruf einen
+     * `TypeError` in die Konsole. Ein echter Browser ohne Unterstützung lässt
+     * die Eigenschaft weg — beide Formen deckt die Wahrheitsprüfung ab.
+     */
+    if (!navigator.serviceWorker) return;
 
     // Service Worker laufen nur im sicheren Kontext. In Produktion durch Vercel
     // gegeben, lokal über `localhost` (das der Browser als sicher behandelt).
@@ -30,6 +41,11 @@ export function ServiceWorkerRegistration() {
     // Erst nach `load`: Die Registrierung konkurriert sonst mit dem ersten
     // Rendern um Bandbreite. Das PRD gibt < 2s Ladezeit vor.
     const register = () => {
+      // Erneut prüfen: Zwischen dem Effekt und `load` liegt Zeit, in der eine
+      // Erweiterung die Eigenschaft noch ersetzen kann. Der `.catch()` unten
+      // fängt nur abgelehnte Promises, nicht diesen synchronen Zugriff.
+      if (!navigator.serviceWorker) return;
+
       navigator.serviceWorker.register("/sw.js").catch(() => {
         // Siehe Edge Case 12 — kein sichtbarer Fehler.
       });

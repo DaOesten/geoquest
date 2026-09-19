@@ -611,9 +611,9 @@ Positiv erwähnenswert: `sw.js` wird mit `Cache-Control: public, max-age=0` ausg
 
 ### Gefundene Bugs
 
-#### BUG-11 (Low) — Konsolenfehler, wenn eine Erweiterung `navigator.serviceWorker` auf `undefined` setzt
+#### BUG-11 (Low) — ~~Konsolenfehler, wenn eine Erweiterung `navigator.serviceWorker` auf `undefined` setzt~~ **BEHOBEN am 2026-09-19**
 
-**Ort:** [service-worker-registration.tsx:22](src/components/service-worker-registration.tsx#L22)
+**Ort:** `service-worker-registration.tsx` — damals Zeile 22, nach der Behebung [Zeile 33](src/components/service-worker-registration.tsx#L33)
 
 **Beschreibung:** Der Guard lautet `if (!("serviceWorker" in navigator)) return;`. Er prüft, ob die *Eigenschaft existiert* — nicht, ob sie einen Wert hat. Härtungs-Erweiterungen und datenschutzorientierte Browser setzen solche APIs gelegentlich auf `undefined`, statt sie zu löschen. Dann besteht der Guard, und `navigator.serviceWorker.register(...)` wirft.
 
@@ -628,6 +628,34 @@ Positiv erwähnenswert: `sw.js` wird mit `Cache-Control: public, max-age=0` ausg
 **Mögliche Behebung (eine Zeile):** `if (!navigator.serviceWorker) return;` statt der `in`-Prüfung — deckt beide Formen ab.
 
 **Nicht blockierend.** Kein Nutzer verliert Funktionalität; die `.catch()`-Klausel fängt bereits alles ab, was *nach* diesem Punkt schiefgehen kann.
+
+**Behoben am 2026-09-19.** Die Prüfung fragt jetzt den **Wert** ab (`if (!navigator.serviceWorker) return;`) statt die Existenz der Eigenschaft. Damit sind beide Formen abgedeckt: der echte Browser ohne Unterstützung, der die Eigenschaft weglässt, und die Erweiterung, die sie auf `undefined` setzt.
+
+**Zusätzlich abgesichert, über den gemeldeten Fehler hinaus:** Die Registrierung läuft in der Regel erst beim `load`-Ereignis, also messbar später als die Prüfung im Effekt. In diesem Fenster kann eine Erweiterung die Eigenschaft noch ersetzen. `register()` prüft deshalb ein zweites Mal — der `.catch()` darunter fängt nur abgelehnte Promises, nicht diesen synchronen Zugriff.
+
+**Die eigentliche Lücke war das Fehlen jeden Tests.** Für die drei Wege ohne Service Worker gab es keinen einzigen — genau so konnte BUG-11 entstehen. Jetzt drei Tests im Block „Ohne Service Worker (Edge Case 12)": Eigenschaft fehlt ganz, Eigenschaft ist `undefined`, unsicherer Kontext. Alle drei prüfen nicht nur die Abwesenheit des Fehlers, sondern dass `/`, `/play` und `/create` **bedienbar bleiben**.
+
+**Per Gegenprobe geschärft:** Mit dem alten Guard (`"serviceWorker" in navigator`) fällt **genau der BUG-11-Test**, während die beiden anderen bestehen — der Test trifft den echten Fehler und nicht bloß die Umgebung.
+
+#### Dabei gefunden: ein flakiger Test (kein Produktfehler)
+
+Beim Absichern des BUG-11-Fixes fiel der Test „die Offline-Seite laedt nichts nach" **in 1 von 3 parallelen Läufen** um — in Einzelläufen dagegen nie (6 von 6 grün). Das war kein Produktfehler und auch keine Folge des Fixes: **Die Flakiness steckte schon in der Suite, die in der QA als grün gemeldet wurde** — sie ist dort durch Glück nicht aufgetreten.
+
+Ursache, gemessen statt vermutet: Der Test horchte auf `page.on("request")` und fing dabei Next.js-Prefetches (`/about?_rsc=…`) auf, die ein **anderer, parallel laufender Test** ausgelöst hatte. Über die Offline-Seite sagte das nichts aus.
+
+Behoben, indem der Test jetzt misst, was die Seite **selbst referenziert** (`script[src]`, `link[href]`, `img[src]` plus die Zahl der `<script>`-Tags) statt was während ihrer Anzeige zufällig durchs Netz geht. **5 von 5 parallelen Läufen grün.**
+
+Die Verschärfung ist per Gegenprobe belegt: Lädt die Offline-Seite eine externe Google-Schrift nach, fallen **2 Tests**, darunter dieser. Der Test wurde also nicht stillgelegt, sondern präzisiert.
+
+#### Und noch einer — mit einer unangenehmen Nebenwirkung
+
+Ein **zweiter** Test war flaky: `waitForFunction(() => !!navigator.serviceWorker.controller)` lief im vollen 464-Test-Lauf in ein Timeout, in Einzelläufen nie (5 von 5 grün). Ursache: Ein Service Worker kontrolliert nur Seiten, die **nach** seiner Aktivierung geladen wurden. `clients.claim()` holt das nach, aber unter Last ist das ein Rennen, das länger dauern kann als das Timeout. Fünf Teststellen teilten dieses Muster; sie laufen jetzt über den Helfer `warteAufKontrolle()`, der kurz wartet und notfalls einmal neu lädt.
+
+**Die Gegenprobe deckte dabei ein echtes Problem auf.** Mit dem Reload als Rückfallebene bestand die Suite **auch dann vollständig**, wenn man `skipWaiting()` und `clients.claim()` aus `sw.js` entfernte — der Reload verdeckte den Verlust. Damit wäre das Acceptance Criterion „neue Version ohne Deinstallieren oder Fensterschließen" **unbemerkt ungeschützt** gewesen: Der Worker hätte im Wartezustand hängen können, und niemand hätte es gemerkt.
+
+Behoben durch zwei neue Tests im Block „Sofortige Uebernahme (skipWaiting + claim)", die die Übernahme **ohne Reload** prüfen. Erneute Gegenprobe: Entfernt man die beiden Zeilen aus `sw.js`, **fällt jetzt ein Test** — die Lücke ist zu.
+
+**Beide flakigen Tests steckten bereits in der Suite, die in der QA als grün gemeldet wurde.** Sie sind dort zufällig durchgelaufen. Das ist eine Korrektur der QA-Meldung, kein Fehler im Produkt — angefasst wurde nur Testcode.
 
 ### Beobachtungen ohne Bug-Status
 
@@ -657,12 +685,12 @@ Die drei `test.skip` der PROJ-12-Suite sind nachvollzogen und **keine stillgeleg
 | Suite | Ergebnis |
 |---|---|
 | Unit (Vitest) | **219/219** |
-| E2E Chrome 153 | **436 passed / 23 skipped / 0 failed** |
-| E2E Mobile Safari (WebKit) | **430 passed / 29 skipped / 0 failed** |
+| E2E Chrome 153 | **441 passed / 23 skipped / 0 failed** (Stand nach BUG-11-Fix) |
+| E2E Mobile Safari (WebKit) | **435 passed / 29 skipped / 0 failed** (Stand nach BUG-11-Fix) |
 | Build | sauber; `/`, `/play` und alle Info-Seiten weiterhin statisch (`○`) |
 | Lint | 0 Fehler (7 Warnungen, alle vorbestehend: `<img>` in fremden Komponenten) |
 
-Beide Engines fahren dieselben 459 Tests, beide mit Exit-Code 0. Die Skip-Differenz von 6 ist vollständig erklärt: 5 Offline-Navigationstests laufen nur auf Chrome (WebKit-Grenze), 1 iOS-Test nur auf WebKit.
+Beide Engines fahren dieselben 464 Tests, beide mit Exit-Code 0 (464 = 441+23 bzw. 435+29). Die Skip-Differenz von 6 ist vollständig erklärt: 5 Offline-Navigationstests laufen nur auf Chrome (WebKit-Grenze), 1 iOS-Test nur auf WebKit.
 
 ### Production-Ready: **JA**
 

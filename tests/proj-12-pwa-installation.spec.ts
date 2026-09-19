@@ -40,6 +40,40 @@ async function fireInstallPrompt(page: Page, outcome: "accepted" | "dismissed" =
   }, outcome);
 }
 
+/**
+ * Wartet, bis der Service Worker die Seite **kontrolliert** — nicht nur, bis er
+ * aktiv ist.
+ *
+ * Der Unterschied ist der Grund, warum es diese Funktion gibt: Ein Worker
+ * kontrolliert nur Seiten, die *nach* seiner Aktivierung geladen wurden. Beim
+ * allerersten Besuch registriert er sich, wird aktiv — und die bereits offene
+ * Seite bleibt unkontrolliert, bis sie neu geladen wird. `clients.claim()` im
+ * Worker holt das normalerweise nach, aber das ist ein Rennen: Unter Last
+ * (gemessen im vollen 462-Test-Lauf) kann es länger dauern als das
+ * Test-Timeout, und `waitForFunction` wartet dann auf etwas, das in dieser
+ * Runde nicht mehr kommt.
+ *
+ * Deshalb: kurz auf `claim()` warten, und wenn das nicht reicht, einmal neu
+ * laden. Nach einem Reload ist die Kontrolle garantiert — das ist kein
+ * Verstecken des Problems, sondern der vorgesehene Weg.
+ */
+async function warteAufKontrolle(page: Page) {
+  await page.evaluate(() => navigator.serviceWorker.ready);
+
+  const kontrolliert = await page
+    .waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 5000 })
+    .then(() => true)
+    .catch(() => false);
+
+  if (kontrolliert) return;
+
+  await page.reload();
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, {
+    timeout: 10000,
+  });
+}
+
 test.describe("PROJ-12: PWA-Installation", () => {
   test.describe("Manifest", () => {
     test("ist verlinkt und deklariert alle Pflichtfelder", async ({ page, request }) => {
@@ -196,9 +230,7 @@ test.describe("PROJ-12: PWA-Installation", () => {
 
     test("zeigt die eigene Seite statt der Browser-Fehlerseite", async ({ page, context }) => {
       await page.goto("/");
-      await page.evaluate(() => navigator.serviceWorker.ready);
-      // Der Worker muss die Seite auch kontrollieren, nicht nur aktiv sein.
-      await page.waitForFunction(() => !!navigator.serviceWorker.controller);
+      await warteAufKontrolle(page);
 
       await context.setOffline(true);
       await page.goto("/");
@@ -211,8 +243,7 @@ test.describe("PROJ-12: PWA-Installation", () => {
 
     test("verspricht NICHT, dass Quests offline spielbar seien", async ({ page, context }) => {
       await page.goto("/");
-      await page.evaluate(() => navigator.serviceWorker.ready);
-      await page.waitForFunction(() => !!navigator.serviceWorker.controller);
+      await warteAufKontrolle(page);
 
       await context.setOffline(true);
       await page.goto("/");
@@ -229,8 +260,7 @@ test.describe("PROJ-12: PWA-Installation", () => {
 
     test("bietet einen 'Erneut versuchen'-Button mit 44px Tap-Ziel", async ({ page, context }) => {
       await page.goto("/");
-      await page.evaluate(() => navigator.serviceWorker.ready);
-      await page.waitForFunction(() => !!navigator.serviceWorker.controller);
+      await warteAufKontrolle(page);
 
       await context.setOffline(true);
       await page.goto("/");
@@ -247,8 +277,7 @@ test.describe("PROJ-12: PWA-Installation", () => {
       // Erststart-Dialog vorab erledigen, sonst liegt er nach dem Neuladen
       // ueber dem Startscreen und verdeckt genau das, was geprueft wird.
       await seed(page);
-      await page.evaluate(() => navigator.serviceWorker.ready);
-      await page.waitForFunction(() => !!navigator.serviceWorker.controller);
+      await warteAufKontrolle(page);
 
       await context.setOffline(true);
       await page.goto("/");
@@ -270,22 +299,42 @@ test.describe("PROJ-12: PWA-Installation", () => {
       context,
     }) => {
       await page.goto("/");
-      await page.evaluate(() => navigator.serviceWorker.ready);
-      await page.waitForFunction(() => !!navigator.serviceWorker.controller);
+      await warteAufKontrolle(page);
 
       await context.setOffline(true);
-
-      const requests: string[] = [];
-      page.on("request", (r) => {
-        if (r.url() !== page.url()) requests.push(r.url());
-      });
       await page.goto("/");
       await expect(page.getByRole("heading", { name: /keine verbindung/i })).toBeVisible();
 
+      /**
+       * Geprueft wird, was die Seite **selbst** referenziert — nicht, was
+       * waehrend ihrer Anzeige zufaellig durchs Netz geht.
+       *
+       * Die erste Fassung horchte auf `page.on("request")` und war dadurch
+       * flaky (gemessen: 1 von 3 parallelen Laeufen): Sie fing Next.js'
+       * Prefetches (`/about?_rsc=...`) auf, die ein *anderer* parallel
+       * laufender Test ausgeloest hatte. Das sagte nichts ueber die
+       * Offline-Seite aus — die Aussage haengt an ihrem Markup, und genau das
+       * wird jetzt gemessen.
+       */
+      const referenzen = await page.evaluate(() => {
+        const raus: string[] = [];
+        document.querySelectorAll("script[src], link[href], img[src]").forEach((el) => {
+          const url =
+            el.getAttribute("src") ?? el.getAttribute("href") ?? "";
+          // Anker und reine Fragmente sind keine nachgeladenen Ressourcen.
+          if (url && !url.startsWith("#")) raus.push(url);
+        });
+        return raus;
+      });
+
       // Die Seite muss funktionieren, wenn die App gar nicht laden konnte —
-      // also ohne ein einziges Unter-Asset.
-      const subResources = requests.filter((u) => !u.endsWith("/") && !u.includes("favicon"));
-      expect(subResources).toEqual([]);
+      // also ohne ein einziges Unter-Asset: kein React, kein Next.js, keine
+      // Schriften, kein externes CSS.
+      expect(referenzen).toEqual([]);
+
+      // Und kein Inline-Script, das nachladen koennte.
+      const scripts = await page.locator("script").count();
+      expect(scripts).toBe(0);
 
       await context.setOffline(false);
     });
@@ -566,6 +615,139 @@ test.describe("PROJ-12: PWA-Installation", () => {
         expect(ratio, text).toBeGreaterThanOrEqual(4.5);
       }
       expect(Object.keys(measured).length).toBeGreaterThan(0);
+    });
+  });
+
+  /**
+   * AC "Browser ohne Service-Worker-Unterstuetzung" und Edge Case 12.
+   *
+   * Diese drei Faelle hatten bis zur QA vom 2026-09-19 **gar keinen Test** —
+   * genau die Luecke, durch die BUG-11 entstehen konnte. Alle drei enden
+   * damit, dass die App vollstaendig bedienbar bleibt und die Konsole still
+   * ist; nur Offline-Seite und Android-Installationsweg entfallen.
+   */
+  /**
+   * AC: „Neue Version ohne Deinstallieren oder Fensterschliessen."
+   *
+   * Dieser Block existiert wegen einer Gegenprobe: Nachdem `warteAufKontrolle()`
+   * einen Reload als Rueckfallebene bekam, bestand die Suite **auch dann noch
+   * vollstaendig**, wenn man `skipWaiting()` und `clients.claim()` aus `sw.js`
+   * entfernte — der Reload verdeckte den Verlust. Die sofortige Uebernahme ist
+   * aber genau das, was das Acceptance Criterion verlangt, und muss deshalb
+   * eigens geprueft werden.
+   */
+  test.describe("Sofortige Uebernahme (skipWaiting + claim)", () => {
+    test("der Worker uebernimmt die bereits offene Seite OHNE Reload", async ({ page }) => {
+      // Frischer Zustand: Ohne das kontrolliert ein Worker aus einem frueheren
+      // Test die Seite schon beim ersten Aufruf, und der Test wuerde bestehen,
+      // ohne die Uebernahme wirklich zu pruefen.
+      await page.goto("/");
+      await page.evaluate(async () => {
+        for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister();
+        for (const k of await caches.keys()) await caches.delete(k);
+      });
+
+      // Erster Aufruf nach dem Aufraeumen: Der Worker installiert sich neu und
+      // muss diese Seite von sich aus uebernehmen.
+      await page.goto("/");
+      await page.evaluate(() => navigator.serviceWorker.ready);
+
+      // Bewusst KEIN Reload. Faellt `clients.claim()` weg, bleibt `controller`
+      // null und dieser Test schlaegt fehl — so soll es sein.
+      await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, {
+        timeout: 15000,
+      });
+
+      const kontrolliert = await page.evaluate(() => !!navigator.serviceWorker.controller);
+      expect(kontrolliert).toBe(true);
+    });
+
+    test("kein Worker haengt im Wartezustand fest", async ({ page }) => {
+      await page.goto("/");
+      await warteAufKontrolle(page);
+
+      const zustand = await page.evaluate(async () => {
+        const r = await navigator.serviceWorker.ready;
+        await r.update();
+        return { waiting: !!r.waiting, active: !!r.active };
+      });
+
+      // `skipWaiting()` sorgt dafuer, dass eine neue Fassung nicht wartet, bis
+      // alle Fenster geschlossen sind — die installierte App hat keine
+      // Adressleiste, mit der ein Nutzer das erzwingen koennte.
+      expect(zustand.waiting).toBe(false);
+      expect(zustand.active).toBe(true);
+    });
+  });
+
+  test.describe("Ohne Service Worker (Edge Case 12)", () => {
+    /** Hilft beim Zaehlen: Wirft die Seite waehrend der Bedienung Fehler? */
+    async function bedienbarOhneFehler(page: import("@playwright/test").Page) {
+      const fehler: string[] = [];
+      page.on("pageerror", (e) => fehler.push(String(e)));
+
+      await page.goto("/");
+      await page.evaluate(() => localStorage.setItem("gq_first_visit_done", "true"));
+      await page.goto("/");
+      await expect(page.locator('a[href="/play"]')).toBeVisible();
+      await expect(page.locator('a[href="/create"]')).toBeVisible();
+
+      await page.goto("/play");
+      await expect(page.getByRole("heading", { name: /meine quests/i })).toBeVisible();
+
+      await page.goto("/create");
+      await expect(page.getByRole("heading").first()).toBeVisible();
+
+      return fehler;
+    }
+
+    test("Eigenschaft fehlt ganz — echter Browser ohne Unterstuetzung", async ({ page }) => {
+      await page.addInitScript(() => {
+        delete (Navigator.prototype as unknown as Record<string, unknown>).serviceWorker;
+      });
+
+      const fehler = await bedienbarOhneFehler(page);
+      expect(await page.evaluate(() => "serviceWorker" in navigator)).toBe(false);
+      expect(fehler).toEqual([]);
+    });
+
+    /**
+     * BUG-11 (QA 2026-09-19): Haertungs-Erweiterungen setzen solche APIs
+     * gelegentlich auf `undefined`, statt sie zu loeschen. Die alte Pruefung
+     * `"serviceWorker" in navigator` war dann `true`, und `.register()` warf
+     * bei jedem Seitenaufruf einen `TypeError` in die Konsole.
+     */
+    test("BUG-11: Eigenschaft ist undefined — kein TypeError in der Konsole", async ({
+      page,
+    }) => {
+      await page.addInitScript(() => {
+        Object.defineProperty(navigator, "serviceWorker", {
+          get: () => undefined,
+          configurable: true,
+        });
+      });
+
+      const fehler = await bedienbarOhneFehler(page);
+      // Die Eigenschaft ist da, aber leer — genau der Fall aus BUG-11.
+      expect(await page.evaluate(() => "serviceWorker" in navigator)).toBe(true);
+      expect(await page.evaluate(() => navigator.serviceWorker)).toBeFalsy();
+      expect(fehler).toEqual([]);
+    });
+
+    test("unsicherer Kontext — still uebersprungen, keine Registrierung", async ({ page }) => {
+      await page.addInitScript(() => {
+        Object.defineProperty(window, "isSecureContext", {
+          get: () => false,
+          configurable: true,
+        });
+      });
+
+      const fehler = await bedienbarOhneFehler(page);
+      const registrierungen = await page.evaluate(
+        async () => (await navigator.serviceWorker.getRegistrations()).length
+      );
+      expect(registrierungen).toBe(0);
+      expect(fehler).toEqual([]);
     });
   });
 
