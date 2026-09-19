@@ -356,6 +356,14 @@ Gemessen statt geschätzt: **schlechtester Kontrast 6.61:1**, alle Tap-Ziele **4
 
 Suiten gegen den Production-Build, beide mit Exit-Code 0: **Unit 219/219**, **Chrome 153: 441 passed / 23 skipped / 0 failed**, **Mobile Safari: 435 passed / 29 skipped / 0 failed** — dieselben 464 Tests auf beiden Engines.
 
+**Am 2026-09-19 nach Production deployt** (Tag `v1.30.0-PROJ-12`) — live auf https://geoquesty.vercel.app und dort verifiziert. **Alle 14 Endpunkte HTTP 200** mit korrektem Content-Type. Der Kern ist auch live bestätigt: Der Service Worker kontrolliert die Seite, und der Cache enthält nach dem Besuch aller sieben Routen **genau `["/offline.html"]`**. Die Offline-Seite erscheint mit der richtigen Aussage, „Erneut versuchen" bringt die App zurück. Alle vier Icons sind **byte-identisch** zum Repository ausgeliefert. Auf WebKit ist der Hinweis live sichtbar — `/` kompakt, `/play` voll, `/create` keiner. Nachbarseiten unbeschädigt: `/about` mit `FAQPage` und 1× Ko-fi, `/anleitung` weiterhin ohne Prompt. Security-Header inkl. HSTS auf allen neuen Dateien.
+
+**Zwei Auffälligkeiten geprüft statt weggewunken:** Die ~25 fehlgeschlagenen `?_rsc=`-Requests traten in der Gegenmessung **ohne** Service Worker genauso auf (24) — abgebrochene Next.js-Prefetches der schnellen Testnavigation, nicht vom Feature. Ein ruhiger Erstbesuch zeigt **0 Konsolenfehler und 0 fehlgeschlagene Requests**. Und dass der Hinweis auf Desktop-Chrome ausbleibt, liegt nicht an einer Sperrbedingung (alle einzeln gemessen und offen), sondern daran, dass **Chrome `beforeinstallprompt` bei einem Erstbesuch nicht feuert** — mit simuliertem Event erscheint er sofort.
+
+**Ein Fehler in meiner eigenen Messung, offen benannt:** Mein erster „Live"-Check suchte im Manifest nach „Geo Quest" — und fand den Text in der **404-Seite**, die denselben Titel trägt. Der Check konnte nicht fehlschlagen und war wertlos; ich hatte kurzzeitig „live" gemeldet, während alle neuen Dateien noch 404 lieferten. Korrigiert durch eine Prüfung auf den echten Statuscode von `manifest.webmanifest` **und** `sw.js`.
+
+**PROJ-12 ist abgeschlossen. Damit sind alle P0-Features des PRD live.** Offen bleibt nur die Statusleistenfarbe (`black-translucent`) als Augenschein am echten iPhone — in der Spec als offene Frage geführt.
+
 **Per Gegenprobe geschärft:** Entfernt man die Standalone-Prüfung, fällt genau der zuständige Test; ändert man die Frist auf 3 Tage, fällt „nach 29 Tagen"; lässt man die Offline-Seite „Deine Quests sind offline spielbar" versprechen, fallen **4 Tests**, darunter der eigens dafür geschriebene. Die drei `test.skip` sind nachvollzogen und keine stillgelegten Tests — zweimal eine unabhängig verifizierte Engine-Grenze, einmal eine bewusst engine-spezifische Prüfung.
 
 

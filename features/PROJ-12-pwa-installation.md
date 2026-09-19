@@ -718,4 +718,29 @@ Keine Critical- oder High-Bugs. Der einzige Fund (BUG-11) ist ein Konsolenfehler
 | Secrets im Repo | keine; nur `.env.local.example` ist getrackt |
 | Security-Header | aktiv, auch auf `sw.js`, `offline.html`, Manifest und Icons |
 
-_Ergänzt nach der Production-Verifikation._
+### In Production verifiziert (2026-09-19)
+
+**Alle 14 Endpunkte liefern HTTP 200** mit korrektem Content-Type — die sieben Routen (0,07–0,22 s), Manifest (`application/manifest+json`), `sw.js`, `offline.html` und alle vier Icons.
+
+| Prüfung | Ergebnis |
+|---|---|
+| Service Worker | registriert, **kontrolliert die Seite**, Scope `https://geoquesty.vercel.app/` |
+| Cache nach Besuch aller sieben Routen | **`["/offline.html"]`** — genau ein Eintrag |
+| Offline-Start | eigene Seite: „Keine Verbindung / … zum Starten"; kein „offline spielen" |
+| „Erneut versuchen" mit Netz | App startet wieder |
+| Hinweis auf iOS/WebKit | `/` kompakt („Teilen → Home-Bildschirm"), `/play` voll mit beiden Schritten, `/create` keiner |
+| Icons | alle vier **byte-identisch** zum Repository (`cmp` gegen `public/icons/`) |
+| `apple-touch-icon`, `apple-mobile-web-app-*` | im HTML gesetzt |
+| Security-Header | auf allen neuen Dateien aktiv, inkl. **HSTS**; `sw.js` mit `max-age=0` |
+| Nachbarseiten | `/about` trägt `FAQPage` + 1× Ko-fi; `/anleitung` weiterhin **ohne** Prompt, mit „Bald" |
+| Erstbesuch wie ein echter Nutzer | **0 Konsolenfehler, 0 fehlgeschlagene Requests** |
+
+**Zwei Auffälligkeiten geprüft und beide entkräftet:**
+
+1. **~25 fehlgeschlagene `?_rsc=`-Requests** im ersten Messlauf sahen nach einem Fehler aus. Gegenmessung **ohne** Service Worker: **24** — praktisch dieselbe Zahl. Es sind abgebrochene Next.js-Prefetches durch die schnelle Testnavigation, nicht vom Feature verursacht. Ein ruhiger Erstbesuch zeigt 0.
+
+2. **Der Installations-Hinweis erschien auf Desktop-Chrome nicht.** Einzeln nachgemessen: keine Sperrbedingung greift (nicht standalone, nicht weggeklickt, Erststart erledigt) — **Chrome feuert `beforeinstallprompt` schlicht nicht**, weil seine Engagement-Heuristik einen Erstbesuch nicht genügen lässt. Mit simuliertem Event erscheint der Hinweis sofort. Auf WebKit ist er ohnehin live sichtbar. Erwartetes Verhalten, in der Spec als Grenze benannt.
+
+**Nicht prüfbar geblieben:** Offline-Navigation auf WebKit (`setOffline` + `goto` wirft dort „WebKit encountered an internal error" — dieselbe Playwright-Grenze wie lokal, unabhängig bestätigt) und das echte Homescreen-Icon auf einem Gerät.
+
+**Offen für den Betreiber:** `apple-mobile-web-app-status-bar-style` steht auf `black-translucent`. Die Spec führt die Statusleistenfarbe als offene Frage, die nur am echten iPhone zu beurteilen ist.
