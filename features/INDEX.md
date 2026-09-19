@@ -27,7 +27,7 @@
 | PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Deployed | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
-| PROJ-12 | PWA-Installation | P0 | PROJ-1 | In Progress | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
+| PROJ-12 | PWA-Installation | P0 | PROJ-1 | Approved | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
@@ -312,11 +312,31 @@ Mit ausgeliefert: `playwright.prod.config.ts` (löst das projektlange Chromium-P
 
 **33 Unit-Tests** für den Hook, den die Architektur ausdrücklich als testbedürftig markierte („die Lücke, durch die BUG-6 live gehen konnte, war ein ungetesteter Hook"). Die Plattform-Erkennung ist gegen sieben echte User-Agents geprüft, darunter die drei Fälle, die wie iOS-Safari aussehen und keines sind: Chrome auf iOS, Firefox auf iOS und ein echter Mac. Dazu **32 E2E-Tests**.
 
-Suiten gegen den Production-Build: **Unit 219/219** (vorher 186), **Chrome 152: 436 passed / 23 skipped / 0 failed**, **Mobile Safari: 430 passed / 29 skipped / 0 failed** — beide Engines fahren dieselben 459 Tests, die Skip-Differenz von 6 ist erklärt (5 Offline-Navigationstests nur Chrome, 1 iOS-Test nur WebKit). Build und Lint sauber; `/`, `/play` und die Info-Seiten bleiben statisch (`○`).
+Suiten gegen den Production-Build: **Unit 219/219** (vorher 186), **Chrome 153: 436 passed / 23 skipped / 0 failed**, **Mobile Safari: 430 passed / 29 skipped / 0 failed** — beide Engines fahren dieselben 459 Tests, die Skip-Differenz von 6 ist erklärt (5 Offline-Navigationstests nur Chrome, 1 iOS-Test nur WebKit). Build und Lint sauber; `/`, `/play` und die Info-Seiten bleiben statisch (`○`).
 
 **Drei Gegenproben, alle mit dem erwarteten Ergebnis:** das BUG-6-Muster (iOS an einem Merkmal) lässt 5 Unit-Tests fallen; App-Shell mitcachen lässt den zuständigen Cache-Test fallen; die volle Karte auf `/` lässt den Scroll-Wächter fallen.
 
 **Nicht per Test abgedeckt und bewusst benannt:** das echte Homescreen-Icon (Augenschein), die Offline-*Navigation* auf WebKit (`setOffline` + `goto` wirft dort einen internen Playwright-Fehler — ersatzweise prüfen beide Engines den Cache-Inhalt), der echte `beforeinstallprompt` und Edge Case 7 (Standortfreigabe in der installierten iOS-PWA, nur am Gerät zu klären).
+**QA am 2026-09-19 abgeschlossen: 30 von 31 Acceptance Criteria erfüllt (1 braucht ein echtes iPhone), keine Critical- oder High-Bugs, Production-Ready.**
+
+Weil das Feature in derselben Sitzung gebaut wurde, habe ich die beiden zentralen Behauptungen **nicht übernommen, sondern mit eigenen Sonden neu gemessen.**
+
+**Erstens der Cache.** Härter geprüft als in der Frontend-Phase: alle sieben Routen besucht, zwei doppelt, zweimal zurück, einmal vorwärts, dazu ein Reload — und anschließend noch ein kompletter Quest-Durchlauf mit Karte und Modulen. Ergebnis unverändert `{"geoquest-offline-v1":["/offline.html"]}`. **Ein Eintrag, ein Cache-Name.** Dokument-Antworten kamen durchgehend vom Netz.
+
+**Zweitens die Icons**, per Pixel-Analyse statt per Augenmaß: Der hellste Randpixel aller vier Dateien misst **11 von 255** — kein weißer Rand, alle Ecken einfarbig dunkel, also auch keine doppelte Abrundung. **Kein einziger Motivpixel** liegt außerhalb einer Kreismaske. Das maskable-Icon hält sein Motiv bei x 139..372 von 512, vollständig in den inneren 80%. Auf 48px herunterskaliert und angesehen: der Pin ist klar erkennbar.
+
+**Security-Audit ohne Befund.** Der Service Worker ist neue Angriffsfläche und wurde entsprechend behandelt: Cache-Poisoning über manipulierte URLs (`<script>` in Query und Hash) lässt den Cache bei exakt einem Eintrag; die Offline-Seite reflektiert nichts, hat **0 `<script>`-Tags** und genau einen Inline-Handler (`onclick="location.reload()"`); `sw.js` enthält **keine absolute URL** und kann damit keine fremde Origin ansprechen. Security-Header sind auf allen neuen Dateien aktiv, `sw.js` mit `max-age=0` — eine neue Version kann nicht von einem HTTP-Cache festgehalten werden.
+
+Gemessen statt geschätzt: **schlechtester Kontrast 6.61:1**, alle Tap-Ziele **44px**, die 30-Tage-Grenze exakt getroffen (1/29/29,99 Tage kein Hinweis — 30,01/31 Tage wieder da). Auf echtem WebKit ohne künstliches Event zeigt iOS beide Schritte und **0 Installieren-Buttons** — die BUG-6-Lehre hält.
+
+**BUG-11 (Low, neu):** Der Guard in `service-worker-registration.tsx:22` prüft, ob `navigator.serviceWorker` *existiert*, nicht ob es einen Wert hat. Setzt eine Härtungs-Erweiterung die Eigenschaft auf `undefined`, wirft `.register()` einen Konsolenfehler. **Die App bleibt dabei vollständig bedienbar** (`/`, `/play`, `/create` geprüft), und im Normalfall tritt es nicht auf: Ein echter Browser ohne Unterstützung lässt die Eigenschaft weg, dann greift der Guard einwandfrei. Ein Einzeiler (`if (!navigator.serviceWorker) return;`) deckt beide Formen ab. Nicht blockierend.
+
+**Drei Beobachtungen ohne Bug-Status:** 320×568 scrollt — aber **schon vor diesem Feature** (gegen `de882fb~1` gemessen: 581 bei 568px Höhe); der Hinweis vergrößert 13px Überlauf auf 65px, das Spec-Kriterium nennt 360×640 und dort ist es erfüllt. **Firefox bleibt ungetestet** (Binary fehlt trotz gegenteiliger `--dry-run`-Meldung, kein Firefox in `/Applications`) — Risiko gering, da Firefox `beforeinstallprompt` gar nicht bereitstellt. Und das **echte Homescreen-Icon** bleibt Augenschein; dazu wäre `apple-mobile-web-app-status-bar-style: black-translucent` vor dem Deploy einmal auf einem iPhone zu begutachten (offene Frage der Spec).
+
+Suiten gegen den Production-Build, beide mit Exit-Code 0: **Unit 219/219**, **Chrome 153: 436 passed / 23 skipped / 0 failed**, **Mobile Safari: 430 passed / 29 skipped / 0 failed**.
+
+**Per Gegenprobe geschärft:** Entfernt man die Standalone-Prüfung, fällt genau der zuständige Test; ändert man die Frist auf 3 Tage, fällt „nach 29 Tagen"; lässt man die Offline-Seite „Deine Quests sind offline spielbar" versprechen, fallen **4 Tests**, darunter der eigens dafür geschriebene. Die drei `test.skip` sind nachvollzogen und keine stillgelegten Tests — zweimal eine unabhängig verifizierte Engine-Grenze, einmal eine bewusst engine-spezifische Prüfung.
+
 
 ## Abgeschlossen: QA des Navigations-Refinements (2026-09-10)
 Die seit dem 2026-09-06 offene QA von **PROJ-1** ist nachgeholt — der Punkt, der in mehreren Einträgen oben als „QA steht aus" vermerkt war.

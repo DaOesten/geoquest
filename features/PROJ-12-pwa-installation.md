@@ -1,8 +1,8 @@
 # PROJ-12: PWA-Installation (Add to Homescreen)
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-09-18
-**Last Updated:** 2026-09-19 (Frontend umgesetzt)
+**Last Updated:** 2026-09-19 (QA abgeschlossen)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — der Startscreen `/` trägt einen der beiden Hinweis-Orte, und das Wurzel-Layout (`src/app/layout.tsx`) hält heute schon `themeColor` und `viewportFit: "cover"`
@@ -472,7 +472,7 @@ Gegen den **Production-Build** gefahren (`playwright.prod.config.ts`), nicht geg
 | Suite | Ergebnis |
 |---|---|
 | Unit (Vitest) | **219/219** (vorher 186) |
-| E2E Chrome 152 | **436 passed / 23 skipped / 0 failed** |
+| E2E Chrome 153 | **436 passed / 23 skipped / 0 failed** |
 | E2E Mobile Safari | **430 passed / 29 skipped / 0 failed** |
 | Build | sauber, `/` `/play` und alle Info-Seiten weiterhin statisch (`○`) |
 | Lint | 0 Fehler (7 Warnungen, alle vorbestehend: `<img>` in fremden Komponenten) |
@@ -489,7 +489,185 @@ Vor diesem Feature lagen die Suiten bei 405/22 (Chrome) und 404/23 (Mobile Safar
 - **Standortfreigabe in der installierten iOS-PWA** (Edge Case 7, offene Frage der Spec) — nur auf einem echten iPhone zu klären.
 
 ## QA Test Results
-_To be added by /qa_
+
+**Getestet am:** 2026-09-19
+**Getestet gegen:** Production-Build (`next build` + `next start`), nicht den Dev-Server
+**Engines:** Google Chrome 153 (echtes Binary via `channel: 'chrome'`) und WebKit (iPhone-13-Profil)
+
+> **Hinweis zur Unabhängigkeit:** Dieses Feature wurde in derselben Sitzung gebaut. Die beiden zentralen Behauptungen der Frontend-Phase — „der Cache enthält nur die Offline-Seite" und „die Icons halten die Sicherheitszone" — wurden deshalb **nicht übernommen, sondern mit eigenen Sonden neu gemessen**.
+
+### Ergebnis in einem Satz
+
+**30 von 31 Acceptance Criteria erfüllt, 1 nicht prüfbar (echtes Gerät nötig), keine Critical- oder High-Bugs. Ein Low-Bug gefunden. Production-Ready: JA.**
+
+### Acceptance Criteria
+
+#### Installierbarkeit (7)
+
+| # | Kriterium | Ergebnis | Nachweis |
+|---|---|---|---|
+| 1 | Manifest verlinkt, alle Pflichtfelder | **PASS** | Auf allen 7 Routen `<link rel="manifest">`; Felder gemessen |
+| 2 | Chrome/Android bietet Installationsweg | **PASS** | Alle 9 Installationsbedingungen erfüllt; SW mit fetch-Handler aktiv |
+| 3 | iOS „Zum Home-Bildschirm" mit Icon und Namen | **PASS (technisch)** | `apple-touch-icon` + `apple-mobile-web-app-title` ausgeliefert; die Ablage selbst braucht ein echtes iPhone |
+| 4 | Vollbild ohne Adressleiste | **PASS** | `display: standalone` im Manifest |
+| 5 | Startet auf `/` mit beiden Mode-Cards | **PASS** | `start_url: "/"`, beide Cards gerendert |
+| 6 | Bleibt im Hochformat | **PASS** | `orientation: "portrait"` |
+| 7 | Quests und Fortschritt vorhanden | **PASS** | Quest überlebt Reload mit aktivem SW (gemessen: 1 Quest vor und nach) |
+
+#### App-Icons (5)
+
+| # | Kriterium | Ergebnis | Messwert |
+|---|---|---|---|
+| 8 | Kein weißer Rand, keine doppelte Abrundung | **PASS** | Hellster Randpixel aller vier Icons: **11 von 255**; alle vier Ecken `rgb(3,10,11)` |
+| 9 | Pin überlebt Kreis-/Squircle-Maske | **PASS** | **0 Motivpixel** außerhalb der Kreismaske, in allen vier Varianten |
+| 10 | Bei 48×48 erkennbar | **PASS** | Auf 48px herunterskaliert und angesehen: Pin, Route und X klar lesbar |
+| 11 | 192, 512 und eigene `maskable`-Variante | **PASS** | Alle drei vorhanden, `maskable` ist eine **eigene Datei**, nicht dasselbe Bild mit zwei Zwecken |
+| 12 | `apple-touch-icon` gesetzt | **PASS** | `<link rel="apple-touch-icon" sizes="180x180">`, Datei liefert 200 + `image/png` |
+
+Die Sicherheitszone ist unabhängig nachgemessen: Das maskable-Icon hält das Motiv bei **x 139..372, y 103..408** von 512 — vollständig in den inneren 80% (51..460). Die `any`-Icons liegen bewusst darüber, weil sie unbeschnitten dargestellt werden.
+
+#### Hinweis auf die Installation (9)
+
+| # | Kriterium | Ergebnis | Messwert |
+|---|---|---|---|
+| 13 | Hinweis auf `/` und `/play` | **PASS** | Gezählt je Route: `/`=1, `/play`=1 |
+| 14 | Android-Button öffnet nativen Dialog | **PASS** | `preventDefault` **und** `prompt()` nachweislich aufgerufen |
+| 15 | iOS erklärt „Teilen → Zum Home-Bildschirm" | **PASS** | Auf echtem WebKit ohne künstliches Event: beide Schritte genannt, **0 Installieren-Buttons** |
+| 16 | Kein Hinweis im Standalone-Modus | **PASS** | `/`=0 und `/play`=0 bei `display-mode: standalone` |
+| 17 | Wegklicken → 30 Tage Ruhe | **PASS** | Zeitstempel geschrieben; nach 1 / 29 / 29,99 Tagen: kein Hinweis |
+| 18 | Nach 30 Tagen wieder angeboten | **PASS** | Bei 30,01 und 31 Tagen: Hinweis wieder da — die Grenze liegt exakt richtig |
+| 19 | Kein Hinweis in Quest und Creator | **PASS** | `/create`, `/about`, `/anleitung`, `/impressum`, `/datenschutz` und **`/play/[id]`** je 0 |
+| 20 | Tap-Ziele ≥44px, Kontrast ≥4.5:1 | **PASS** | Alle Bedienelemente **44px**; schlechtester Kontrast **6.61:1** |
+| 21 | PROJ-1-Kriterium auf 360×640 bleibt erfüllt | **PASS** | Cards enden bei **559/640**, `scrollHeight` = `innerHeight` = **640** — kein Scroll |
+
+#### Verhalten ohne Netz (4)
+
+| # | Kriterium | Ergebnis | Nachweis |
+|---|---|---|---|
+| 22 | Eigene Seite statt Browser-Fehlerseite | **PASS** | „KEINE VERBINDUNG / Geo Quest braucht eine Internetverbindung, um zu starten." |
+| 23 | „Erneut versuchen" versucht neu zu laden | **PASS** | Klick während Offline → bleibt auf der Seite (korrekt) |
+| 24 | Mit Netz zurück startet die App | **PASS** | Klick nach `setOffline(false)` → Startscreen mit beiden Mode-Cards |
+| 25 | Verspricht **keine** Offline-Fähigkeit | **PASS** | Text enthält „starten"; „offline spielbar", „offline spielen", „offline verfügbar", „du bist offline" kommen **nicht** vor |
+
+#### Aktualisierung (2)
+
+| # | Kriterium | Ergebnis | Nachweis |
+|---|---|---|---|
+| 26 | Neue Version ohne Fensterschließen | **PASS** | Nach `update()` hängt **kein** Worker in `waiting`; Seite bleibt kontrolliert. Ein untergeschobener Fremd-Cache wird bei echter Aktivierung **entfernt** |
+| 27 | Alles aus dem Netz, nur Offline-Seite aus dem Cache | **PASS** | Siehe Kernmessung unten |
+
+#### Keine Regression (5)
+
+| # | Kriterium | Ergebnis | Nachweis |
+|---|---|---|---|
+| 28 | Alle 7 Routen HTTP 200 | **PASS** | Alle 200, auf beiden Engines |
+| 29 | Info-Seiten unverändert | **PASS** | `FAQPage`- und `WebApplication`-JSON-LD vorhanden; Ko-fi exakt 1×/1×/0×/0×; PROJ-14-Prompt weiterhin **nicht** ausgeliefert |
+| 30 | Quest spielen funktioniert wie zuvor | **PASS** | Quest-Intro rendert, **0 Seitenfehler**, Cache wächst dabei nicht |
+| 31 | Browser ohne SW-Unterstützung | **PASS** | Eigenschaft fehlt → Guard greift, **0 Fehler**. Unsicherer Kontext → still übersprungen, 0 Registrierungen, 0 Fehler |
+| 32 | Security-Header unverändert aktiv | **PASS** | `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` auf **allen** neuen Dateien |
+
+### Die Kernmessung — unabhängig wiederholt
+
+Die zentrale Behauptung des Features ist, dass das PRD-Non-Goal „Kein Offline-Modus" strukturell eingehalten wird. Eigene Sonde, härter als die Frontend-Tests: alle 7 Routen besucht, zwei davon doppelt, dazu zweimal zurück, einmal vorwärts und ein Reload.
+
+```
+CACHE-DUMP: {"geoquest-offline-v1":["/offline.html"]}
+```
+
+**Ein Eintrag. Ein Cache-Name.** Zusätzlich nach einem kompletten Quest-Durchlauf mit Karte und Modulen erneut geprüft: unverändert. Dokument-Antworten kamen durchgehend vom Netz (`from: "net"`, Status 200).
+
+### Security-Audit (Red Team)
+
+Der Service Worker ist neue Angriffsfläche — er sitzt zwischen Nutzer und Netz. **Kein Befund.**
+
+| Angriff | Ergebnis |
+|---|---|
+| Cache-Poisoning über manipulierte URLs (`/play?x=<script>`, `/create?evil=%3Cscript%3E`, Query, Hash) | Cache danach **weiterhin exakt 1 Eintrag** |
+| XSS über die Offline-Seite (`?q=<script>alert(1)</script>`, `"><img src=x onerror=...`) | Nichts reflektiert, `alert(1)` und `onerror=` nicht im Dokument |
+| Ausführbarer Code auf der Offline-Seite | **0 `<script>`-Tags**, genau **ein** Inline-Handler: `onclick="location.reload()"` |
+| Fremde Hosts auf der Offline-Seite | Keine — einzige Fundstelle ist der SVG-Namespace (kein Netzaufruf) |
+| Secrets in `sw.js` | Keine; und **keine absolute URL** — der Worker kann keine fremde Origin ansprechen |
+| Scope-Ausweitung | Scope ist `http://localhost:3200/`, Skript `/sw.js` — eigene Origin |
+| Fremde Ziele im Manifest | Keine; `start_url` und `scope` sind relativ, alle Icons relativ |
+| Security-Header auf den neuen Dateien | Alle aktiv, auch auf `sw.js`, `offline.html`, Manifest und Icons |
+
+Positiv erwähnenswert: `sw.js` wird mit `Cache-Control: public, max-age=0` ausgeliefert. Eine neue Worker-Version wird dadurch sofort geholt und kann nicht von einem HTTP-Cache festgehalten werden — genau das, was `skipWaiting` voraussetzt.
+
+### Geprüfte Edge Cases
+
+| Edge Case | Ergebnis |
+|---|---|
+| 3 — Abbruch des Dialogs zählt als weggeklickt | **PASS** — Hinweis weg, Zeitstempel gesetzt |
+| 4 — localStorage blockiert | **PASS** — Hinweis verschwindet für die Sitzung, kein Fehler |
+| 5 — Netzausfall **mitten** in der Sitzung | **PASS** — keine Offline-Seite, die App bleibt stehen und bedienbar |
+| 12 — Service Worker nicht registrierbar | **PASS** bei fehlender Unterstützung und unsicherem Kontext; **BUG-11** im Sonderfall (siehe unten) |
+| 13 — Erststart-Dialog hat Vorrang | **PASS** — Dialog offen: kein Hinweis; nach „Verstanden" rückt er ohne Neuladen nach |
+
+**Zusätzlich geprüft (nicht in der Spec):**
+
+- **HTTP-Fehlerseiten:** Ein 404 zeigt weiterhin die App-eigene Seite „ZIEL NICHT GEFUNDEN", **nicht** die Offline-Seite. Richtig, denn `fetch` wirft nur bei echtem Netzfehler — eine Serverantwort ist kein Offline-Zustand.
+- **Abschneiden der kompakten Fassung:** Auf 320px wird auf beiden Engines **kein** Text abgeschnitten.
+- **Fremd-Cache beim Versionswechsel:** Wird bei echter Aktivierung entfernt.
+
+### Gefundene Bugs
+
+#### BUG-11 (Low) — Konsolenfehler, wenn eine Erweiterung `navigator.serviceWorker` auf `undefined` setzt
+
+**Ort:** [service-worker-registration.tsx:22](src/components/service-worker-registration.tsx#L22)
+
+**Beschreibung:** Der Guard lautet `if (!("serviceWorker" in navigator)) return;`. Er prüft, ob die *Eigenschaft existiert* — nicht, ob sie einen Wert hat. Härtungs-Erweiterungen und datenschutzorientierte Browser setzen solche APIs gelegentlich auf `undefined`, statt sie zu löschen. Dann besteht der Guard, und `navigator.serviceWorker.register(...)` wirft.
+
+**Schritte zum Reproduzieren:**
+1. `Object.defineProperty(navigator, 'serviceWorker', { get: () => undefined })` vor dem Laden setzen
+2. Eine beliebige Seite aufrufen
+
+**Beobachtet:** `TypeError: Cannot read properties of undefined (reading 'register')`, mehrfach pro Seitenaufruf.
+
+**Auswirkung: gering.** Die App bleibt **vollständig bedienbar** — `/`, `/play` und `/create` wurden in diesem Zustand geprüft und funktionieren. Es ist ein Konsolenfehler, kein Funktionsverlust, und er tritt im normalen Betrieb nicht auf: Ein echter Browser ohne Unterstützung lässt die Eigenschaft **weg** (gemessen: `'serviceWorker' in navigator === false`), und dann greift der Guard einwandfrei.
+
+**Mögliche Behebung (eine Zeile):** `if (!navigator.serviceWorker) return;` statt der `in`-Prüfung — deckt beide Formen ab.
+
+**Nicht blockierend.** Kein Nutzer verliert Funktionalität; die `.catch()`-Klausel fängt bereits alles ab, was *nach* diesem Punkt schiefgehen kann.
+
+### Beobachtungen ohne Bug-Status
+
+**1. 320×568 scrollt — aber schon vorher.** Der Startscreen überläuft auf dem kleinsten Referenz-Viewport. **Das ist kein Regress:** Mit der Fassung vor diesem Feature (Commit `de882fb~1`) gemessen, scrollte er dort bereits (`scrollHeight` 581 bei 568px Höhe). Der Hinweis vergrößert einen vorhandenen Überlauf von 13px auf 65px. Das Spec-Kriterium nennt ausdrücklich 360×640, und dort ist es erfüllt. Passt zur bereits in `INDEX.md` vermerkten Beobachtung, dass 320×568 die Stelle ist, die zuerst kippt.
+
+**2. Firefox bleibt ungetestet.** Das Binary fehlt, obwohl `playwright install --dry-run` es als vorhanden meldet, und es liegt kein Firefox in `/Applications`. Risiko gering: Firefox stellt `beforeinstallprompt` gar nicht bereit und wird von `isIOSSafari()` sicher ausgeschlossen — der Hinweis erscheint dort schlicht nicht, was dem gewünschten Verhalten entspricht (Edge Case 1).
+
+**3. Das echte Homescreen-Icon bleibt Augenschein.** Alles technisch Messbare ist geprüft; wie das Icon auf einem echten iPhone- oder Android-Homescreen zwischen anderen Apps wirkt, kann kein Test beantworten.
+
+**4. `apple-mobile-web-app-status-bar-style: black-translucent`** ist gesetzt. Die Spec führt die Statusleistenfarbe als offene Frage („am echten Gerät zu beurteilen") — vor dem Deploy ein Blick auf einem iPhone wäre sinnvoll.
+
+### Gegenprobe — greifen die Tests wirklich?
+
+Vier absichtlich eingebaute Fehler, jeweils mit dem erwarteten Ergebnis:
+
+| Absichtlicher Fehler | Fallende Tests |
+|---|---|
+| Standalone-Prüfung entfernt (installierte App bekäme den Hinweis) | 1 — genau der zuständige |
+| 30-Tage-Frist auf 3 Tage geändert | 1 — „ist nach 29 Tagen noch true" |
+| Offline-Seite verspricht „Deine Quests sind offline spielbar" | **4**, darunter der eigens dafür geschriebene Test |
+| BUG-6-Muster: iOS an einem Merkmal festmachen | 5 Unit-Tests (in der Frontend-Phase belegt) |
+
+Die drei `test.skip` der PROJ-12-Suite sind nachvollzogen und **keine stillgelegten Tests**: zweimal eine Engine-Grenze (WebKit kann Offline-Navigation in Playwright nicht nachstellen — unabhängig verifiziert), einmal eine bewusst engine-spezifische Prüfung (iOS-Fassung nur auf WebKit sinnvoll).
+
+### Suiten
+
+| Suite | Ergebnis |
+|---|---|
+| Unit (Vitest) | **219/219** |
+| E2E Chrome 153 | **436 passed / 23 skipped / 0 failed** |
+| E2E Mobile Safari (WebKit) | **430 passed / 29 skipped / 0 failed** |
+| Build | sauber; `/`, `/play` und alle Info-Seiten weiterhin statisch (`○`) |
+| Lint | 0 Fehler (7 Warnungen, alle vorbestehend: `<img>` in fremden Komponenten) |
+
+Beide Engines fahren dieselben 459 Tests, beide mit Exit-Code 0. Die Skip-Differenz von 6 ist vollständig erklärt: 5 Offline-Navigationstests laufen nur auf Chrome (WebKit-Grenze), 1 iOS-Test nur auf WebKit.
+
+### Production-Ready: **JA**
+
+Keine Critical- oder High-Bugs. Der einzige Fund (BUG-11) ist ein Konsolenfehler in einem Sonderfall, der keine Funktionalität kostet und im normalen Betrieb nicht auftritt.
+
 
 ## Deployment
 _To be added by /deploy_
