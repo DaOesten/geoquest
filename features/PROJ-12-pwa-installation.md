@@ -1,8 +1,8 @@
 # PROJ-12: PWA-Installation (Add to Homescreen)
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-09-18
-**Last Updated:** 2026-09-19 (QA abgeschlossen)
+**Last Updated:** 2026-09-19 (deployt)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — der Startscreen `/` trägt einen der beiden Hinweis-Orte, und das Wurzel-Layout (`src/app/layout.tsx`) hält heute schon `themeColor` und `viewportFit: "cover"`
@@ -698,4 +698,24 @@ Keine Critical- oder High-Bugs. Der einzige Fund (BUG-11) ist ein Konsolenfehler
 
 
 ## Deployment
-_To be added by /deploy_
+
+**Deployt am:** 2026-09-19
+**Production-URL:** https://geoquesty.vercel.app
+**Tag:** `v1.30.0-PROJ-12`
+**Weg:** Push auf `main` → Vercel deployt automatisch (wie alle bisherigen Deploys dieses Projekts)
+
+### Vor dem Deploy geprüft
+
+| Prüfung | Ergebnis |
+|---|---|
+| `npm run build` | sauber; `/`, `/play` und alle Info-Seiten weiterhin statisch (`○`) |
+| `npm run lint` | 0 Fehler (7 Warnungen, alle vorbestehend: `<img>` in fremden Komponenten) |
+| Unit (Vitest) | 219/219 |
+| E2E Chrome 153 | 441 passed / 23 skipped / 0 failed, Exit-Code 0 |
+| E2E Mobile Safari | 435 passed / 29 skipped / 0 failed, Exit-Code 0 |
+| QA-Freigabe | 30/31 Acceptance Criteria, keine Critical/High-Bugs |
+| Offene Bugs | keine — BUG-11 vor dem Deploy behoben |
+| Secrets im Repo | keine; nur `.env.local.example` ist getrackt |
+| Security-Header | aktiv, auch auf `sw.js`, `offline.html`, Manifest und Icons |
+
+_Ergänzt nach der Production-Verifikation._
