@@ -45,10 +45,13 @@ export function OutroScreen({ quest, completedCount, totalCount, onDone }: Outro
           className="relative"
           style={{ animation: "gq-pop 0.5s cubic-bezier(.34,1.56,.64,1) 0.1s both" }}
         >
+          {/* Freigestelltes PNG statt des JPEG: Das JPEG bringt seinen eigenen
+              dunklen Grund mit und zeichnete sich als Rechteck vom Hintergrund
+              ab — siehe scripts/make-mark-pin-cutout.swift (PROJ-3, 2026-09-19) */}
           <img
-            src="/assets/mark-pin.jpg"
+            src="/assets/mark-pin.png"
             alt=""
-            className="w-28 h-28 object-contain rounded-2xl"
+            className="w-28 h-28 object-contain"
           />
           <div className="absolute -bottom-1 -right-1 w-10 h-10 rounded-full bg-gq-lime grid place-items-center shadow-glow-lime border-[3px] border-gq-black">
             <Check className="w-5 h-5 text-gq-black" strokeWidth={3} />

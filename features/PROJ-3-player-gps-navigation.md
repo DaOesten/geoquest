@@ -8,7 +8,7 @@
 
 > **Refinement (2026-09-07) — BUG-6 geklärt, umgesetzt und QA-geprüft:** Die iOS-Erkennung hinter dem "Kompass aktivieren"-Button ist zu grob. Sie schließt allein daraus auf iOS, dass `DeviceOrientationEvent.requestPermission` eine Funktion ist — das trifft auf Desktop-Chrome ebenfalls zu. Folge: Chrome-Nutzer bekommen einen Button angeboten, der garantiert fehlschlägt, statt des Hinweises, der ihnen hilft. BUG-6 war als vermutliches Testumgebungs-Artefakt notiert und ist als **echter Produktfehler bestätigt**. Siehe Acceptance Criteria "Richtungsanzeige ohne Heading", Edge Cases 13–14, Technical Requirements und Decision Log.
 
-> **Refinement (2026-09-19) — Gratulationsscreen (`ArrivalOverlay`), noch nicht umgesetzt:** Drei Befunde aus dem Gebrauch, alle am Ankunfts-Screen. (1) Die Karte „Nächstes Ziel" nimmt vorweg, was der Spieler gerade erst verdient hat — sie entfällt ersatzlos. (2) Das Pin-Logo zeichnet sich als Rechteck vom Hintergrund ab, weil `mark-pin.jpg` ein JPEG ohne Transparenz ist — es bekommt ein freigestelltes PNG. (3) Das Konfetti rieselt von oben und läuft endlos; es soll einmalig wie aus einer Konfetti-Kanone von unten mittig nach oben schießen — das gilt für beide Screens, die `ConfettiEffect` nutzen (Ankunft und Outro/PROJ-5). Siehe Acceptance Criteria „Ankunft — Gratulationsscreen", Edge Cases 15–17, Technical Requirements und Decision Log.
+> **Refinement (2026-09-19) — Gratulationsscreen (`ArrivalOverlay`), umgesetzt:** Drei Befunde aus dem Gebrauch, alle am Ankunfts-Screen. (1) Die Karte „Nächstes Ziel" nimmt vorweg, was der Spieler gerade erst verdient hat — sie entfällt ersatzlos. (2) Das Pin-Logo zeichnet sich als Rechteck vom Hintergrund ab, weil `mark-pin.jpg` ein JPEG ohne Transparenz ist — es bekommt ein freigestelltes PNG. (3) Das Konfetti rieselt von oben und läuft endlos; es soll einmalig wie aus einer Konfetti-Kanone von unten mittig nach oben schießen — das gilt für beide Screens, die `ConfettiEffect` nutzen (Ankunft und Outro/PROJ-5). Siehe Acceptance Criteria „Ankunft — Gratulationsscreen", Edge Cases 15–17, Technical Requirements und Decision Log.
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — für Routing und UI-Rahmen
@@ -81,14 +81,14 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 - [ ] Angenommen der Spieler ist angekommen, wenn die Ankunft bestätigt wurde, dann wird die Station als "besucht" markiert und die nächste Station freigeschaltet
 
 **Ankunft — Gratulationsscreen (Refinement 2026-09-19):**
-- [ ] Angenommen der Gratulationsscreen erscheint, wenn der Spieler ihn sieht, dann zeigt er **keinen** Hinweis auf die nächste Station — weder Name noch Karte, weder Entfernung noch Richtung
-- [ ] Angenommen der Gratulationsscreen erscheint, wenn er gerendert wird, dann folgen auf den Pin von oben nach unten: Headline "Ziel erreicht!", Teal-Strich, Stationsname, CTA "Station entdecken" — ohne weiteres Element dazwischen
-- [ ] Angenommen das Pin-Logo wird angezeigt, wenn es auf dem Screen-Hintergrund steht, dann ist keine Kante und kein Rechteck um das Motiv sichtbar — der Pin steht frei auf dem Hintergrund
-- [ ] Angenommen das Pin-Logo wird angezeigt, wenn der Haken-Badge daran sitzt, dann überlappt er das Motiv und nicht eine sichtbare Bildkante
-- [ ] Angenommen der Gratulationsscreen erscheint, wenn die Konfetti-Animation startet, dann schießen die Partikel von unten aus der Mitte nach oben auf und fallen anschließend seitlich streuend aus — kein Rieseln von oben
-- [ ] Angenommen die Konfetti-Kanone hat gefeuert, wenn alle Partikel ausgefallen sind, dann bleibt der Screen ruhig — die Animation wiederholt sich nicht (kein `infinite`)
-- [ ] Angenommen der Outro-Screen am Quest-Ende erscheint (PROJ-5), wenn seine Konfetti-Animation startet, dann verhält sie sich identisch zur Ankunft — dieselbe Komponente, dasselbe Schussverhalten
-- [ ] Angenommen der Spieler hat "Bewegung reduzieren" aktiviert (`prefers-reduced-motion`), wenn der Gratulationsscreen erscheint, dann bleibt der Screen inhaltlich vollständig, ohne aufschießende Partikel
+- [x] Angenommen der Gratulationsscreen erscheint, wenn der Spieler ihn sieht, dann zeigt er **keinen** Hinweis auf die nächste Station — weder Name noch Karte, weder Entfernung noch Richtung
+- [x] Angenommen der Gratulationsscreen erscheint, wenn er gerendert wird, dann folgen auf den Pin von oben nach unten: Headline "Ziel erreicht!", Teal-Strich, Stationsname, CTA "Station entdecken" — ohne weiteres Element dazwischen
+- [x] Angenommen das Pin-Logo wird angezeigt, wenn es auf dem Screen-Hintergrund steht, dann ist keine Kante und kein Rechteck um das Motiv sichtbar — der Pin steht frei auf dem Hintergrund
+- [x] Angenommen das Pin-Logo wird angezeigt, wenn der Haken-Badge daran sitzt, dann überlappt er das Motiv und nicht eine sichtbare Bildkante
+- [x] Angenommen der Gratulationsscreen erscheint, wenn die Konfetti-Animation startet, dann schießen die Partikel von unten aus der Mitte nach oben auf und fallen anschließend seitlich streuend aus — kein Rieseln von oben
+- [x] Angenommen die Konfetti-Kanone hat gefeuert, wenn alle Partikel ausgefallen sind, dann bleibt der Screen ruhig — die Animation wiederholt sich nicht (kein `infinite`)
+- [x] Angenommen der Outro-Screen am Quest-Ende erscheint (PROJ-5), wenn seine Konfetti-Animation startet, dann verhält sie sich identisch zur Ankunft — dieselbe Komponente, dasselbe Schussverhalten
+- [x] Angenommen der Spieler hat "Bewegung reduzieren" aktiviert (`prefers-reduced-motion`), wenn der Gratulationsscreen erscheint, dann bleibt der Screen inhaltlich vollständig, ohne aufschießende Partikel
 
 **GPS-Signalverlust:**
 - [ ] Angenommen das GPS-Signal geht verloren, wenn weniger als 30 Sekunden vergangen sind, dann zeigt die Navigation den letzten bekannten Stand (Pfeil + Entfernung bleiben stehen)
@@ -156,8 +156,8 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 - [ ] Soll der richtungslose Pfeil langsam rotieren (Suchanimation) oder statisch ausgegraut bleiben? — Umsetzungsdetail für `/frontend`
 - [ ] Soll die Ankunftserkennung bei sehr schlechter `accuracy` (> Stationsradius) unterdrückt werden, um Falsch-Ankünfte zu vermeiden? Hängt mit der offenen Genauigkeits-Frage oben zusammen.
 - [ ] Verhält sich **Android-Chrome** wie Desktop-Chrome (`requestPermission` vorhanden, liefert `denied`)? Lokal nicht messbar — kein Android-Gerät und kein lauffähiges Chromium-Binary. Der beschlossene `denied`-Rückfall macht die Antwort für die Korrektheit unkritisch, sie bliebe aber für die Testabdeckung interessant.
-- [ ] Soll die Konfetti-Kanone aus einem Punkt oder aus zwei Punkten (links und rechts unten) feuern? Ein Punkt ist die klarere Geste, zwei füllen den Screen besser — Umsetzungsdetail für `/frontend`, am besten am Gerät zu entscheiden.
-- [ ] Wie lange dauert der komplette Schuss (Aufstieg + Ausfallen)? Er muss vorbei sein, bevor der Spieler den CTA tippt, darf aber nicht so kurz sein, dass er beim Erscheinen schon verpasst ist — Umsetzungsdetail für `/frontend`.
+- [x] Soll die Konfetti-Kanone aus einem Punkt oder aus zwei Punkten feuern? → Ein Punkt, unten mittig. Der Fächer öffnet sich über 62° und deckt damit die volle Breite ab; ein zweiter Ursprung hätte nichts hinzugefügt, was der Streuwinkel nicht schon leistet (2026-09-19)
+- [x] Wie lange dauert der komplette Schuss? → 1,7–2,7s je Partikel plus bis zu 0,18s gestaffelte Zündung; nach rund 3s ist der Screen ruhig. Gemessen: Der Fächer steht nach 260ms voll im Bild, bei 600ms fällt er sichtbar aus (2026-09-19)
 
 ## Decision Log
 
@@ -515,6 +515,63 @@ geprueft (Suchzustand, Kein-Fix, `POSITION_UNAVAILABLE`, richtungsloser Pfeil mi
 weiterhin sichtbarer Entfernung).
 
 **Offen:** Chromium-Binary lokal nicht installiert, daher nur WebKit-Abdeckung.
+
+### Umsetzung: Gratulationsscreen (2026-09-19)
+
+Umsetzung des Refinements vom selben Tag. Fünf Dateien, **kein neues Paket**, keine neue Komponente, keine neue Route.
+
+**1. „Nächstes Ziel"-Karte entfernt.** Die Prop `nextStationName` ist über die ganze Kette weg — `ArrivalOverlay`, `NavigationScreen` und in `quest-player.tsx` auch die Zeile `const nextStation = quest.stations[navigatingIndex + 1]`, die nur sie gespeist hat. Der CTA rückt von 0,9s auf 0,7s Animationsverzögerung vor: Ohne die Karte dazwischen wäre sonst eine sichtbare Lücke entstanden, bevor der Button erscheint.
+
+Der Stationsname bekommt `max-w-xs text-balance` statt `truncate` — Edge Case 16 verlangt Umbruch statt Abschneiden.
+
+**2. Pin freigestellt.** Neues Skript `scripts/make-mark-pin-cutout.swift` erzeugt `public/assets/mark-pin.png` aus dem JPEG. Beide Screens (Ankunft und Outro) ziehen darauf um; `rounded-2xl` ist weg, weil es nur die Kante des JPEG kaschierte.
+
+**Gemessen, und die Architektur-Annahme korrigiert:** Die Spec erwartete denselben flachen Grund wie beim PWA-Icon (rgb(4,10,11)). Tatsächlich ist der Grund von `mark-pin.jpg` ein **Verlauf** — mittlere Luminanz 42.8 oben links gegen 24.9 unten rechts, Einzelwerte von rgb(20,25,31) bis rgb(35,46,51). Gegen den App-Hintergrund `#0B0F12` (Luminanz 14.2) ist das durchgehend zu hell. Keine feste Ersatzfarbe hätte das treffen können; Freistellen war nicht die elegantere, sondern die einzige Lösung.
+
+Zwei Fallstricke, die eine einfache Schwelle nicht löst und die im Skript dokumentiert sind:
+- Die dunkle Kreisfläche in der Pin-Mitte und der dunkelgrüne Schatten sind **selbst dunkel** — eine reine Luminanzschwelle stanzt ein Loch mitten durch den Pin. Gelöst per Flood-Fill vom Bildrand: Nur Dunkel, das vom Rand aus erreichbar ist, ist Hintergrund.
+- Die Lime-Elemente haben einen **Neon-Glow**, der weich ausläuft. Eine harte Schwelle hätte ihn zu einem gezackten Halo abgeschnitten. Gelöst per Alpha-Rampe über das Histogramm-Tal bei Luminanz 96–127 (nur 1.3% aller Pixel) — der Glow wird zu Teil-Alpha.
+
+Ergebnis: 76,9% der Fläche freigestellt (das Histogramm sagte ~78% Grund voraus), alle vier Eckpixel Alpha 0, Motiv-Anteil rund 23%.
+
+**3. Konfetti-Kanone.** `confetti-effect.tsx` neu: 70 Partikel (vorher 40), Mündung unten mittig, Fächer über 62°, Aufstieg 46–92vh, danach seitliches Ausfallen. `animation-iteration-count: 1` statt `infinite`, `both` hält den Endzustand.
+
+**Waagerechter und senkrechter Versatz rechnen bewusst in derselben Einheit (`vh`).** Die erste Fassung mischte `vw` waagerecht mit `vh` senkrecht — damit hängt der tatsächliche Abschusswinkel am Seitenverhältnis des Geräts (auf 390×844 ist 1vh 8.4px gegen 3.9px bei 1vw), der Fächer fällt also je nach Gerät anders aus als berechnet.
+
+`prefers-reduced-motion: reduce` blendet die Partikel aus (`display: none`) und schaltet zusätzlich die Einblend-Animationen des Ankunfts-Screens ab (`.gq-arrival-step`). Beides fehlte vorher ganz.
+
+#### Am Bildschirm geprüft, nicht nur gemessen
+
+Die Konfetti-Kanone ist eine Design-Änderung — Zahlen allein hätten sie nicht abgenommen. Screenshots auf 390×844 in drei Phasen: Der Fächer steht nach **260ms** voll im Bild (23 Partikel gleichzeitig sichtbar, über die volle Breite verteilt), bei **600ms** fällt er sichtbar nach unten aus, nach **3s** ist der Screen vollständig ruhig und der CTA hat die Aufmerksamkeit allein.
+
+Der Outro-Screen wurde gegengeprüft: Er erbt PNG, `gq-cannon` und `iteration-count: 1`, ohne dass seine Datei dafür angefasst werden musste.
+
+#### Ein Messfehler und eine korrigierte Behauptung
+
+Ein erster Screenshot bei 700ms zeigte nur 5 sichtbare Partikel und sah nach einem zusammengefallenen Fächer aus. Daraufhin habe ich die Parameter geändert (44→70 Partikel, 58°→62°) **und** die Einheiten vereinheitlicht — und in die Testdatei eine Begründung geschrieben, die ich anschließend nicht belegen konnte.
+
+Die Gegenprobe gegen die echte Ursprungsfassung hat das widerlegt: Sie zeigte bei 200ms **40** gleichzeitig sichtbare Partikel, nicht weniger als die neue Fassung (22). Die dünne Stelle bei 700ms war ein **Zeitpunkt-Artefakt** meiner Aufnahme, kein Fächer-Kollaps. Die Einheiten-Vereinheitlichung bleibt trotzdem richtig — aber als Vorsorge gegen geräteabhängige Winkel, nicht als Behebung eines gemessenen Fehlers. Kommentar im Code und Testbegründung sind entsprechend korrigiert; der zugehörige Test prüft jetzt nur noch, was er belegen kann (Fächerform zu beiden Seiten, genug gleichzeitig sichtbare Partikel).
+
+#### Tests
+
+**19 neue Tests** in `tests/proj-3-gratulationsscreen.spec.ts`, **19/19 auf Desktop Chrome 152 und 19/19 auf Mobile Safari**.
+
+Per Gegenprobe geschärft — jede der drei Änderungen einzeln zurückgebaut und gemessen, welche Tests fallen:
+- JPEG zurück → genau **2** Tests fallen (PNG-Nachweis, Border-Radius)
+- Karte zurück → genau **2** Tests fallen (kein Hinweis auf die nächste Station, letzte Station)
+- altes Rieseln zurück → genau **6** Tests fallen (Ursprung, `infinite`, Aufstieg, Ruhe, Klick-Durchlässigkeit, `aria-hidden`)
+
+Der Alpha-Nachweis liest die Eckpixel des **ausgelieferten** PNG per Canvas — ein JPEG kann das gar nicht erfüllen. Dazu eine Gegenprobe gegen die naheliegende Lücke: Eine vollständig transparente Datei hätte ebenfalls transparente Ecken, deshalb prüft ein zweiter Test, dass 10–50% der Fläche opak geblieben sind.
+
+**Ein Fehler in den Tests selbst** (das Produkt war richtig): `test.use({ reducedMotion: "reduce" })` kommt unter Playwright 1.58.2 mit `channel: 'chrome'` in der Seite **nicht an** — `matchMedia(...).matches` bleibt `false`, auch in einem Top-Level-Block auf about:blank. Der Test hätte 44 sichtbare Partikel als Produktfehler gemeldet. `page.emulateMedia({ reducedMotion: "reduce" })` wirkt zuverlässig. Beide reduced-motion-Tests prüfen jetzt zuerst, dass die Media Query überhaupt greift — ohne diese Vorbedingung hätten sie auch dann bestanden, wenn gar nichts emuliert wird.
+
+Suiten gegen den Production-Build: **Chrome 152: 460 passed / 23 skipped / 0 failed. Mobile Safari: 454 passed / 29 skipped / 0 failed. Unit 219/219.** Build und Lint sauber (0 Errors; die 7 Warnungen sind vorbestehend).
+
+#### Nicht abgedeckt
+
+- Das Erscheinungsbild des Pins auf einem **echten Gerätedisplay** — Augenschein am Screenshot, nicht am Handy.
+- Ob 70 Partikel auf einem **schwachen Android-Gerät** flüssig laufen; lokal kein solches Gerät verfügbar.
+- Der **haptische** Teil der Ankunft (`navigator.vibrate`) ist unverändert und wurde nicht erneut geprüft.
 
 ## QA Test Results
 

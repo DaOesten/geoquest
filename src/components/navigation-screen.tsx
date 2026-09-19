@@ -15,7 +15,6 @@ interface NavigationScreenProps {
   station: Station;
   stationIndex: number;
   totalStations: number;
-  nextStationName?: string;
   alreadyVisited?: boolean;
   onArrived: () => void;
   onBack: () => void;
@@ -32,7 +31,6 @@ export function NavigationScreen({
   station,
   stationIndex,
   totalStations,
-  nextStationName,
   alreadyVisited,
   onArrived,
   onBack,
@@ -110,7 +108,6 @@ export function NavigationScreen({
     return (
       <ArrivalOverlay
         stationName={station.name}
-        nextStationName={nextStationName}
         onContinue={onArrived}
       />
     );
@@ -189,11 +186,9 @@ export function NavigationScreen({
 
 function ArrivalOverlay({
   stationName,
-  nextStationName,
   onContinue,
 }: {
   stationName: string;
-  nextStationName?: string;
   onContinue: () => void;
 }) {
   return (
@@ -207,22 +202,27 @@ function ArrivalOverlay({
           0% { transform: translateY(24px); opacity: 0; }
           100% { transform: translateY(0); opacity: 1; }
         }
+        @media (prefers-reduced-motion: reduce) {
+          .gq-arrival-step { animation: none !important; opacity: 1 !important; transform: none !important; }
+        }
       `}</style>
 
-      {/* Confetti — falling from top */}
+      {/* Konfetti-Kanone — ein Schuss von unten mittig */}
       <ConfettiEffect />
 
-      {/* Brand pin with checkmark badge */}
+      {/* Brand-Pin mit Haken-Badge. Freigestelltes PNG (nicht das JPEG):
+          Das JPEG bringt seinen eigenen dunklen Grund mit und zeichnete sich
+          als Rechteck vom Hintergrund ab — siehe scripts/make-mark-pin-cutout.swift */}
       <div
-        className="relative"
+        className="gq-arrival-step relative"
         style={{
           animation: "gq-pop 0.5s cubic-bezier(.34,1.56,.64,1) 0.1s both",
         }}
       >
         <img
-          src="/assets/mark-pin.jpg"
+          src="/assets/mark-pin.png"
           alt=""
-          className="w-36 h-36 object-contain rounded-2xl"
+          className="w-36 h-36 object-contain"
         />
         <div className="absolute -bottom-1 -right-1 w-11 h-11 rounded-full bg-gq-lime grid place-items-center shadow-glow-lime border-[3px] border-gq-black">
           <Check className="w-5 h-5 text-gq-black" strokeWidth={3} />
@@ -231,6 +231,7 @@ function ArrivalOverlay({
 
       {/* Headline + decorative line */}
       <div
+        className="gq-arrival-step"
         style={{
           animation: "gq-pop 0.4s cubic-bezier(.34,1.56,.64,1) 0.3s both",
         }}
@@ -246,9 +247,10 @@ function ArrivalOverlay({
         <div className="mx-auto mt-2 w-2/5 max-w-[160px] h-[3px] rounded-full bg-gq-teal opacity-70" />
       </div>
 
-      {/* Station name */}
+      {/* Stationsname — darf umbrechen statt abzuschneiden: abgeschnitten
+          waere ausgerechnet die Belohnung unvollstaendig (Edge Case 16). */}
       <p
-        className="text-tech text-sm tracking-[0.1em] text-gq-grey mt-3"
+        className="gq-arrival-step text-tech text-sm tracking-[0.1em] text-gq-grey mt-3 max-w-xs text-balance"
         style={{
           animation: "gq-rise 0.4s cubic-bezier(.16,.84,.44,1) 0.5s both",
         }}
@@ -256,28 +258,15 @@ function ArrivalOverlay({
         {stationName}
       </p>
 
-      {/* Next station card */}
-      {nextStationName && (
-        <div
-          className="mt-8 w-full max-w-xs rounded-card bg-gq-dark-teal border border-border/40 p-4 shadow-card text-left"
-          style={{
-            animation: "gq-rise 0.4s cubic-bezier(.16,.84,.44,1) 0.7s both",
-          }}
-        >
-          <span className="text-tech text-[9px] tracking-[0.14em] text-gq-grey uppercase">
-            Nächstes Ziel
-          </span>
-          <p className="text-tech text-sm mt-1.5 text-foreground truncate">
-            {nextStationName}
-          </p>
-        </div>
-      )}
+      {/* Kein Hinweis auf die naechste Station: Der Screen feiert diese
+          Ankunft und nimmt nicht vorweg, was der Spieler gerade erst
+          verdient hat (Refinement 2026-09-19). */}
 
       {/* CTA */}
       <div
-        className="mt-10 w-full max-w-xs"
+        className="gq-arrival-step mt-10 w-full max-w-xs"
         style={{
-          animation: "gq-rise 0.4s cubic-bezier(.16,.84,.44,1) 0.9s both",
+          animation: "gq-rise 0.4s cubic-bezier(.16,.84,.44,1) 0.7s both",
         }}
       >
         <button

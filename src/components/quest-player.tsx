@@ -147,14 +147,12 @@ export function QuestPlayer({ quest }: QuestPlayerProps) {
         return null;
       }
       const station = quest.stations[navigatingIndex];
-      const nextStation = quest.stations[navigatingIndex + 1];
       const alreadyVisited = progress.visitedStations.includes(station.id);
       return (
         <NavigationScreen
           station={station}
           stationIndex={navigatingIndex}
           totalStations={quest.stations.length}
-          nextStationName={nextStation?.name}
           alreadyVisited={alreadyVisited}
           onArrived={handleArrived}
           onBack={handleBackFromNavigation}

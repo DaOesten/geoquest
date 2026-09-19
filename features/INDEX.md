@@ -151,7 +151,19 @@ Deployt am 2026-09-09 (Tag `v1.25.0-PROJ-13`). Offen bleiben zwei Low-Befunde au
 
 Spec ist aktualisiert (8 neue Acceptance Criteria im Block „Ankunft — Gratulationsscreen", Edge Cases 15–17, 7 Technical Requirements, 7 Produkt- und 6 technische Entscheidungen, 2 neue Open Questions; zwei überholte Design-Entscheidungen von 2026-08-24 sind als solche markiert statt gelöscht).
 
-Offen für `/frontend`: ob die Kanone aus einem oder zwei Punkten feuert und wie lange der Schuss dauert — beides am besten am Gerät zu entscheiden.
+**Frontend umgesetzt am 2026-09-19.** Fünf Dateien, kein neues Paket, keine neue Komponente, keine neue Route. Beide offenen Fragen sind am Bildschirm beantwortet: **ein** Ursprung unten mittig (der 62°-Fächer deckt die Breite ohnehin ab), Schussdauer 1,7–2,7s je Partikel, nach rund 3s ist der Screen ruhig.
+
+**Die Architektur-Annahme zum Pin war falsch — und der Fehler dadurch größer als gedacht.** Die Spec erwartete denselben flachen Grund wie beim PWA-Icon (rgb(4,10,11)). Gemessen ist der Grund von `mark-pin.jpg` ein **Verlauf**: mittlere Luminanz 42.8 oben links gegen 24.9 unten rechts, gegen einen App-Hintergrund von 14.2. Keine feste Ersatzfarbe hätte das je getroffen — Freistellen war nicht die elegantere, sondern die einzige Lösung. Zwei Fallstricke, die eine einfache Schwelle nicht löst: Die dunkle Kreisfläche in der Pin-Mitte hätte ein Loch bekommen (gelöst per Flood-Fill vom Rand), und der Neon-Glow wäre zu einem gezackten Halo abgeschnitten worden (gelöst per Alpha-Rampe über das Histogramm-Tal bei Luminanz 96–127, nur 1.3% aller Pixel). Ergebnis: 76,9% freigestellt, alle vier Eckpixel Alpha 0.
+
+**Am Bildschirm geprüft, nicht nur gemessen** — bei einer Design-Änderung hätten Zahlen allein nicht gereicht: Der Fächer steht nach 260ms voll im Bild (23 Partikel gleichzeitig, volle Breite), bei 600ms fällt er sichtbar aus, nach 3s ist der Screen ruhig und der CTA allein. Der Outro-Screen erbt PNG und Kanone, ohne dass seine Datei dafür angefasst werden musste.
+
+**Eine eigene Behauptung korrigiert:** Ein Screenshot bei 700ms zeigte nur 5 Partikel und sah nach einem zusammengefallenen Fächer aus; ich habe daraufhin Parameter geändert und eine Begründung in den Test geschrieben. Die Gegenprobe gegen die echte Ursprungsfassung hat sie widerlegt — die zeigte bei 200ms **40** gleichzeitig sichtbare Partikel, mehr als die neue Fassung. Die dünne Stelle war ein Zeitpunkt-Artefakt meiner Aufnahme. Die Einheiten-Vereinheitlichung (`vh` für beide Achsen statt `vw`/`vh` gemischt) bleibt richtig, aber als Vorsorge gegen geräteabhängige Abschusswinkel, nicht als Behebung eines gemessenen Fehlers. Code-Kommentar und Test sind entsprechend korrigiert; der Test prüft jetzt nur noch, was er belegen kann.
+
+**Ein Fehler in den Tests selbst** (das Produkt war richtig): `test.use({ reducedMotion: "reduce" })` kommt unter Playwright 1.58.2 mit `channel: 'chrome'` in der Seite nicht an — `matchMedia(...).matches` bleibt `false`. Der Test hätte 44 sichtbare Partikel als Produktfehler gemeldet. `page.emulateMedia()` wirkt; beide reduced-motion-Tests prüfen jetzt zuerst, dass die Media Query überhaupt greift.
+
+19 neue Tests, per Gegenprobe geschärft: JPEG zurück → genau 2 Tests fallen, Karte zurück → genau 2, altes Rieseln zurück → genau 6. Suiten gegen den Production-Build: **Chrome 152: 460 passed / 23 skipped / 0 failed. Mobile Safari: 454 passed / 29 skipped / 0 failed. Unit 219/219.** Build und Lint sauber.
+
+Nicht abgedeckt und benannt: der Pin auf einem echten Gerätedisplay, die Performance von 70 Partikeln auf schwacher Android-Hardware, und der unveränderte Vibrations-Pfad.
 
 ## Next Available ID: PROJ-15
 
