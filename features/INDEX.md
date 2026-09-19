@@ -18,7 +18,7 @@
 |----|---------|----------|--------------|--------|------|---------|
 | PROJ-1 | App Shell & Mode Switch | P0 | None | Deployed | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
-| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
+| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | In Progress | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
 | PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
@@ -135,6 +135,23 @@ Der kritische Regressionspunkt ist in Production bestätigt: `eyebrow` wurde in 
 
 ## Abgeschlossen: Refinement 4 (Marketing-Landingpage)
 Deployt am 2026-09-09 (Tag `v1.25.0-PROJ-13`). Offen bleiben zwei Low-Befunde aus der QA, die den gesamten Info-Bereich betreffen und ein eigenes Refinement wert wären: BUG-8 (Sektions-Kicker als `h2`, die echten Titel als `h3` — Screenreader hören das dekorative Label als Überschrift) und BUG-9 (kein `:focus-visible` in `globals.css`, app-weit).
+
+## Offenes Refinement: Gratulationsscreen nach Stationsankunft (2026-09-19)
+**PROJ-3** geht von Deployed zurück auf In Progress; **PROJ-5** ist mitbetroffen und bleibt auf Deployed. Drei Befunde des Betreibers am Ankunfts-Screen (`ArrivalOverlay` in `navigation-screen.tsx`), alle im Code bestätigt:
+
+1. **Die Karte „Nächstes Ziel" nimmt vorweg, was der Spieler gerade erst erreicht hat** — sie entfällt ersatzlos. Erwogen und verworfen: ein Fortschrittszähler an ihrer Stelle (wäre keine Belohnung, sondern dieselbe Zeile, die der Navigations-Screen schon führt). Der Screen wird kürzer, nicht anders gefüllt; der Blick geht ohne Umweg auf „Station entdecken". Nebeneffekt: Der Sonderfall „letzte Station" verschwindet — der Screen sieht überall gleich aus.
+
+2. **Das Pin-Logo zeichnet sich als Rechteck vom Hintergrund ab.** Ursache gefunden: `mark-pin.jpg` ist ein JPEG **ohne Alpha-Kanal** und bringt seinen eigenen Grund mit. Dieselbe Kante war schon bei den PWA-Icons (PROJ-12, 2026-09-19) gemessen worden — das Quellbild misst rgb(4,10,11), der Token-Hintergrund ist `#0B0F12`. Lösung an der Wurzel: ein freigestelltes PNG, erzeugt durch ein **eingechecktes Skript** statt von Hand, nach dem Muster der PWA-Icons. Das JPEG bleibt liegen (es speist die PWA-Icons); nur die beiden Celebration-Screens ziehen um.
+
+3. **Das Konfetti rieselt von oben und läuft endlos** — es soll wie aus einer **Konfetti-Kanone** von unten mittig nach oben schießen, **einmalig**, danach Ruhe. „Rieseln ist Wetter, kein Jubel." Das `infinite` entfällt, was nebenbei 40 dauerhaft animierte Elemente beendet und der Motion-Regel des Design Systems entspricht („keine Ambient-Loops").
+
+**Reichweite:** `ConfettiEffect` ist eine geteilte Komponente — sie läuft auch auf dem Outro-Screen am Quest-Ende (PROJ-5). Entschieden: **beide** Screens bekommen die Kanone, statt eine Varianten-Prop einzuführen. Der Outro ist der größere Anlass und würde sonst ausgerechnet dort mit dem schwächeren Effekt zurückbleiben. PROJ-5 trägt einen entsprechenden Vermerk; sein Outro-Screen wird nicht angefasst und erbt das Verhalten.
+
+**Mitgenommen:** `prefers-reduced-motion` wird in der Konfetti-Komponente behandelt — bisher fehlt das ganz. Und die Prop `nextStationName` wird über die ganze Kette entfernt (`ArrivalOverlay` → `NavigationScreen` → `quest-player.tsx`), nicht nur ignoriert.
+
+Spec ist aktualisiert (8 neue Acceptance Criteria im Block „Ankunft — Gratulationsscreen", Edge Cases 15–17, 7 Technical Requirements, 7 Produkt- und 6 technische Entscheidungen, 2 neue Open Questions; zwei überholte Design-Entscheidungen von 2026-08-24 sind als solche markiert statt gelöscht).
+
+Offen für `/frontend`: ob die Kanone aus einem oder zwei Punkten feuert und wie lange der Schuss dauert — beides am besten am Gerät zu entscheiden.
 
 ## Next Available ID: PROJ-15
 
@@ -330,6 +347,8 @@ Weil das Feature in derselben Sitzung gebaut wurde, habe ich die beiden zentrale
 Gemessen statt geschätzt: **schlechtester Kontrast 6.61:1**, alle Tap-Ziele **44px**, die 30-Tage-Grenze exakt getroffen (1/29/29,99 Tage kein Hinweis — 30,01/31 Tage wieder da). Auf echtem WebKit ohne künstliches Event zeigt iOS beide Schritte und **0 Installieren-Buttons** — die BUG-6-Lehre hält.
 
 **BUG-11 (Low, neu):** Der Guard in `service-worker-registration.tsx:22` prüft, ob `navigator.serviceWorker` *existiert*, nicht ob es einen Wert hat. Setzt eine Härtungs-Erweiterung die Eigenschaft auf `undefined`, wirft `.register()` einen Konsolenfehler. **Die App bleibt dabei vollständig bedienbar** (`/`, `/play`, `/create` geprüft), und im Normalfall tritt es nicht auf: Ein echter Browser ohne Unterstützung lässt die Eigenschaft weg, dann greift der Guard einwandfrei. Ein Einzeiler (`if (!navigator.serviceWorker) return;`) deckt beide Formen ab. Nicht blockierend.
+
+**BUG-11 noch am 2026-09-19 behoben.** Die Prüfung fragt jetzt den **Wert** ab statt die Existenz der Eigenschaft; damit sind beide Formen abgedeckt. Über den gemeldeten Fehler hinaus abgesichert: Die Registrierung läuft erst beim `load`-Ereignis, also später als die Prüfung im Effekt — in diesem Fenster kann eine Erweiterung die Eigenschaft noch ersetzen, deshalb prüft `register()` ein zweites Mal. **Die eigentliche Lücke war, dass die drei Wege ohne Service Worker gar keinen Test hatten** — genau so konnte der Fehler entstehen. Jetzt drei Tests, die nicht nur die Abwesenheit des Fehlers prüfen, sondern dass `/`, `/play` und `/create` bedienbar bleiben. Per Gegenprobe geschärft: Mit dem alten Guard fällt **genau der BUG-11-Test**, die beiden anderen bestehen.
 
 **Drei Beobachtungen ohne Bug-Status:** 320×568 scrollt — aber **schon vor diesem Feature** (gegen `de882fb~1` gemessen: 581 bei 568px Höhe); der Hinweis vergrößert 13px Überlauf auf 65px, das Spec-Kriterium nennt 360×640 und dort ist es erfüllt. **Firefox bleibt ungetestet** (Binary fehlt trotz gegenteiliger `--dry-run`-Meldung, kein Firefox in `/Applications`) — Risiko gering, da Firefox `beforeinstallprompt` gar nicht bereitstellt. Und das **echte Homescreen-Icon** bleibt Augenschein; dazu wäre `apple-mobile-web-app-status-bar-style: black-translucent` vor dem Deploy einmal auf einem iPhone zu begutachten (offene Frage der Spec).
 

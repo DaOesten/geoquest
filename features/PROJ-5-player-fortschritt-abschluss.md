@@ -2,7 +2,9 @@
 
 ## Status: Deployed
 **Created:** 2026-08-26
-**Last Updated:** 2026-08-27
+**Last Updated:** 2026-09-19
+
+> **Mitbetroffen vom Refinement in PROJ-3 (2026-09-19) — noch nicht umgesetzt:** Der Outro-Screen teilt sich `ConfettiEffect` mit dem Ankunfts-Screen. Diese Komponente wird von „Rieseln von oben, endlos" auf eine **einmalig feuernde Konfetti-Kanone** (von unten mittig nach oben) umgebaut, dazu kommt eine Behandlung von `prefers-reduced-motion`. Bewusste Entscheidung: **beide** Screens bekommen die Kanone — der Outro ist der größere Anlass und würde mit dem schwächeren Effekt zurückbleiben. Der Outro-Screen selbst wird dabei nicht angefasst; er erbt das neue Verhalten. Sein Acceptance Criterion „Konfetti-Effekt läuft (analog zum Ankunfts-Overlay aus PROJ-3)" bleibt damit wörtlich gültig. Das freigestellte Pin-PNG aus demselben Refinement zieht der Outro ebenfalls, da er `mark-pin.jpg` mit demselben sichtbaren Rechteck rendert. Siehe PROJ-3, Abschnitt „Ankunft — Gratulationsscreen".
 
 ## Dependencies
 - Requires: PROJ-3 (Player — GPS-Navigation) — für State Machine, `useQuestProgress` und die Quest-Liste

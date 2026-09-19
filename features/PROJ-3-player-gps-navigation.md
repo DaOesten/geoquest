@@ -1,12 +1,14 @@
 # PROJ-3: Player — GPS-Navigation
 
-## Status: Deployed
+## Status: In Progress
 **Created:** 2026-08-23
-**Last Updated:** 2026-09-07
+**Last Updated:** 2026-09-19
 
 > **Refinement (2026-09-06) — umgesetzt, deployt und QA-geprüft:** Zwei stille Ausfallmodi ergänzt — GPS-Fix bleibt trotz erteilter Permission aus, und der Richtungspfeil hat keine Richtung. Siehe Abschnitte "Permission-Flow", "Richtungsanzeige ohne Heading", Edge Cases 9–12 und die Implementation Notes vom 2026-09-06.
 
 > **Refinement (2026-09-07) — BUG-6 geklärt, umgesetzt und QA-geprüft:** Die iOS-Erkennung hinter dem "Kompass aktivieren"-Button ist zu grob. Sie schließt allein daraus auf iOS, dass `DeviceOrientationEvent.requestPermission` eine Funktion ist — das trifft auf Desktop-Chrome ebenfalls zu. Folge: Chrome-Nutzer bekommen einen Button angeboten, der garantiert fehlschlägt, statt des Hinweises, der ihnen hilft. BUG-6 war als vermutliches Testumgebungs-Artefakt notiert und ist als **echter Produktfehler bestätigt**. Siehe Acceptance Criteria "Richtungsanzeige ohne Heading", Edge Cases 13–14, Technical Requirements und Decision Log.
+
+> **Refinement (2026-09-19) — Gratulationsscreen (`ArrivalOverlay`), noch nicht umgesetzt:** Drei Befunde aus dem Gebrauch, alle am Ankunfts-Screen. (1) Die Karte „Nächstes Ziel" nimmt vorweg, was der Spieler gerade erst verdient hat — sie entfällt ersatzlos. (2) Das Pin-Logo zeichnet sich als Rechteck vom Hintergrund ab, weil `mark-pin.jpg` ein JPEG ohne Transparenz ist — es bekommt ein freigestelltes PNG. (3) Das Konfetti rieselt von oben und läuft endlos; es soll einmalig wie aus einer Konfetti-Kanone von unten mittig nach oben schießen — das gilt für beide Screens, die `ConfettiEffect` nutzen (Ankunft und Outro/PROJ-5). Siehe Acceptance Criteria „Ankunft — Gratulationsscreen", Edge Cases 15–17, Technical Requirements und Decision Log.
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — für Routing und UI-Rahmen
@@ -78,6 +80,16 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 - [ ] Angenommen der Spieler befindet sich innerhalb des Ankunftsradius einer Station, wenn die Position erkannt wird, dann vibriert das Gerät und ein "Angekommen!"-Hinweis erscheint
 - [ ] Angenommen der Spieler ist angekommen, wenn die Ankunft bestätigt wurde, dann wird die Station als "besucht" markiert und die nächste Station freigeschaltet
 
+**Ankunft — Gratulationsscreen (Refinement 2026-09-19):**
+- [ ] Angenommen der Gratulationsscreen erscheint, wenn der Spieler ihn sieht, dann zeigt er **keinen** Hinweis auf die nächste Station — weder Name noch Karte, weder Entfernung noch Richtung
+- [ ] Angenommen der Gratulationsscreen erscheint, wenn er gerendert wird, dann folgen auf den Pin von oben nach unten: Headline "Ziel erreicht!", Teal-Strich, Stationsname, CTA "Station entdecken" — ohne weiteres Element dazwischen
+- [ ] Angenommen das Pin-Logo wird angezeigt, wenn es auf dem Screen-Hintergrund steht, dann ist keine Kante und kein Rechteck um das Motiv sichtbar — der Pin steht frei auf dem Hintergrund
+- [ ] Angenommen das Pin-Logo wird angezeigt, wenn der Haken-Badge daran sitzt, dann überlappt er das Motiv und nicht eine sichtbare Bildkante
+- [ ] Angenommen der Gratulationsscreen erscheint, wenn die Konfetti-Animation startet, dann schießen die Partikel von unten aus der Mitte nach oben auf und fallen anschließend seitlich streuend aus — kein Rieseln von oben
+- [ ] Angenommen die Konfetti-Kanone hat gefeuert, wenn alle Partikel ausgefallen sind, dann bleibt der Screen ruhig — die Animation wiederholt sich nicht (kein `infinite`)
+- [ ] Angenommen der Outro-Screen am Quest-Ende erscheint (PROJ-5), wenn seine Konfetti-Animation startet, dann verhält sie sich identisch zur Ankunft — dieselbe Komponente, dasselbe Schussverhalten
+- [ ] Angenommen der Spieler hat "Bewegung reduzieren" aktiviert (`prefers-reduced-motion`), wenn der Gratulationsscreen erscheint, dann bleibt der Screen inhaltlich vollständig, ohne aufschießende Partikel
+
 **GPS-Signalverlust:**
 - [ ] Angenommen das GPS-Signal geht verloren, wenn weniger als 30 Sekunden vergangen sind, dann zeigt die Navigation den letzten bekannten Stand (Pfeil + Entfernung bleiben stehen)
 - [ ] Angenommen das GPS-Signal ist länger als 30 Sekunden weg, wenn der Timer abläuft, dann stoppt die Navigation und ein Hinweis mit "Erneut versuchen"-Button erscheint
@@ -102,6 +114,9 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 12. **Gerät ohne brauchbares Magnetometer (Android-Billiggeräte):** Fällt auf GPS-Bewegungsrichtung zurück, funktioniert also nur beim Laufen — gleicher sichtbarer Zustand wie Edge Case 11 im Stand.
 13. **Nicht-iOS-Browser mit `requestPermission`-API (Desktop-Chrome, evtl. Android-Chrome):** `DeviceOrientationEvent.requestPermission` existiert dort als Funktion, ohne dass es eine iOS-artige Sensorfreigabe gäbe. Eine Erkennung, die allein darauf prüft, hält jeden solchen Browser für ein iPhone und bietet den "Kompass aktivieren"-Button an. Der Aufruf liefert `denied`, der Button ist eine Sackgasse. Richtig ist hier der "Laufe ein paar Schritte"-Hinweis. **Bestätigt auf Chrome 152 (2026-09-07), siehe BUG-6.**
 14. **Sensorfreigabe wird abgelehnt oder schlägt fehl (jede Plattform):** Nach einem `denied` darf der Screen nicht in einem Zustand ohne Erklärung stehen bleiben. Der Spieler fällt auf denselben sichtbaren Zustand wie Edge Case 11/12 zurück — richtungsloser Pfeil plus "Laufe ein paar Schritte".
+15. **Letzte Station erreicht (Refinement 2026-09-19):** Hier gab es noch nie ein nächstes Ziel — die Karte fehlte, und der Screen endete direkt beim CTA. Mit dem Wegfall der Karte ist das jetzt der einzige Fall: Der Gratulationsscreen sieht an jeder Station gleich aus, unabhängig davon, ob noch Stationen folgen. Der bisherige Sonderfall verschwindet, statt gesondert behandelt zu werden.
+16. **Sehr langer Stationsname auf dem Gratulationsscreen:** Mit dem Wegfall der „Nächstes Ziel"-Karte trägt der Screen nur noch einen Namen. Er darf umbrechen statt abzuschneiden — abgeschnitten wäre ausgerechnet die Belohnung unvollständig. Die Höhe des Screens muss das auf 320×568 aushalten, ohne den CTA unter den Falz zu drücken.
+17. **`prefers-reduced-motion` aktiv:** Die Konfetti-Kanone ist reine Dekoration. Bei reduzierter Bewegung entfällt der Partikel-Schuss; Pin, Headline, Stationsname und CTA bleiben vollständig und bedienbar. Betrifft beide Screens (Ankunft und Outro).
 
 ## Technical Requirements
 - GPS-Position: `navigator.geolocation.watchPosition()` mit `enableHighAccuracy: true`
@@ -125,6 +140,15 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 - Touch-Targets: min. 44px (PRD-Anforderung)
 - Min. Body-Text: 16px (PRD-Anforderung)
 
+**Gratulationsscreen (Refinement 2026-09-19):**
+- Die Prop `nextStationName` entfällt über die ganze Kette: `ArrivalOverlay` → `NavigationScreen` → `quest-player.tsx`. Kein totes Durchreichen stehen lassen — wenn die Karte weg ist, geht auch der Wert, der sie gespeist hat
+- Freigestelltes Pin-Asset als PNG mit Alpha-Kanal (`mark-pin.png`) neben dem bestehenden `mark-pin.jpg`. Das JPEG bleibt liegen, solange andere Stellen es nutzen; Ankunft und Outro ziehen auf das PNG
+- Das Freistellen muss reproduzierbar und eingecheckt sein, nicht einmalig von Hand — wie beim PWA-Icon (PROJ-12, `scripts/`). Der dunkle Grund des Quellbilds misst rgb(4,10,11) und ist damit nicht exakt der Token-Hintergrund `#0B0F12`; genau diese Differenz erzeugt die sichtbare Kante
+- `ConfettiEffect` wird von Rieseln auf Kanone umgebaut: Ursprung unten mittig, Partikel steigen in gestreuten Winkeln auf, verlieren an Höhe und fallen seitlich aus. Einmalig pro Mount, kein `infinite`
+- Die Komponente ist geteilt (Ankunft + Outro/PROJ-5). Änderungen an ihr treffen beide Screens — das ist gewollt und in PROJ-5 zu vermerken
+- `prefers-reduced-motion: reduce` unterdrückt den Partikel-Schuss; der Screen bleibt ohne ihn vollständig
+- Die Partikel sind rein dekorativ und dürfen keine Klicks abfangen (`pointer-events-none` bleibt) und nicht vom Screenreader gelesen werden
+
 ## Open Questions
 - [ ] Ab welcher GPS-Genauigkeit (accuracy in Metern) soll eine Warnung angezeigt werden? (z.B. accuracy > 50m = "Signal ungenau")
 - [ ] Soll die Entfernung bei > 1000m als "1,2 km" statt "1200 m" angezeigt werden?
@@ -132,6 +156,8 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 - [ ] Soll der richtungslose Pfeil langsam rotieren (Suchanimation) oder statisch ausgegraut bleiben? — Umsetzungsdetail für `/frontend`
 - [ ] Soll die Ankunftserkennung bei sehr schlechter `accuracy` (> Stationsradius) unterdrückt werden, um Falsch-Ankünfte zu vermeiden? Hängt mit der offenen Genauigkeits-Frage oben zusammen.
 - [ ] Verhält sich **Android-Chrome** wie Desktop-Chrome (`requestPermission` vorhanden, liefert `denied`)? Lokal nicht messbar — kein Android-Gerät und kein lauffähiges Chromium-Binary. Der beschlossene `denied`-Rückfall macht die Antwort für die Korrektheit unkritisch, sie bliebe aber für die Testabdeckung interessant.
+- [ ] Soll die Konfetti-Kanone aus einem Punkt oder aus zwei Punkten (links und rechts unten) feuern? Ein Punkt ist die klarere Geste, zwei füllen den Screen besser — Umsetzungsdetail für `/frontend`, am besten am Gerät zu entscheiden.
+- [ ] Wie lange dauert der komplette Schuss (Aufstieg + Ausfallen)? Er muss vorbei sein, bevor der Spieler den CTA tippt, darf aber nicht so kurz sein, dass er beim Erscheinen schon verpasst ist — Umsetzungsdetail für `/frontend`.
 
 ## Decision Log
 
@@ -158,6 +184,13 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 | Entfernung bleibt bei richtungslosem Pfeil sichtbar | Die Entfernung ist unabhängig vom Heading korrekt und weiterhin nützlich — sie mit auszublenden würde funktionierende Information verschenken. | 2026-09-06 |
 | BUG-6 ist ein Produktfehler, kein Testumgebungs-Artefakt | Auf echtem Chrome 152 reproduziert und instrumentiert: Position liegt vor (12514m gerendert), der Nachbartest besteht. Die vermutete Ursache "Playwright liefert keinen Fix" ist damit widerlegt; die Ursache ist die zu grobe iOS-Erkennung. | 2026-09-07 |
 | Ursache beheben statt Symptom: echte Plattformerkennung **und** `denied`-Rückfall | Nur die Erkennung zu schärfen würde Android-Chrome ungeprüft lassen — das reale Zielgerät. Der Rückfall bei `denied` macht das Verhalten dort korrekt, ohne dass wir es je messen müssen. Zwei unabhängige Schutzebenen für einen Fehler, der sonst still bleibt. | 2026-09-07 |
+| „Nächstes Ziel"-Karte entfällt ersatzlos | Der Screen feiert eine Ankunft — er nimmt nicht vorweg, was der Spieler gerade erst verdient hat. Der Blick auf das nächste Ziel gehört in die Stationsliste, die ohnehin der Hub ist. Ersatzlos statt Umbau: Der Spieler soll diesen einen Moment lesen, nicht drei Informationen. | 2026-09-19 |
+| Kein Fortschrittszähler an der frei gewordenen Stelle | Erwogen und verworfen: „Ziel 2 von 5" wäre keine Belohnung, sondern dieselbe Zeile, die der Navigations-Screen schon führt. Der Gratulationsscreen wird kürzer, nicht anders gefüllt. | 2026-09-19 |
+| Der Gratulationsscreen sieht an jeder Station gleich aus | Bisher unterschied ihn die Karte zwischen „es folgt noch etwas" und letzter Station. Ohne sie verschwindet der Sonderfall, statt behandelt zu werden — weniger Zustände, weniger Testfläche, und der Moment wirkt jedes Mal gleich stark. | 2026-09-19 |
+| Konfetti-Kanone statt Rieseln von oben | Rieseln ist Wetter, kein Jubel. Der Schuss von unten mittig nach oben ist die Geste, die den Erfolg meint — passend zum „aufgeregten Game-Host" des Design Systems statt zu einem ruhigen Hintergrundeffekt. | 2026-09-19 |
+| Ein Schuss, dann Ruhe (kein `infinite`) | Eine Kanone feuert einmal; eine dauerhaft feuernde wäre keine Feier, sondern Lärm. Danach gehört die Aufmerksamkeit dem CTA. Deckt sich mit der Motion-Regel des Design Systems: „keine Ambient-Loops". | 2026-09-19 |
+| Kanone auf beiden Screens (Ankunft **und** Outro) | Der Outro am Quest-Ende hat dasselbe Problem und würde sonst mit dem schwächeren Effekt zurückbleiben — ausgerechnet beim größeren Anlass. Eine Komponente, ein Verhalten, ein Ort für künftige Änderungen. | 2026-09-19 |
+| Pin wird freigestellt statt kaschiert | Erwogen: weiche CSS-Maske oder den Pin bewusst in ein Panel rahmen. Beides behandelt das Symptom — die Ursache ist, dass ein JPEG keinen Alpha-Kanal hat. Ein freigestelltes PNG löst es an der Wurzel und ist überall wiederverwendbar, wo der Pin künftig frei stehen soll. | 2026-09-19 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -171,6 +204,12 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 | Haversine-Formel selbst implementiert | Triviale Mathematik (~10 Zeilen), spart eine Geo-Library-Dependency | 2026-08-24 |
 | GPS-Heading als Fallback statt "kein Pfeil" | Berechnung aus letzten 2 GPS-Positionen, universell verfügbar, nur in Bewegung genau | 2026-08-24 |
 | Einmalige Ankunftserkennung pro Station | Verhindert Flackern bei GPS-Drift am Radius-Rand, Station wird sofort als "besucht" persistiert | 2026-08-24 |
+| `nextStationName` wird über die ganze Kette entfernt, nicht nur ignoriert | Eine Prop, die durch drei Komponenten gereicht und nirgends gelesen wird, ist eine Falle für den Nächsten, der sie für noch benutzt hält. Mit der Karte geht der Wert, der sie gespeist hat. | 2026-09-19 |
+| Freistellung als eingechecktes Skript, nicht von Hand | Dasselbe Muster wie bei den PWA-Icons (PROJ-12): `sips` reichte dort nicht, ein eingechecktes Swift/CoreGraphics-Skript machte das Ergebnis reproduzierbar statt einmalig. Ein von Hand freigestelltes Asset lässt sich nach einer Quellbild-Änderung nicht nachvollziehbar erneuern. | 2026-09-19 |
+| Neues PNG neben dem JPEG, kein Ersatz | `mark-pin.jpg` wird an weiteren Stellen und als Quelle der PWA-Icons genutzt. Ein Austausch an Ort und Stelle würde Screens verändern, die niemand geprüft hat; die beiden Celebration-Screens ziehen auf das PNG, der Rest bleibt unberührt. | 2026-09-19 |
+| Konfetti-Umbau in der geteilten Komponente statt einer zweiten Variante | Eine Varianten-Prop würde zwei Verhalten dauerhaft nebeneinander pflegen, obwohl beide Screens dasselbe wollen. Der Preis ist, dass jede Änderung beide trifft — das ist hier gewollt und in PROJ-5 vermerkt. | 2026-09-19 |
+| Kein `infinite` mehr — Animation endet von selbst | Die heutige Endlosschleife hält 40 Elemente dauerhaft animiert, auch lange nachdem der Spieler den Screen gelesen hat. Ein einmaliger Schuss beendet die Arbeit des Compositors und respektiert die Motion-Regel des Design Systems. | 2026-09-19 |
+| `prefers-reduced-motion` wird in der Konfetti-Komponente behandelt, nicht bei jedem Aufrufer | Ein Ort für eine Regel, die für jede Nutzung der Komponente gilt. Bisher fehlt die Behandlung ganz — der Umbau ist der richtige Zeitpunkt, sie nachzuziehen. | 2026-09-19 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
@@ -378,8 +417,8 @@ Keine neuen Packages erforderlich. Alle genutzten APIs:
 
 ### Design-Entscheidungen
 
-- Arrival-Screen: Brand-Asset `mark-pin.jpg` + Lime-Haken-Badge statt SVG-Pin
-- Konfetti: Kontinuierliches Rieseln von oben (Teal + Lime Partikel), kein Burst
+- Arrival-Screen: Brand-Asset `mark-pin.jpg` + Lime-Haken-Badge statt SVG-Pin — **überholt durch das Refinement vom 2026-09-19:** das JPEG hat keinen Alpha-Kanal und zeichnet sich als Rechteck vom Hintergrund ab; ersetzt durch ein freigestelltes PNG
+- Konfetti: Kontinuierliches Rieseln von oben (Teal + Lime Partikel), kein Burst — **überholt durch das Refinement vom 2026-09-19:** ersetzt durch eine einmalig feuernde Konfetti-Kanone von unten mittig nach oben
 - Teal-Strich unter "Ziel erreicht!" analog zum Home-Screen
 - Teal-Pill-Button statt Brush-Stroke-Button fuer CTAs (Brush-Stroke skaliert schlecht)
 - `max-w-[430px]` Container im Play-Layout (nicht in einzelnen Komponenten)
