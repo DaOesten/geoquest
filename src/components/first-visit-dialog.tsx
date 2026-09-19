@@ -11,7 +11,21 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
-const STORAGE_KEY = "gq_first_visit_done";
+/**
+ * Auch von `use-install-prompt.ts` gelesen (PROJ-12, Edge Case 13): Solange
+ * dieser Dialog noch aussteht, hält sich der Installations-Hinweis zurück —
+ * zwei Aufforderungen auf einem Screen sind eine zu viel. Deshalb exportiert
+ * statt als lokale Konstante.
+ */
+export const FIRST_VISIT_STORAGE_KEY = "gq_first_visit_done";
+const STORAGE_KEY = FIRST_VISIT_STORAGE_KEY;
+
+/**
+ * Wird beim Schließen des Dialogs ausgelöst, damit der Installations-Hinweis
+ * (PROJ-12) ohne Neuladen nachrücken kann. `localStorage` löst im selben Tab
+ * kein `storage`-Ereignis aus — ohne dieses Signal bliebe nur Pollen.
+ */
+export const FIRST_VISIT_DONE_EVENT = "gq:first-visit-done";
 
 function getIsFirstVisit() {
   try {
@@ -40,6 +54,12 @@ export function FirstVisitDialog() {
       // localStorage unavailable — dialog will show again next visit
     }
     setDismissed(true);
+
+    // Sagt dem Installations-Hinweis Bescheid, dass er jetzt erscheinen darf
+    // (PROJ-12, Edge Case 13). Ohne dieses Signal muesste er den Speicher
+    // pollen oder bis zum naechsten Laden warten — `localStorage` loest im
+    // selben Tab kein `storage`-Ereignis aus.
+    window.dispatchEvent(new Event(FIRST_VISIT_DONE_EVENT));
   }
 
   return (

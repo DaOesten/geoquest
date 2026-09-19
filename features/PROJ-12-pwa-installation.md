@@ -1,8 +1,8 @@
 # PROJ-12: PWA-Installation (Add to Homescreen)
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-09-18
-**Last Updated:** 2026-09-18 (Architektur entworfen)
+**Last Updated:** 2026-09-19 (Frontend umgesetzt)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — der Startscreen `/` trägt einen der beiden Hinweis-Orte, und das Wurzel-Layout (`src/app/layout.tsx`) hält heute schon `themeColor` und `viewportFit: "cover"`
@@ -378,6 +378,115 @@ Das Projekt haelt seine 41 Abhaengigkeiten bewusst klein; dieses Feature erhoeht
 5. **Service Worker nur im sicheren Kontext registrieren.** Lokal ueber `localhost`, in Produktion ueber HTTPS; sonst still nichts tun (Edge Case 12).
 6. **`public/assets/geoquest_pwaIcon.jpeg` ist noch nicht eingecheckt** — gehoert mit ins Repository, weil die Icons daraus stammen.
 7. **Playwright kann den Standalone-Modus nicht vollstaendig nachstellen.** Pruefbar sind Manifest-Inhalt, Icon-Erreichbarkeit, Service-Worker-Registrierung, Offline-Verhalten und die Anzeige-Logik des Hinweises. Das echte Homescreen-Icon bleibt Augenschein.
+
+## Implementation Notes (Frontend)
+
+**Umgesetzt am:** 2026-09-19
+
+### Was gebaut wurde
+
+Elf Dateien, davon fünf Ergänzungen an bestehenden. **Kein neues Paket** — die Abhängigkeitszahl bleibt bei 41, wie in der Architektur zugesagt.
+
+```
+NEU
+  src/app/manifest.ts                     Manifest als Metadaten-Route
+  src/hooks/use-install-prompt.ts         Anzeige-Logik (4 Bedingungen)
+  src/hooks/use-install-prompt.test.ts    33 Unit-Tests
+  src/components/install-hint.tsx         Die Karte (Android + iOS + kompakt)
+  src/components/service-worker-registration.tsx
+  public/sw.js                            91 Zeilen, cacht NUR offline.html
+  public/offline.html                     Eigenständig, ohne React/Next/Schriften
+  public/icons/{icon-192,icon-512,icon-maskable,apple-touch-icon}.png
+  scripts/make-pwa-icons.swift            Erzeugt die Icons reproduzierbar
+  tests/proj-12-pwa-installation.spec.ts  31 E2E-Tests
+
+ERWEITERT
+  src/app/layout.tsx                      apple-touch-icon + SW-Registrierung
+  src/app/page.tsx                        Hinweis (kompakt)
+  src/app/play/page.tsx                   Hinweis (volle Karte)
+  src/lib/app-nav.ts                      Speicherschlüssel + 30-Tage-Frist
+  src/components/first-visit-dialog.tsx   Schlüssel exportiert + Schließ-Ereignis
+  playwright.config.ts / .prod.config.ts  serviceWorkers: 'block'
+```
+
+### Die Icons — gemessen statt geschätzt
+
+Die Architektur schätzte das Pin-Motiv auf x 62..392, y 250..670. Per Pixel-Analyse (Swift/CoreGraphics, `scripts/make-pwa-icons.swift`) nachgemessen: **x 90..391, y 276..670**. Die von der Architektur gefundene motivfreie Spalte bei **x 392..401** ist exakt bestätigt — die Schnittkante stimmt.
+
+**Eine Abweichung vom Plan, die im Augenschein nötig wurde:** Die Architektur sah Deep Black (`#0B0F12`) als Icon-Grund vor. Gemessen liegt der Grund des Quellbilds bei **rgb(4,10,11)** — dunkler als der Token. Mit `#0B0F12` war an der Zuschnittkante ein deutliches Rechteck sichtbar (Screenshot geprüft). Die Fläche bekommt jetzt den gemessenen Wert; optisch ist er von Deep Black nicht zu unterscheiden, aber die Kante verschwindet.
+
+`sips` allein reichte nicht: Es padded nur einseitig und kann nicht zentriert compositen. Stattdessen ein einmaliges Swift-Skript über CoreGraphics — ebenfalls ohne jede Abhängigkeit, da `swift` auf jedem Mac liegt. Das Skript ist eingecheckt, die Ableitung damit reproduzierbar statt einmalig von Hand.
+
+Die Sicherheitszone ist **nachgemessen, nicht behauptet**: Das maskable-Icon hält das Motiv bei x 139..372, y 103..408 von 512 — vollständig innerhalb der inneren 80% (51..460). Kein Motivpixel liegt bei irgendeiner Variante außerhalb einer Kreismaske.
+
+### Der Konflikt, den die Architektur nicht vorhergesehen hat
+
+Die Architektur schrieb: Auf `/` steht der Hinweis hinter den Mode-Cards, „dahinter kostet er nichts" — begründet damit, dass der Inhalt auf 360×640 bei 559/640 endet.
+
+**Gemessen stimmt das nicht.** Die volle Hinweis-Karte ist **195px** hoch und ließ die Seite auf **799px** wachsen. Beide Mode-Cards blieben zwar sichtbar, aber der bestehende PROJ-1-Test prüft schärfer: `document.documentElement.scrollHeight > window.innerHeight` — der Startscreen darf **gar nicht scrollen**. Zwei Tests fielen (`proj-1-navigation-qa`, `proj-1-startscreen-refinement`), zuerst nur auf WebKit.
+
+Das Kriterium ist älter als dieses Feature und hat Vorrang. Nach Rückfrage beim Betreiber: **kompakte Fassung auf `/`**. Der Hinweis trägt dort nur eine Zeile — kein Eyebrow, keine Display-Überschrift, kein Beschreibungstext — und misst **exakt 44px** (das Tap-Ziel-Minimum). Damit endet die Seite bei **640 von 640**: kein Scroll, Kriterium gehalten. Auf `/play` gibt es kein solches Kriterium, dort steht die volle Karte.
+
+### Der zweite Konflikt: Service Worker vs. Playwright
+
+Nach dem Einbau fielen **6 Tests in PROJ-4 und PROJ-7**, die externe Dienste per `page.route` mocken. Die Ursache ist gemessen, nicht vermutet: Sobald der Service Worker die Seite kontrolliert (`navigator.serviceWorker.controller !== null`), **greift `page.route` nicht mehr** — die Sonde zeigte 0 Treffer im Mock und eine Antwort der echten Nominatim-API (erkennbar am OSM-Lizenztext).
+
+Das ist eine bekannte Playwright-Grenze; die Bibliothek empfiehlt in ihrer eigenen Typdefinition ausdrücklich `serviceWorkers: 'block'`. Beide Configs setzen das jetzt. Die PROJ-12-Suite hebt es per `test.use({ serviceWorkers: "allow" })` für sich wieder auf — dort ist der Worker der Prüfgegenstand.
+
+Gegenprobe gefahren: Ohne die Änderung fallen die 6 Tests, mit ihr laufen alle 74 durch. Das Produkt war in allen 6 Fällen richtig.
+
+### Abweichungen vom Tech Design
+
+1. **Kompakte Hinweis-Fassung auf `/`** (siehe oben) — die Architektur sah nur eine Fassung vor.
+2. **`service-worker-registration.tsx` als eigene Komponente.** Die Architektur listete die Registrierung nicht als eigene Datei. Nötig, weil `layout.tsx` eine Server-Komponente bleiben soll — ein `useEffect` dort hätte das gesamte Wurzel-Layout zur Client-Komponente gemacht.
+3. **`first-visit-dialog.tsx` musste angefasst werden.** Für Edge Case 13 („Dialog hat Vorrang") braucht der Hinweis ein Signal beim Schließen: `localStorage` löst im selben Tab kein `storage`-Ereignis aus, und Pollen wäre die schlechtere Lösung. Der Dialog feuert jetzt `gq:first-visit-done`.
+4. **`scripts/make-pwa-icons.swift` eingecheckt.** Die Architektur sagte „einmalig von Hand mit `sips`". Das Skript macht die Ableitung nachvollziehbar und wiederholbar, ohne etwas zum Build hinzuzufügen.
+5. **`useSyncExternalStore` statt `useState` im Effekt.** Die erste Fassung las Anzeigemodus, Frist und Dialog-Zustand in einem `useEffect` und rief dort `setState` — ESLint (`react-hooks/set-state-in-effect`) meldete das als Fehler, zu Recht. Jetzt dasselbe Muster wie in `FirstVisitDialog`.
+
+### Zwei Fehler, die erst beim Messen auffielen
+
+**1. Abgeschnittene Anleitung auf 320px.** Die erste kompakte Fassung lautete „Als App: Teilen → Zum Home-Bildschirm" und brauchte 224px; auf 320px standen 184px zur Verfügung. Der iOS-Nutzer hätte dort eine **halbe Anweisung** gesehen — genau das Gegenteil dessen, wofür der Hinweis da ist. Im Code fiel das nicht auf, weil `truncate` sauber aussieht. Die Fassung heißt jetzt „Teilen → Home-Bildschirm" und passt ab 320px; die vollständige Anleitung mit beiden Schritten steht auf `/play`. Ein eigener Test misst das auf 320px nach.
+
+**2. Blockierter Speicher hielt den Hinweis dauerhaft zurück.**
+
+Bei blockiertem `localStorage` schreibt der Erststart-Dialog seinen Schlüssel nicht — `isFirstVisitPending()` blieb dann dauerhaft `true`, und der Installations-Hinweis wäre in dieser Sitzung **nie** erschienen, obwohl der Dialog längst weg war. Das Schließ-Ereignis gilt jetzt als Beweis für sich. Ein eigener Test hält das fest.
+
+### Testabdeckung
+
+**33 Unit-Tests** (`use-install-prompt.test.ts`) — der Hook, den die Architektur ausdrücklich als testbedürftig markierte, weil „die Lücke, durch die BUG-6 live gehen konnte, ein ungetesteter Hook war". Die Plattform-Erkennung wird gegen sieben echte User-Agent-Strings geprüft, darunter die drei Fälle, die wie iOS-Safari aussehen und keines sind: **Chrome auf iOS, Firefox auf iOS und ein echter Mac** (gleiche UA wie iPadOS, aber 0 Touch-Punkte).
+
+**32 E2E-Tests** (`proj-12-pwa-installation.spec.ts`).
+
+**Drei Gegenproben gefahren**, alle mit dem erwarteten Ergebnis:
+
+| Absichtlicher Fehler | Fallende Tests |
+|---|---|
+| BUG-6-Muster: iOS an einem Merkmal festmachen | 5 Unit-Tests, darunter Desktop-Chrome |
+| App-Shell mitcachen (das PRD-Non-Goal) | „cacht AUSSCHLIESSLICH offline.html" |
+| Volle Hinweis-Karte auf `/` | „`/` scrollt auf 360x640 weiterhin nicht" |
+
+### Suiten-Ergebnis
+
+Gegen den **Production-Build** gefahren (`playwright.prod.config.ts`), nicht gegen den Dev-Server.
+
+| Suite | Ergebnis |
+|---|---|
+| Unit (Vitest) | **219/219** (vorher 186) |
+| E2E Chrome 152 | **436 passed / 23 skipped / 0 failed** |
+| E2E Mobile Safari | **430 passed / 29 skipped / 0 failed** |
+| Build | sauber, `/` `/play` und alle Info-Seiten weiterhin statisch (`○`) |
+| Lint | 0 Fehler (7 Warnungen, alle vorbestehend: `<img>` in fremden Komponenten) |
+
+Beide Engines fahren dieselben 459 Tests. Die Skip-Differenz von 6 ist vollständig erklärt: 5 Offline-Navigationstests laufen nur auf Chrome (WebKit-Grenze, siehe oben), 1 iOS-Anleitungstest nur auf WebKit.
+
+Vor diesem Feature lagen die Suiten bei 405/22 (Chrome) und 404/23 (Mobile Safari) — die 32 neuen Tests und ein zusätzlicher Skip je Engine gehen vollständig darin auf.
+
+### Was nicht per Test prüfbar ist
+
+- **Das echte Homescreen-Icon** — bleibt Augenschein auf einem Gerät.
+- **Offline-Navigation auf WebKit**: `setOffline(true)` + `page.goto()` wirft dort „WebKit encountered an internal error"; die Navigation erreicht den Service Worker gar nicht. Fünf Tests laufen deshalb nur auf Chrome. Ersatzweise prüft ein eigener Test auf **beiden** Engines, dass `offline.html` mit dem richtigen Inhalt im Cache liegt — die Voraussetzung dafür gilt engineübergreifend.
+- **Der echte `beforeinstallprompt`** — Chrome feuert ihn nur nach eigenen Engagement-Heuristiken. Die Tests stellen das Ereignis nach.
+- **Standortfreigabe in der installierten iOS-PWA** (Edge Case 7, offene Frage der Spec) — nur auf einem echten iPhone zu klären.
 
 ## QA Test Results
 _To be added by /qa_

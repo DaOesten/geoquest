@@ -154,3 +154,23 @@ export const HEADER_NAV_LINKS = ANLEITUNG_VERFUEGBAR
     // Die Kopfzeile trägt dann nur noch Ko-fi-Icon und "Zur App", beide
     // rechtsbündig — die leere Liste hinterlässt keine Lücke.
     [];
+
+/**
+ * Speicherschlüssel für das Wegklicken des Installations-Hinweises (PROJ-12).
+ *
+ * Gleiches Präfix und gleicher Mechanismus wie `gq_first_visit_done` (PROJ-1).
+ * Der Unterschied: Hier liegt ein **Zeitstempel** statt eines Wahrheitswerts,
+ * weil sich die 30-Tage-Frist sonst nicht berechnen ließe.
+ */
+export const INSTALL_HINT_STORAGE_KEY = "gq_install_hint_dismissed";
+
+/**
+ * Wie lange der Installations-Hinweis nach dem Wegklicken schweigt (PROJ-12).
+ *
+ * 30 Tage: lang genug, um nicht zu nörgeln; kurz genug, dass jemand, der die
+ * App ein zweites Mal für einen Ausflug nutzt, das Angebot noch einmal bekommt.
+ * Bewusst abweichend vom Erststart-Dialog, der dauerhaft verschwindet — der ist
+ * eine Pflichtinformation, dieser hier ein Angebot.
+ */
+export const INSTALL_HINT_DISMISS_DAYS = 30;
+export const INSTALL_HINT_DISMISS_MS = INSTALL_HINT_DISMISS_DAYS * 24 * 60 * 60 * 1000;

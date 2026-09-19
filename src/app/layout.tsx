@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Anton, Orbitron, Rubik } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/sonner";
+import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import "./globals.css";
 
 /**
@@ -48,6 +49,26 @@ export const metadata: Metadata = {
   title: "Geo Quest",
   description:
     "Erstelle und spiele GPS-basierte Schnitzeljagden. Navigiere. Entdecke. Löse.",
+
+  /**
+   * Eigener `apple-touch-icon` neben den Manifest-Icons (PROJ-12).
+   *
+   * iOS wertet die Icon-Liste des Manifests nicht in allen Versionen aus. Ohne
+   * dieses Icon legt Safari einen Screenshot der Seite auf den Homescreen —
+   * zwischen echten App-Icons sofort als Fremdkörper erkennbar.
+   *
+   * `<link rel="manifest">` setzt Next.js selbst, sobald `app/manifest.ts`
+   * existiert; es gehört deshalb nicht hierher.
+   */
+  appleWebApp: {
+    capable: true,
+    title: "Geo Quest",
+    // Deep Black hinter der Statusleiste, passend zu `themeColor` unten.
+    statusBarStyle: "black-translucent",
+  },
+  icons: {
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+  },
 };
 
 export const viewport: Viewport = {
@@ -71,6 +92,10 @@ export default function RootLayout({
       <body className="min-h-dvh">
         {children}
         <Toaster />
+        {/* Meldet den Service Worker an — die Bedingung dafuer, dass Chrome auf
+            Android einen Installationsweg anbietet (PROJ-12). Er cacht nichts
+            ausser der Offline-Fallback-Seite. */}
+        <ServiceWorkerRegistration />
         {/* Reichweitenmessung ohne Cookies und ohne Geräte-Kennung — lädt nur in
             Produktion. Siehe /datenschutz; wird das hier entfernt oder gegen ein
             anderes Werkzeug getauscht, muss der Text dort mitgezogen werden. */}

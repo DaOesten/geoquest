@@ -8,6 +8,7 @@ import { AppHeader } from "@/components/app-header";
 import { QuestImportButton } from "@/components/quest-import-button";
 import { QuestCard } from "@/components/quest-card";
 import { QuestFilterTabs, type QuestFilter } from "@/components/quest-filter-tabs";
+import { InstallHint } from "@/components/install-hint";
 
 // Randomized particle positions must never be part of the SSR/hydration diff.
 const QuestListBackdrop = dynamic(
@@ -77,6 +78,17 @@ export default function PlayPage() {
           </p>
         )}
       </div>
+
+      {/* Installations-Hinweis (PROJ-12) — zwischen Titel-Block und Liste.
+
+          Hier und nicht am Listenende, weil `/play` beliebig lang wird: Am Ende
+          bekaeme ihn nur zu sehen, wer durch alle Quests scrollt. Auf `/` liegt
+          er dagegen bewusst hinter den Mode-Cards — dort steht ein
+          Nicht-Scrollen-Kriterium aus PROJ-1 dagegen, das es hier nicht gibt.
+
+          Ausserhalb beider Zweige, damit er auch in der Leeransicht erscheint:
+          Wer noch keine Quest importiert hat, ist genauso ein Kandidat. */}
+      <InstallHint className="relative mx-5 mt-4" />
 
       {quests.length === 0 ? (
         <div className="relative flex flex-col items-center justify-center min-h-[50vh] gap-4 px-5 text-center">

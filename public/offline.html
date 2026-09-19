@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0B0F12" />
+    <title>Geo Quest — keine Verbindung</title>
+
+    <!--
+      Offline-Fallback-Seite (PROJ-12).
+
+      Sie wird genau dann gezeigt, wenn die App NICHT laden konnte. Sie darf
+      deshalb nichts nachladen: kein React, kein Next.js, keine Google-Schriften
+      (die in genau diesem Moment ebenfalls fehlen wuerden), kein externes CSS.
+      Alles steht inline und nutzt Systemschriften.
+
+      Preis dieser Entscheidung, offen benannt: Die Farbwerte stehen hier ein
+      zweites Mal und koennen bei einem Redesign von docs/design-system.md
+      auseinanderlaufen. Akzeptiert — die Alternative waere, die App-Shell zu
+      cachen, und das bricht das PRD-Non-Goal "Kein Offline-Modus".
+
+      Der Text sagt bewusst NICHT "du bist offline". Das liesse sich als "sonst
+      ginge es auch offline" lesen und waere ein Versprechen, das das Produkt
+      nicht haelt. Er sagt, dass Geo Quest Internet zum Starten braucht.
+    -->
+    <style>
+      /* Design-System-Tokens, hier als feste Werte (siehe Kommentar oben). */
+      :root {
+        --gq-black: #0b0f12;
+        --gq-dark-teal: #0e1f24;
+        --gq-teal: #00e0d1;
+        --gq-white: #ffffff;
+        --gq-grey: #a0a7ad;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--gq-black);
+      }
+
+      body {
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        /* Screen-Gutter 20px nach Design System, plus Safe-Area am Notch. */
+        padding: 24px calc(20px + env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom))
+          calc(20px + env(safe-area-inset-left));
+        text-align: center;
+        /* Systemschriften: Anton/Orbitron/Rubik laden hier nicht. */
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+          sans-serif;
+        color: var(--gq-white);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .wrap {
+        width: 100%;
+        max-width: 430px; /* Content-Container der App */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+      }
+
+      /* Pin-Motiv als Inline-SVG — eine <img>-Quelle waere eine zweite Anfrage,
+         die ohne Netz ebenfalls fehlschlagen koennte. */
+      .mark {
+        width: 84px;
+        height: 84px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 26px;
+        line-height: 1.15;
+        font-weight: 800;
+        letter-spacing: 0.01em;
+        text-transform: uppercase;
+        color: var(--gq-white);
+      }
+
+      p {
+        margin: 0;
+        max-width: 320px;
+        font-size: 16px; /* PRD: min. 16px Body-Text */
+        line-height: 1.5;
+        /* #A0A7AD auf #0B0F12 = 8.0:1, deutlich ueber der WCAG-AA-Vorgabe. */
+        color: var(--gq-grey);
+      }
+
+      button {
+        appearance: none;
+        border: 0;
+        margin-top: 4px;
+        /* Min. 44px Tap-Ziel (PRD/WCAG AA). */
+        min-height: 48px;
+        padding: 0 28px;
+        border-radius: 999px; /* Pill-Shape nach Design System */
+        background: var(--gq-teal);
+        /* Teal-Grund mit schwarzer Schrift = 11.6:1. */
+        color: var(--gq-black);
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: transform 120ms cubic-bezier(0.16, 0.84, 0.44, 1), opacity 120ms;
+      }
+
+      button:active {
+        transform: scale(0.96);
+        opacity: 0.9;
+      }
+
+      button:focus-visible {
+        outline: 3px solid rgba(0, 224, 209, 0.45);
+        outline-offset: 3px;
+      }
+
+      .hint {
+        font-size: 13px;
+        color: var(--gq-grey);
+        opacity: 0.75;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        button {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <svg
+        class="mark"
+        viewBox="0 0 48 48"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+      >
+        <path
+          d="M24 5c-7.18 0-13 5.82-13 13 0 9.75 13 25 13 25s13-15.25 13-25c0-7.18-5.82-13-13-13z"
+          stroke="#00E0D1"
+          stroke-width="3"
+          stroke-linejoin="round"
+        />
+        <circle cx="24" cy="18" r="5" fill="#00E0D1" />
+      </svg>
+
+      <h1>Keine Verbindung</h1>
+
+      <p>Geo Quest braucht eine Internetverbindung, um zu starten.</p>
+
+      <button type="button" onclick="location.reload()">Erneut versuchen</button>
+
+      <p class="hint">Prüfe dein Mobilfunknetz oder WLAN.</p>
+    </div>
+  </body>
+</html>

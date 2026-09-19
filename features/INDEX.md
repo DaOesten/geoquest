@@ -27,7 +27,7 @@
 | PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Deployed | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
-| PROJ-12 | PWA-Installation | P0 | PROJ-1 | Architected | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
+| PROJ-12 | PWA-Installation | P0 | PROJ-1 | In Progress | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
@@ -290,6 +290,33 @@ Mit ausgeliefert: `playwright.prod.config.ts` (löst das projektlange Chromium-P
 **Zum Freischalten:** `ANLEITUNG_VERFUEGBAR = true` in `src/lib/app-nav.ts`. Vorher `npm run test:e2e:freigeschaltet` laufen lassen.
 
 **PROJ-14 ist abgeschlossen.**
+
+## Offenes Feature: PROJ-12 — PWA-Installation (2026-09-19)
+**PROJ-12** geht von Architected auf In Progress. Das PRD nennt Geo Quest im ersten Satz eine PWA und führt „PWA-Installation" als P0 — technisch war davon **nichts** vorhanden: kein Manifest, kein Service Worker, keine App-Icons.
+
+**Frontend umgesetzt am 2026-09-19.** Elf Dateien, **kein neues Paket** (die 41 Abhängigkeiten bleiben). Manifest als `src/app/manifest.ts` (Next.js prüft die Feldnamen im Build), vier eingecheckte Icons, ein handgeschriebener Service Worker (91 Zeilen, überwiegend Begründung), eine eigenständige Offline-Seite und der Installations-Hinweis auf `/` und `/play`.
+
+**Der Kern ist gemessen, nicht behauptet:** Der Cache enthält nach Navigation über drei Screens **genau `["/offline.html"]`**. Das PRD-Non-Goal „Kein Offline-Modus" ist damit strukturell unverletzbar — es liegt nichts im Cache, woraus sich die App zusammensetzen ließe. Zugleich ist der Worker die Bedingung dafür, dass Chrome auf Android überhaupt einen Installationsweg anbietet.
+
+**Zwei Konflikte, die die Architektur nicht vorhergesehen hatte — beide gemessen aufgedeckt:**
+
+1. **Der Hinweis auf `/` brach ein PROJ-1-Kriterium.** Die Architektur schrieb „hinter den Mode-Cards kostet er nichts". Gemessen ist die volle Karte 195px hoch und ließ die Seite auf **799px** wachsen; der bestehende Test prüft aber, dass der Startscreen auf 360×640 **gar nicht scrollt**. Zwei Tests fielen, zuerst nur auf WebKit. Nach Rückfrage beim Betreiber trägt `/` jetzt eine **kompakte einzeilige Fassung** von exakt 44px — die Seite endet bei **640 von 640**. `/play` behält die volle Karte, dort gibt es kein solches Kriterium.
+
+2. **Der Service Worker legte 6 fremde Tests lahm.** Sobald er die Seite kontrolliert, greift Playwrights `page.route` nicht mehr — die Sonde zeigte **0 Treffer im Mock** und eine Antwort der echten Nominatim-API. Playwright empfiehlt dafür in der eigenen Typdefinition `serviceWorkers: 'block'`; beide Configs setzen das jetzt, die PROJ-12-Suite hebt es für sich auf. Das Produkt war in allen 6 Fällen richtig.
+
+**Die Icons sind nachgemessen statt geschätzt:** Die Architektur schätzte das Pin-Motiv auf x 62..392, y 250..670 — per Pixel-Analyse liegt es bei **x 90..391, y 276..670**. Die von ihr gefundene motivfreie Spalte bei x 392..401 ist exakt bestätigt. Eine Abweichung war nötig: Der Icon-Grund bekommt **rgb(4,10,11)** statt des Tokens `#0B0F12`, weil das Quellbild dunkler ist und an der Zuschnittkante sonst ein sichtbares Rechteck stand. Das maskable-Icon hält das Motiv nachgemessen in den inneren 80% (x 139..372 von 512).
+
+`sips` reichte dafür nicht (padded nur einseitig, kein zentriertes Compositing) — stattdessen ein eingechecktes Swift-Skript über CoreGraphics, ebenfalls ohne Abhängigkeit, dafür reproduzierbar statt einmalig von Hand.
+
+**Ein Fehler, den erst die Tests fanden:** Bei blockiertem `localStorage` schreibt der Erststart-Dialog seinen Schlüssel nicht — der Installations-Hinweis wäre in dieser Sitzung **nie** erschienen, obwohl der Dialog längst weg war.
+
+**33 Unit-Tests** für den Hook, den die Architektur ausdrücklich als testbedürftig markierte („die Lücke, durch die BUG-6 live gehen konnte, war ein ungetesteter Hook"). Die Plattform-Erkennung ist gegen sieben echte User-Agents geprüft, darunter die drei Fälle, die wie iOS-Safari aussehen und keines sind: Chrome auf iOS, Firefox auf iOS und ein echter Mac. Dazu **32 E2E-Tests**.
+
+Suiten gegen den Production-Build: **Unit 219/219** (vorher 186), **Chrome 152: 436 passed / 23 skipped / 0 failed**, **Mobile Safari: 430 passed / 29 skipped / 0 failed** — beide Engines fahren dieselben 459 Tests, die Skip-Differenz von 6 ist erklärt (5 Offline-Navigationstests nur Chrome, 1 iOS-Test nur WebKit). Build und Lint sauber; `/`, `/play` und die Info-Seiten bleiben statisch (`○`).
+
+**Drei Gegenproben, alle mit dem erwarteten Ergebnis:** das BUG-6-Muster (iOS an einem Merkmal) lässt 5 Unit-Tests fallen; App-Shell mitcachen lässt den zuständigen Cache-Test fallen; die volle Karte auf `/` lässt den Scroll-Wächter fallen.
+
+**Nicht per Test abgedeckt und bewusst benannt:** das echte Homescreen-Icon (Augenschein), die Offline-*Navigation* auf WebKit (`setOffline` + `goto` wirft dort einen internen Playwright-Fehler — ersatzweise prüfen beide Engines den Cache-Inhalt), der echte `beforeinstallprompt` und Edge Case 7 (Standortfreigabe in der installierten iOS-PWA, nur am Gerät zu klären).
 
 ## Abgeschlossen: QA des Navigations-Refinements (2026-09-10)
 Die seit dem 2026-09-06 offene QA von **PROJ-1** ist nachgeholt — der Punkt, der in mehreren Einträgen oben als „QA steht aus" vermerkt war.

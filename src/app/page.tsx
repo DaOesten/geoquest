@@ -4,6 +4,7 @@ import { Gamepad2, Pencil } from "lucide-react";
 import { ModeCard } from "@/components/mode-card";
 import { FirstVisitDialog } from "@/components/first-visit-dialog";
 import { AppNavMenu } from "@/components/app-nav-menu";
+import { InstallHint } from "@/components/install-hint";
 
 export default function StartScreen() {
   return (
@@ -77,6 +78,20 @@ export default function StartScreen() {
           accent="lime"
         />
       </div>
+
+      {/* Installations-Hinweis (PROJ-12) — hinter den Mode-Cards und bewusst in
+          der KOMPAKTEN Fassung.
+
+          Das Kriterium aus PROJ-1 verlangt, dass `/` auf 360x640 gar nicht
+          scrollt. Gemessen endet die zweite Card dort bei 559 von 640; mit der
+          Seitenpolsterung bleiben rund 37px. Die volle Hinweis-Karte ist 195px
+          hoch und liess die Seite auf 799px wachsen — das Kriterium ist aelter
+          als dieses Feature und hat Vorrang, also traegt `/` nur die einzeilige
+          Fassung. Die vollstaendige Karte steht auf `/play`.
+
+          Der Hinweis erscheint ohnehin nur, wenn ein Installationsweg existiert
+          und die App nicht schon installiert laeuft. */}
+      <InstallHint compact className="mt-2" />
 
       <FirstVisitDialog />
     </main>
