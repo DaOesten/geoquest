@@ -1,8 +1,8 @@
 # PROJ-12: PWA-Installation (Add to Homescreen)
 
-## Status: Deployed
+## Status: Approved
 **Created:** 2026-09-18
-**Last Updated:** 2026-09-19 (deployt)
+**Last Updated:** 2026-09-20 (Refinement: Service Worker nur in Production)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — der Startscreen `/` trägt einen der beiden Hinweis-Orte, und das Wurzel-Layout (`src/app/layout.tsx`) hält heute schon `themeColor` und `viewportFit: "cover"`
@@ -54,6 +54,15 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 ## Acceptance Criteria
 
 **Format:** Angenommen [Vorbedingung] / Wenn [Aktion] / Dann [Ergebnis]
+
+### Service Worker nur in Production (Refinement 2026-09-20)
+
+- [x] Angenommen ein Entwickler öffnet die App über `localhost` oder `127.0.0.1`, wenn die Seite lädt, dann wird **kein** Service Worker registriert — `navigator.serviceWorker.controller` bleibt `null` und es entsteht kein Cache
+- [x] Angenommen die App läuft unter ihrer Produktionsdomain, wenn die Seite lädt, dann registriert sich der Service Worker unverändert wie bisher und der Installationsweg auf Android bleibt erhalten
+- [x] Angenommen ein Entwickler öffnet `localhost`, während kein Dev-Server läuft, wenn der Browser die Anfrage stellt, dann zeigt er **seine eigene** Fehlermeldung über den nicht erreichbaren Server — nicht die Geo-Quest-Offline-Seite
+- [x] Angenommen auf dem Rechner ist aus einem früheren Besuch noch ein Worker für `localhost` registriert, wenn die App dort erneut geladen wird, dann meldet sie diesen bestehenden Worker aktiv ab und löscht seine Caches, sodass sich das Problem ohne manuellen Eingriff des Entwicklers auflöst
+- [x] Angenommen die E2E-Suite läuft gegen den Production-Build auf `localhost:3100`, wenn die PROJ-12-Tests den Service Worker prüfen, dann sind sie weiterhin lauffähig — die Unterscheidung darf **nicht** allein am Hostnamen `localhost` hängen, weil die Suite genau dort einen echten Production-Build testet
+- [x] Angenommen die Offline-Seite und das Manifest werden weiterhin ausgeliefert, wenn ein Entwickler sie lokal direkt aufruft, dann sind sie unverändert erreichbar — dieses Refinement ändert nur, **wer den Worker registriert**, nicht welche Dateien existieren
 
 ### Installierbarkeit
 
@@ -135,6 +144,12 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 
 14. **Nutzer öffnet die App über einen geteilten `/play/[id]`-Link auf einem Gerät, auf dem sie installiert ist** → Verhalten ist plattformabhängig (Browser oder App). Kein Anspruch dieses Features; der Link muss lediglich weiterhin funktionieren.
 
+15. **Entwickler öffnet `localhost`, während kein Dev-Server läuft** → Bisher zeigte der Browser die Geo-Quest-Offline-Seite, weil der Service Worker die Navigation abfing und aus dem Cache antwortete. Das sah aus wie ein Produktfehler, war aber korrektes Verhalten am falschen Ort. **Nach diesem Refinement registriert sich der Worker lokal gar nicht mehr** — der Browser zeigt seine eigene „Server nicht erreichbar"-Meldung, die den wahren Grund nennt.
+
+16. **Ein anderes Projekt läuft auf demselben `localhost`** → Der Service-Worker-Scope ist die **Origin**, nicht der Port. Ein auf `localhost` registrierter Worker galt damit für jedes Projekt auf jedem Port dieser Maschine — ein fremdes Projekt mit kurz gestopptem Server zeigte die Offline-Seite von Geo Quest. Nach diesem Refinement kann das nicht mehr entstehen.
+
+17. **Ein bereits registrierter Worker aus einem früheren Besuch lebt lokal weiter** → Die Änderung verhindert **neue** Registrierungen, entfernt aber keine bestehende. Wer die App vor diesem Refinement lokal geöffnet hat, trägt den Worker weiter, bis er ihn löscht (Safari: Entwickler → Caches leeren, oder Einstellungen → Datenschutz → Website-Daten verwalten → `localhost` entfernen; Chrome: DevTools → Application → Service Workers → Unregister). Deshalb muss die Unregistrierung aktiv passieren, statt auf den Ablauf zu warten — siehe Acceptance Criteria.
+
 ## Technical Requirements
 
 - **Kein Backend, keine neuen Netzabhängigkeiten** — alle neuen Dateien werden von der eigenen Domain ausgeliefert
@@ -143,6 +158,7 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 - **Der Service Worker cacht ausschließlich die Offline-Fallback-Seite** — kein HTML, CSS, JS, keine Schriften, keine Kartenkacheln, keine Medien
 - **Der Service Worker übernimmt bei jedem Deploy sofort die Kontrolle** — kein Warten auf geschlossene Tabs
 - **HTTPS** — Service Worker laufen nur im sicheren Kontext; in der Produktion durch Vercel gegeben, lokal über `localhost`
+- **Der Service Worker registriert sich ausschließlich in Production** (Refinement 2026-09-20) — auf dem lokalen Dev-Server nicht; zusätzlich meldet die App einen dort bereits registrierten Worker aktiv ab und löscht dessen Caches. Die Unterscheidung läuft über `process.env.NODE_ENV`, **nicht** über den Hostnamen, weil die E2E-Suite den Production-Build auf `localhost:3100` testet
 - **Browser-Support:** Chrome (Android/Desktop) und Safari (iOS/macOS) müssen den Installationsweg bieten; Firefox und Edge müssen die App **fehlerfrei ohne** Installationsangebot darstellen
 - **Kontrast mindestens 4.5:1 und Tap-Ziele mindestens 44×44px** für alle neuen Bedienelemente (PRD/WCAG-AA-Vorgabe) — auch auf der Offline-Seite
 - **Die Offline-Seite kommt ohne JavaScript-Framework aus** — sie muss funktionieren, wenn die App gar nicht geladen werden konnte, und darf deshalb nicht von React oder Next.js abhängen
@@ -153,6 +169,7 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 ## Open Questions
 
 - [x] ~~Lässt sich der Pin sauber aus `geoquest_pwaIcon.jpeg` freistellen, oder braucht es eine Zulieferung des Betreibers?~~ **Geschlossen in `/architecture` (2026-09-18): ja, keine Zulieferung nötig.** Das Quellbild wurde vermessen — weißer Rand 55/54/61px, und zwischen Pin-Gruppe und Schriftzug liegt eine motivfreie Spalte bei x 392..401. Ein Probeschnitt (330×420 ab x=62, y=250) zeigt Pin, gestrichelte Route und X vollständig, ohne Buchstabenrest und ohne weißen Rand. Werkzeug: `sips` (Teil von macOS).
+- [ ] Soll die Abmeldung des lokalen Workers dauerhaft im Code bleiben oder nach einer Übergangszeit entfernt werden? Sie nützt nur Rechnern, die die App vor dem 2026-09-20 lokal geöffnet haben. Vorschlag: vorerst belassen — sie kostet wenige Zeilen, und ein wiederkehrender Worker wäre schwer zu diagnostizieren.
 - [ ] Soll die Themenfarbe (Statusleiste der installierten App) bei `#0B0F12` bleiben oder das Teal aufnehmen? Vorschlag: Deep Black beibehalten, damit die Statusleiste nahtlos in den App-Hintergrund übergeht. Am echten Gerät zu beurteilen.
 - [ ] Verhält sich die Standortfreigabe in der installierten iOS-PWA wie im Safari-Tab, oder muss sie neu erteilt werden? (Edge Case 7) — nur auf einem echten iPhone abschließend zu klären; für die Korrektheit des Features unkritisch, weil der Permission-Screen aus PROJ-3 greift.
 - [ ] Bleibt es dauerhaft bei „keine Screenshots im Manifest"? Sie würden die Android-Installations-Ansicht aufwerten, erfordern aber gepflegtes Bildmaterial.
@@ -177,6 +194,7 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 | Start-URL ist `/`, nicht `/play` | Die installierte App verhält sich wie die Website. `/` trägt seit BUG-10 das vollständige Burger-Menu und beide Mode-Cards; von dort sind Play und Create je einen Tap entfernt. Ein Start auf `/play` würde den Creator in der installierten App verstecken, obwohl die Installation laut PRD auch ihm offensteht. | 2026-09-18 |
 | Kein Menu-Eintrag „App installieren" | Das Burger-Menu trägt bereits sieben Ziele in vier Gruppen. Ein achter Eintrag, der auf den meisten Geräten nichts tun kann (iOS bietet keinen programmatischen Weg), wäre mehr Last als Nutzen. | 2026-09-18 |
 | Offline-Seite verspricht ausdrücklich **keine** Offline-Fähigkeit | Sie sagt, dass Internet zum Starten nötig ist. Eine Formulierung wie „du bist offline" könnte als „sonst ginge es auch offline" gelesen werden — und würde ein Versprechen erzeugen, das das Produkt nicht hält. | 2026-09-18 |
+| Der Service Worker läuft **nur in Production**, nicht auf `localhost` | Ein Betreiber-Befund vom 2026-09-20: Desktop-Safari zeigte beim Öffnen von `localhost` nur noch „Keine Verbindung". Reproduziert — der Dev-Server lief nicht, der Worker fing die Navigation ab und antwortete aus dem Cache. Technisch korrekt, aber am falschen Ort: Lokal ist ein gestoppter Server der **Normalfall**, und die Offline-Seite verdeckt dann die wahre Ursache. Der Nutzen des Workers (Installierbarkeit auf Android, würdige Fehlerseite draußen) entsteht ausschließlich in Production; lokal hat er nur Kosten. | 2026-09-20 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -197,6 +215,9 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 | Auf `/` steht der Hinweis **hinter** den Mode-Cards | Das PROJ-1-Kriterium verlangt Logo, Headline und beide Cards ohne Scrollen auf 360×640; gemessen endet der Inhalt dort bei 559/640px. Davor würde der Hinweis dieses Kriterium brechen, dahinter kostet er nichts. | 2026-09-18 |
 | Speicherschlüssel `gq_install_hint_dismissed` mit Zeitstempel | Gleiches Präfix und gleicher Mechanismus wie `gq_first_visit_done` (PROJ-1). Ein Zeitstempel statt eines Wahrheitswerts, weil die 30-Tage-Frist sonst nicht berechenbar wäre. | 2026-09-18 |
 | Konstanten (Frist, Speicherschlüssel) in `src/lib/app-nav.ts` | Dort liegen bereits die app-weiten Navigations- und Schalterkonstanten (`KOFI_URL`, `ANLEITUNG_VERFUEGBAR`). Das Modul ist bewusst kein Client-Modul und aus Server- wie Client-Komponenten importierbar. | 2026-09-18 |
+| Unterscheidung über `process.env.NODE_ENV`, **nicht** über den Hostnamen | Die E2E-Suite testet den echten Production-Build auf `localhost:3100` (`playwright.prod.config.ts`). Eine Hostname-Prüfung auf `localhost` würde dort den Worker abschalten und die 37 PROJ-12-Tests entwerten, ohne dass eine einzige Zeile Produktcode kaputt aussieht — ein stiller Testverlust. `NODE_ENV` trennt Dev-Server von Production-Build sauber, unabhängig vom Port. | 2026-09-20 |
+| Bestehende lokale Worker aktiv abmelden statt nur neue verhindern | Der Scope eines Service Workers ist die **Origin**, nicht der Port — ein einmal auf `localhost` registrierter Worker überlebt den Dev-Server und gilt für **jedes** Projekt auf dieser Maschine. Würde man nur neue Registrierungen unterlassen, bliebe der bereits ausgelieferte Worker auf allen Entwicklerrechnern liegen und müsste von Hand gelöscht werden. Die Abmeldung ist wenige Zeilen und räumt den Fehler dort auf, wo er entstanden ist. | 2026-09-20 |
+| Kein Opt-in-Schalter für lokales Testen | Erwogen und verworfen: Die Offline-Seite und die Installierbarkeit lassen sich gegen den Production-Build prüfen (`playwright.prod.config.ts`, Port 3100) — genau dort, wo die Suite ohnehin läuft. Ein zusätzlicher Schalter wäre ein dritter Zustand, den niemand regelmäßig testet. | 2026-09-20 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
@@ -488,6 +509,41 @@ Vor diesem Feature lagen die Suiten bei 405/22 (Chrome) und 404/23 (Mobile Safar
 - **Der echte `beforeinstallprompt`** — Chrome feuert ihn nur nach eigenen Engagement-Heuristiken. Die Tests stellen das Ereignis nach.
 - **Standortfreigabe in der installierten iOS-PWA** (Edge Case 7, offene Frage der Spec) — nur auf einem echten iPhone zu klären.
 
+### Refinement 2026-09-20 — Service Worker nur in Production
+
+**Anlass:** Der Betreiber sah in Desktop-Safari beim Öffnen von `localhost` nur noch „Keine Verbindung". Kein Produktfehler und in Production nie aufgetreten — der Worker tat genau das, wofür er gebaut wurde, nur am falschen Ort: Es lief kein Dev-Server, er fing die Navigation ab und antwortete aus dem Cache.
+
+**Eine Datei geändert** (`src/components/service-worker-registration.tsx`), kein neues Paket, keine neue Komponente, keine neue Route. `public/sw.js`, das Manifest, die Icons und die Offline-Seite sind **unverändert** — das Refinement ändert nur, *wer* den Worker registriert, nicht welche Dateien existieren.
+
+**Beide Richtungen am Browser gemessen, nicht behauptet** (WebKit, gleicher Hostname `localhost`, nur unterschiedliches `NODE_ENV`):
+
+| Umgebung | Worker registriert | `controller` | Caches |
+|---|---|---|---|
+| Production-Build (Port 3100) | **1** | `true` | `["geoquest-offline-v1"]` |
+| Dev-Server (Port 3000) | **0** | `false` | `[]` |
+
+Damit ist belegt, dass die Unterscheidung nicht am Hostnamen hängt — beide Fälle liefen auf `localhost`.
+
+**Edge Case 17 (Aufräumen) ebenfalls gemessen.** Der erste Versuch war wertlos und wurde verworfen: Er stellte den Altzustand auf `/` her, wo der neue Aufräum-Code sofort lief — „VORHER" zeigte bereits 0 Worker, der Test hätte auch bei kaputtem Code bestanden. Korrigiert über `offline.html`, eine statische Seite ohne React:
+
+- **VORHER:** 1 Worker, Cache `["geoquest-offline-v1"]`
+- **NACHHER (ein Seitenaufruf):** 0 Worker, 0 Caches
+- **Zweiter Seitenaufruf:** auch `controller: false` — der Rest im ersten Schritt ist die bereits kontrollierte Seite, die ihr Leben zu Ende lebt, kein Halbzustand
+
+Der Entwickler muss also nichts von Hand löschen; es löst sich beim nächsten Aufruf.
+
+**7 neue Unit-Tests** in `service-worker-registration.test.tsx` — bewusst als Unit- und nicht als E2E-Tests: Die E2E-Suite fährt ausschließlich gegen den Production-Build, wo `NODE_ENV` immer `production` ist. Der Dev-Zweig ist dort **strukturell nicht erreichbar**, und genau er ist der Gegenstand des Refinements.
+
+**Per Gegenprobe geschärft:** Mit der alten Fassung fallen **genau 4** der 7 Tests (keine Registrierung im Dev-Modus, Abmelden, Cache-Löschen, fremde Caches). Die 3, die weiter bestehen müssen — Registrierung in Production, kein Aufräumen in Production, BUG-11 —, bestehen auch. Produktcode danach per `diff` als identisch zur gebauten Fassung bestätigt.
+
+**Die zentrale Sorge des Refinements ist eingelöst:** Die **37 PROJ-12-E2E-Tests laufen unverändert** gegen den Production-Build auf `localhost:3100`. Eine Hostname-Prüfung hätte sie entwertet, ohne dass der Produktcode kaputt ausgesehen hätte.
+
+**Suiten:** Unit **226/226** (vorher 219). Vollständiger E2E-Lauf gegen den Production-Build: **913 passed / 52 skipped / 1 failed** — der eine Fehlschlag liegt in `proj-7-creator-stationen-editor.spec.ts` (Radius-Slider), besteht einzeln und ist von diesem Refinement nicht erreichbar: Die Datei ist unverändert und ihre Suite läuft mit `serviceWorkers: 'block'`. PROJ-12 selbst **3× seriell hintereinander 36/36 grün** auf Chrome. Build und Lint sauber (0 Fehler; die 7 Warnungen sind vorbestehend, keine in den geänderten Dateien).
+
+**Zwei Messfehler offen benannt, beide meine:** Ein `tail`-Aufruf schnitt die Fehlerzeile ab, sodass ich kurzzeitig „0 failed" las, während 10 Tests fehlschlugen — Ursache war die Datei `tests/zz-probe-radius.spec.ts`, die während des Laufs verschwand (nicht von mir angelegt und nicht von mir gelöscht). Und ein `pkill` gegen Playwright beendete zugleich den Production-Server, worauf der Folgelauf „No tests found" meldete.
+
+**Nicht abgedeckt:** Das Verhalten in Production bleibt unverändert und wurde nur lokal gegen `next start` geprüft, nicht gegen Vercel — der Deploy muss bestätigen, dass sich der Worker dort weiterhin registriert.
+
 ## QA Test Results
 
 **Getestet am:** 2026-09-19
@@ -696,6 +752,41 @@ Beide Engines fahren dieselben 464 Tests, beide mit Exit-Code 0 (464 = 441+23 bz
 
 Keine Critical- oder High-Bugs. Der einzige Fund (BUG-11) ist ein Konsolenfehler in einem Sonderfall, der keine Funktionalität kostet und im normalen Betrieb nicht auftritt.
 
+
+### QA Refinement 2026-09-20 — Service Worker nur in Production
+
+**Ergebnis: 6/6 Acceptance Criteria erfüllt, keine Bugs jeglicher Schwere, Production-Ready.**
+
+Weil das Refinement in derselben Sitzung gebaut wurde, habe ich die zentralen Behauptungen **nicht übernommen, sondern mit eigenen Sonden neu gemessen** — und auf **beiden Engines**, während die Frontend-Phase nur WebKit geprüft hatte.
+
+| # | Kriterium | Ergebnis | Nachweis (WebKit / Chrome 152) |
+|---|---|---|---|
+| 1 | Kein Worker auf localhost (dev) | **PASS** | `worker=0 controller=false caches=[]` auf beiden Engines |
+| 2 | Production registriert unverändert | **PASS** | `worker=1 controller=true caches=["geoquest-offline-v1"]` auf beiden |
+| 3 | Browser zeigt eigene Fehlermeldung | **PASS** | „Could not connect to the server" / `net::ERR_CONNECTION_REFUSED` |
+| 4 | Bestehender Worker wird abgeräumt | **PASS** | 1 Worker + Cache → 0/0 nach einem Aufruf, `controller:false` beim zweiten |
+| 5 | E2E-Suite bleibt lauffähig | **PASS** | PROJ-12 **67 passed / 7 skipped / 0 failed** |
+| 6 | Offline-Seite, Manifest, sw.js erreichbar | **PASS** | alle drei HTTP 200 auf beiden Engines |
+
+**Der gemeldete Fehler ist direkt gegengeprüft.** Mit der **alten** Fassung zeigen beide Engines bei gestopptem Dev-Server `Titel: "Geo Quest — keine Verbindung"` und den Text „KEINE VERBINDUNG" — exakt der Betreiber-Befund. Mit der neuen Fassung meldet der Browser seinen eigenen Verbindungsfehler. Damit ist nicht nur das Kriterium erfüllt, sondern der **konkrete Symptombericht reproduziert und als behoben nachgewiesen**.
+
+**Die `NODE_ENV`-Entscheidung ist empirisch belegt, nicht nur argumentiert.** Gegenprobe mit einer Hostname-Prüfung eingespielt und gemessen: Der Worker registriert sich auf `localhost:3100` **nicht** (`worker=0`), und die PROJ-12-Suite **hängt** dann, statt sauber rot zu werden (7,7 s regulär gegen Timeout). Eine Hostname-Lösung hätte die 37 Tests also nicht nur entwertet, sondern unlesbar gemacht.
+
+**Über die Spec hinaus geprüft — Security-Audit ohne Befund.** Das Aufräumen löscht Caches auf einer **geteilten Origin**; Über-Löschung wäre ein echter Schaden. Mit fünf gezielt ähnlichen Cache-Namen gemessen: Gelöscht wird **ausschließlich** `geoquest-offline-v1`. Erhalten bleiben `fremdes-projekt-v9`, `GEOQUEST-gross` (Groß-/Kleinschreibung), `xgeoquest-tarnung` (Präfix-Täuschung) und `geoquest` (ohne Bindestrich). Dazu: 0 Konsolenfehler auf `/`, `/play`, `/create` im Dev-Modus, keine Secrets im ausgelieferten HTML.
+
+**Regression:** Unit **226/226**. **Chrome 152: 463 passed / 23 skipped / 0 failed. Mobile Safari: 457 passed / 29 skipped / 0 failed.** Build sauber, Lint 0 Fehler (7 Warnungen vorbestehend, keine in den geänderten Dateien). Die 3 PROJ-12-Skips sind nachvollzogen und dokumentierte Engine-Grenzen, keine stillgelegten Tests. Der PROJ-7-Fehlschlag aus der Frontend-Phase ist hier **nicht** aufgetreten — bestätigt als Last-Flakiness, nicht als Regression.
+
+**Gegenproben:** Unit-Tests — mit der alten Fassung fallen **genau 4 der 7**, die 3, die bestehen müssen, bestehen (unabhängig nachvollzogen). E2E — registriert sich der Worker nie, fallen **2 Tests**. Produktcode nach jeder Gegenprobe per `diff` als byte-identisch bestätigt.
+
+**Vier Fehler in meinen eigenen Tests und Messungen, offen benannt — das Produkt war jedes Mal richtig:**
+1. Ein Test erwartete **0 Konsolenfehler**; lokal schlägt aber Vercel Analytics fehl (`_vercel/insights/script.js`, 404). Gegenmessung mit **blockiertem** Worker: dieselben 3 Fehler. Der Test prüft jetzt JavaScript- und Service-Worker-Fehler statt Infrastrukturrauschen.
+2. Beim Härten wartete ein Test nur auf die **Registrierung** statt auf den **gefüllten Cache** — auf WebKit reproduzierbar rot.
+3. `navigator.serviceWorker.ready` hängt unendlich, wenn sich kein Worker registriert; eine Gegenprobe lief damit ins Timeout statt klar fehlzuschlagen. Ersetzt durch `waitForFunction` mit Timeout.
+4. Der `line`-Reporter mit `tail -1` verschluckte Fehlschläge — fünf Läufe sahen grün aus, während der JSON-Reporter 1–2 rote Tests auswies. Alle Stabilitätsaussagen hier stammen aus dem **JSON-Reporter**.
+
+**Ein eigener Test wurde nach mehreren Reparaturversuchen entfernt statt stillgelegt.** Die Cache-Inhalts-Prüfung blieb auf WebKit unzuverlässig (1 von 5 Läufen rot) — bei nachweislich korrektem Produkt: Unabhängig gemessen enthält der Cache vor *und* nach der Navigation exakt `/offline.html`. Da `proj-12-pwa-installation.spec.ts:183` dieselbe Zusicherung **stabil** abdeckt, war die zweite Fassung redundant. Ein Test, der ohne Produktfehler rot wird, kostet mehr Vertrauen als er Deckung bringt. Die Begründung steht als Kommentar an seiner Stelle. Verbleibende Suite: **6 Tests, 6 von 6 Läufen grün**.
+
+**Nicht abgedeckt:** Das Verhalten **auf Vercel** — geprüft wurde gegen `next start`. Der Deploy muss bestätigen, dass sich der Worker in Production weiterhin registriert; das ist die einzige offene Zusicherung. Dazu unverändert: Firefox (Binary fehlt) und ein echtes Android-Gerät.
 
 ## Deployment
 

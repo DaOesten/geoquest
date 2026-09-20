@@ -27,7 +27,7 @@
 | PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Deployed | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
-| PROJ-12 | PWA-Installation | P0 | PROJ-1 | In Progress | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
+| PROJ-12 | PWA-Installation | P0 | PROJ-1 | Approved | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
@@ -504,3 +504,33 @@ Entschieden: Der Worker registriert sich **nur noch in Production**; zusätzlich
 Spec ist aktualisiert (6 neue Acceptance Criteria, Edge Cases 15–17, 1 Technical Requirement, 1 Produkt- und 3 technische Entscheidungen, 1 neue Open Question).
 
 **Sofortmaßnahme für den Betreiber** (unabhängig vom Fix): Safari → Entwickler → Caches leeren, oder Einstellungen → Datenschutz → Website-Daten verwalten → `localhost` entfernen. Danach `npm run dev` starten.
+
+**Frontend umgesetzt am 2026-09-20.** Eine Datei (`service-worker-registration.tsx`), kein neues Paket, keine neue Komponente, keine neue Route. `sw.js`, Manifest, Icons und Offline-Seite sind unverändert — geändert hat sich nur, *wer* den Worker registriert.
+
+Beide Richtungen am Browser gemessen, bei **gleichem Hostname** und nur unterschiedlichem `NODE_ENV`: Production-Build (Port 3100) registriert **1** Worker mit Cache `["geoquest-offline-v1"]`, Dev-Server (Port 3000) **0** Worker und **0** Caches. Damit ist belegt, dass die Unterscheidung nicht am Hostnamen hängt.
+
+Das Aufräumen (Edge Case 17) ist ebenfalls gemessen: 1 Worker + 1 Cache vorher → 0/0 nach einem einzigen Seitenaufruf, beim zweiten auch `controller: false`. **Der erste Messversuch war wertlos und wurde verworfen** — er stellte den Altzustand auf `/` her, wo der Aufräum-Code sofort lief, und hätte auch bei kaputtem Code bestanden; korrigiert über die statische `offline.html`.
+
+**Die zentrale Sorge ist eingelöst:** Die 37 PROJ-12-E2E-Tests laufen unverändert gegen den Production-Build auf `localhost:3100`. 7 neue Unit-Tests decken den Dev-Zweig ab, der in der E2E-Suite **strukturell nicht erreichbar** ist. Per Gegenprobe geschärft: Mit der alten Fassung fallen genau 4 der 7; die 3, die bestehen bleiben müssen, bestehen.
+
+**Suiten:** Unit **226/226** (vorher 219). Voller E2E-Lauf **913 passed / 52 skipped / 1 failed** — der Fehlschlag liegt in PROJ-7 (Radius-Slider), besteht einzeln und ist unerreichbar für dieses Refinement (Datei unverändert, Suite läuft mit `serviceWorkers: 'block'`). PROJ-12 selbst 3× seriell 36/36 grün. Build und Lint sauber (0 Fehler, 7 vorbestehende Warnungen, keine in geänderten Dateien).
+
+Offen bis zum Deploy: Dass sich der Worker **auf Vercel** weiterhin registriert, ist lokal gegen `next start` geprüft, aber noch nicht in Production bestätigt.
+
+**QA am 2026-09-20 abgeschlossen: 6/6 Acceptance Criteria erfüllt, keine Bugs, Production-Ready.**
+
+Die zentralen Behauptungen neu gemessen statt übernommen — und auf **beiden Engines**, während die Frontend-Phase nur WebKit geprüft hatte. Dev: `worker=0, caches=[]`. Production: `worker=1, caches=["geoquest-offline-v1"]`.
+
+**Der gemeldete Fehler ist direkt gegengeprüft:** Mit der **alten** Fassung zeigen beide Engines bei gestopptem Dev-Server „KEINE VERBINDUNG" — exakt der Betreiber-Befund; mit der neuen meldet der Browser seinen eigenen Verbindungsfehler.
+
+**Die `NODE_ENV`-Entscheidung ist empirisch belegt:** Eine eingespielte Hostname-Variante registriert auf `localhost:3100` keinen Worker, und die PROJ-12-Suite **hängt** dann statt sauber rot zu werden. Sie hätte die 37 Tests nicht nur entwertet, sondern unlesbar gemacht.
+
+**Security-Audit ohne Befund** — geprüft wurde die heikelste Stelle: Das Aufräumen löscht Caches auf einer **geteilten Origin**. Von fünf gezielt ähnlichen Namen wird ausschließlich `geoquest-offline-v1` gelöscht; `xgeoquest-tarnung`, `GEOQUEST-gross`, `geoquest` und ein fremder Projekt-Cache bleiben erhalten.
+
+**Regression:** Unit **226/226**, **Chrome 463 passed / 23 skipped / 0 failed**, **Mobile Safari 457 passed / 29 skipped / 0 failed**, Build und Lint sauber. Der PROJ-7-Fehlschlag der Frontend-Phase trat nicht auf — bestätigt als Last-Flakiness.
+
+**Vier Fehler in meinen eigenen Tests/Messungen offen benannt** (Produkt jeweils richtig), darunter zwei mit Lehrwert für künftige Läufe: `navigator.serviceWorker.ready` hängt unendlich, wenn sich kein Worker registriert — eine Gegenprobe läuft damit ins Timeout statt klar fehlzuschlagen. Und der `line`-Reporter mit `tail -1` **verschluckt Fehlschläge**: Fünf Läufe sahen grün aus, während der JSON-Reporter 1–2 rote Tests auswies. Stabilitätsaussagen nur noch über den JSON-Reporter.
+
+**Ein eigener Test wurde entfernt statt stillgelegt:** Die Cache-Inhalts-Prüfung blieb auf WebKit unzuverlässig (1 von 5 Läufen rot) bei nachweislich korrektem Produkt, und `proj-12-pwa-installation.spec.ts:183` deckt dieselbe Zusicherung stabil ab. Ein Test, der ohne Produktfehler rot wird, kostet mehr Vertrauen als er Deckung bringt. Verbleibende neue Suite: 6 Tests, **6 von 6 Läufen grün**.
+
+**Offen bis zum Deploy:** Dass sich der Worker **auf Vercel** weiterhin registriert — geprüft wurde nur gegen `next start`.
