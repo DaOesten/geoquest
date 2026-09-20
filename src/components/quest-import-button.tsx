@@ -3,6 +3,7 @@
 import { Plus, Upload } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { useInstallPrompt } from "@/hooks/use-install-prompt";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +34,20 @@ export function QuestImportButton({ variant = "dark", floating = false, onImport
     cancelOverwrite,
     reset,
   } = useQuestImport();
+
+  /**
+   * Der schwebende Installations-Hinweis (PROJ-12) sitzt seit dem Refinement
+   * vom 2026-09-20 fest am unteren Rand und laege sonst unter diesem Button.
+   *
+   * Beide sind vollwertige Bedienelemente — eines teilweise zu verdecken waere
+   * in beide Richtungen falsch. Der FAB ist das beweglichere von beiden (er
+   * schwebt ohnehin schon frei), also weicht er aus und faellt zurueck, sobald
+   * der Hinweis weggeklickt ist.
+   *
+   * Die Information kommt aus derselben Quelle wie der Hinweis selbst; ein
+   * zweiter, eigener Zustand koennte auseinanderlaufen.
+   */
+  const { shouldShow: installHintVisible } = useInstallPrompt();
 
   useEffect(() => {
     if (state.status === "success") {
@@ -68,7 +83,15 @@ export function QuestImportButton({ variant = "dark", floating = false, onImport
           onClick={triggerFilePicker}
           disabled={state.status === "processing"}
           aria-label="Quest importieren"
-          className={`fixed bottom-6 right-5 z-40 flex items-center justify-center w-12 h-12 rounded-full transition-all duration-base ease-gq active:scale-[0.96] disabled:opacity-50 disabled:pointer-events-none ${fabColors}`}
+          /* `bottom-6` ist die gewohnte Position. Solange der Hinweis steht,
+             rueckt der Button ueber ihn: 44px Zeile + 14px Safe-Area-Gutter +
+             12px Polsterung des Overlays, aufgerundet auf 5.5rem. Die
+             Safe-Area kommt hinzu, weil das Overlay sie ebenfalls addiert. */
+          className={`fixed right-5 z-40 flex items-center justify-center w-12 h-12 rounded-full transition-all duration-base ease-gq active:scale-[0.96] disabled:opacity-50 disabled:pointer-events-none ${
+            installHintVisible
+              ? "bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]"
+              : "bottom-6"
+          } ${fabColors}`}
         >
           <Plus className="w-5 h-5" strokeWidth={2.5} />
         </button>

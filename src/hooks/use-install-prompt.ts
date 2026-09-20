@@ -29,6 +29,24 @@ interface BeforeInstallPromptEvent extends Event {
  */
 export type InstallMethod = "none" | "prompt" | "ios";
 
+/**
+ * Gefeuert, sobald der Hinweis weggeklickt wurde oder die Installation
+ * stattgefunden hat.
+ *
+ * Nötig, weil der Hook an **mehreren** Stellen zugleich läuft: Seit dem
+ * Refinement vom 2026-09-20 fragt ihn nicht nur der Hinweis selbst, sondern
+ * auch der Import-FAB und die Quest-Liste auf `/play`, die ihm ausweichen.
+ * Jeder Aufruf hat eigenen React-State — ohne dieses Signal bliebe der FAB nach
+ * dem Wegklicken oben stehen, weil `dismiss()` nur die Instanz des Hinweises
+ * umschaltet. Gemessen: FAB bei 552 statt 616.
+ *
+ * Dasselbe Muster, das `FirstVisitDialog` mit `gq:first-visit-done` schon
+ * nutzt — ein Fensterereignis statt eines Context-Providers, weil die
+ * betroffenen Komponenten in verschiedenen Teilbäumen sitzen und keine
+ * gemeinsame Klammer haben.
+ */
+export const INSTALL_HINT_CHANGED_EVENT = "gq:install-hint-changed";
+
 export interface UseInstallPromptReturn {
   /** Darf der Hinweis jetzt erscheinen? Alle vier Bedingungen erfüllt. */
   shouldShow: boolean;
@@ -205,14 +223,25 @@ export function useInstallPrompt(): UseInstallPromptReturn {
       setRevision((r) => r + 1);
     };
 
+    /**
+     * Eine andere Instanz dieses Hooks hat weggeklickt — nachziehen, damit
+     * Hinweis, FAB und Listen-Freiraum nicht auseinanderlaufen.
+     */
+    const onHintChanged = () => {
+      setHiddenForSession(true);
+      setRevision((r) => r + 1);
+    };
+
     window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
     window.addEventListener("appinstalled", onInstalled);
     window.addEventListener(FIRST_VISIT_DONE_EVENT, onFirstVisitDone);
+    window.addEventListener(INSTALL_HINT_CHANGED_EVENT, onHintChanged);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
       window.removeEventListener("appinstalled", onInstalled);
       window.removeEventListener(FIRST_VISIT_DONE_EVENT, onFirstVisitDone);
+      window.removeEventListener(INSTALL_HINT_CHANGED_EVENT, onHintChanged);
     };
   }, []);
 
@@ -261,6 +290,8 @@ export function useInstallPrompt(): UseInstallPromptReturn {
     }
     setHiddenForSession(true);
     setRevision((r) => r + 1);
+    // Die anderen Instanzen des Hooks mitziehen (siehe Ereignis-Definition).
+    window.dispatchEvent(new Event(INSTALL_HINT_CHANGED_EVENT));
   }, []);
 
   const promptInstall = useCallback(async () => {

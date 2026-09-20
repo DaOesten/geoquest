@@ -9,6 +9,7 @@ import { QuestImportButton } from "@/components/quest-import-button";
 import { QuestCard } from "@/components/quest-card";
 import { QuestFilterTabs, type QuestFilter } from "@/components/quest-filter-tabs";
 import { InstallHint } from "@/components/install-hint";
+import { useInstallPrompt } from "@/hooks/use-install-prompt";
 
 // Randomized particle positions must never be part of the SSR/hydration diff.
 const QuestListBackdrop = dynamic(
@@ -25,6 +26,16 @@ export default function PlayPage() {
   const { quests: allQuests, refreshQuests } = useQuests();
   const [filter, setFilter] = useState<QuestFilter>("all");
   const [refreshKey, setRefreshKey] = useState(0);
+
+  /**
+   * Der schwebende Installations-Hinweis (PROJ-12) liegt ueber dem Listenende
+   * und wuerde sonst die letzte Quest-Karte verdecken (Edge Case 19). Solange
+   * er steht, bekommt die Liste unteren Freiraum in seiner Hoehe.
+   *
+   * Bewusst nur solange er steht: Dauerhafter Freiraum hinterliesse eine
+   * unerklaerliche Luecke, sobald der Hinweis weggeklickt ist.
+   */
+  const { shouldShow: installHintVisible } = useInstallPrompt();
 
   // A quest with no stations has nothing to navigate to — everything else
   // (including an otherwise incomplete "Entwurf") is testable by the creator.
@@ -79,16 +90,17 @@ export default function PlayPage() {
         )}
       </div>
 
-      {/* Installations-Hinweis (PROJ-12) — zwischen Titel-Block und Liste.
+      {/* Installations-Hinweis (PROJ-12) — schwebendes Overlay am unteren Rand.
 
-          Hier und nicht am Listenende, weil `/play` beliebig lang wird: Am Ende
-          bekaeme ihn nur zu sehen, wer durch alle Quests scrollt. Auf `/` liegt
-          er dagegen bewusst hinter den Mode-Cards — dort steht ein
-          Nicht-Scrollen-Kriterium aus PROJ-1 dagegen, das es hier nicht gibt.
+          Seit dem Refinement vom 2026-09-20 ist er `fixed` und nimmt keine
+          Layout-Hoehe ein; seine Stelle im Markup entscheidet nichts mehr. Die
+          frueher noetige Ueberlegung "zwischen Titel und Liste, damit ihn nicht
+          nur sieht, wer durchscrollt" ist damit gegenstandslos — er steht immer
+          im Bild.
 
           Ausserhalb beider Zweige, damit er auch in der Leeransicht erscheint:
           Wer noch keine Quest importiert hat, ist genauso ein Kandidat. */}
-      <InstallHint className="relative mx-5 mt-4" />
+      <InstallHint />
 
       {quests.length === 0 ? (
         <div className="relative flex flex-col items-center justify-center min-h-[50vh] gap-4 px-5 text-center">
@@ -109,7 +121,13 @@ export default function PlayPage() {
             <QuestFilterTabs active={filter} onChange={setFilter} />
           </div>
 
-          <div className="relative flex flex-col gap-3 px-5 py-4">
+          <div
+            className={`relative flex flex-col gap-3 px-5 pt-4 ${
+              installHintVisible
+                ? "pb-[calc(env(safe-area-inset-bottom)+5.5rem)]"
+                : "pb-4"
+            }`}
+          >
             {visibleQuests.length === 0 ? (
               <p className="font-body text-sm text-gq-grey text-center py-8">
                 {filter === "live" ? "Keine aktiven Quests" : "Keine neuen Quests"}

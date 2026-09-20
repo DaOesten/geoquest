@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Share, SquarePlus, X } from "lucide-react";
+import { Download, Share, X } from "lucide-react";
 import { useInstallPrompt } from "@/hooks/use-install-prompt";
 import { cn } from "@/lib/utils";
 
@@ -11,50 +11,58 @@ import { cn } from "@/lib/utils";
  * im Spielverlauf (analog zur Ko-fi-Regel des PRD: „kein Hinweis im
  * Spielverlauf") und nicht im Creator, der überwiegend am Desktop läuft.
  *
- * **Im Seitenfluss, nicht fixiert.** Das Design System verbietet ausdrücklich
- * Bottom-Navigation und Tab-Bars; ein fixierter Banner am unteren Rand läse
- * sich genau als solche. Als normale Karte verdeckt er nichts und schiebt
- * nichts weg.
+ * **Schwebend, nicht im Seitenfluss** (Refinement 2026-09-20). Die erste
+ * Fassung war eine Karte im Fluss, begründet mit dem Bottom-Nav-Verbot des
+ * Design Systems. Diese Auslegung war zu weit: Die Regel zielt auf dauerhaftes
+ * Navigations-Mobiliar, und dieser Hinweis ist weder dauerhaft (ein Tap auf ✕
+ * und er schweigt 30 Tage) noch navigiert er irgendwohin.
  *
- * Zwei Fassungen, weil es zwei Wege gibt: Android/Chrome öffnet einen echten
+ * Der Preis der alten Fassung war messbar: Im Fluss schob die volle Karte den
+ * Startscreen um 195px auf 799px und brach damit das PROJ-1-Kriterium
+ * „`/` scrollt auf 360x640 nicht" — weshalb es eine zweite, abgespeckte
+ * Fassung nur für `/` gab. Schwebend kostet der Hinweis **null** Layout-Höhe;
+ * damit ist eine Fassung für beide Screens genug.
+ *
+ * Zwei Zweige, weil es zwei Wege gibt: Android/Chrome öffnet einen echten
  * Dialog per Knopfdruck, iOS Safari kennt keinen programmatischen Weg und
- * bekommt stattdessen die Anleitung „Teilen → Zum Home-Bildschirm". Welcher
+ * bekommt stattdessen die Kurzanleitung „Teilen → Home-Bildschirm". Welcher
  * Weg gilt — und ob überhaupt einer gilt —, entscheidet `useInstallPrompt`.
  */
 interface InstallHintProps {
   className?: string;
-  /**
-   * Kompakte einzeilige Fassung für den Startscreen (`/`).
-   *
-   * **Gemessen, nicht geschätzt:** Die volle Karte ist 195px hoch. Auf 360x640
-   * endet die zweite Mode-Card bei 559px; mit 24px Seitenpolsterung und 20px
-   * Abstand bleiben rund 37px. Die volle Fassung liess die Seite auf 799px
-   * wachsen und brach damit das PROJ-1-Kriterium "Startscreen scrollt auf
-   * 360x640 nicht" — ein Kriterium, das aelter ist als dieses Feature und
-   * Vorrang hat.
-   *
-   * Die kompakte Fassung traegt deshalb nur eine Zeile: keinen Eyebrow, keine
-   * Display-Ueberschrift, keinen Beschreibungstext. Auf `/play` gibt es kein
-   * solches Kriterium — dort steht die volle Karte.
-   */
-  compact?: boolean;
 }
 
-export function InstallHint({ className, compact = false }: InstallHintProps) {
+export function InstallHint({ className }: InstallHintProps) {
   const { shouldShow, method, promptInstall, dismiss } = useInstallPrompt();
 
   if (!shouldShow) return null;
 
-  if (compact) {
-    return (
-      <aside
-        aria-label="Geo Quest als App installieren"
-        className={cn("flex items-center gap-1", className)}
-      >
+  return (
+    <aside
+      aria-label="Geo Quest als App installieren"
+      className={cn(
+        /* `fixed` ist der Kern dieses Refinements: Der Hinweis nimmt keine
+           Layout-Höhe ein, der Inhalt scrollt unverändert darunter weiter.
+           Messbar daran, dass `scrollHeight` mit und ohne sichtbaren Hinweis
+           identisch ist. */
+        "fixed bottom-0 left-0 right-0 z-50",
+        /* Der Inhalt bleibt auf Desktop auf Handy-Maß — dieselbe Breite, die
+           das Design System für jeden Content-Container vorschreibt. */
+        "mx-auto max-w-[430px]",
+        /* Safe Area: Auf einem iPhone mit Home-Indikator läge das Schließen-X
+           sonst teilweise unter der Gestenleiste. 14px ist der Safe-Area-Wert
+           des Design Systems für eine fest stehende untere Aktion; auf Geräten
+           ohne Systemleiste ist `env()` 0 und es bleiben genau diese 14px. */
+        "pb-[calc(env(safe-area-inset-bottom)+14px)] px-3 pt-3",
+        className
+      )}
+    >
+      <div className="flex items-center gap-1 rounded-[14px] border border-gq-teal/25 bg-[#0F2429] pl-1 pr-1 shadow-lg shadow-black/40">
         {method === "prompt" ? (
           <button
             type="button"
             onClick={promptInstall}
+            aria-label="Installieren"
             className="flex-1 min-w-0 flex items-center gap-2 h-11 px-3 rounded-[12px] text-left text-gq-teal transition-colors duration-base ease-gq hover:bg-gq-teal/10 active:scale-[0.98]"
           >
             <Download className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
@@ -64,16 +72,18 @@ export function InstallHint({ className, compact = false }: InstallHintProps) {
           </button>
         ) : (
           /* iOS: kein Button, weil es keinen programmatischen Weg gibt — ein
-             Knopf, der nichts tun kann, waere genau der Fehler aus BUG-6. Die
-             Anleitung steht als eine Zeile da. */
-          <p className="flex-1 min-w-0 flex items-center gap-2 h-11 px-2 text-gq-grey">
+             Knopf, der nichts tun kann, wäre genau der Fehler aus BUG-6.
+
+             Die Kurzform statt der früheren zweischrittigen Anleitung: Ein
+             Overlay verdeckt Inhalt, solange es steht, und die zweizeilige
+             Fassung hätte den Hinweis je Plattform unterschiedlich hoch
+             gemacht. Gemessen in der Frontend-Phase am 2026-09-19: Die
+             ausgeschriebene Fassung ("Als App: Teilen → Zum Home-Bildschirm")
+             braucht 224px und wurde auf 320px bei 184px gekappt — diese passt
+             ab 320px. */
+          <p className="flex-1 min-w-0 flex items-center gap-2 h-11 px-3 text-gq-grey">
             <Share className="w-4 h-4 flex-shrink-0 text-gq-teal" aria-hidden="true" />
-            {/* Gemessen: Die ausgeschriebene Fassung ("Als App: Teilen → Zum
-                Home-Bildschirm") braucht 224px und wurde auf 320px auf 184px
-                abgeschnitten — der Nutzer haette eine halbe Anweisung gesehen.
-                Diese Fassung passt auf allen Breiten ab 320px. Die vollstaendige
-                Anleitung mit beiden Schritten steht auf `/play`. */}
-            <span className="min-w-0 font-body text-[12px] leading-tight">
+            <span className="min-w-0 truncate font-body text-[12px] leading-tight">
               <span className="text-gq-white">Teilen</span> →{" "}
               <span className="text-gq-white">Home-Bildschirm</span>
             </span>
@@ -88,83 +98,7 @@ export function InstallHint({ className, compact = false }: InstallHintProps) {
         >
           <X className="w-4 h-4" aria-hidden="true" />
         </button>
-      </aside>
-    );
-  }
-
-  return (
-    <aside
-      aria-label="Geo Quest als App installieren"
-      className={cn(
-        "relative rounded-[16px] border border-gq-teal/25 bg-[#0F2429] p-4 pr-12",
-        className
-      )}
-    >
-      {/* Wegklicken. 44x44 Tap-Ziel (PRD/WCAG AA) mit kleinerem Icon darin —
-          das `-mr-1 -mt-1` holt die optische Kante zurück an den Kartenrand,
-          ohne das Ziel zu verkleinern. */}
-      <button
-        type="button"
-        onClick={dismiss}
-        aria-label="Hinweis ausblenden"
-        className="absolute top-2 right-2 flex items-center justify-center w-11 h-11 rounded-full text-gq-grey transition-colors duration-base ease-gq hover:text-gq-white hover:bg-white/5 active:scale-[0.96]"
-      >
-        <X className="w-4 h-4" aria-hidden="true" />
-      </button>
-
-      <p className="text-tech text-[10px] tracking-[0.12em] uppercase text-gq-teal">
-        Tipp
-      </p>
-
-      <p className="mt-1.5 text-display text-lg leading-tight text-gq-white">
-        Geo Quest als App
-      </p>
-
-      {method === "prompt" ? (
-        <>
-          <p className="mt-1.5 font-body text-[13px] leading-[1.45] text-[#A0A7AD]">
-            Leg Geo Quest auf deinen Homescreen — startet im Vollbild, ohne
-            Browser-Leiste.
-          </p>
-
-          <button
-            type="button"
-            onClick={promptInstall}
-            className="mt-3 inline-flex items-center justify-center gap-2 h-11 px-5 rounded-pill bg-gq-teal text-gq-black text-tech text-xs uppercase tracking-[0.08em] transition-all duration-fast ease-gq hover:bg-gq-teal-hover active:scale-[0.96]"
-          >
-            <Download className="w-4 h-4" aria-hidden="true" />
-            Installieren
-          </button>
-        </>
-      ) : (
-        <>
-          <p className="mt-1.5 font-body text-[13px] leading-[1.45] text-[#A0A7AD]">
-            Leg Geo Quest auf deinen Homescreen — startet im Vollbild, ohne
-            Browser-Leiste. In Safari:
-          </p>
-
-          {/*
-            Kein Button, weil iOS keinen programmatischen Weg anbietet — ein
-            Button, der nichts tun kann, wäre genau der Fehler aus BUG-6. Die
-            Icons stehen neben dem Text, weil der Nutzer sie im Safari-Menu
-            wiedererkennen soll; `aria-hidden`, weil der Text sie bereits nennt.
-          */}
-          <ol className="mt-2.5 flex flex-col gap-2 font-body text-[13px] leading-[1.45] text-[#A0A7AD]">
-            <li className="flex items-center gap-2">
-              <Share className="w-4 h-4 flex-shrink-0 text-gq-teal" aria-hidden="true" />
-              <span>
-                Tippe auf <span className="text-gq-white">Teilen</span>
-              </span>
-            </li>
-            <li className="flex items-center gap-2">
-              <SquarePlus className="w-4 h-4 flex-shrink-0 text-gq-teal" aria-hidden="true" />
-              <span>
-                Dann <span className="text-gq-white">Zum Home-Bildschirm</span>
-              </span>
-            </li>
-          </ol>
-        </>
-      )}
+      </div>
     </aside>
   );
 }

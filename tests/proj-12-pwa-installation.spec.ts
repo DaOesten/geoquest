@@ -514,7 +514,11 @@ test.describe("PROJ-12: PWA-Installation", () => {
       const hint = page.getByRole("complementary", { name: HINT });
       await expect(hint).toBeVisible();
       await expect(hint).toContainText("Teilen");
-      await expect(hint).toContainText("Zum Home-Bildschirm");
+      // Kurzform seit dem Refinement vom 2026-09-20 ("Home-Bildschirm" statt
+      // "Zum Home-Bildschirm"): Das Overlay traegt eine Zeile, die frueher
+      // zweischrittige Anleitung mit zwei Icons ist entfallen.
+      await expect(hint).toContainText("Home-Bildschirm");
+      await expect(hint.locator("li")).toHaveCount(0);
       // Der eigentliche Punkt: kein Knopf, der auf iOS garantiert nichts tun
       // kann.
       await expect(page.getByRole("button", { name: "Installieren" })).toHaveCount(0);
@@ -540,13 +544,16 @@ test.describe("PROJ-12: PWA-Installation", () => {
     });
 
     /**
-     * Die kompakte Fassung auf `/` darf ihren Text nicht abschneiden. Gemessen
-     * in der Frontend-Phase: Die erste Fassung ("Als App: Teilen → Zum
-     * Home-Bildschirm") brauchte 224px und wurde auf 320px bei 184px gekappt —
-     * der Nutzer haette eine halbe Anweisung gesehen, also genau das Gegenteil
-     * dessen, wofuer der Hinweis da ist.
+     * Der Hinweis darf seinen Text nicht abschneiden. Gemessen in der
+     * Frontend-Phase am 2026-09-19: Die ausgeschriebene Fassung ("Als App:
+     * Teilen → Zum Home-Bildschirm") brauchte 224px und wurde auf 320px bei
+     * 184px gekappt — der Nutzer haette eine halbe Anweisung gesehen, also
+     * genau das Gegenteil dessen, wofuer der Hinweis da ist.
+     *
+     * Seit dem Refinement vom 2026-09-20 gibt es nur noch **eine** Fassung
+     * (die kompakte); der Test gilt damit fuer beide Screens.
      */
-    test("die kompakte Fassung auf `/` schneidet auf 320px keinen Text ab", async ({ page }) => {
+    test("der Hinweis schneidet auf 320px keinen Text ab", async ({ page }) => {
       await page.setViewportSize({ width: 320, height: 640 });
       await seed(page);
       await fireInstallPrompt(page);
@@ -615,6 +622,283 @@ test.describe("PROJ-12: PWA-Installation", () => {
         expect(ratio, text).toBeGreaterThanOrEqual(4.5);
       }
       expect(Object.keys(measured).length).toBeGreaterThan(0);
+    });
+  });
+
+  /**
+   * Refinement 2026-09-20 — der Hinweis ist ein schwebendes Overlay.
+   *
+   * Der Kern ist **eine** Behauptung: Der Hinweis kostet null Layout-Hoehe.
+   * Alles andere folgt daraus — dass `/` weiterhin nicht scrollt, dass kein
+   * Inhalt verdraengt wird, dass die frueher noetige zweite ("kompakte")
+   * Fassung entfaellt.
+   */
+  test.describe("Installations-Hinweis — schwebendes Overlay", () => {
+    for (const route of ["/", "/play"]) {
+      test(`ist auf ${route} fixiert und nicht Teil des Seitenflusses`, async ({ page }) => {
+        await seed(page, route);
+        await fireInstallPrompt(page);
+
+        const hint = page.getByRole("complementary", { name: HINT });
+        await expect(hint).toBeVisible();
+        await expect(hint).toHaveCSS("position", "fixed");
+
+        // Unten, nicht oben: Der untere Rand des Hinweises liegt am unteren
+        // Rand des Viewports.
+        const abstand = await page.evaluate(() => {
+          const a = document.querySelector('aside[aria-label*="installieren"]')!;
+          return Math.round(window.innerHeight - a.getBoundingClientRect().bottom);
+        });
+        expect(abstand).toBeLessThanOrEqual(1);
+      });
+
+      /**
+       * **Die zentrale Messung dieses Refinements.**
+       *
+       * Bewusst nicht "Seitenhoehe mit Hinweis == Seitenhoehe ohne Hinweis":
+       * Auf `/play` bekommt die Liste absichtlich unteren Freiraum, solange der
+       * Hinweis steht (Edge Case 19) — dieser Vergleich waere dort falsch und
+       * wuerde einen gewollten Unterschied als Fehler melden.
+       *
+       * Stattdessen wird der Beitrag **des Overlays selbst** isoliert: aus dem
+       * DOM nehmen, neu messen, zuruecksetzen. Bleibt die Hoehe gleich, nimmt
+       * das Overlay keinen Platz im Fluss ein.
+       */
+      test(`kostet auf ${route} null Layout-Hoehe`, async ({ page }) => {
+        await seed(page, route);
+        await fireInstallPrompt(page);
+        await expect(page.getByRole("complementary", { name: HINT })).toBeVisible();
+
+        const { vorher, nachher } = await page.evaluate(() => {
+          const vorher = document.documentElement.scrollHeight;
+          const a = document.querySelector('aside[aria-label*="installieren"]')!;
+          const parent = a.parentNode!;
+          const next = a.nextSibling;
+          a.remove();
+          const nachher = document.documentElement.scrollHeight;
+          parent.insertBefore(a, next);
+          return { vorher, nachher };
+        });
+
+        expect(nachher).toBe(vorher);
+      });
+    }
+
+    /**
+     * Das Kriterium aus PROJ-1, an dem die alte Fassung im Fluss gescheitert
+     * ist: Die volle Karte liess `/` auf 799px wachsen und erzwang damit eine
+     * zweite, abgespeckte Fassung. Schwebend stellt sich die Frage nicht mehr.
+     */
+    test("`/` scrollt auf 360x640 weiterhin nicht", async ({ page }) => {
+      await page.setViewportSize({ width: 360, height: 640 });
+      await seed(page);
+      await fireInstallPrompt(page);
+      await expect(page.getByRole("complementary", { name: HINT })).toBeVisible();
+
+      const scrollt = await page.evaluate(
+        () => document.documentElement.scrollHeight > window.innerHeight
+      );
+      expect(scrollt).toBe(false);
+    });
+
+    /**
+     * Eine Fassung, nicht zwei: Die `compact`-Prop ist mit dem Refinement
+     * entfallen. Gemessen wird die Hoehe auf beiden Screens im selben
+     * Viewport — sie muss gleich sein.
+     */
+    test("traegt auf `/` und `/play` dieselbe Fassung", async ({ page }) => {
+      await page.setViewportSize({ width: 360, height: 640 });
+
+      const hoehe = async (route: string) => {
+        await seed(page, route);
+        await fireInstallPrompt(page);
+        await expect(page.getByRole("complementary", { name: HINT })).toBeVisible();
+        return page.evaluate(() =>
+          Math.round(
+            document
+              .querySelector('aside[aria-label*="installieren"]')!
+              .getBoundingClientRect().height
+          )
+        );
+      };
+
+      expect(await hoehe("/play")).toBe(await hoehe("/"));
+    });
+
+    /**
+     * Der Hinweis traegt genau eine Zeile — keinen Eyebrow ("Tipp"), keine
+     * Display-Ueberschrift ("Geo Quest als App"), keinen Beschreibungsabsatz.
+     * Das war der Inhalt der alten vollen Karte auf `/play`.
+     */
+    test("traegt eine Zeile, ohne Eyebrow und Ueberschrift", async ({ page }) => {
+      await seed(page, "/play");
+      await fireInstallPrompt(page);
+
+      const hint = page.getByRole("complementary", { name: HINT });
+      await expect(hint).toBeVisible();
+      await expect(hint).not.toContainText("Tipp");
+      await expect(hint).not.toContainText("Geo Quest als App");
+      await expect(hint).not.toContainText("Browser-Leiste");
+
+      // 44px Zeile + 14px Safe-Area-Gutter + Polsterung — deutlich unter der
+      // alten vollen Karte (gemessen 195px).
+      const h = await hint.boundingBox();
+      expect(h!.height).toBeLessThanOrEqual(90);
+    });
+
+    /**
+     * Edge Case 21 — Geraete mit unterer Systemleiste. Ohne diesen Abstand
+     * laege das Schliessen-X teilweise unter der Gestenleiste.
+     */
+    test("haelt den Safe-Area-Abstand nach unten", async ({ page }) => {
+      await seed(page, "/play");
+      await fireInstallPrompt(page);
+      await expect(page.getByRole("complementary", { name: HINT })).toBeVisible();
+
+      const pad = await page.evaluate(() =>
+        parseFloat(
+          getComputedStyle(
+            document.querySelector('aside[aria-label*="installieren"]')!
+          ).paddingBottom
+        )
+      );
+      // Ohne Systemleiste ist `env()` 0 und es bleiben die 14px des Design
+      // Systems; mit Systemleiste kommt deren Hoehe hinzu.
+      expect(pad).toBeGreaterThanOrEqual(14);
+    });
+
+    /**
+     * Edge Case 20 — das Overlay darf keine Ebene blockieren, die der Nutzer
+     * bewusst geoeffnet hat.
+     */
+    test("liegt unter dem Burger-Menu", async ({ page }) => {
+      // Schmaler Viewport: Nur dort ueberlappen Menu-Panel und Hinweis
+      // ueberhaupt. Auf 1280px liegt das Panel bei x=1000..1280, der Hinweis
+      // mittig bei x=425..855 — sie beruehren sich nicht, und ein
+      // Ueberdeckungstest waere dort gegenstandslos. (Genau das hat die erste
+      // Fassung dieses Tests uebersehen: Sie pruefte Geometrie, die nur auf
+      // schmalen Bildschirmen zutrifft, und fiel auf Desktop-Chrome um,
+      // obwohl das Produkt richtig war.)
+      await page.setViewportSize({ width: 360, height: 640 });
+      await seed(page, "/play");
+      await fireInstallPrompt(page);
+      await expect(page.getByRole("complementary", { name: HINT })).toBeVisible();
+
+      await page.getByRole("button", { name: /menü|menu/i }).first().click();
+      const dialog = page.getByRole("dialog");
+      await expect(dialog).toBeVisible();
+
+      // Erstens: Wo sich beide ueberlappen, gewinnt das Menu. Gemessen am
+      // Punkt statt an z-index-Zahlen — die sagen ohne Stacking-Context
+      // nichts aus.
+      const oben = await page.evaluate(() => {
+        const a = document.querySelector('aside[aria-label*="installieren"]')!;
+        const r = a.getBoundingClientRect();
+        const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        if (!el) return "nichts";
+        if (el.closest('[role="dialog"]')) return "dialog";
+        if (el.closest('aside[aria-label*="installieren"]')) return "hinweis";
+        return el.tagName;
+      });
+      expect(oben).toBe("dialog");
+
+      // Zweitens, und das ist der eigentliche Punkt: Das Menu bleibt
+      // bedienbar, auch an der Stelle, an der der Hinweis liegt.
+      await expect(dialog).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(dialog).toHaveCount(0);
+    });
+  });
+
+  /**
+   * Der Import-FAB auf `/play` und der Hinweis teilen sich den unteren Rand.
+   *
+   * Beide sind vollwertige Bedienelemente; eines teilweise zu verdecken waere
+   * in beide Richtungen falsch. Der FAB weicht aus — und faellt zurueck,
+   * sobald der Hinweis weg ist.
+   */
+  test.describe("Installations-Hinweis — Zusammenspiel mit dem Import-Button", () => {
+    /** Sechs Quests, damit die Liste laenger als der Viewport ist. */
+    async function seedMitQuests(page: Page) {
+      const quests = Array.from({ length: 6 }, (_, i) => ({
+        version: 1,
+        id: `q${i}`,
+        name: `Test Quest ${i}`,
+        lastModified: "2026-01-01T00:00:00.000Z",
+        intro: { text: "" },
+        outro: { text: "" },
+        stations: [
+          { id: `s${i}`, name: "Station", lat: 52.5, lng: 13.4, radius: 30, modules: [] },
+        ],
+      }));
+      await page.goto("/");
+      await page.evaluate((qs) => {
+        localStorage.clear();
+        localStorage.setItem("gq_first_visit_done", "true");
+        localStorage.setItem("gq_quests", JSON.stringify(qs));
+      }, quests);
+      await page.goto("/play");
+    }
+
+    test("der Import-Button liegt nicht unter dem Hinweis", async ({ page }) => {
+      await seedMitQuests(page);
+      await fireInstallPrompt(page);
+
+      const hint = page.getByRole("complementary", { name: HINT });
+      await expect(hint).toBeVisible();
+
+      const fab = page.getByRole("button", { name: "Quest importieren" });
+      await expect(fab).toBeVisible();
+
+      const h = (await hint.boundingBox())!;
+      const f = (await fab.boundingBox())!;
+
+      const ueberlappt =
+        f.x < h.x + h.width && f.x + f.width > h.x && f.y < h.y + h.height && f.y + f.height > h.y;
+      expect(ueberlappt).toBe(false);
+    });
+
+    /**
+     * Die Gegenprobe zum vorigen Test: Ohne Hinweis muss der Button an seiner
+     * gewohnten Stelle stehen. Sonst haette man ihn dauerhaft verschoben.
+     */
+    test("der Import-Button faellt nach dem Wegklicken zurueck", async ({ page }) => {
+      await seedMitQuests(page);
+      await fireInstallPrompt(page);
+
+      const fab = page.getByRole("button", { name: "Quest importieren" });
+      const oben = (await fab.boundingBox())!.y;
+
+      await page.getByRole("button", { name: "Hinweis ausblenden" }).click();
+      await expect(page.getByRole("complementary", { name: HINT })).toHaveCount(0);
+
+      await expect
+        .poll(async () => (await fab.boundingBox())!.y)
+        .toBeGreaterThan(oben);
+    });
+
+    /**
+     * Edge Case 19 — wer bis ans Listenende scrollt, muss die letzte Karte
+     * noch bedienen koennen.
+     */
+    test("die letzte Quest-Karte bleibt erreichbar", async ({ page }) => {
+      await seedMitQuests(page);
+      await fireInstallPrompt(page);
+      await expect(page.getByRole("complementary", { name: HINT })).toBeVisible();
+
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await page.waitForTimeout(300);
+
+      const frei = await page.evaluate(() => {
+        const karten = document.querySelectorAll("ul > li");
+        const letzte = karten[karten.length - 1];
+        const hinweis = document.querySelector('aside[aria-label*="installieren"]')!;
+        return (
+          Math.round(hinweis.getBoundingClientRect().top) -
+          Math.round(letzte.getBoundingClientRect().bottom)
+        );
+      });
+      expect(frei).toBeGreaterThanOrEqual(0);
     });
   });
 

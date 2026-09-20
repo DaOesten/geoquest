@@ -27,7 +27,7 @@
 | PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Deployed | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
-| PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
+| PROJ-12 | PWA-Installation | P0 | PROJ-1 | Approved | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
@@ -586,3 +586,61 @@ Alle 10 Endpunkte HTTP 200 (0,06–0,31 s), vier PWA-Icons als `image/png`, Secu
 **Drei Messfehler offen benannt, alle meine:** Zwei Sonden meldeten einen leeren Cache und damit eine ausbleibende Offline-Seite — ein `waitForFunction`, das `caches` im Sekundentakt abfragt, kommt dem `install`-Schritt in die Quere. Mit festem Warten reproduzierbar korrekt. Für künftige Läufe: Den Worker-Cache **nicht** pollen, sondern schlicht ~4 s warten.
 
 **PROJ-12 ist abgeschlossen.**
+
+## Offenes Refinement: Installations-Hinweis wird schwebendes Overlay (2026-09-20)
+**PROJ-12** geht von Deployed zurück auf In Progress. Der Betreiber: Der Hinweis sitzt fest im Seitenfluss auf `/` und `/play` — gewünscht ist ein Overlay, hinter dem die Seite weiter scrollt, und deutlich kompakter.
+
+**Der Befund stützt das.** Die Entscheidung von 2026-09-18 („Hinweis im Seitenfluss statt fixiert") stand auf der Begründung, das Design System verbiete Bottom-Navigation. Diese Auslegung ist zu weit: Die Regel zielt auf **dauerhaftes Navigations-Mobiliar**, und der Installations-Hinweis ist weder dauerhaft (ein Tap auf ✕ und er schweigt 30 Tage) noch navigiert er irgendwohin. Ihr zweites Argument — „verdeckt nichts und schiebt nichts weg" — traf zudem nur die halbe Wahrheit: Im Fluss **schob** er sehr wohl, auf `/` um 195px. Genau daran brach in der Frontend-Phase das PROJ-1-Nicht-Scrollen-Kriterium, und genau deshalb existiert heute eine zweite, abgespeckte `compact`-Fassung nur für den Startscreen.
+
+Entschieden (fünf Punkte, alle vom Betreiber bestätigt):
+- **Fixiert am unteren Rand**, Inhalt scrollt darunter weiter — die Bottom-Nav-Regel bekommt eine eng gefasste Ausnahme für temporäre, wegklickbare Hinweise
+- **Eine Zeile auf beiden Plattformen**; die zweischrittige iOS-Anleitung mit zwei Icons entfällt zugunsten der Kurzform „Teilen → Home-Bildschirm", die auf `/` ohnehin schon live ist
+- **Bleibt stehen, bis weggeklickt** — kein Ausblenden beim Scrollen (wäre die Ambient-Bewegung, die das Design System ausschließt), kein Selbstschließen nach Sekunden (wäre kein Wegklicken und käme beim nächsten Besuch wieder)
+- **Unverändert nur `/` und `/play`** — die Overlay-Form ändert nichts daran, wo der Hinweis angebracht ist
+- **Der Import-FAB auf `/play` rückt hoch**, statt einander zu verdecken
+
+**Der Nebengewinn:** Was nicht in die Höhe zählt, kann kein Höhen-Kriterium brechen — die `compact`-Prop und mit ihr die Zwei-Fassungen-Logik verschwinden ersatzlos. Dieselbe Mechanik hat bei BUG-10 das schwebende Burger-Icon auf `/` getragen.
+
+**Drei Fallstricke für `/frontend`, im Code nachgesehen statt vermutet:** `quest-import-button.tsx:71` ist bereits `fixed bottom-6 right-5 z-40` und braucht dieselbe Information wie der Hinweis (Quelle: `useInstallPrompt().shouldShow`, kein zweiter Zustand). Die `compact`-Prop ist ersatzlos zu entfernen, nicht auf `true` festzunageln. Und `tests/proj-12-pwa-installation.spec.ts` prüft den Hinweis heute im Seitenfluss — diese Assertions sind zu **ziehen, nicht zu löschen**. Neu dazu gehört der Wächter auf `scrollHeight` mit und ohne sichtbaren Hinweis; das ist die Behauptung, die dieses Refinement belegen muss.
+
+**Der Hook wird nicht angefasst.** Die vier Anzeige-Bedingungen, die 30-Tage-Frist, der Vorrang des Erststart-Dialogs und die iOS-Erkennung an mehreren Signalen (BUG-6-Lehre) bleiben unverändert — dieses Refinement ändert, wie der Hinweis aussieht und wo er sitzt, nicht wann er erscheint.
+
+Spec ist aktualisiert (10 neue Acceptance Criteria in einem eigenen Block, Edge Cases 18–21, 5 Technical Requirements, 5 Produkt- und 3 technische Entscheidungen, 2 überholte Entscheidungen als solche markiert statt gelöscht, 1 neue Open Question).
+
+**Offen geblieben:** Ob die Bottom-Nav-Ausnahme in `docs/design-system.md` festgeschrieben wird. Die Entscheidung ist in der Spec begründet, aber das Design System kennt sie nicht — wer als Nächstes einen schwebenden Hinweis baut, liest dort weiterhin ein pauschales Verbot.
+
+**Frontend umgesetzt am 2026-09-20.** Fünf Dateien, kein neues Paket, keine neue Komponente, keine neue Route. Die `compact`-Prop ist ersatzlos entfallen — es gibt nur noch eine Fassung, und die ist die kompakte.
+
+**Der Kern ist gemessen, und die naheliegende Messung wäre falsch gewesen.** „Seitenhöhe mit Hinweis == ohne Hinweis" schlägt auf `/play` fehl (922 → 994px), weil die Liste absichtlich Freiraum bekommt, solange der Hinweis steht. Der Vergleich hätte einen gewollten Unterschied als Layout-Kosten des Overlays gemeldet. Isoliert man stattdessen den Beitrag **des Overlays selbst** — aus dem DOM nehmen, neu messen, zurücksetzen —, ergibt sich auf beiden Seiten und beiden Engines **0px**. Das PROJ-1-Kriterium hält mit 640 von 640.
+
+**Einen Fehler habe ich selbst eingebaut und durch Messen gefunden:** Der FAB blieb nach dem Wegklicken oben stehen (552 statt 616). `useInstallPrompt()` läuft jetzt an drei Stellen zugleich, jede mit eigenem React-State — `dismiss()` schaltete nur die Instanz des Hinweises um. Ich hatte in denselben Code den Kommentar geschrieben, ein zweiter Zustand könne auseinanderlaufen, und genau das dann produziert. Gelöst mit dem Fensterereignis-Muster, das `FirstVisitDialog` schon nutzt.
+
+Gemessen: Höhe **72px, auf Android und iOS identisch** (alte volle Karte: 195px), Kontrast **9.64:1**, Tap-Ziele 44px, kein abgeschnittener Text auf 320–430px, FAB und Hinweis ohne Überlappung, letzte Quest-Karte beim Scrollen ans Ende nicht verdeckt, iOS-Zweig auf echtem WebKit mit **0 Installieren-Buttons**. **Am Bildschirm abgenommen**, nicht nur gemessen — bei einer Design-Änderung reichen Zahlen nicht.
+
+**Ein Fehler im Test selbst** (das Produkt war richtig): Der Menu-Wächter fiel auf Desktop-Chrome um, weil dort Menu-Panel (x=1000..1280) und Hinweis (x=425..855) sich gar nicht berühren — er prüfte Geometrie, die nur auf schmalen Bildschirmen gilt.
+
+12 neue Tests, PROJ-12 jetzt **49 statt 37** je Engine. Per Gegenprobe geschärft: Hinweis zurück in den Seitenfluss → **6** Tests fallen; Ereignis für den FAB entfernt → **genau 1**. Die bestehenden Assertions sind gezogen, nicht gelöscht.
+
+Suiten gegen den Production-Build: **Unit 226/226**, E2E über beide Engines **978 passed / 52 skipped / 0 failed**. Build und Lint sauber, `/` und `/play` bleiben statisch.
+
+**Nicht abgedeckt und benannt:** die Safe Area auf einem echten iPhone mit Home-Indikator (Playwright emuliert `env(safe-area-inset-bottom)` nicht), das Verhalten bei eingeblendeter Bildschirmtastatur, und Firefox.
+
+**QA am 2026-09-20 abgeschlossen: 10/10 Acceptance Criteria erfüllt, keine Bugs jeglicher Schwere, Production-Ready.**
+
+Weil das Refinement in derselben Sitzung gebaut wurde, habe ich die zentralen Behauptungen neu gemessen — und **an zwei Stellen schärfer geprüft als die Frontend-Phase**.
+
+Erstens die Layout-Höhe: Die Frontend-Phase isolierte den Beitrag des Overlays nur über die Höhe. Ein `fixed` Element kann die Seite aber auch über die **Breite** beeinflussen. Nachgeholt — der Beitrag ist **0px in beiden Achsen**, beide Seiten, beide Engines.
+
+Zweitens das eigentliche Anliegen des Betreibers („hinter dem man die Seite noch scrollen kann"), das bisher nur indirekt über `position: fixed` belegt war: Über drei Scroll-Schritte bewegt sich der Inhalt (erste Karte 198 → −102 → −396), der Hinweis steht konstant bei 568, und unter dem Overlay liegt nachweislich eine **Quest-Karte**.
+
+Gemessen: Kontrast schlechtester Wert **6.61:1** (Vorgabe 4.5:1), Tap-Ziele 44px auf **acht Viewports** (320×568 bis 1440×900), kein Überlauf und kein abgeschnittener Text, Höhe **72px auf Android und iOS gleich**, FAB rückt beim Wegklicken exakt 64px zurück, letzte Quest-Karte mit 16px Luft erreichbar — **am Bildschirm abgenommen**, nicht nur gemessen. Edge Case 18 (Querformat) und die Tastaturbedienung zusätzlich geprüft, letztere in der Spec nicht gefordert.
+
+**Security ohne Befund:** XSS über den Quest-Namen erzeugt 0 Dialoge und 0 injizierte Elemente; ein manipulierter `localStorage`-Schlüssel in sechs Varianten ergibt **0 `pageerror`** und eine durchgehend bedienbare App; 0 externe Requests.
+
+**Gegenproben bewusst an anderen Stellen als in der Frontend-Phase:** Listen-Freiraum entfernt → **genau 2** Tests fallen (einer je Engine); iOS-Kurzform durch die alte zweischrittige Liste ersetzt → **genau 1**. Produktcode danach per Prüfsumme als unverändert bestätigt. Die 7 Skips sind nachvollzogen und keine stillgelegten Tests.
+
+**Unit 226/226, E2E beide Engines 978 passed / 52 skipped / 0 failed**, Build sauber, Lint 0 Fehler.
+
+**Zwei Beobachtungen ohne Bug-Status:** Der Import-FAB überlappt die letzte Quest-Karte samt Titel — gegengeprüft mit weggeklicktem Hinweis: **identisch**, also vorbestehend aus PROJ-6. Und die lokalen Konsolenfehler stammen von Vercel Analytics, das nur in Production existiert.
+
+**Nicht abgedeckt:** die echte Safe Area am iPhone (Playwright meldet `env(safe-area-inset-bottom)` als 0 — gemessen wurde der 14px-Grundwert), Bildschirmtastatur, Firefox, und der echte `beforeinstallprompt`.

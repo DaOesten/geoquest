@@ -79,19 +79,19 @@ export default function StartScreen() {
         />
       </div>
 
-      {/* Installations-Hinweis (PROJ-12) — hinter den Mode-Cards und bewusst in
-          der KOMPAKTEN Fassung.
+      {/* Installations-Hinweis (PROJ-12) — schwebendes Overlay am unteren Rand.
 
-          Das Kriterium aus PROJ-1 verlangt, dass `/` auf 360x640 gar nicht
-          scrollt. Gemessen endet die zweite Card dort bei 559 von 640; mit der
-          Seitenpolsterung bleiben rund 37px. Die volle Hinweis-Karte ist 195px
-          hoch und liess die Seite auf 799px wachsen — das Kriterium ist aelter
-          als dieses Feature und hat Vorrang, also traegt `/` nur die einzeilige
-          Fassung. Die vollstaendige Karte steht auf `/play`.
+          Seine Position im Markup ist gleichgueltig: Der Hinweis ist `fixed`
+          und nimmt keine Layout-Hoehe ein. Genau darum steht er hier und nicht
+          mehr in zwei Fassungen — die frueher noetige kompakte Sonderfassung
+          fuer `/` entfaellt mit dem Refinement vom 2026-09-20.
 
-          Der Hinweis erscheint ohnehin nur, wenn ein Installationsweg existiert
-          und die App nicht schon installiert laeuft. */}
-      <InstallHint compact className="mt-2" />
+          Das PROJ-1-Kriterium „`/` scrollt auf 360x640 nicht" bleibt damit
+          erfuellt, ohne dass der Hinweis dafuer Inhalt opfern muss.
+
+          Er erscheint ohnehin nur, wenn ein Installationsweg existiert und die
+          App nicht schon installiert laeuft. */}
+      <InstallHint />
 
       <FirstVisitDialog />
     </main>

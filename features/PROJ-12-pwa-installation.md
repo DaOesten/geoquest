@@ -1,8 +1,8 @@
 # PROJ-12: PWA-Installation (Add to Homescreen)
 
-## Status: Deployed
+## Status: Approved
 **Created:** 2026-09-18
-**Last Updated:** 2026-09-20 (Refinement: Service Worker nur in Production)
+**Last Updated:** 2026-09-20 (Refinement: Installations-Hinweis wird schwebendes Overlay)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — der Startscreen `/` trägt einen der beiden Hinweis-Orte, und das Wurzel-Layout (`src/app/layout.tsx`) hält heute schon `themeColor` und `viewportFit: "cover"`
@@ -94,6 +94,19 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 - [ ] Angenommen der Hinweis wird angezeigt, wenn seine Bedienelemente gemessen werden, dann ist jedes Tap-Ziel mindestens 44×44px groß und der Textkontrast erreicht mindestens 4.5:1
 - [ ] Angenommen der Hinweis erscheint auf `/`, wenn der Startscreen auf 360×640 betrachtet wird, dann bleiben Logo, Headline und beide Mode-Cards ohne Scrollen sichtbar (Kriterium aus PROJ-1 bleibt erfüllt)
 
+### Der Hinweis als schwebendes Overlay (Refinement 2026-09-20)
+
+- [x] Angenommen der Hinweis erscheint auf `/` oder `/play`, wenn seine Position gemessen wird, dann ist er **fixiert am unteren Rand des Viewports** (`position: fixed`) und nicht Teil des Seitenflusses
+- [x] Angenommen der Hinweis ist sichtbar, wenn der Nutzer die Seite scrollt, dann **scrollt der Seiteninhalt darunter weiter** und der Hinweis bleibt an seiner Position stehen, bis er weggeklickt wird
+- [x] Angenommen der Hinweis ist sichtbar, wenn die Seitenhöhe gemessen wird, dann **hat er die Höhe des Dokuments nicht verändert** — er verdrängt keinen Inhalt und erzeugt keinen Scrollbalken, wo vorher keiner war
+- [x] Angenommen der Hinweis erscheint auf `/` auf 360×640, wenn der Startscreen betrachtet wird, dann **scrollt die Seite weiterhin gar nicht** und alle vier Elemente aus dem PROJ-1-Kriterium bleiben sichtbar
+- [x] Angenommen der Hinweis ist sichtbar, wenn sein Inhalt betrachtet wird, dann trägt er **genau eine Zeile** — auf Android Icon, Kurztext und Installieren-Weg, auf iOS Safari Icon und die Kurzanleitung „Teilen → Home-Bildschirm" — ohne Eyebrow, ohne Überschrift, ohne Beschreibungsabsatz
+- [x] Angenommen der Hinweis ist auf beiden Plattformen sichtbar, wenn seine Höhe gemessen wird, dann ist sie **auf Android und iOS gleich** (eine Zeile je Plattform)
+- [x] Angenommen der Hinweis ist auf `/play` sichtbar, wenn der schwebende Import-Button betrachtet wird, dann **liegt dieser vollständig über dem Hinweis** und beide sind unverdeckt bedienbar; klickt der Nutzer den Hinweis weg, rückt der Import-Button an seine gewohnte Position zurück
+- [x] Angenommen der Hinweis erscheint auf einem Gerät mit unterer Systemleiste (iPhone mit Home-Indikator), wenn er gemessen wird, dann liegt sein Inhalt **oberhalb der Safe Area** und wird nicht vom Systembereich überlagert
+- [x] Angenommen der Hinweis ist sichtbar, wenn ein Sheet, Dialog oder das Burger-Menu geöffnet wird, dann **liegt der Hinweis darunter** und blockiert keine Bedienelemente dieser Ebenen
+- [x] Angenommen der Nutzer scrollt auf `/play` ans Listenende, wenn der Hinweis sichtbar ist, dann **bleibt die letzte Quest-Karte erreichbar** und wird nicht dauerhaft vom Hinweis verdeckt
+
 ### Verhalten ohne Netz
 
 - [ ] Angenommen die App ist installiert und der Service Worker aktiv, wenn der Nutzer sie ohne Internetverbindung startet, dann sieht er eine Geo-Quest-eigene Seite mit der Aussage, dass die App eine Internetverbindung zum Starten braucht — nicht die Fehlerseite des Browsers
@@ -150,6 +163,14 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 
 17. **Ein bereits registrierter Worker aus einem früheren Besuch lebt lokal weiter** → Die Änderung verhindert **neue** Registrierungen, entfernt aber keine bestehende. Wer die App vor diesem Refinement lokal geöffnet hat, trägt den Worker weiter, bis er ihn löscht (Safari: Entwickler → Caches leeren, oder Einstellungen → Datenschutz → Website-Daten verwalten → `localhost` entfernen; Chrome: DevTools → Application → Service Workers → Unregister). Deshalb muss die Unregistrierung aktiv passieren, statt auf den Ablauf zu warten — siehe Acceptance Criteria.
 
+18. **Sehr kurzer Viewport im Querformat** (z.B. 640×360) → Das Overlay nimmt eine Zeile am unteren Rand ein. Auf `/play` bleibt die Liste scrollbar, auf `/` gilt das Nicht-Scrollen-Kriterium nur für 360×640 (Hochformat). Der Hinweis bleibt wegklickbar — wem er im Weg ist, der schließt ihn.
+
+19. **Der Nutzer scrollt auf `/play` ans Listenende** → Das Overlay schwebt über dem Listenende und könnte die letzte Quest-Karte verdecken. Die Liste bekommt deshalb unteren Freiraum in Höhe des Overlays, solange es sichtbar ist; nach dem Wegklicken fällt er weg. Alternative — die Liste dauerhaft mit Freiraum ausstatten — wurde verworfen: Das hinterließe eine unerklärliche Lücke, sobald der Hinweis weg ist.
+
+20. **Das Overlay trifft auf eine andere schwebende Ebene** (Burger-Menu, Sheet, Erststart-Dialog) → Der Hinweis liegt unter diesen Ebenen. Für den Erststart-Dialog greift ohnehin schon Edge Case 13 (Vorrang, der Hinweis erscheint erst nach dem Schließen); für Menu und Sheets entscheidet die Stapelreihenfolge. Das Burger-Menu liegt bei `z-[1100]`, der Import-FAB bei `z-40` — der Hinweis ordnet sich dazwischen ein.
+
+21. **Gerät mit unterer Systemleiste** (iPhone mit Home-Indikator, Android-Gestenleiste) → Das Overlay respektiert die Safe Area; sein Inhalt endet oberhalb des Systembereichs. Ohne das läge das Schließen-X teilweise unter der Gestenleiste und wäre schwer zu treffen. Das Wurzel-Layout setzt `viewportFit: "cover"` bereits, die nötige Information liegt also vor.
+
 ## Technical Requirements
 
 - **Kein Backend, keine neuen Netzabhängigkeiten** — alle neuen Dateien werden von der eigenen Domain ausgeliefert
@@ -165,6 +186,11 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 - **Icons als PNG**, abgeleitet aus `public/assets/geoquest_pwaIcon.jpeg`; das Quellbild bleibt im Repository
 - **Das `maskable`-Icon hält die inneren 80% als Sicherheitszone frei** (Android-Maskierung)
 - **Die bestehenden Security-Header bleiben unverändert** und müssen auch für Manifest, Service Worker und Icons gelten
+- **Der Installations-Hinweis ist `position: fixed` am unteren Rand** (Refinement 2026-09-20) und darf die Dokumenthöhe nicht verändern — messbar daran, dass `scrollHeight` mit und ohne sichtbaren Hinweis identisch ist
+- **Der Hinweis respektiert die untere Safe Area** (`env(safe-area-inset-bottom)`); das Wurzel-Layout setzt `viewportFit: "cover"` bereits
+- **Der Hinweis ordnet sich unter Menu und Sheets ein, über dem Import-FAB** — konkret zwischen `z-40` (FAB) und `z-[1100]` (Burger-Menu)
+- **Der Import-FAB auf `/play` weicht dem Hinweis aus**, solange dieser sichtbar ist, und kehrt beim Wegklicken an seine Position zurück
+- **Die Quest-Liste auf `/play` bekommt unteren Freiraum in Höhe des Hinweises**, solange er sichtbar ist, damit die letzte Karte erreichbar bleibt
 
 ## Open Questions
 
@@ -173,6 +199,7 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 - [ ] Soll die Themenfarbe (Statusleiste der installierten App) bei `#0B0F12` bleiben oder das Teal aufnehmen? Vorschlag: Deep Black beibehalten, damit die Statusleiste nahtlos in den App-Hintergrund übergeht. Am echten Gerät zu beurteilen.
 - [ ] Verhält sich die Standortfreigabe in der installierten iOS-PWA wie im Safari-Tab, oder muss sie neu erteilt werden? (Edge Case 7) — nur auf einem echten iPhone abschließend zu klären; für die Korrektheit des Features unkritisch, weil der Permission-Screen aus PROJ-3 greift.
 - [ ] Bleibt es dauerhaft bei „keine Screenshots im Manifest"? Sie würden die Android-Installations-Ansicht aufwerten, erfordern aber gepflegtes Bildmaterial.
+- [ ] Soll die Bottom-Nav-Ausnahme für temporäre Hinweise in `docs/design-system.md` festgeschrieben werden? (Refinement 2026-09-20) Die Entscheidung ist hier begründet, aber das Design System kennt sie noch nicht — der nächste, der einen schwebenden Hinweis baut, liest dort weiterhin ein pauschales Verbot. Vorschlag: einen Satz bei der Regel in Zeile 62 ergänzen, der die Ausnahme eng fasst (temporär **und** wegklickbar **und** nicht navigierend).
 - [ ] Wie weit soll der Pin die `any`-Icons ausfüllen? Randlos wirkt kräftig, kann auf iOS aber gedrungen aussehen, weil dort kein Sicherheitsrand abgezogen wird. Beim Erzeugen der PNGs im Augenschein zu entscheiden — betrifft nur die Optik, nicht die Installierbarkeit.
 
 ## Decision Log
@@ -186,6 +213,11 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 | Eigene Offline-Fallback-Seite statt Browser-Fehlerseite | Eine installierte App sieht aus wie eine echte App. Chromes Dinosaurier lässt das Produkt kaputt wirken, nicht das Netz. Genau der Moment — draußen, wenig Empfang, Tap aufs Icon — ist der, für den die App existiert. | 2026-09-18 |
 | Hinweis nur auf `/` und `/play` | Die beiden Screens vor dem Loslaufen. Nicht im Spielverlauf (analog zur Ko-fi-Regel des PRD: „kein Hinweis im Spielverlauf") und nicht im Creator, der überwiegend am Desktop läuft. | 2026-09-18 |
 | Hinweis ist dezent und wegklickbar, kein Modal | Das Projekt tritt durchgehend zurückhaltend auf — keine Werbung, keine Bezahlschranke, Ko-fi nur am Rand. Ein aufdringliches Install-Interstitial widerspräche dieser Haltung. | 2026-09-18 |
+| **Der Hinweis wird ein schwebendes Overlay am unteren Rand** statt einer Karte im Seitenfluss | Betreiber-Entscheidung 2026-09-20. Im Fluss verbraucht der Hinweis Platz auf genau den beiden Screens, die ihn am knappsten haben — auf `/` erzwang er bereits eine eigene, abgespeckte zweite Fassung, weil die volle Karte das PROJ-1-Nicht-Scrollen-Kriterium brach. Schwebend kostet er **null** Layout-Höhe, der Inhalt scrollt unverändert darunter weiter, und die Sonderfassung je Screen entfällt. Dieselbe Begründung, die bei BUG-10 das schwebende Burger-Icon auf `/` trug: Was nicht in die Höhe zählt, kann kein Höhen-Kriterium brechen. | 2026-09-20 |
+| **Eine Zeile auf beiden Plattformen** — die zweischrittige iOS-Anleitung entfällt | „Sehr kompakt" war die ausdrückliche Vorgabe. Ein Overlay verdeckt Inhalt, solange es steht; je kleiner die verdeckte Fläche, desto eher darf es überhaupt schweben. Die bisher zweizeilige iOS-Fassung hätte den Hinweis je Plattform unterschiedlich hoch gemacht und die verdeckte Fläche verdoppelt. Die Kurzform „Teilen → Home-Bildschirm" ist auf `/` seit dem 2026-09-19 live und hat sich als ausreichend erwiesen. | 2026-09-20 |
+| **Bleibt stehen, bis weggeklickt** — kein Ausblenden beim Scrollen, kein Selbstschließen nach Sekunden | Ein Hinweis, der beim Scrollen wegfährt und wiederkommt, ist genau die Ambient-Bewegung, die das Design System ausschließt („keine Ambient-Loops", vgl. PROJ-3 Konfetti). Ein Selbstschließen nach Sekunden wäre zudem kein Wegklicken und müsste beim nächsten Besuch wiederkommen — der Nutzer bekäme den Hinweis dauerhaft, ohne ihn je loszuwerden. Ein Tap auf ✕ schweigt wie bisher 30 Tage. | 2026-09-20 |
+| **Unverändert nur auf `/` und `/play`** | Die Overlay-Form ändert nichts an der Frage, *wo* der Hinweis angebracht ist. Kein Hinweis im Spielverlauf (Ko-fi-Regel des PRD), keiner im Creator (überwiegend Desktop). | 2026-09-20 |
+| **Der Import-FAB auf `/play` rückt hoch, statt den Hinweis zu verdecken oder ihn zu verkürzen** | Beide Elemente sind vollwertige Bedienelemente; eines teilweise zu verdecken wäre in beide Richtungen falsch. Einen schmaleren Hinweis nur auf `/play` zu bauen hieße, die gerade erst abgeschaffte Zwei-Fassungen-Logik durch die Hintertür zurückzuholen. Der FAB ist das beweglichere Element — er schwebt ohnehin schon frei. | 2026-09-20 |
 | Weggeklickt = 30 Tage Ruhe, dann erneut | Lang genug, um nicht zu nörgeln; kurz genug, dass jemand, der die App ein zweites Mal für einen Ausflug nutzt, das Angebot noch einmal bekommt. Bewusst abweichend vom Erststart-Dialog, der dauerhaft verschwindet — der ist eine Pflichtinformation, das hier ein Angebot. | 2026-09-18 |
 | Schwerpunkt Spieler, Ersteller aber nicht ausgeschlossen | Der Vollbildgewinn (~100px) nützt dem Player-Screen am meisten. Der Ersteller kann jederzeit über die Browser-Funktion installieren, bekommt nur keinen Hinweis dazu. | 2026-09-18 |
 | Icon zeigt **nur den Pin**, nicht den vollen Schriftzug | Bei 48×48 auf dem Homescreen wird „GEO QUEST" unleserlich. Das Design System sieht den Pin ohnehin ausdrücklich als „Standalone App-Icon" vor. Der Produktname steht auf dem Homescreen als Text unter dem Icon — er muss nicht zusätzlich im Bild stehen. | 2026-09-18 |
@@ -211,8 +243,11 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 | Eigener `apple-touch-icon` neben den Manifest-Icons | iOS wertet die Manifest-Icon-Liste nicht in allen Versionen aus. Ohne dieses Icon nimmt Safari einen Screenshot der Seite — auf dem Homescreen unter den echten App-Icons sofort erkennbar. | 2026-09-18 |
 | Anzeige-Logik in einem eigenen Hook `use-install-prompt.ts` | „Darf der Hinweis erscheinen?" hängt an vier Bedingungen (installiert? weggeklickt? Frist um? Weg vorhanden?) und wird an zwei Orten gebraucht. Als Hook steht die Regel einmal da und ist ohne Browser testbar — **die Lücke, durch die BUG-6 live gehen konnte, war ein ungetesteter Hook** (`use-device-orientation.ts` hatte keine Unit-Tests). | 2026-09-18 |
 | iOS-Erkennung über mehrere Signale, im Zweifel nichts anzeigen | Direkte Lehre aus BUG-6 (PROJ-3, 2026-09-07): Dort schloss `isIOS()` allein aus der Existenz von `requestPermission` auf iOS und lag auf Desktop-Chrome falsch — der Spieler bekam einen Button, der garantiert fehlschlug. Ein ausbleibender Hinweis ist harmlos; eine Anleitung, die auf dem Gerät nicht funktioniert, ist der eigentliche Fehler. | 2026-09-18 |
-| Hinweis im Seitenfluss statt fixiert am unteren Rand | Das Design System verbietet ausdrücklich Bottom-Navigation und Tab-Bars; ein fixierter Banner läse sich als solche. Als normale Karte im Fluss verdeckt er nichts und schiebt nichts weg. | 2026-09-18 |
-| Auf `/` steht der Hinweis **hinter** den Mode-Cards | Das PROJ-1-Kriterium verlangt Logo, Headline und beide Cards ohne Scrollen auf 360×640; gemessen endet der Inhalt dort bei 559/640px. Davor würde der Hinweis dieses Kriterium brechen, dahinter kostet er nichts. | 2026-09-18 |
+| ~~Hinweis im Seitenfluss statt fixiert am unteren Rand~~ **überholt am 2026-09-20** | Ursprünglich: „Das Design System verbietet ausdrücklich Bottom-Navigation und Tab-Bars; ein fixierter Banner läse sich als solche." **Diese Auslegung ist zu weit.** Die Regel in `docs/design-system.md:62` zielt auf **dauerhaftes Navigations-Mobiliar** — eine Leiste, die immer da ist und den Wechsel zwischen Bereichen trägt. Der Installations-Hinweis ist weder dauerhaft (ein Tap auf ✕ und er schweigt 30 Tage) noch navigiert er irgendwohin. Die Annahme „verdeckt nichts und schiebt nichts weg" traf zudem nur die halbe Wahrheit: Im Fluss verdeckt er zwar nichts, **schiebt aber sehr wohl** — auf `/` um 195px, was das PROJ-1-Kriterium brach und die kompakte Sonderfassung erzwang. | 2026-09-18, überholt 2026-09-20 |
+| **Fixiertes Overlay unten, Bottom-Nav-Regel bekommt eine dokumentierte Ausnahme** | Die Ausnahme gilt eng: **temporäre, wegklickbare Hinweise** dürfen unten schweben; dauerhafte Navigation weiterhin nicht. Damit bleibt die Regel wirksam für das, wofür sie geschrieben wurde. Diese Ausnahme gehört nach `docs/design-system.md` — siehe Open Questions. | 2026-09-20 |
+| **Safe Area statt fester Polsterung** | Auf einem iPhone mit Home-Indikator läge das Schließen-X sonst teilweise unter der Gestenleiste. `viewportFit: "cover"` steht bereits im Wurzel-Layout, die Information liegt also vor; `station-editor-sheet.tsx:198` nutzt für denselben Zweck bereits den 14px-Wert des Design Systems. | 2026-09-20 |
+| **Stapelreihenfolge zwischen FAB (`z-40`) und Burger-Menu (`z-[1100]`)** | Der Hinweis muss über dem normalen Seiteninhalt liegen, aber unter jeder Ebene, die der Nutzer bewusst geöffnet hat. Ein Hinweis, der ein offenes Sheet überlagert, wäre genau das aufdringliche Verhalten, das die Produkt-Entscheidung von 2026-09-18 ausschließt. | 2026-09-20 |
+| ~~Auf `/` steht der Hinweis **hinter** den Mode-Cards~~ **gegenstandslos am 2026-09-20** | Die Reihenfolge im Seitenfluss entscheidet nichts mehr, sobald der Hinweis gar nicht mehr im Fluss steht. Mit ihr entfällt auch die daraus entstandene `compact`-Prop: Es gibt nur noch **eine** Fassung, und die ist die kompakte. | 2026-09-18, gegenstandslos 2026-09-20 |
 | Speicherschlüssel `gq_install_hint_dismissed` mit Zeitstempel | Gleiches Präfix und gleicher Mechanismus wie `gq_first_visit_done` (PROJ-1). Ein Zeitstempel statt eines Wahrheitswerts, weil die 30-Tage-Frist sonst nicht berechenbar wäre. | 2026-09-18 |
 | Konstanten (Frist, Speicherschlüssel) in `src/lib/app-nav.ts` | Dort liegen bereits die app-weiten Navigations- und Schalterkonstanten (`KOFI_URL`, `ANLEITUNG_VERFUEGBAR`). Das Modul ist bewusst kein Client-Modul und aus Server- wie Client-Komponenten importierbar. | 2026-09-18 |
 | Unterscheidung über `process.env.NODE_ENV`, **nicht** über den Hostnamen | Die E2E-Suite testet den echten Production-Build auf `localhost:3100` (`playwright.prod.config.ts`). Eine Hostname-Prüfung auf `localhost` würde dort den Worker abschalten und die 37 PROJ-12-Tests entwerten, ohne dass eine einzige Zeile Produktcode kaputt aussieht — ein stiller Testverlust. `NODE_ENV` trennt Dev-Server von Production-Build sauber, unabhängig vom Port. | 2026-09-20 |
@@ -544,6 +579,77 @@ Der Entwickler muss also nichts von Hand löschen; es löst sich beim nächsten 
 
 **Nicht abgedeckt:** Das Verhalten in Production bleibt unverändert und wurde nur lokal gegen `next start` geprüft, nicht gegen Vercel — der Deploy muss bestätigen, dass sich der Worker dort weiterhin registriert.
 
+### Refinement 2026-09-20 — Installations-Hinweis wird schwebendes Overlay
+
+**Anlass (Betreiber):** Der Hinweis sitzt fest im Seitenfluss auf `/` und `/play`. Gewünscht ist stattdessen ein Overlay, hinter dem die Seite weiter scrollt — und deutlich kompakter.
+
+**Was sich ändert**
+
+| Heute (live seit 2026-09-19) | Nach diesem Refinement |
+|---|---|
+| Karte im Seitenfluss, verdrängt Inhalt | `position: fixed` unten, verdrängt nichts |
+| Zwei Fassungen (`compact` auf `/`, volle Karte auf `/play`) | **Eine** Fassung, überall dieselbe |
+| Volle Karte 195px, kompakt 44px | Eine Zeile, beide Plattformen gleich hoch |
+| iOS: zweischrittige Anleitung mit zwei Icons | iOS: eine Zeile „Teilen → Home-Bildschirm" |
+| Auf `/play` hinter dem Titel-Block, auf `/` hinter den Mode-Cards | Position im Markup ist gleichgültig — der Hinweis schwebt |
+
+**Was ausdrücklich gleich bleibt:** die vier Anzeige-Bedingungen in `use-install-prompt.ts` (installiert? weggeklickt? Frist um? Weg vorhanden?), die 30-Tage-Frist, der Vorrang des Erststart-Dialogs (Edge Case 13), die iOS-Erkennung an mehreren Signalen (BUG-6-Lehre) und die Beschränkung auf `/` und `/play`. **Der Hook wird nicht angefasst** — dieses Refinement ändert nur, wie der Hinweis aussieht und wo er sitzt, nicht wann er erscheint.
+
+**Drei Fallstricke, die beim Bauen zu beachten sind**
+
+1. **Der Import-FAB auf `/play` steht im Weg.** `quest-import-button.tsx:71` ist bereits `fixed bottom-6 right-5 z-40`. Er muss hochrücken, solange der Hinweis sichtbar ist — und zurückfallen, sobald er weggeklickt ist. Beide Komponenten brauchen dafür dieselbe Information; die Quelle ist `useInstallPrompt().shouldShow`, nicht ein zweiter, eigener Zustand.
+
+2. **Die `compact`-Prop verschwindet.** Sie existierte nur, weil die volle Karte auf `/` das PROJ-1-Kriterium brach. Mit dem Overlay gibt es nur noch eine Fassung — die Prop ersatzlos entfernen, statt sie auf `true` festzunageln. Die ausführliche iOS-`<ol>` mit zwei Schritten entfällt mit ihr.
+
+3. **Bestehende Tests werden absichtlich falsch.** `tests/proj-12-pwa-installation.spec.ts` prüft den Hinweis heute im Seitenfluss. Diese Assertions sind auf den neuen Zustand zu **ziehen, nicht zu löschen** — insbesondere die Messung der kompakten 44px-Fassung und die Stelle, an der der Hinweis im DOM erwartet wird. Neu dazu gehört der Wächter, der belegt, dass die Dokumenthöhe mit und ohne sichtbaren Hinweis identisch ist; genau das ist die Behauptung dieses Refinements.
+
+**Die Messung, die dieses Refinement belegt:** `document.documentElement.scrollHeight` mit sichtbarem Hinweis gegen denselben Wert ohne ihn — auf `/` und `/play`, auf beiden Engines. Sind die Werte identisch, kostet der Hinweis null Layout-Höhe. Dasselbe Muster hat bei BUG-10 das schwebende Burger-Icon auf `/` belegt (24 Werte, alle identisch).
+
+#### Umsetzung am 2026-09-20
+
+**Fünf Dateien, kein neues Paket, keine neue Komponente, keine neue Route.**
+
+| Datei | Änderung |
+|---|---|
+| `src/components/install-hint.tsx` | `fixed bottom-0 … z-50`, eine Fassung statt zwei, `compact`-Prop entfernt, iOS-`<ol>` durch eine Zeile ersetzt |
+| `src/hooks/use-install-prompt.ts` | neues Ereignis `gq:install-hint-changed` (siehe „Der Fehler, den erst die Messung fand") |
+| `src/components/quest-import-button.tsx` | FAB weicht dem Hinweis aus und fällt zurück |
+| `src/app/page.tsx` | `compact`-Prop und Flow-Klassen entfernt |
+| `src/app/play/page.tsx` | Flow-Klassen entfernt, Listen-Freiraum solange der Hinweis steht |
+
+**Der Kern ist gemessen, nicht behauptet — und schärfer, als ich zuerst geprüft hatte.**
+
+Die naheliegende Messung („Seitenhöhe mit Hinweis == Seitenhöhe ohne Hinweis") war **falsch** und hätte ein richtiges Ergebnis vorgetäuscht: Auf `/play` wuchs die Seite von 922 auf 994px, weil die Liste absichtlich Freiraum bekommt (Edge Case 19). Der Vergleich hätte dort einen gewollten Unterschied als Fehler gemeldet — oder, mit umgekehrtem Vorzeichen, den Freiraum als Beweis für Layout-Kosten des Overlays missdeutet.
+
+Stattdessen wird der Beitrag **des Overlays selbst** isoliert: aus dem DOM nehmen, neu messen, zurücksetzen. Ergebnis auf beiden Seiten und beiden Engines: **0px**. Der Hinweis nimmt keinen Platz im Fluss ein. Das PROJ-1-Kriterium hält mit `scrollHeight == innerHeight == 640` auf 360×640, also exakt auf Kante wie vorher.
+
+**Der Fehler, den erst die Messung fand — und den ich selbst eingebaut hatte.** Der FAB blieb nach dem Wegklicken oben stehen (gemessen: 552 statt 616). Ursache: `useInstallPrompt()` läuft jetzt an **drei** Stellen zugleich (Hinweis, FAB, Listen-Freiraum), und jeder Aufruf hat eigenen React-State — `dismiss()` schaltete nur die Instanz des Hinweises um. Ich hatte in denselben Code den Kommentar geschrieben, ein zweiter Zustand könnte auseinanderlaufen, und genau das dann produziert.
+
+Gelöst mit dem Muster, das `FirstVisitDialog` schon nutzt: ein Fensterereignis (`gq:install-hint-changed`) statt eines Context-Providers, weil die drei Komponenten in verschiedenen Teilbäumen sitzen. Per Gegenprobe abgesichert — nimmt man das `dispatchEvent` heraus, fällt **genau ein** Test, der zuständige.
+
+**Gemessen statt geschätzt** (Chrome 152 und WebKit, Production-Build):
+
+- Overlay-Beitrag zur Layout-Höhe: **0px** auf `/` und `/play`, beide Engines
+- Höhe **72px** (44px Zeile + 14px Safe-Area + Polsterung) — **auf Android und iOS identisch**; die alte volle Karte maß 195px
+- Kontrast **9.64:1** bei 4.5:1 Vorgabe; Tap-Ziele 44×44 (Schließen) und 238–348×44 (Installieren)
+- Kein abgeschnittener Text und kein horizontaler Überlauf auf 320/360/390/430px
+- Safe-Area-Polsterung löst zu 14px auf, wenn keine Systemleiste da ist
+- FAB und Hinweis überlappen **nicht**; nach dem Wegklicken steht der FAB wieder exakt auf seiner Ausgangsposition (616/640)
+- Letzte Quest-Karte beim Scrollen ans Listenende **nicht verdeckt** (Unterkante 552 gegen Hinweis-Oberkante 568)
+- iOS-Zweig auf echtem WebKit: eine Zeile, **0 Installieren-Buttons** — die BUG-6-Lehre hält
+
+**Am Bildschirm abgenommen**, nicht nur gemessen — bei einer Design-Änderung reichen Zahlen nicht: Die Leiste liest sich auf beiden Plattformen als kompakter Hinweis, nicht als Tab-Bar, und tritt neben den Mode-Cards zurück.
+
+**Ein Fehler im Test selbst** (das Produkt war richtig): Der Wächter „liegt unter dem Burger-Menu" prüfte, was am Mittelpunkt des Hinweises liegt — und fiel auf Desktop-Chrome um. Ursache gemessen: Auf 1280px sitzt das Menu-Panel bei x=1000..1280, der Hinweis mittig bei x=425..855; sie berühren sich dort gar nicht. Der Test prüfte Geometrie, die nur auf schmalen Bildschirmen gilt. Er setzt jetzt einen schmalen Viewport und prüft zusätzlich, dass das Menu bedienbar bleibt.
+
+**Testabdeckung:** 12 neue Tests, PROJ-12 damit **49 statt 37** je Engine. Per Gegenprobe geschärft: Stellt man den Hinweis zurück in den Seitenfluss, fallen **6** Tests; nimmt man das Ereignis für den FAB heraus, fällt **genau 1**.
+
+Die bestehenden Assertions sind **gezogen, nicht gelöscht**: Der iOS-Test prüft jetzt die Kurzform und zusätzlich, dass es keine `<li>` mehr gibt; der Truncation-Test heißt nicht mehr „die kompakte Fassung", weil es nur noch eine gibt.
+
+**Suiten gegen den Production-Build:** Unit **226/226**. E2E über beide Engines: **978 passed / 52 skipped / 0 failed**. Build und Lint sauber (7 Warnungen, alle vorbestehend), `/` und `/play` bleiben statisch (`○`).
+
+**Nicht abgedeckt und benannt:** die Safe Area auf einem echten iPhone mit Home-Indikator (Playwright emuliert `env(safe-area-inset-bottom)` nicht — konstruktiv abgedeckt, am Gerät zu bestätigen), das Verhalten bei eingeblendeter Bildschirmtastatur, und Firefox (Binary fehlt; Risiko gering, da Firefox `beforeinstallprompt` nicht bereitstellt und die iOS-Erkennung dort `false` liefert).
+
 ## QA Test Results
 
 **Getestet am:** 2026-09-19
@@ -787,6 +893,85 @@ Weil das Refinement in derselben Sitzung gebaut wurde, habe ich die zentralen Be
 **Ein eigener Test wurde nach mehreren Reparaturversuchen entfernt statt stillgelegt.** Die Cache-Inhalts-Prüfung blieb auf WebKit unzuverlässig (1 von 5 Läufen rot) — bei nachweislich korrektem Produkt: Unabhängig gemessen enthält der Cache vor *und* nach der Navigation exakt `/offline.html`. Da `proj-12-pwa-installation.spec.ts:183` dieselbe Zusicherung **stabil** abdeckt, war die zweite Fassung redundant. Ein Test, der ohne Produktfehler rot wird, kostet mehr Vertrauen als er Deckung bringt. Die Begründung steht als Kommentar an seiner Stelle. Verbleibende Suite: **6 Tests, 6 von 6 Läufen grün**.
 
 **Nicht abgedeckt:** Das Verhalten **auf Vercel** — geprüft wurde gegen `next start`. Der Deploy muss bestätigen, dass sich der Worker in Production weiterhin registriert; das ist die einzige offene Zusicherung. Dazu unverändert: Firefox (Binary fehlt) und ein echtes Android-Gerät.
+
+### QA Refinement 2026-09-20 — Installations-Hinweis als schwebendes Overlay
+
+**Ergebnis: 10/10 Acceptance Criteria erfüllt, keine Bugs jeglicher Schwere, Production-Ready.**
+
+Weil das Refinement in derselben Sitzung gebaut wurde, habe ich die zentralen Behauptungen **nicht übernommen, sondern mit eigenen Sonden neu gemessen** — und an zwei Stellen schärfer geprüft als die Frontend-Phase.
+
+#### Acceptance Criteria
+
+| # | Kriterium | Ergebnis |
+|---|---|---|
+| 1 | `position: fixed`, nicht im Seitenfluss | ✅ `fixed`, `z-50`, Unterkante bündig (Abstand 0) auf beiden Seiten, beiden Engines |
+| 2 | Inhalt scrollt darunter weiter, Hinweis bleibt stehen | ✅ gemessen über drei Scroll-Schritte: erste Karte 198 → −102 → −396, Hinweis konstant bei 568 (Chrome) bzw. 592 (WebKit) |
+| 3 | Dokumenthöhe unverändert | ✅ **0px** Beitrag in Höhe **und Breite**, beide Seiten, beide Engines |
+| 4 | `/` scrollt auf 360×640 weiterhin nicht | ✅ `scrollHeight == innerHeight == 640` (Chrome), 664 (WebKit) |
+| 5 | Genau eine Zeile, kein Eyebrow/Überschrift/Beschreibung | ✅ 0 `<li>`, kein „Tipp", kein „Geo Quest als App", kein „Browser-Leiste" |
+| 6 | Höhe auf Android und iOS gleich | ✅ **72px auf beiden**, im selben Viewport gemessen |
+| 7 | Import-Button unverdeckt, fällt nach Wegklicken zurück | ✅ keine Überlappung, FAB an seinem Mittelpunkt oberstes Element, rückt beim Wegklicken exakt 64px zurück |
+| 8 | Inhalt oberhalb der Safe Area | ✅ `padding-bottom: 14px`, Schließen-X endet 15px über dem Rand (Einschränkung siehe unten) |
+| 9 | Liegt unter Menu/Dialog/Sheet | ✅ 280px Überlappung, oben liegt das **Menu** (z 1100 vs 50); Menu bleibt bedienbar und schließt per Escape |
+| 10 | Letzte Quest-Karte erreichbar | ✅ 16px Luft, Kartenmitte klickbar — und am Bildschirm abgenommen |
+
+#### Zwei Messungen, die ich schärfer geführt habe als die Frontend-Phase
+
+**Erstens die Layout-Höhe.** Die Frontend-Phase isolierte den Beitrag des Overlays über die Höhe. Das lässt eine Lücke: Ein `fixed` Element kann die Seite auch über die **Breite** beeinflussen (horizontaler Überlauf, Scrollbalken). Nachgeholt: Der Beitrag ist **0px in beiden Achsen**, auf beiden Seiten und beiden Engines.
+
+**Zweitens AC 2**, das eigentliche Anliegen des Betreibers („hinter dem man die Seite noch scrollen kann"). Die Frontend-Phase belegte es indirekt über `position: fixed`. Ich habe es direkt gemessen: über drei Scroll-Schritte bewegt sich der Inhalt (erste Karte 198 → −102 → −396), der Hinweis steht still, und unter dem Overlay liegt nachweislich eine **Quest-Karte** (per `elementFromPoint` mit kurzzeitig abgeschaltetem `pointer-events`).
+
+#### Gemessen statt geschätzt
+
+- **Kontrast:** schlechtester Wert **6.61:1** (der Pfeil „→" im iOS-Zweig), Android 9.64:1, iOS-Text 16.1:1 — Vorgabe 4.5:1
+- **Tap-Ziele:** Schließen 44×44, Installieren 238–348×44 auf **acht Viewports** (320×568 bis 1440×900)
+- **Kein Überlauf, kein abgeschnittener Text** auf keinem der acht Viewports; ab 768px bleibt der Hinweis auf 430px begrenzt und zentriert (Design-System-Containerbreite)
+- **Edge Case 18** (Querformat 640×360): Hinweis 430px breit, mittig, Tap-Ziele unverändert 44px, kein Überlauf
+
+#### Zusätzlich geprüft, in der Spec nicht gefordert
+
+**Tastaturbedienung:** Fokusreihenfolge `Zurück > Menü > Installieren > Hinweis ausblenden` — der Hinweis kommt zuletzt und drängt sich nicht vor. Das X ist fokussierbar und per Enter auslösbar.
+
+#### Security-Audit ohne Befund
+
+- **XSS über den Quest-Namen** (`<img src=x onerror=alert(1)><script>alert(2)</script>`): 0 Dialoge, **0** injizierte `<img>`, **0** injizierte `<script>`; der Hinweis rendert daneben unbeschadet
+- **Manipulierter `localStorage`-Schlüssel** in sechs Varianten (Markup, `NaN`, negativ, absurd groß, JSON-Objekt, leer): **0 `pageerror`** in allen sechs, App durchgehend bedienbar
+- **0 externe Requests** im Production-Build
+
+Ein Grenzfall geprüft statt weggewunken: Ein absurd großer Zeitstempel (`1e22`) unterdrückt den Hinweis. Das ist **korrekt** — eine negative verstrichene Zeit liegt definitionsgemäß „innerhalb von 30 Tagen" —, und erreichbar nur, indem man den eigenen Speicher manipuliert und damit den eigenen Hinweis unterdrückt. Kein Befund.
+
+#### Gegenproben — greifen die Tests wirklich?
+
+Bewusst **andere** Eingriffe als in der Frontend-Phase, damit die Gegenprobe nicht dieselbe Stelle zweimal trifft:
+
+| Eingriff | Erwartung | Ergebnis |
+|---|---|---|
+| Listen-Freiraum auf `/play` entfernt (Edge Case 19) | der zuständige Wächter fällt | **genau 2** (einer je Engine) |
+| iOS-Kurzform durch die alte zweischrittige `<ol>` ersetzt | der `<li>`-Wächter fällt | **genau 1** (nur WebKit fährt den iOS-Zweig) |
+
+Produktcode danach per Prüfsumme als unverändert bestätigt, keine Gegenproben-Reste im Baum.
+
+Die **7 Skips** sind nachvollzogen und keine stillgelegten Tests: 5× eine unabhängig dokumentierte WebKit-Grenze bei Offline-Navigation, 2× bewusst engine-spezifische Prüfungen des iOS- bzw. Nicht-iOS-Zweigs.
+
+#### Regression
+
+**Unit 226/226. E2E über beide Engines: 978 passed / 52 skipped / 0 failed.** Build sauber, Lint 0 Fehler (7 Warnungen, alle vorbestehend), `/` und `/play` bleiben statisch (`○`).
+
+Der geteilte Hook und der Import-FAB berühren PROJ-1, PROJ-5 und PROJ-6 — alle Suiten grün.
+
+#### Beobachtungen ohne Bug-Status
+
+1. **Der Import-FAB überlappt die letzte Quest-Karte** samt deren Titel. Gegengeprüft mit weggeklicktem Hinweis: **identisches Verhalten** — vorbestehend aus PROJ-6, von diesem Refinement unberührt.
+2. **Lokale Konsolenfehler** stammen von Vercel Analytics, das nur in Production existiert; sie treten mit harmlosem Quest-Namen genauso auf (4 statt 5, die Differenz ist ein Favicon-404).
+
+#### Nicht abgedeckt und benannt
+
+- **Die echte Safe Area** auf einem iPhone mit Home-Indikator: Playwright meldet `env(safe-area-inset-bottom)` als 0, gemessen wurde also der 14px-Grundwert des Design Systems. Konstruktiv abgedeckt, am Gerät zu bestätigen.
+- **Bildschirmtastatur** (von Playwright nicht emulierbar)
+- **Firefox** (Binary fehlt trotz gegenteiliger `--dry-run`-Meldung; Risiko gering, da Firefox `beforeinstallprompt` nicht bereitstellt und die iOS-Erkennung dort `false` liefert)
+- **Der echte `beforeinstallprompt`** — im Test nachgestellt, weil er an Chromes Engagement-Heuristiken hängt
+
+#### Production-Ready: **JA**
 
 ## Deployment
 
