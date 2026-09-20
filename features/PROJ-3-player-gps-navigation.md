@@ -1,12 +1,14 @@
 # PROJ-3: Player — GPS-Navigation
 
-## Status: Deployed
+## Status: In Progress
 **Created:** 2026-08-23
-**Last Updated:** 2026-09-19
+**Last Updated:** 2026-09-20
 
 > **Refinement (2026-09-06) — umgesetzt, deployt und QA-geprüft:** Zwei stille Ausfallmodi ergänzt — GPS-Fix bleibt trotz erteilter Permission aus, und der Richtungspfeil hat keine Richtung. Siehe Abschnitte "Permission-Flow", "Richtungsanzeige ohne Heading", Edge Cases 9–12 und die Implementation Notes vom 2026-09-06.
 
 > **Refinement (2026-09-07) — BUG-6 geklärt, umgesetzt und QA-geprüft:** Die iOS-Erkennung hinter dem "Kompass aktivieren"-Button ist zu grob. Sie schließt allein daraus auf iOS, dass `DeviceOrientationEvent.requestPermission` eine Funktion ist — das trifft auf Desktop-Chrome ebenfalls zu. Folge: Chrome-Nutzer bekommen einen Button angeboten, der garantiert fehlschlägt, statt des Hinweises, der ihnen hilft. BUG-6 war als vermutliches Testumgebungs-Artefakt notiert und ist als **echter Produktfehler bestätigt**. Siehe Acceptance Criteria "Richtungsanzeige ohne Heading", Edge Cases 13–14, Technical Requirements und Decision Log.
+
+> **Refinement (2026-09-20) — Ruhige Kompassnadel:** Ein Handy-Test im Gelände zeigte einen Richtungspfeil, der ruckartig springt und sich zeitweise ganz um sich selbst dreht. Die Navigation war über die Entfernungsanzeige weiter möglich, aber der Pfeil — das Kern-Element dieses Features — war unbrauchbar. Vier Ursachen im Code bestätigt: der 359°→0°-Sprung wird als volle Gegendrehung animiert, der Sensorwert wird ungefiltert durchgereicht, die Heading-Quelle kippt zwischen Kompass und GPS-Bewegungsrichtung, und die Zielpeilung rauscht mit der GPS-Position. Zusätzlich mitgenommen: der seit 2026-08-23 spezifizierte, aber nie gerenderte Kalibrierungs-Hinweis. Siehe Acceptance Criteria „Ruhige Richtungsanzeige", Edge Cases 18–22, Technical Requirements und Decision Log.
 
 > **Refinement (2026-09-19) — Gratulationsscreen (`ArrivalOverlay`), umgesetzt, QA-geprüft und am 2026-09-20 deployt (`v1.31.0-PROJ-3`):** Drei Befunde aus dem Gebrauch, alle am Ankunfts-Screen. (1) Die Karte „Nächstes Ziel" nimmt vorweg, was der Spieler gerade erst verdient hat — sie entfällt ersatzlos. (2) Das Pin-Logo zeichnet sich als Rechteck vom Hintergrund ab, weil `mark-pin.jpg` ein JPEG ohne Transparenz ist — es bekommt ein freigestelltes PNG. (3) Das Konfetti rieselt von oben und läuft endlos; es soll einmalig wie aus einer Konfetti-Kanone von unten mittig nach oben schießen — das gilt für beide Screens, die `ConfettiEffect` nutzen (Ankunft und Outro/PROJ-5). Siehe Acceptance Criteria „Ankunft — Gratulationsscreen", Edge Cases 15–17, Technical Requirements und Decision Log.
 
@@ -76,6 +78,17 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 - [ ] Angenommen der Browser stellt `DeviceOrientationEvent.requestPermission` bereit, ohne eine echte Sensorfreigabe zu kennen (Desktop-Chrome), wenn der Navigations-Screen geöffnet wird, dann erscheint **kein** "Kompass aktivieren"-Button, sondern direkt der "Laufe ein paar Schritte"-Hinweis
 - [ ] Angenommen der Spieler tippt "Kompass aktivieren", wenn die Freigabe abgelehnt wird oder fehlschlägt, dann erscheint sofort der "Laufe ein paar Schritte"-Hinweis — der Screen bleibt nie ohne Erklärung zurück
 
+**Ruhige Richtungsanzeige (Refinement 2026-09-20):**
+- [ ] Angenommen der Spieler dreht sich langsam im Kreis, wenn der Pfeil die 0°-Grenze passiert (z.B. von 359° auf 1°), dann dreht er sich **den kürzeren Weg** um 2° weiter — nicht um 358° zurück
+- [ ] Angenommen der Spieler hält das Handy still in der Hand, wenn der Kompass um wenige Grad rauscht, dann bleibt der Pfeil sichtbar ruhig stehen
+- [ ] Angenommen der Spieler dreht das Handy zügig um 90°, wenn er dabei auf den Pfeil schaut, dann folgt der Pfeil der Drehung sichtbar verzögert, aber ohne Ruckeln, und steht nach spätestens einer knappen Sekunde still
+- [ ] Angenommen der Kompass liefert Werte, wenn einzelne Sensor-Events ausbleiben, dann bleibt der Kompass die Heading-Quelle — es wird nicht bei jedem Aussetzer auf die GPS-Bewegungsrichtung umgeschaltet
+- [ ] Angenommen die Heading-Quelle wechselt tatsächlich (Kompass fällt dauerhaft aus oder wird verfügbar), wenn der Wechsel eintritt, dann dreht sich der Pfeil weich auf die neue Richtung, statt schlagartig zu springen
+- [ ] Angenommen der Spieler nähert sich dem Ziel auf wenige Meter, wenn die GPS-Position innerhalb ihrer Genauigkeit schwankt, dann springt der Pfeil nicht wild — die Zielpeilung ist gegen Positionsrauschen gedämpft
+- [ ] Angenommen der Pfeil ist richtungslos (Edge Case 11), wenn keine Heading-Quelle vorliegt, dann gilt die Dämpfung nicht und der bestehende Suchzustand bleibt unverändert sichtbar
+- [ ] Angenommen das Gerät meldet ein nicht-absolutes Heading, wenn der Navigations-Screen offen ist, dann erscheint der Kalibrierungs-Hinweis "Bewege dein Handy in einer 8" — sichtbar und dem Pfeil zugeordnet
+- [ ] Angenommen der Kalibrierungs-Hinweis wird angezeigt, wenn das Gerät danach ein absolutes Heading liefert, dann verschwindet er wieder, ohne dass der Spieler etwas tun muss
+
 **Ankunft:**
 - [ ] Angenommen der Spieler befindet sich innerhalb des Ankunftsradius einer Station, wenn die Position erkannt wird, dann vibriert das Gerät und ein "Angekommen!"-Hinweis erscheint
 - [ ] Angenommen der Spieler ist angekommen, wenn die Ankunft bestätigt wurde, dann wird die Station als "besucht" markiert und die nächste Station freigeschaltet
@@ -117,6 +130,12 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 15. **Letzte Station erreicht (Refinement 2026-09-19):** Hier gab es noch nie ein nächstes Ziel — die Karte fehlte, und der Screen endete direkt beim CTA. Mit dem Wegfall der Karte ist das jetzt der einzige Fall: Der Gratulationsscreen sieht an jeder Station gleich aus, unabhängig davon, ob noch Stationen folgen. Der bisherige Sonderfall verschwindet, statt gesondert behandelt zu werden.
 16. **Sehr langer Stationsname auf dem Gratulationsscreen:** Mit dem Wegfall der „Nächstes Ziel"-Karte trägt der Screen nur noch einen Namen. Er darf umbrechen statt abzuschneiden — abgeschnitten wäre ausgerechnet die Belohnung unvollständig. Die Höhe des Screens muss das auf 320×568 aushalten, ohne den CTA unter den Falz zu drücken.
 17. **`prefers-reduced-motion` aktiv:** Die Konfetti-Kanone ist reine Dekoration. Bei reduzierter Bewegung entfällt der Partikel-Schuss; Pin, Headline, Stationsname und CTA bleiben vollständig und bedienbar. Betrifft beide Screens (Ankunft und Outro).
+18. **Kompass-Nadel überquert die 0°-Grenze (Refinement 2026-09-20):** Liegt das Ziel ungefähr hinter dem Spieler, wechselt die Rotation zwischen 359° und 1°. Eine CSS-Transition auf einem auf `0..360` normalisierten Wert animiert dann den langen Weg — eine fast volle Umdrehung für 2° reale Änderung. Das ist der auffälligste Teil des gemeldeten Befunds ("dreht sich um sich selbst") und tritt systematisch auf, nicht zufällig.
+19. **Sensorrauschen bei ruhig gehaltenem Gerät:** `webkitCompassHeading` schwankt am echten Gerät um mehrere Grad, besonders neben Metall, in Gebäuden oder bei unkalibriertem Magnetometer. Ungefiltert landet jedes Zittern der Hand im Pfeil. Die Nadel muss stillstehen, wenn der Spieler stillsteht — auch wenn der Sensor das nicht tut.
+20. **Wechsel zwischen Kompass und GPS-Bewegungsrichtung:** Die beiden Quellen messen Verschiedenes — der Kompass, wohin das Gerät zeigt; die Bewegungsrichtung, wohin der Spieler läuft. Beim Blick aufs Handy in der Hand liegen leicht 90° dazwischen. Fällt der Kompass kurz aus und kommt zurück, reißt der Pfeil zweimal herum. Zusätzlich liefert die Bewegungsrichtung bei Strecken unter 2 m gar kein Heading, wodurch der Wechsel im Stand mehrfach pro Minute eintreten kann.
+21. **Zielpeilung rauscht mit der GPS-Genauigkeit:** Die Peilung wird aus der rohen Position berechnet. Nah am Ziel schlägt Positionsrauschen überproportional durch — bei 15 m Ungenauigkeit auf 30 m Distanz bis zu ±30° Peilungsänderung, ohne dass sich der Spieler bewegt. Die Nadel wird also ausgerechnet auf den letzten Metern am unruhigsten.
+22. **Unkalibriertes Magnetometer:** Das Gerät meldet ein relatives statt absolutes Heading (`event.absolute === false`). Der Hook erkennt das bereits als `needsCalibration`, der Navigations-Screen liest den Wert aber nirgends aus — der seit 2026-08-23 spezifizierte Hinweis "Bewege dein Handy in einer 8" wurde nie gerendert. Ein unkalibrierter Sensor ist zugleich eine der Ursachen für eine unruhige oder falsch zeigende Nadel.
+
 
 ## Technical Requirements
 - GPS-Position: `navigator.geolocation.watchPosition()` mit `enableHighAccuracy: true`
@@ -149,11 +168,26 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 - `prefers-reduced-motion: reduce` unterdrückt den Partikel-Schuss; der Screen bleibt ohne ihn vollständig
 - Die Partikel sind rein dekorativ und dürfen keine Klicks abfangen (`pointer-events-none` bleibt) und nicht vom Screenreader gelesen werden
 
+**Ruhige Richtungsanzeige (Refinement 2026-09-20):**
+- Die Pfeil-Rotation muss als **fortlaufender, unbeschränkter Winkel** geführt werden, nicht als auf `0..360` normalisierter Wert. Jede neue Zielrotation wird auf die kürzeste Winkeldifferenz zur aktuellen Rotation aufaddiert (`delta = ((neu - alt + 540) % 360) - 180`). Nur so animiert CSS den kürzeren Weg
+- Das Kompass-Heading wird geglättet, bevor es die Rotation speist. Winkel-Glättung muss über Sinus/Kosinus oder die o.g. Delta-Formel laufen — ein arithmetischer Mittelwert zweier Winkel ist an der 0°-Grenze falsch (Mittel aus 359° und 1° ergibt 180°, also genau die Gegenrichtung)
+- Zusätzlich zur Glättung eine **Mindestschwelle**: Änderungen unterhalb weniger Grad lösen keine Aktualisierung aus. Das hält die Nadel bei ruhig gehaltenem Gerät wirklich still und spart React-Re-Renders des gesamten Navigations-Screens bei ~60 Hz Sensorrate
+- Die Glättung gehört in den Hook (`use-device-orientation.ts`), nicht in die Darstellung — sie ist eine Eigenschaft des Sensorwerts, und der Hook ist der Ort, der ihn kennt. Der rohe Wert darf zusätzlich verfügbar bleiben, wenn Tests ihn brauchen
+- Die Heading-Quelle braucht eine **Karenzzeit**: Ein vorhandenes Kompass-Heading bleibt für einige Sekunden gültig, auch wenn einzelne Events ausbleiben. Erst danach übernimmt die GPS-Bewegungsrichtung. Ein Quellenwechsel darf nicht pro Sensor-Aussetzer ausgelöst werden
+- Die Zielpeilung wird gegen Positionsrauschen gedämpft — über eine geglättete Position, eine geglättete Peilung oder eine Gewichtung nach `accuracy`. Die konkrete Wahl trifft `/frontend` am Gerät; die Wirkung muss im Unit-Test nachweisbar sein
+- Die Dämpfung darf den richtungslosen Zustand (Edge Case 11) **nicht** verwässern: Liegt keine Heading-Quelle vor, bleibt der bestehende Suchzustand unverändert — nichts wird gegen einen alten Wert geglättet, der nicht mehr gilt
+- `needsCalibration` aus dem Hook muss im Navigations-Screen gerendert werden. Der Zustand existiert seit 2026-08-23 im Code und wird nirgends gelesen
+- Die Glättungs- und Wrap-around-Mathematik ist per **Unit-Test** abzusichern (synthetische Sensorfolgen, ausdrücklich inklusive 359°→1° und 1°→359°). Playwright kann den Magnetometer nicht emulieren — E2E kann diese Klasse nicht prüfen
+
 ## Open Questions
 - [ ] Ab welcher GPS-Genauigkeit (accuracy in Metern) soll eine Warnung angezeigt werden? (z.B. accuracy > 50m = "Signal ungenau")
 - [ ] Soll die Entfernung bei > 1000m als "1,2 km" statt "1200 m" angezeigt werden?
 - [ ] Soll die Stationsliste auch die Entfernung zur jeweiligen Station anzeigen (wenn GPS aktiv)?
 - [ ] Soll der richtungslose Pfeil langsam rotieren (Suchanimation) oder statisch ausgegraut bleiben? — Umsetzungsdetail für `/frontend`
+- [ ] Wie stark darf die Glättung sein, ohne dass sich die Nadel träge anfühlt? Richtwert aus der Diskussion: ~0,2–0,3s Nachlauf. Am Gerät zu entscheiden (2026-09-20)
+- [ ] Wie lang ist die Karenzzeit, bevor von Kompass auf GPS-Bewegungsrichtung umgeschaltet wird? Muss länger sein als übliche Sensor-Aussetzer und kürzer als ein echter Ausfall (2026-09-20)
+- [ ] Welche Dämpfung der Zielpeilung wirkt am besten — geglättete Position, geglättete Peilung oder `accuracy`-Gewichtung? Am Gerät zu entscheiden (2026-09-20)
+- [ ] Bleibt der Kalibrierungs-Hinweis dauerhaft stehen, solange `absolute === false`, oder blendet er nach einigen Sekunden aus? Auf Android meldet mancher Browser dauerhaft `absolute === false`, ohne dass eine Kalibrierung hilft (2026-09-20)
 - [ ] Soll die Ankunftserkennung bei sehr schlechter `accuracy` (> Stationsradius) unterdrückt werden, um Falsch-Ankünfte zu vermeiden? Hängt mit der offenen Genauigkeits-Frage oben zusammen.
 - [ ] Verhält sich **Android-Chrome** wie Desktop-Chrome (`requestPermission` vorhanden, liefert `denied`)? Lokal nicht messbar — kein Android-Gerät und kein lauffähiges Chromium-Binary. Der beschlossene `denied`-Rückfall macht die Antwort für die Korrektheit unkritisch, sie bliebe aber für die Testabdeckung interessant.
 - [x] Soll die Konfetti-Kanone aus einem Punkt oder aus zwei Punkten feuern? → Ein Punkt, unten mittig. Der Fächer öffnet sich über 62° und deckt damit die volle Breite ab; ein zweiter Ursprung hätte nichts hinzugefügt, was der Streuwinkel nicht schon leistet (2026-09-19)
@@ -190,6 +224,11 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 | Konfetti-Kanone statt Rieseln von oben | Rieseln ist Wetter, kein Jubel. Der Schuss von unten mittig nach oben ist die Geste, die den Erfolg meint — passend zum „aufgeregten Game-Host" des Design Systems statt zu einem ruhigen Hintergrundeffekt. | 2026-09-19 |
 | Ein Schuss, dann Ruhe (kein `infinite`) | Eine Kanone feuert einmal; eine dauerhaft feuernde wäre keine Feier, sondern Lärm. Danach gehört die Aufmerksamkeit dem CTA. Deckt sich mit der Motion-Regel des Design Systems: „keine Ambient-Loops". | 2026-09-19 |
 | Kanone auf beiden Screens (Ankunft **und** Outro) | Der Outro am Quest-Ende hat dasselbe Problem und würde sonst mit dem schwächeren Effekt zurückbleiben — ausgerechnet beim größeren Anlass. Eine Komponente, ein Verhalten, ein Ort für künftige Änderungen. | 2026-09-19 |
+| Ruhige Nadel hat Vorrang vor sofortiger Reaktion | Eine Nadel, die zittert und sich um sich selbst dreht, ist unbrauchbar — eine, die 0,2s nachläuft, fällt beim Laufen nicht auf. Der Spieler navigiert über Sekunden, nicht über Millisekunden. So verhalten sich auch Kompass-Apps. Auslöser: Handy-Test im Gelände 2026-09-20. | 2026-09-20 |
+| Kompass hat Vorrang vor der GPS-Bewegungsrichtung | Der Kompass zeigt, wohin das Gerät schaut — das ist, was der Spieler mit dem Pfeil abgleicht, wenn er das Handy vor sich hält. Die Bewegungsrichtung ist der Notnagel für Geräte ohne brauchbares Magnetometer, nicht die gleichwertige Alternative. | 2026-09-20 |
+| Quellenwechsel wird gedämpft statt hart geschaltet | Erwogen und verworfen: die Quelle beim Navigationsstart einmal festlegen und halten. Das wäre maximal ruhig, würde aber einen später verfügbaren Kompass dauerhaft verschenken — genau der Fall, den der "Kompass aktivieren"-Button vom 2026-09-06 herstellt. | 2026-09-20 |
+| Zielpeilung wird mitbehandelt, nicht auf später vertagt | Das Peilungsrauschen wird nah am Ziel am stärksten — also dort, wo der Spieler den Pfeil am dringendsten braucht. Eine Lösung nur für den Kompass hätte den Befund auf den letzten Metern bestehen lassen und wäre als "behoben" durchgegangen. | 2026-09-20 |
+| Kalibrierungs-Hinweis wird in diesem Refinement mitgezogen | Er steht seit 2026-08-23 als Acceptance Criterion in der Spec, der Hook setzt `needsCalibration` — gerendert wurde er nie. Ein unkalibriertes Magnetometer ist zugleich eine Ursache für genau die unruhige Nadel, um die es hier geht. Gleiche Datei, gleiche Fehlerklasse, gleicher Prüf-Durchlauf. | 2026-09-20 |
 | Pin wird freigestellt statt kaschiert | Erwogen: weiche CSS-Maske oder den Pin bewusst in ein Panel rahmen. Beides behandelt das Symptom — die Ursache ist, dass ein JPEG keinen Alpha-Kanal hat. Ein freigestelltes PNG löst es an der Wurzel und ist überall wiederverwendbar, wo der Pin künftig frei stehen soll. | 2026-09-19 |
 
 ### Technical Decisions
@@ -204,6 +243,12 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 | Haversine-Formel selbst implementiert | Triviale Mathematik (~10 Zeilen), spart eine Geo-Library-Dependency | 2026-08-24 |
 | GPS-Heading als Fallback statt "kein Pfeil" | Berechnung aus letzten 2 GPS-Positionen, universell verfügbar, nur in Bewegung genau | 2026-08-24 |
 | Einmalige Ankunftserkennung pro Station | Verhindert Flackern bei GPS-Drift am Radius-Rand, Station wird sofort als "besucht" persistiert | 2026-08-24 |
+| Rotation als fortlaufender Winkel statt normalisiert auf 0..360 | Die Normalisierung ist die Ursache der Rundumdrehung: CSS sieht 359°→1° als Rückwärtsweg über 358°. Ein aufaddierter, unbeschränkter Winkel mit kürzester Delta-Formel behebt das an der Wurzel, ohne die Transition abzuschalten. Symptombehandlung wäre gewesen, die Transition zu entfernen — dann ruckelt die Nadel bei jedem Update. | 2026-09-20 |
+| Glättung im Hook, nicht in der Darstellung | Die Glättung ist eine Eigenschaft des Sensorwerts, nicht der Optik. Im Hook profitiert jeder künftige Verbraucher davon, und die Mathematik ist ohne DOM testbar — was hier entscheidend ist, weil Playwright den Magnetometer nicht emulieren kann. | 2026-09-20 |
+| Winkel-Glättung über Delta/Trigonometrie, nie über arithmetische Mittel | Der Mittelwert aus 359° und 1° ist 180° — die exakte Gegenrichtung. Ein naiver gleitender Mittelwert würde die Nadel an der Nordgrenze umklappen lassen und damit einen zweiten Fehler derselben Klasse einbauen, den der Test nur mit einer Sequenz über 0° findet. | 2026-09-20 |
+| Zusätzliche Mindestschwelle neben der Glättung | Glättung allein lässt die Nadel weiter minimal kriechen und feuert bei ~60 Hz Sensorrate ein React-Re-Render des gesamten Navigations-Screens. Die Schwelle macht "steht still" zu einem echten Zustand statt zu einer sehr langsamen Bewegung. | 2026-09-20 |
+| Karenzzeit statt sofortigem Quellenwechsel | Ein einzelner ausbleibender Sensor-Event ist kein Kompassausfall. Ohne Karenzzeit schaltet die Logik zwischen zwei Bezugssystemen hin und her, die um bis zu 90° auseinanderliegen — der Wechsel selbst wird dann zur Hauptursache des Springens. | 2026-09-20 |
+| Unit-Tests als primäre Absicherung, Geräte-Test für das Gefühl | Die Fehlerklasse ist reine Winkelmathematik und im Unit-Test vollständig prüfbar (inkl. der 0°-Grenze). Ob sich die Dämpfung richtig anfühlt, kann kein Test beantworten — das entscheidet der Betreiber am Gerät, so wie er den Befund auch gefunden hat. | 2026-09-20 |
 | `nextStationName` wird über die ganze Kette entfernt, nicht nur ignoriert | Eine Prop, die durch drei Komponenten gereicht und nirgends gelesen wird, ist eine Falle für den Nächsten, der sie für noch benutzt hält. Mit der Karte geht der Wert, der sie gespeist hat. | 2026-09-19 |
 | Freistellung als eingechecktes Skript, nicht von Hand | Dasselbe Muster wie bei den PWA-Icons (PROJ-12): `sips` reichte dort nicht, ein eingechecktes Swift/CoreGraphics-Skript machte das Ergebnis reproduzierbar statt einmalig. Ein von Hand freigestelltes Asset lässt sich nach einer Quellbild-Änderung nicht nachvollziehbar erneuern. | 2026-09-19 |
 | Neues PNG neben dem JPEG, kein Ersatz | `mark-pin.jpg` wird an weiteren Stellen und als Quelle der PWA-Icons genutzt. Ein Austausch an Ort und Stelle würde Screens verändern, die niemand geprüft hat; die beiden Celebration-Screens ziehen auf das PNG, der Rest bleibt unberührt. | 2026-09-19 |

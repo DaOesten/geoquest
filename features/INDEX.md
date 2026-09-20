@@ -18,7 +18,7 @@
 |----|---------|----------|--------------|--------|------|---------|
 | PROJ-1 | App Shell & Mode Switch | P0 | None | Deployed | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
-| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
+| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | In Progress | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
 | PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
@@ -644,3 +644,25 @@ Gemessen: Kontrast schlechtester Wert **6.61:1** (Vorgabe 4.5:1), Tap-Ziele 44px
 **Zwei Beobachtungen ohne Bug-Status:** Der Import-FAB überlappt die letzte Quest-Karte samt Titel — gegengeprüft mit weggeklicktem Hinweis: **identisch**, also vorbestehend aus PROJ-6. Und die lokalen Konsolenfehler stammen von Vercel Analytics, das nur in Production existiert.
 
 **Nicht abgedeckt:** die echte Safe Area am iPhone (Playwright meldet `env(safe-area-inset-bottom)` als 0 — gemessen wurde der 14px-Grundwert), Bildschirmtastatur, Firefox, und der echte `beforeinstallprompt`.
+
+## Offenes Refinement: Ruhige Kompassnadel (2026-09-20)
+**PROJ-3** geht von Deployed zurück auf In Progress. Betreiber-Befund aus einem Handy-Test im Gelände: *"die Kompassnadel springt ab und zu wild hin und her, dreht sich um sich selbst"* — Navigation war über die Entfernungsanzeige möglich, aber der Pfeil ist das Kern-Element dieses Features und war unbrauchbar.
+
+**Vier Ursachen, alle im Code bestätigt:**
+
+1. **Der 359°→0°-Sprung wird als volle Gegendrehung animiert.** `arrowRotation` ist in `navigation-screen.tsx:80` auf `0..360` normalisiert und speist eine CSS-Transition. Geht der Wert von 359° auf 1°, animiert CSS den langen Weg — fast eine ganze Umdrehung für 2° reale Änderung. Das ist das gemeldete "dreht sich um sich selbst", und es tritt systematisch auf, wenn das Ziel ungefähr hinter dem Spieler liegt.
+2. **Der Sensorwert wird ungefiltert durchgereicht.** `use-device-orientation.ts` schreibt jeden `deviceorientation`-Event (auf iOS ~60 Hz) direkt in den State — kein Tiefpass, keine Mindestschwelle. Jedes Zittern der Hand landet im Pfeil und löst zusätzlich ein Re-Render des ganzen Screens aus.
+3. **Die Heading-Quelle kippt zwischen zwei Bezugssystemen.** Fällt `orientation.heading` auf `null`, springt die Logik auf die GPS-Bewegungsrichtung. Kompass (wohin das Gerät zeigt) und Bewegungsrichtung (wohin der Spieler läuft) liegen beim Blick aufs Handy leicht 90° auseinander. Da `headingFromPositions` unter 2 m Strecke `null` liefert, kann der Wechsel im Stand mehrfach pro Minute eintreten.
+4. **Die Zielpeilung rauscht mit der GPS-Position.** Bei 15 m Ungenauigkeit auf 30 m Distanz sind das bis zu ±30° Peilungsänderung im Stillstand — die Nadel wird ausgerechnet auf den letzten Metern am unruhigsten.
+
+Warum die Entfernungsanzeige funktionierte: Sie ist ein gerundeter Skalar ohne Wrap-around — dasselbe Rauschen fällt dort schlicht nicht auf.
+
+**Entschieden (alle vier Punkte vom Betreiber bestätigt):** Rotation als fortlaufender, unbeschränkter Winkel mit kürzester Delta-Formel statt normalisiert; Glättung plus Mindestschwelle im Hook, Zielverhalten "ruhig und gedämpft" (~0,2–0,3 s Nachlauf, Nadel steht still wenn der Spieler still steht); Kompass hat Vorrang mit Karenzzeit vor dem Quellenwechsel, echte Wechsel werden weich überblendet; und die Zielpeilung wird mitbehandelt statt vertagt — der Befund wäre sonst auf den letzten Metern bestehen geblieben und als "behoben" durchgegangen.
+
+**Mitgenommen auf Betreiber-Entscheidung:** Der Kalibrierungs-Hinweis "Bewege dein Handy in einer 8". Er steht seit 2026-08-23 als Acceptance Criterion in der Spec und der Hook setzt `needsCalibration` — gerendert wurde er nie, weil `navigation-screen.tsx` den Wert nirgends ausliest. Ein unkalibriertes Magnetometer ist zugleich eine der Ursachen für genau die unruhige Nadel. Gleiche Datei, gleiche Fehlerklasse, gleicher Prüf-Durchlauf.
+
+**Der Fallstrick für `/frontend`, vorab benannt:** Winkel-Glättung darf **nie** über einen arithmetischen Mittelwert laufen — das Mittel aus 359° und 1° ist 180°, also die exakte Gegenrichtung. Das wäre ein zweiter Fehler derselben Klasse, den nur ein Test mit einer Sequenz über die 0°-Grenze findet. Erforderlich sind Sinus/Kosinus oder dieselbe Delta-Formel wie bei der Rotation.
+
+**Abnahme:** Playwright kann den Magnetometer nicht emulieren — diese Fehlerklasse ist per E2E nicht prüfbar. Die Glättungs- und Wrap-around-Mathematik wird per Unit-Test abgesichert (synthetische Sensorfolgen, ausdrücklich inklusive 359°→1° und 1°→359°); das tatsächliche Gefühl auf der Straße prüft der Betreiber am Gerät.
+
+Spec ist aktualisiert (9 neue Acceptance Criteria im Block „Ruhige Richtungsanzeige", Edge Cases 18–22, 9 Technical Requirements, 5 Produkt- und 6 technische Entscheidungen, 4 neue Open Questions).
