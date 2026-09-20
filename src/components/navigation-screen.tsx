@@ -8,6 +8,7 @@ import { DirectionArrow } from "./direction-arrow";
 import { ConfettiEffect } from "./confetti-effect";
 import { useDeviceOrientation } from "@/hooks/use-device-orientation";
 import { haversine, bearing, headingFromPositions, getDistanceColor } from "@/lib/geo-utils";
+import { useArrowRotation } from "@/hooks/use-arrow-rotation";
 import type { Station } from "@/lib/quest-schema";
 import type { UseGeolocationReturn } from "@/hooks/use-geolocation";
 
@@ -27,6 +28,7 @@ const COLOR_MAP = {
   green: "text-gq-teal",
 } as const;
 
+
 export function NavigationScreen({
   station,
   stationIndex,
@@ -42,6 +44,7 @@ export function NavigationScreen({
     [{ lat: number; lng: number } | null, { lat: number; lng: number } | null]
   >([null, null]);
 
+
   const { position, signal } = geoState;
 
   // Track position history — "adjust state during render" pattern
@@ -56,31 +59,36 @@ export function NavigationScreen({
 
   // Compute navigation data inline from current state
   let distance: number | null = null;
-  let arrowRotation = 0;
+  let targetBearing: number | null = null;
   let isNear = false;
   let compassAvailable = false;
   let headingSource: "compass" | "movement" | "none" = "none";
+  let deviceHeading: number | null = null;
 
   if (position) {
     distance = Math.round(haversine(position.lat, position.lng, station.lat, station.lng));
-    const targetBearing = bearing(position.lat, position.lng, station.lat, station.lng);
+    targetBearing = bearing(position.lat, position.lng, station.lat, station.lng);
 
-    let deviceHeading: number | null = orientation.heading;
-    compassAvailable = deviceHeading !== null;
-
-    if (!compassAvailable && prevPos) {
-      deviceHeading = headingFromPositions(prevPos.lat, prevPos.lng, position.lat, position.lng);
-    }
-
-    if (!compassAvailable && prevPos) {
-      headingSource = deviceHeading !== null ? "movement" : "none";
-    } else if (compassAvailable) {
+    // Kompass hat Vorrang und behält ihn, solange der Hook ihn als frisch
+    // meldet — auch wenn einzelne Sensor-Events ausbleiben (Edge Case 20).
+    // Ohne diese Karenzzeit kippt die Anzeige zwischen zwei Bezugssystemen,
+    // die um bis zu 90° auseinanderliegen; der Wechsel selbst wird dann zur
+    // Hauptursache des Springens.
+    if (orientation.compassFresh && orientation.heading !== null) {
+      deviceHeading = orientation.heading;
       headingSource = "compass";
+    } else if (prevPos) {
+      deviceHeading = headingFromPositions(prevPos.lat, prevPos.lng, position.lat, position.lng);
+      headingSource = deviceHeading !== null ? "movement" : "none";
     }
 
-    arrowRotation = deviceHeading !== null ? (targetBearing - deviceHeading + 360) % 360 : 0;
+    compassAvailable = headingSource === "compass";
     isNear = distance <= 50;
   }
+
+  // Fortlaufende Rotation samt Peilungsdämpfung — die Akkumulation liegt im
+  // Hook, damit dieser Render rein bleibt (Refinement 2026-09-20).
+  const arrowRotation = useArrowRotation({ targetBearing, deviceHeading, distance });
 
   const directionUnknown = position !== null && headingSource === "none";
 
@@ -174,9 +182,14 @@ export function NavigationScreen({
           )
         )}
 
+        {/* Kalibrierungs-Hinweis (Edge Case 22). Stand bis 2026-09-20 mit 9px
+            unter der 16px-Mindestgröße des PRD und war damit praktisch
+            unlesbar — ausgerechnet der Hinweis, der eine springende Nadel
+            erklärt. `text-gq-lime` ist ein fester Hex-Wert und nur deshalb
+            zulässig, weil play/layout.tsx das Theme fest auf dark stellt. */}
         {orientation.needsCalibration && (
-          <p className="text-tech text-[9px] tracking-[0.12em] text-gq-lime text-center max-w-[200px]">
-            Bewege dein Handy in einer 8 zur Kalibrierung.
+          <p className="font-body text-base text-gq-lime text-center max-w-[260px]">
+            Bewege dein Handy in einer 8, damit sich der Kompass kalibriert.
           </p>
         )}
       </div>

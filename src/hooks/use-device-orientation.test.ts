@@ -196,3 +196,139 @@ describe("Nicht unterstützte Umgebung", () => {
     (window as unknown as Record<string, unknown>).DeviceOrientationEvent = DOE;
   });
 });
+
+/**
+ * Refinement 2026-09-20: Der rohe Sensorwert landete ungefiltert im State.
+ * Auf dem Gerät schwankt `webkitCompassHeading` um mehrere Grad und feuert mit
+ * ~60 Hz — die Nadel zitterte, und der Navigations-Screen rendert bei jedem
+ * Event neu (Edge Case 19).
+ */
+describe("Glättung des Kompass-Headings (Edge Case 19)", () => {
+  /** Feuert ein deviceorientation-Event mit webkitCompassHeading. */
+  function fireHeading(heading: number) {
+    const event = new Event("deviceorientation") as DeviceOrientationEvent & {
+      webkitCompassHeading?: number;
+    };
+    Object.defineProperty(event, "webkitCompassHeading", {
+      value: heading,
+      configurable: true,
+    });
+    window.dispatchEvent(event);
+  }
+
+  beforeEach(() => {
+    // Nicht-iOS: der Listener hängt sich direkt im Effekt ein.
+    setUserAgent(CHROME_UA);
+    setRequestPermission(null);
+  });
+
+  it("übernimmt den allerersten Wert unverändert", () => {
+    // Gegen null zu glätten gäbe es nichts — und ein Einschwingen von 0° aus
+    // wäre eine Anfangsdrehung, die der Sensor nie gemeldet hat.
+    const { result } = renderHook(() => useDeviceOrientation());
+    act(() => fireHeading(120));
+    expect(result.current.heading).toBeCloseTo(120, 6);
+  });
+
+  it("dämpft Rauschen um einen ruhenden Wert", () => {
+    const { result } = renderHook(() => useDeviceOrientation());
+    act(() => fireHeading(90));
+
+    // Gerät liegt still, Sensor schwankt um ±6°. Gemessen wird der **größte
+    // Ausschlag über die ganze Sequenz**, nicht der Endwert: Ein Endwert allein
+    // besteht diesen Test auch ohne jede Glättung, wenn die Sequenz zufällig
+    // nah an der Mitte endet. Genau das ist mir hier zuerst passiert.
+    const noise = [96, 84, 95, 85, 94, 86, 93, 87, 92, 88];
+    let maxDeviation = 0;
+    for (const raw of noise) {
+      act(() => fireHeading(raw));
+      maxDeviation = Math.max(
+        maxDeviation,
+        Math.abs(((result.current.heading! - 90 + 540) % 360) - 180)
+      );
+    }
+
+    // Das Rohsignal schlägt um 6° aus, der geglättete Wert muss klar darunter
+    // bleiben.
+    expect(maxDeviation).toBeLessThan(3);
+  });
+
+  it("klappt an der Nordgrenze nicht in die Gegenrichtung um", () => {
+    // Der naheliegende gleitende Mittelwert aus 350 und 10 wäre 180 — also
+    // exakt rückwärts. Genau dieser Fehlertyp darf hier nicht entstehen.
+    const { result } = renderHook(() => useDeviceOrientation());
+    act(() => fireHeading(350));
+    act(() => fireHeading(10));
+
+    // Der Zwischenwert ist der aussagekräftige: Bei korrekter Glättung liegt er
+    // zwischen 350 und 10 — also **nahe Nord** —, bei einem arithmetischen
+    // Mittel dagegen bei ~180, der exakten Gegenrichtung.
+    const h = result.current.heading!;
+    const distanceToNorth = Math.min(h, 360 - h);
+    expect(distanceToNorth).toBeLessThan(15);
+    expect(Math.abs(h - 180)).toBeGreaterThan(90);
+
+    // Und die Glättung muss hier wirklich greifen: Der Wert darf nicht einfach
+    // der durchgereichte Rohwert 10 sein.
+    expect(h).not.toBeCloseTo(10, 3);
+    expect(h).toBeGreaterThan(340);
+  });
+
+  it("folgt einer echten Drehung vollständig", () => {
+    // Die Dämpfung darf nicht bedeuten, dass die Nadel das Ziel nie erreicht.
+    const { result } = renderHook(() => useDeviceOrientation());
+    act(() => fireHeading(0));
+    for (let i = 0; i < 80; i++) {
+      act(() => fireHeading(270));
+    }
+    const h = result.current.heading!;
+    expect(Math.abs(((h - 270 + 540) % 360) - 180)).toBeLessThan(1);
+  });
+
+  it("stellt den ungeglätteten Wert weiterhin bereit", () => {
+    const { result } = renderHook(() => useDeviceOrientation());
+    act(() => fireHeading(100));
+    act(() => fireHeading(160));
+    expect(result.current.rawHeading).toBeCloseTo(160, 6);
+    // Das geglättete Heading hinkt bewusst hinterher.
+    expect(result.current.heading).toBeLessThan(160);
+  });
+
+  it("aktualisiert den State nicht bei Änderungen unterhalb der Schwelle", () => {
+    // Das ist der Teil, der den ganzen Navigations-Screen vor ~60 Re-Renders
+    // pro Sekunde bewahrt.
+    const { result } = renderHook(() => useDeviceOrientation());
+    act(() => fireHeading(45));
+    const before = result.current.heading;
+
+    // Eine Abweichung von 1° ergibt bei Faktor 0.15 rund 0.15° Bewegung —
+    // unterhalb der Schwelle von 0.75°.
+    act(() => fireHeading(46));
+    expect(result.current.heading).toBe(before);
+  });
+
+  it("meldet Kalibrierungsbedarf bei nicht-absolutem Heading (Edge Case 22)", () => {
+    const { result } = renderHook(() => useDeviceOrientation());
+    act(() => {
+      const event = new Event("deviceorientation") as DeviceOrientationEvent;
+      Object.defineProperty(event, "alpha", { value: 90, configurable: true });
+      Object.defineProperty(event, "absolute", { value: false, configurable: true });
+      window.dispatchEvent(event);
+    });
+    expect(result.current.needsCalibration).toBe(true);
+  });
+
+  it("nimmt den Kalibrierungs-Hinweis zurück, sobald ein absolutes Heading kommt", () => {
+    const { result } = renderHook(() => useDeviceOrientation());
+    act(() => {
+      const event = new Event("deviceorientation") as DeviceOrientationEvent;
+      Object.defineProperty(event, "alpha", { value: 90, configurable: true });
+      Object.defineProperty(event, "absolute", { value: false, configurable: true });
+      window.dispatchEvent(event);
+    });
+    expect(result.current.needsCalibration).toBe(true);
+
+    act(() => fireHeading(90));
+    expect(result.current.needsCalibration).toBe(false);
+  });
+});

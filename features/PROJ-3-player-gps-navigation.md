@@ -79,15 +79,15 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 - [ ] Angenommen der Spieler tippt "Kompass aktivieren", wenn die Freigabe abgelehnt wird oder fehlschlägt, dann erscheint sofort der "Laufe ein paar Schritte"-Hinweis — der Screen bleibt nie ohne Erklärung zurück
 
 **Ruhige Richtungsanzeige (Refinement 2026-09-20):**
-- [ ] Angenommen der Spieler dreht sich langsam im Kreis, wenn der Pfeil die 0°-Grenze passiert (z.B. von 359° auf 1°), dann dreht er sich **den kürzeren Weg** um 2° weiter — nicht um 358° zurück
-- [ ] Angenommen der Spieler hält das Handy still in der Hand, wenn der Kompass um wenige Grad rauscht, dann bleibt der Pfeil sichtbar ruhig stehen
-- [ ] Angenommen der Spieler dreht das Handy zügig um 90°, wenn er dabei auf den Pfeil schaut, dann folgt der Pfeil der Drehung sichtbar verzögert, aber ohne Ruckeln, und steht nach spätestens einer knappen Sekunde still
-- [ ] Angenommen der Kompass liefert Werte, wenn einzelne Sensor-Events ausbleiben, dann bleibt der Kompass die Heading-Quelle — es wird nicht bei jedem Aussetzer auf die GPS-Bewegungsrichtung umgeschaltet
-- [ ] Angenommen die Heading-Quelle wechselt tatsächlich (Kompass fällt dauerhaft aus oder wird verfügbar), wenn der Wechsel eintritt, dann dreht sich der Pfeil weich auf die neue Richtung, statt schlagartig zu springen
-- [ ] Angenommen der Spieler nähert sich dem Ziel auf wenige Meter, wenn die GPS-Position innerhalb ihrer Genauigkeit schwankt, dann springt der Pfeil nicht wild — die Zielpeilung ist gegen Positionsrauschen gedämpft
-- [ ] Angenommen der Pfeil ist richtungslos (Edge Case 11), wenn keine Heading-Quelle vorliegt, dann gilt die Dämpfung nicht und der bestehende Suchzustand bleibt unverändert sichtbar
-- [ ] Angenommen das Gerät meldet ein nicht-absolutes Heading, wenn der Navigations-Screen offen ist, dann erscheint der Kalibrierungs-Hinweis "Bewege dein Handy in einer 8" — sichtbar und dem Pfeil zugeordnet
-- [ ] Angenommen der Kalibrierungs-Hinweis wird angezeigt, wenn das Gerät danach ein absolutes Heading liefert, dann verschwindet er wieder, ohne dass der Spieler etwas tun muss
+- [x] Angenommen der Spieler dreht sich langsam im Kreis, wenn der Pfeil die 0°-Grenze passiert (z.B. von 359° auf 1°), dann dreht er sich **den kürzeren Weg** um 2° weiter — nicht um 358° zurück
+- [x] Angenommen der Spieler hält das Handy still in der Hand, wenn der Kompass um wenige Grad rauscht, dann bleibt der Pfeil sichtbar ruhig stehen
+- [x] Angenommen der Spieler dreht das Handy zügig um 90°, wenn er dabei auf den Pfeil schaut, dann folgt der Pfeil der Drehung sichtbar verzögert, aber ohne Ruckeln, und steht nach spätestens einer knappen Sekunde still
+- [x] Angenommen der Kompass liefert Werte, wenn einzelne Sensor-Events ausbleiben, dann bleibt der Kompass die Heading-Quelle — es wird nicht bei jedem Aussetzer auf die GPS-Bewegungsrichtung umgeschaltet
+- [x] Angenommen die Heading-Quelle wechselt tatsächlich (Kompass fällt dauerhaft aus oder wird verfügbar), wenn der Wechsel eintritt, dann dreht sich der Pfeil weich auf die neue Richtung, statt schlagartig zu springen
+- [x] Angenommen der Spieler nähert sich dem Ziel auf wenige Meter, wenn die GPS-Position innerhalb ihrer Genauigkeit schwankt, dann springt der Pfeil nicht wild — die Zielpeilung ist gegen Positionsrauschen gedämpft
+- [x] Angenommen der Pfeil ist richtungslos (Edge Case 11), wenn keine Heading-Quelle vorliegt, dann gilt die Dämpfung nicht und der bestehende Suchzustand bleibt unverändert sichtbar
+- [x] Angenommen das Gerät meldet ein nicht-absolutes Heading, wenn der Navigations-Screen offen ist, dann erscheint der Kalibrierungs-Hinweis "Bewege dein Handy in einer 8" — sichtbar und dem Pfeil zugeordnet
+- [x] Angenommen der Kalibrierungs-Hinweis wird angezeigt, wenn das Gerät danach ein absolutes Heading liefert, dann verschwindet er wieder, ohne dass der Spieler etwas tun muss
 
 **Ankunft:**
 - [ ] Angenommen der Spieler befindet sich innerhalb des Ankunftsradius einer Station, wenn die Position erkannt wird, dann vibriert das Gerät und ein "Angekommen!"-Hinweis erscheint
@@ -134,7 +134,9 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 19. **Sensorrauschen bei ruhig gehaltenem Gerät:** `webkitCompassHeading` schwankt am echten Gerät um mehrere Grad, besonders neben Metall, in Gebäuden oder bei unkalibriertem Magnetometer. Ungefiltert landet jedes Zittern der Hand im Pfeil. Die Nadel muss stillstehen, wenn der Spieler stillsteht — auch wenn der Sensor das nicht tut.
 20. **Wechsel zwischen Kompass und GPS-Bewegungsrichtung:** Die beiden Quellen messen Verschiedenes — der Kompass, wohin das Gerät zeigt; die Bewegungsrichtung, wohin der Spieler läuft. Beim Blick aufs Handy in der Hand liegen leicht 90° dazwischen. Fällt der Kompass kurz aus und kommt zurück, reißt der Pfeil zweimal herum. Zusätzlich liefert die Bewegungsrichtung bei Strecken unter 2 m gar kein Heading, wodurch der Wechsel im Stand mehrfach pro Minute eintreten kann.
 21. **Zielpeilung rauscht mit der GPS-Genauigkeit:** Die Peilung wird aus der rohen Position berechnet. Nah am Ziel schlägt Positionsrauschen überproportional durch — bei 15 m Ungenauigkeit auf 30 m Distanz bis zu ±30° Peilungsänderung, ohne dass sich der Spieler bewegt. Die Nadel wird also ausgerechnet auf den letzten Metern am unruhigsten.
-22. **Unkalibriertes Magnetometer:** Das Gerät meldet ein relatives statt absolutes Heading (`event.absolute === false`). Der Hook erkennt das bereits als `needsCalibration`, der Navigations-Screen liest den Wert aber nirgends aus — der seit 2026-08-23 spezifizierte Hinweis "Bewege dein Handy in einer 8" wurde nie gerendert. Ein unkalibrierter Sensor ist zugleich eine der Ursachen für eine unruhige oder falsch zeigende Nadel.
+22. **Unkalibriertes Magnetometer:** Das Gerät meldet ein relatives statt absolutes Heading (`event.absolute === false`). Der Hook erkennt das als `needsCalibration`, und der Navigations-Screen rendert den Hinweis "Bewege dein Handy in einer 8" — allerdings mit **9px Schriftgröße**, also weit unter der 16px-Mindestgröße des PRD und praktisch unlesbar. Ausgerechnet der Hinweis, der eine springende Nadel erklärt, war damit unsichtbar. Ein unkalibrierter Sensor ist zugleich eine der Ursachen für eine unruhige oder falsch zeigende Nadel.
+
+    *Korrektur zur ersten Fassung dieses Refinements (2026-09-20):* Dort stand, der Hinweis werde "nie gerendert". Das war falsch — er wird seit jeher gerendert, nur zu klein. Der Befund bleibt derselbe, die Ursache ist eine andere.
 
 
 ## Technical Requirements
@@ -176,7 +178,7 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 - Die Heading-Quelle braucht eine **Karenzzeit**: Ein vorhandenes Kompass-Heading bleibt für einige Sekunden gültig, auch wenn einzelne Events ausbleiben. Erst danach übernimmt die GPS-Bewegungsrichtung. Ein Quellenwechsel darf nicht pro Sensor-Aussetzer ausgelöst werden
 - Die Zielpeilung wird gegen Positionsrauschen gedämpft — über eine geglättete Position, eine geglättete Peilung oder eine Gewichtung nach `accuracy`. Die konkrete Wahl trifft `/frontend` am Gerät; die Wirkung muss im Unit-Test nachweisbar sein
 - Die Dämpfung darf den richtungslosen Zustand (Edge Case 11) **nicht** verwässern: Liegt keine Heading-Quelle vor, bleibt der bestehende Suchzustand unverändert — nichts wird gegen einen alten Wert geglättet, der nicht mehr gilt
-- `needsCalibration` aus dem Hook muss im Navigations-Screen gerendert werden. Der Zustand existiert seit 2026-08-23 im Code und wird nirgends gelesen
+- Der Kalibrierungs-Hinweis wird bereits gerendert, aber mit 9px. Er muss auf mindestens 16px (PRD-Vorgabe für Body-Text) und in eine Body-Schrift statt der Tech-Schrift
 - Die Glättungs- und Wrap-around-Mathematik ist per **Unit-Test** abzusichern (synthetische Sensorfolgen, ausdrücklich inklusive 359°→1° und 1°→359°). Playwright kann den Magnetometer nicht emulieren — E2E kann diese Klasse nicht prüfen
 
 ## Open Questions
@@ -228,7 +230,7 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 | Kompass hat Vorrang vor der GPS-Bewegungsrichtung | Der Kompass zeigt, wohin das Gerät schaut — das ist, was der Spieler mit dem Pfeil abgleicht, wenn er das Handy vor sich hält. Die Bewegungsrichtung ist der Notnagel für Geräte ohne brauchbares Magnetometer, nicht die gleichwertige Alternative. | 2026-09-20 |
 | Quellenwechsel wird gedämpft statt hart geschaltet | Erwogen und verworfen: die Quelle beim Navigationsstart einmal festlegen und halten. Das wäre maximal ruhig, würde aber einen später verfügbaren Kompass dauerhaft verschenken — genau der Fall, den der "Kompass aktivieren"-Button vom 2026-09-06 herstellt. | 2026-09-20 |
 | Zielpeilung wird mitbehandelt, nicht auf später vertagt | Das Peilungsrauschen wird nah am Ziel am stärksten — also dort, wo der Spieler den Pfeil am dringendsten braucht. Eine Lösung nur für den Kompass hätte den Befund auf den letzten Metern bestehen lassen und wäre als "behoben" durchgegangen. | 2026-09-20 |
-| Kalibrierungs-Hinweis wird in diesem Refinement mitgezogen | Er steht seit 2026-08-23 als Acceptance Criterion in der Spec, der Hook setzt `needsCalibration` — gerendert wurde er nie. Ein unkalibriertes Magnetometer ist zugleich eine Ursache für genau die unruhige Nadel, um die es hier geht. Gleiche Datei, gleiche Fehlerklasse, gleicher Prüf-Durchlauf. | 2026-09-20 |
+| Kalibrierungs-Hinweis wird in diesem Refinement mitgezogen | Er steht seit 2026-08-23 als Acceptance Criterion in der Spec und wird auch gerendert — aber mit 9px, also unlesbar. Ein unkalibrierter Sensor ist zugleich eine Ursache für genau die unruhige Nadel, um die es hier geht. Gleiche Datei, gleiche Fehlerklasse, gleicher Prüf-Durchlauf. | 2026-09-20 |
 | Pin wird freigestellt statt kaschiert | Erwogen: weiche CSS-Maske oder den Pin bewusst in ein Panel rahmen. Beides behandelt das Symptom — die Ursache ist, dass ein JPEG keinen Alpha-Kanal hat. Ein freigestelltes PNG löst es an der Wurzel und ist überall wiederverwendbar, wo der Pin künftig frei stehen soll. | 2026-09-19 |
 
 ### Technical Decisions
@@ -425,6 +427,53 @@ Keine neuen Packages erforderlich. Alle genutzten APIs:
 - Browser: Geolocation API, DeviceOrientation API, Vibration API
 - React: useState, useEffect, useCallback, useRef
 - Bestehend: Tailwind CSS, Lucide Icons, shadcn/ui Components
+
+## Implementation Notes — Ruhige Kompassnadel (2026-09-20)
+
+Vier Dateien geändert, zwei neu. Kein neues Paket, keine neue Route.
+
+| Datei | Änderung |
+|-------|----------|
+| `src/lib/geo-utils.ts` | 4 neue reine Funktionen: `shortestAngleDelta`, `unwrapAngle`, `smoothAngle`, `angleDistance` |
+| `src/hooks/use-arrow-rotation.ts` | **neu** — führt die fortlaufende Rotation und dämpft die Zielpeilung |
+| `src/hooks/use-device-orientation.ts` | Glättung, Mindestschwelle, `compassFresh`-Karenzzeit, `rawHeading` |
+| `src/components/navigation-screen.tsx` | nutzt den neuen Hook; Kompass-Vorrang über `compassFresh`; Kalibrierungs-Hinweis auf 16px |
+| `src/components/direction-arrow.tsx` | Transition 320ms → 220ms, Prop-Vertrag dokumentiert |
+| Tests | `use-arrow-rotation.test.ts` (neu), Erweiterungen in `geo-utils.test.ts` und `use-device-orientation.test.ts`, `tests/proj-3-ruhige-kompassnadel.spec.ts` (neu) |
+
+**Zwei echte Fehler in meiner eigenen Implementierung, beide von Tests gefunden:**
+
+1. **`shortestAngleDelta` war bei negativen Eingaben falsch.** Die naheliegende Formel `((to - from + 540) % 360) - 180` liefert bei negativen Operanden ein negatives Modulo — gemessen ergab sie `-184`, also außerhalb des zugesicherten Bereichs. Das war kein akademischer Fall: Die fortlaufende Rotation läuft ins Negative, sobald der Spieler sich gegen den Uhrzeigersinn über Nord dreht. Behoben durch zweifaches Modulo (erst normalisieren, dann spiegeln).
+2. **Refs während des Renders zu mutieren war nicht haltbar.** Der erste Entwurf führte Rotation und Peilung in Refs direkt im Render — `npm run lint` meldete zu Recht `react-hooks/purity` und `Cannot access refs during render`. Unter konkurrierendem Rendering darf React einen Render verwerfen und wiederholen; jeder Durchlauf hätte den Winkel erneut weitergedreht. Deshalb `use-arrow-rotation.ts` mit Akkumulation in einem Effekt. Nebeneffekt: Die Logik ist jetzt isoliert testbar.
+
+**Ein `Date.now()` im Render war derselbe Fehler in klein.** Die Karenzzeit für den Quellenwechsel lag zuerst im Navigations-Screen. Sie ist in den Hook gewandert (`compassFresh` plus Timer) — dorthin, wo der Sensor ohnehin verwaltet wird.
+
+**Zwei Tests, die grün waren, ohne etwas zu prüfen.** Die Gegenprobe (ungeglättete Fassung einspielen) ließ nur 2 der 4 Glättungstests fallen. Ursache: Beide prüften ausschließlich den **Endwert** einer Rauschsequenz — und meine Sequenz endete zufällig 2° von der Mitte entfernt, also innerhalb der Toleranz auch ohne jede Glättung. Sie messen jetzt den größten Ausschlag über die ganze Sequenz bzw. den Zwischenwert an der Nordgrenze; danach fallen alle 4. **Aufgefallen ist das nur durch die Gegenprobe, nicht durch den grünen Lauf.**
+
+**Ein Fehler in meiner Erwartung, nicht im Code:** Ein Test erwartete nach einer Peilung von 359° bei Heading 0 den Wert `359`. Richtig ist `-1` — von 0 aus ist 359° eine Drehung um 1° rückwärts, und genau das ist der Sinn des fortlaufenden Winkels. Der Test prüft jetzt die Schrittweite (2°) statt eines Absolutwerts.
+
+**Korrektur zur Analyse:** Der Kalibrierungs-Hinweis wurde entgegen der ersten Fassung dieses Refinements **immer gerendert** — aber mit 9px in der Tech-Schrift, also weit unter der 16px-Vorgabe des PRD. Er steht jetzt mit 16px in der Body-Schrift.
+
+**Parameter, am Bildschirm gewählt:** Glättungsfaktor 0,15 pro Event (bei ~60 Hz rund 90 % einer Drehung in ~0,2 s), Mindestschwelle 0,75°, Karenzzeit 3 s, Peilungsdämpfung 0,25 unterhalb von 200 m Entfernung. Die CSS-Transition ist von 320 ms auf 220 ms verkürzt: Bei 320 ms addierte sich die Transition sichtbar zur Glättung.
+
+**Der lehrreichste Fehler: Der Test für den Hauptbefund prüfte den falschen Nulldurchgang.** Der E2E-Test „dreht beim Nulldurchgang den kurzen Weg" ließ den Spieler sein **Heading** durch den Nordpunkt drehen (10° → 350°) — und bestand deshalb auch mit der fehlerhaften, normalisierten Fassung. Der Grund: Die Rotation ist `Peilung − Heading`. Bei einer Peilung von rund 40° wandert sie dabei nur von 30° auf 50°, kommt der 0°-Grenze also nie nahe. Der Nulldurchgang der *Rotation* liegt dort, wo das Heading die *Peilung* kreuzt — wenn das Ziel genau vor oder hinter dem Spieler liegt. Der Test ermittelt die Peilung jetzt und führt das Heading gezielt an ihr entlang; zusätzlich prüft er, dass der Durchgang überhaupt stattgefunden hat. **Erst danach fällt er bei der Gegenprobe.** Aufgefallen ist das ausschließlich durch die Gegenprobe — im normalen Lauf war er grün.
+
+**Ein falscher Locator, kein Produktfehler:** Der Test auf die Entfernung suchte per `/^\d+$/` nach einer reinen Zahl. Die Anzeige rendert aber `<div>1234<span>m</span></div>`, der Textinhalt ist also `"1234m"` — der Locator konnte nie treffen. Er prüft jetzt das Format `<Zahl>m` und zusätzlich, dass der Wert plausibel ist.
+
+**Gegenproben, alle mit dem erwarteten Ergebnis:**
+- Normalisierte Rotation zurück → genau 2 Tests fallen (Nordgrenze, volle Drehung)
+- Glättung entfernt → genau 4 Tests fallen (nach der Schärfung; vorher nur 2)
+- Peilungsdämpfung entfernt → genau 1 Test fällt
+- **E2E gegen die fehlerhafte Fassung (normalisierte Rotation + keine Glättung) → 8 von 16 Tests fallen**, darunter beide Nulldurchgangs-Tests auf beiden Engines. Produktcode danach per `diff` als byte-identisch bestätigt
+
+**Suiten gegen den Production-Build:** Unit **258/258** (vorher 226 — 32 neue). E2E über beide Engines **994 passed / 52 skipped / 0 failed / 0 flaky** (vorher 978). Neue Suite `proj-3-ruhige-kompassnadel.spec.ts` **16/16** (8 Tests × 2 Engines). Build und Lint sauber (0 Errors, 7 vorbestehende Warnungen, keine in geänderten Dateien).
+
+**18 Fehlschläge im ersten Gesamtlauf waren Last-Artefakte, nicht Regressionen** — alle auf Mobile Safari, alle in PROJ-1/12/13/14-Dateien, die dieses Refinement nicht anfasst. Gegengeprüft: Dieselben Dateien laufen mit meiner Änderung isoliert **31/31 grün**, und gegen den Vorgängerstand ebenfalls 31/31. Es ist das in INDEX.md dokumentierte Muster (zu viele parallele Läufe gegen einen Server).
+
+**Nicht abgedeckt und benannt:**
+- Das **Rauschverhalten echter Hardware** — Playwright emuliert keinen Magnetometer. Synthetische Events prüfen den ganzen Pfad, aber nicht, wie stark ein reales iPhone tatsächlich schwankt. Ob sich die Dämpfung richtig *anfühlt*, entscheidet der Handy-Test.
+- Ob 3 s Karenzzeit auf einem Gerät mit häufigen Sensor-Aussetzern die richtige Größe ist.
+- Firefox (Binary fehlt; Risiko gering, da nur Winkelmathematik und CSS-Transform genutzt werden).
 
 ## Implementation Notes
 

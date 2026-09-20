@@ -19,7 +19,7 @@
 | PROJ-1 | App Shell & Mode Switch | P0 | None | Deployed | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
 | PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | In Progress | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
-| PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
+| PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | In Progress | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
 | PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
 | PROJ-7 | Creator — Stationen-Editor | P0 | PROJ-6 | Deployed | [Spec](PROJ-7-creator-stationen-editor.md) | 2026-08-23 |
@@ -707,3 +707,45 @@ Warum die Entfernungsanzeige funktionierte: Sie ist ein gerundeter Skalar ohne W
 **Abnahme:** Playwright kann den Magnetometer nicht emulieren — diese Fehlerklasse ist per E2E nicht prüfbar. Die Glättungs- und Wrap-around-Mathematik wird per Unit-Test abgesichert (synthetische Sensorfolgen, ausdrücklich inklusive 359°→1° und 1°→359°); das tatsächliche Gefühl auf der Straße prüft der Betreiber am Gerät.
 
 Spec ist aktualisiert (9 neue Acceptance Criteria im Block „Ruhige Richtungsanzeige", Edge Cases 18–22, 9 Technical Requirements, 5 Produkt- und 6 technische Entscheidungen, 4 neue Open Questions).
+
+**Frontend umgesetzt am 2026-09-20.** Vier Dateien geändert, zwei neu (`src/hooks/use-arrow-rotation.ts`, `tests/proj-3-ruhige-kompassnadel.spec.ts`). Kein neues Paket, keine neue Route. Die Winkelmathematik liegt als vier reine Funktionen in `geo-utils.ts`, die Glättung im Sensor-Hook, die fortlaufende Rotation in einem eigenen Hook.
+
+**Zwei echte Fehler in der eigenen Implementierung, beide von Tests gefunden.** Die Delta-Formel `((to - from + 540) % 360) - 180` ist bei **negativen** Eingaben falsch — JavaScripts `%` liefert dort ein negatives Ergebnis, gemessen `-184` statt eines Werts im zugesicherten Bereich. Kein akademischer Fall: Die fortlaufende Rotation läuft ins Negative, sobald der Spieler sich gegen den Uhrzeigersinn über Nord dreht. Und der erste Entwurf mutierte Refs **während des Renders**; `npm run lint` meldete zu Recht `react-hooks/purity` und `Cannot access refs during render`. Unter konkurrierendem Rendering darf React einen Render verwerfen und wiederholen — jeder Durchlauf hätte den Winkel erneut weitergedreht. Beides behoben, letzteres durch den eigenen Hook mit Akkumulation im Effekt.
+
+**Der lehrreichste Befund betrifft die Testqualität, nicht das Produkt: Der Test für den Hauptbefund prüfte den falschen Nulldurchgang.** Er ließ den Spieler sein *Heading* durch den Nordpunkt drehen — und bestand deshalb auch mit der fehlerhaften Fassung. Die Rotation ist `Peilung − Heading` und wandert dabei nur von 30° auf 50°, kommt der 0°-Grenze also nie nahe. Der Nulldurchgang der *Rotation* liegt dort, wo das Heading die *Peilung* kreuzt. Nach der Korrektur fallen bei der Gegenprobe **8 von 16** statt 6. Dasselbe Muster auf Unit-Ebene: Zwei Glättungstests prüften nur den Endwert einer Rauschsequenz, die zufällig nah an der Mitte endete — auch ohne Glättung grün. **Beide Male ist es ausschließlich durch die Gegenprobe aufgefallen, nie durch einen roten Lauf.**
+
+Ein weiterer Fehler lag ebenfalls im Test: Der Locator auf die Entfernung suchte eine reine Zahl, die Anzeige rendert aber `"1234m"` in einem Element. Das Produkt war richtig.
+
+**Korrektur zur Analyse:** Der Kalibrierungs-Hinweis wird entgegen der Annahme des Refinements **immer gerendert** — aber mit 9px in der Tech-Schrift, also weit unter der 16px-Vorgabe des PRD und praktisch unlesbar. Der Befund bleibt, die Ursache ist eine andere. Er steht jetzt mit 16px in der Body-Schrift.
+
+**Parameter, am Bildschirm gewählt:** Glättungsfaktor 0,15 pro Event (bei ~60 Hz rund 90 % einer Drehung in ~0,2 s), Mindestschwelle 0,75°, Karenzzeit 3 s, Peilungsdämpfung 0,25 unterhalb von 200 m. Die CSS-Transition sinkt von 320 ms auf 220 ms — bei 320 ms addierte sie sich sichtbar zur Glättung.
+
+**Suiten gegen den Production-Build:** Unit **258/258** (vorher 226). E2E über beide Engines **994 passed / 52 skipped / 0 failed / 0 flaky**. Neue Suite 16/16. Build und Lint sauber.
+
+**18 Fehlschläge in einem Zwischenlauf waren Last-Artefakte, nicht Regressionen** — alle auf Mobile Safari, alle in Dateien, die dieses Refinement nicht anfasst. Gegengeprüft: dieselben Dateien isoliert 31/31 grün, mit und ohne die Änderung. Das in INDEX.md dokumentierte Muster; mit weniger Workern verschwanden sie vollständig.
+
+**Nicht abgedeckt und benannt:** das **Rauschverhalten echter Hardware** (Playwright emuliert keinen Magnetometer — synthetische Events prüfen den ganzen Pfad, aber nicht, wie stark ein reales iPhone schwankt), ob 3 s Karenzzeit die richtige Größe ist, und Firefox. Ob sich die Dämpfung richtig *anfühlt*, entscheidet der Handy-Test des Betreibers.
+
+## Offenes Refinement: Touch-Sortierung im Player (2026-09-20)
+**PROJ-4** geht von Deployed zurück auf In Progress. Betreiber-Befund: *"der Aufgabentyp sortieren auf dem handy fühlt sich mit touch merkwürdig an. Ich habe erwartet, dass das was ich anfasse sich ein wenig hebt und dann kann ich es per drag und drop verschieben."* Dazu die Frage, ob Pfeile auf kleinen Bildschirmen der bessere Weg wären.
+
+**Die Antwort ist nein — und die Spec war von Anfang an auf der Seite des Befunds.** Edge Case 5 fordert seit dem 2026-08-24 wörtlich *"Touch-Hold aktiviert Drag. Visuelles Feedback (Item hebt sich ab, Schatten)"*. Gebaut wurde das nie. Der Befund ist also kein falsch gewähltes Interaktionsmuster, sondern ein nicht umgesetztes.
+
+**Gemessen im Production-Build auf einem Pixel-7-Viewport mit echten Touch-Events:** `transform: none`, `box-shadow: none` und `opacity: 1` in **jeder** Phase der Berührung — beim Antippen, nach 250 ms Halten und während der Bewegung. Das Element unter dem Finger bewegt sich nicht; stattdessen teilt eine eigene `onTouchMove`-Rechnung die gewanderte Strecke durch die hartkodierte Konstante `itemHeight = 58` und tauscht Listeneinträge, sobald eine ganze Zahl herauskommt. Genau das erzeugt das beschriebene Gefühl: keine Rückmeldung auf das Anfassen, dann ein unangekündigter Sprung.
+
+**Zweitbefund, nicht gemeldet und schwerwiegender:** `handleTouchMove` ruft nie `preventDefault()`, dem Drag-Handle fehlt `touch-action: none`. Jede vertikale Wischbewegung über einem Item verändert die Reihenfolge. Gemessen auf einer bis zum Anschlag gescrollten Station (`scrollTop 2689` von 2689, also ohne jede Scroll-Reserve): Der Wisch ließ die Seite stehen — **und tauschte trotzdem zwei Items**. Ein Spieler kann eine bereits richtig sortierte Liste zerstören, während er nur weiterliest, und merkt es erst bei "Prüfen".
+
+**Die Ursache hinter beidem:** `sorting-task.tsx` pflegt **zwei** Implementierungen derselben Geste — HTML5 `draggable` für die Maus und die eigene Pixel-Rechnung für den Finger. `draggable` feuert auf Touch gar nicht. Auf dem Handy lief also nie der Code, der am Desktop geprüft wurde.
+
+Entschiedene Lösung: beide Pfade entfallen zugunsten **eines** `@dnd-kit`-Pfads — dieselbe Bibliothek, die im Creator bereits drei sortierbare Listen trägt und seit PROJ-8 ohnehin Abhängigkeit ist. **Kein neues Paket.** Long-Press (150 ms), sichtbares Anheben, Ausweichanimation und `touch-action: none` kommen damit aus einer Quelle statt aus Handarbeit. Sensoren-Werte identisch zum Creator, damit es eine Zahl zum Nachjustieren gibt statt zwei.
+
+Erwogen und verworfen: **Pfeil-Buttons** (hätten zwei dokumentierte Entscheidungen umgekehrt — 2026-08-24 "gamiger, Zielgruppe ist Touch-affin" und 2026-09-02, als Pfeile aus einem Mockup ausdrücklich nicht übernommen wurden — um einen Fehler zu umgehen statt ihn zu beheben) und **die eigene Mechanik reparieren** (hätte nachgebaut, was `@dnd-kit` fertig mitbringt und was hier schon einmal misslang: BUG-3 korrigierte `itemHeight` von 56 auf 58, und der Wert bricht bei jeder Styling-Änderung erneut still).
+
+Spec ist aktualisiert (8 neue Acceptance Criteria in einem eigenen Block, Edge Case 5 als "spezifiziert, nie gebaut" markiert statt gelöscht, Edge Cases 12–15, 7 Technical Requirements, 4 Produkt- und 4 technische Entscheidungen, 1 überholte Entscheidung von 2026-08-24 als solche gekennzeichnet, 3 geschlossene und 3 neue Open Questions, dazu ein Abschnitt "Refinement 2026-09-20" mit der vollständigen Messtabelle).
+
+**Für `/frontend` zu beachten:** Der gelöste/read-only-Zustand (Edge Case 11) darf sich nicht ändern — die bestehenden Tests dazu müssen grün bleiben, **ohne angefasst zu werden**, sie sind der Wächter gegen Kollateralschaden. Bestehende Assertions auf `div[draggable="true"]` werden durch den Umbau falsch und sind zu **ziehen, nicht zu löschen**. Und der eigentliche Regressionswächter fehlt bisher ganz: Kein Test hält fest, dass ein Wisch *ohne* Long-Press die Reihenfolge unverändert lässt — genau diese Lücke hat den Zweitbefund durchgelassen, während die Suite grün war.
+
+**Nicht abgedeckt:** das Gefühl am echten Gerät (ob 150 ms richtig sind, entscheidet ein Daumen, kein Emulator) und die Gegenprobe auf iOS Safari (Playwright kann auf WebKit keine vergleichbaren Touch-Sequenzen senden; der fehlende `transform` steckt aber im Produktcode, nicht in der Engine).
+
+**Offen geblieben:** ob der Creator dieselbe Anhebe-Rückmeldung bekommt. Dort greift `@dnd-kit` bereits, aber das gezogene Element wird nur auf `opacity: 0.5` gesetzt — es hebt sich ebenfalls nicht sichtbar ab. Nicht gemeldet, nicht gemessen, daher nur notiert.
+

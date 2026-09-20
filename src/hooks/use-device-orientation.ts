@@ -1,12 +1,30 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { smoothAngle, angleDistance } from "@/lib/geo-utils";
 
 export type OrientationPermission = "prompt" | "granted" | "denied" | "unsupported";
 
 export interface UseDeviceOrientationReturn {
   permission: OrientationPermission;
+  /**
+   * Geglättetes Heading (Refinement 2026-09-20). Der rohe Sensorwert schwankt
+   * am Gerät um mehrere Grad und feuert mit ~60 Hz — ungefiltert zittert die
+   * Nadel und der ganze Navigations-Screen rendert bei jedem Event neu
+   * (Edge Case 19).
+   */
   heading: number | null;
+  /** Ungeglätteter Sensorwert. Nur für Diagnose/Tests, nicht für die Anzeige. */
+  rawHeading: number | null;
+  /**
+   * True, solange innerhalb der Karenzzeit ein Kompass-Heading eingetroffen ist
+   * (Refinement 2026-09-20, Edge Case 20).
+   *
+   * Ein einzelner ausbleibender Sensor-Event ist kein Kompassausfall. Ohne
+   * Karenzzeit schaltet die Anzeige zwischen Kompass und GPS-Bewegungsrichtung
+   * hin und her — zwei Bezugssysteme, die um bis zu 90° auseinanderliegen.
+   */
+  compassFresh: boolean;
   needsCalibration: boolean;
   requestPermission: () => Promise<void>;
   /**
@@ -54,6 +72,31 @@ function isIOS(): boolean {
   return isIPhoneOrIPad || isIPadOS;
 }
 
+/**
+ * Glättungsfaktor pro Sensor-Event (exponentieller Tiefpass).
+ *
+ * Bei der iOS-typischen Rate von ~60 Hz erreicht die Nadel damit rund 90 % einer
+ * Drehung in ~0,2 s — schnell genug, dass ein Schwenk direkt wirkt, langsam
+ * genug, dass Rauschen um wenige Grad nicht sichtbar wird.
+ */
+const SMOOTHING_FACTOR = 0.15;
+
+/**
+ * Unterhalb dieser Änderung wird der State gar nicht erst aktualisiert.
+ *
+ * Ohne die Schwelle kriecht der geglättete Wert endlos weiter und rendert den
+ * Navigations-Screen bei jedem Event neu. Damit wird "steht still" zu einem
+ * echten Zustand statt zu einer sehr langsamen Bewegung.
+ */
+const UPDATE_THRESHOLD_DEG = 0.75;
+
+/**
+ * Wie lange ein zuletzt empfangenes Kompass-Heading weiter als gültig gilt
+ * (Edge Case 20). Länger als übliche Sensor-Aussetzer, kürzer als ein echter
+ * Ausfall.
+ */
+const COMPASS_GRACE_MS = 3000;
+
 export function useDeviceOrientation(): UseDeviceOrientationReturn {
   const [permission, setPermission] = useState<OrientationPermission>(() => {
     if (typeof window === "undefined") return "prompt";
@@ -62,18 +105,63 @@ export function useDeviceOrientation(): UseDeviceOrientationReturn {
     return "prompt";
   });
   const [heading, setHeading] = useState<number | null>(null);
+  const [rawHeading, setRawHeading] = useState<number | null>(null);
   const [needsCalibration, setNeedsCalibration] = useState(false);
   const listenerAdded = useRef(false);
+  /**
+   * Der geglättete Wert wird in einer Ref mitgeführt, nicht aus dem State
+   * gelesen: `handleOrientation` ist über `useCallback` stabil und sähe sonst
+   * dauerhaft den Wert vom ersten Render.
+   */
+  const smoothedRef = useRef<number | null>(null);
+  const [compassFresh, setCompassFresh] = useState(false);
+  /**
+   * Timer, der die Karenzzeit abläuft. Bewusst im Hook statt im
+   * Navigations-Screen: `Date.now()` während des Renders zu lesen macht den
+   * Render unrein (react-hooks/purity) und ist unter konkurrierendem Rendering
+   * nicht verlässlich.
+   */
+  const staleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleOrientation = useCallback((event: DeviceOrientationEvent) => {
-    if (event.webkitCompassHeading !== undefined) {
-      setHeading(event.webkitCompassHeading as number);
-      setNeedsCalibration(false);
-    } else if (event.alpha !== null) {
-      setHeading((360 - event.alpha) % 360);
-      setNeedsCalibration(event.absolute === false);
+  const applyHeading = useCallback((next: number) => {
+    setRawHeading(next);
+    setCompassFresh(true);
+    if (staleTimer.current) clearTimeout(staleTimer.current);
+    staleTimer.current = setTimeout(() => setCompassFresh(false), COMPASS_GRACE_MS);
+
+    const previous = smoothedRef.current;
+    if (previous === null) {
+      // Erster Wert: direkt übernehmen. Gegen `null` zu glätten gäbe es
+      // nichts, und ein Einschwingen von 0° aus wäre eine sichtbare
+      // Anfangsdrehung, die der Sensor nie gemeldet hat.
+      smoothedRef.current = next;
+      setHeading(next);
+      return;
     }
+
+    const smoothed = smoothAngle(previous, next, SMOOTHING_FACTOR);
+    smoothedRef.current = smoothed;
+
+    // Nur rendern, wenn sich sichtbar etwas geändert hat (Edge Case 19).
+    setHeading((current) =>
+      current === null || angleDistance(current, smoothed) >= UPDATE_THRESHOLD_DEG
+        ? smoothed
+        : current
+    );
   }, []);
+
+  const handleOrientation = useCallback(
+    (event: DeviceOrientationEvent) => {
+      if (event.webkitCompassHeading !== undefined) {
+        applyHeading(event.webkitCompassHeading as number);
+        setNeedsCalibration(false);
+      } else if (event.alpha !== null) {
+        applyHeading((360 - event.alpha) % 360);
+        setNeedsCalibration(event.absolute === false);
+      }
+    },
+    [applyHeading]
+  );
 
   const addListener = useCallback(() => {
     if (listenerAdded.current) return;
@@ -120,12 +208,18 @@ export function useDeviceOrientation(): UseDeviceOrientationReturn {
         window.removeEventListener("deviceorientation", handleOrientation, true);
         listenerAdded.current = false;
       }
+      if (staleTimer.current) {
+        clearTimeout(staleTimer.current);
+        staleTimer.current = null;
+      }
     };
   }, [addListener, handleOrientation]);
 
   return {
     permission,
     heading,
+    rawHeading,
+    compassFresh,
     needsCalibration,
     requestPermission,
     canRequestPermission: permission === "prompt" && isIOS(),

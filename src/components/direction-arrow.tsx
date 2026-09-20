@@ -1,6 +1,14 @@
 "use client";
 
 interface DirectionArrowProps {
+  /**
+   * Fortlaufender, **unbeschränkter** Rotationswinkel in Grad — darf über 360
+   * hinaus und unter 0 laufen (Refinement 2026-09-20).
+   *
+   * Ein auf 0..360 normalisierter Wert ist hier falsch: CSS interpoliert
+   * numerisch, also animiert 359 → 1 eine fast volle Rückwärtsdrehung statt
+   * 2° vorwärts. Der Aufrufer führt den Wert fortlaufend (`unwrapAngle`).
+   */
   rotation: number;
   isNear: boolean;
   /**
@@ -65,7 +73,7 @@ export function DirectionArrow({ rotation, isNear, directionUnknown = false }: D
         className={`w-[70%] h-[70%] ${
           directionUnknown
             ? "opacity-40 animate-[gq-seek_4s_linear_infinite]"
-            : "transition-transform duration-slow ease-gq"
+            : "transition-transform duration-[220ms] ease-out"
         }`}
         viewBox="0 0 100 100"
         style={{
