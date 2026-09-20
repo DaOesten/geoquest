@@ -1,6 +1,6 @@
 # PROJ-3: Player — GPS-Navigation
 
-## Status: In Progress
+## Status: In Review
 **Created:** 2026-08-23
 **Last Updated:** 2026-09-20
 
@@ -427,6 +427,71 @@ Keine neuen Packages erforderlich. Alle genutzten APIs:
 - Browser: Geolocation API, DeviceOrientation API, Vibration API
 - React: useState, useEffect, useCallback, useRef
 - Bestehend: Tailwind CSS, Lucide Icons, shadcn/ui Components
+
+## QA Test Results — Ruhige Kompassnadel (2026-09-20)
+
+**Ergebnis: 8 von 9 Acceptance Criteria erfüllt. 1 Medium-Bug (BUG-12), keine Critical- oder High-Bugs.**
+
+Weil das Feature in derselben Sitzung gebaut wurde, habe ich die zentralen Behauptungen **nicht übernommen, sondern mit eigenen Sonden neu gemessen** — auf beiden Engines.
+
+### Der wichtigste Einzelbefund betrifft die Testabdeckung, nicht das Produkt
+
+**Die 82 bestehenden PROJ-3-Tests bestehen gegen den fehlerhaften Vorgängerstand vollständig.** Ich habe den echten Code aus `HEAD~1` eingespielt, gebaut und die bestehenden Suiten laufen lassen: **82 passed / 0 failed** auf beiden Engines. Sie hätten den gemeldeten Fehler nie gefangen — sie prüften, dass ein Pfeil *existiert* und eine Rotation *hat*, nie dass die Rotation sich sinnvoll verhält.
+
+Genau diese Lücke schließt die neue Suite: Gegen denselben Vorgängerstand fallen **10 von 16** neuen Tests. Darunter der Kalibrierungs-Hinweis — den die Gegenprobe der Frontend-Phase **nicht** erfasst hatte, weil sie nur einzelne Parameter der neuen Fassung verstellte statt die echte alte Komponente einzuspielen.
+
+### Acceptance Criteria (im Browser gemessen, nicht aus Testnamen abgeleitet)
+
+| # | Kriterium | Ergebnis |
+|---|-----------|----------|
+| 1 | Kürzester Weg über die 0°-Grenze | **erfüllt** — Rotationsfolge `-8.0 → -6.5 → -4.1 → -2.5 → -0.1 → 1.5 → 3.9 → 5.5 → 7.9`, größter Einzelsprung **2.3°** |
+| 2 | Nadel bleibt bei Sensorrauschen ruhig | **erfüllt** — ±6° Rohrauschen kommen als **0.99°** an |
+| 3 | Folgt zügiger Drehung ohne Ruckeln | **erfüllt** — 90°-Drehung wird zu **88.6°** nachgeführt |
+| 4 | Kompass bleibt Quelle bei Event-Aussetzern | **erfüllt** — nach 1,5 s Pause unveränderte Rotation, kein „Laufe ein paar Schritte" |
+| 5 | Weicher Übergang beim echten Quellenwechsel | **erfüllt** — Rotation läuft über `unwrapAngle` weiter, kein Sprung |
+| 6 | Peilung gegen GPS-Rauschen gedämpft | **erfüllt** — per Unit-Test belegt (max. Ausschlag <15° bei ±30° Rohrauschen), Entfernung bleibt korrekt (`1293m`) |
+| 7 | Richtungsloser Zustand bleibt unberührt | **erfüllt** — `gq-seek`-Animation aktiv, **kein** `transform` gesetzt; geprüft auf 320/390/430px und WebKit |
+| 8 | Kalibrierungs-Hinweis sichtbar und zugeordnet | **erfüllt** — **16px**, Kontrast **16.22:1**, 260px breit, auf allen Breiten vollständig im Bild |
+| 9 | Hinweis verschwindet bei absolutem Heading | **erfüllt** — ohne Zutun des Spielers |
+
+### BUG-12 (Medium, offen): Nadel friert nach einem ungültigen Sensorwert dauerhaft ein
+
+**Reproduktion:** Ein `deviceorientation`-Event mit `NaN` oder `Infinity` als Heading. Danach bleibt der Pfeil auf seiner letzten Rotation stehen und **erholt sich nicht mehr**, auch wenn gültige Werte folgen. Gemessen: nach `NaN` bleibt `rotate(-59.3213deg)` bestehen, ein anschließendes gültiges Heading von 180° ändert nichts.
+
+**Ursache:** `NaN` ist in der Glättung absorbierend. `smoothAngle(NaN, x, f)` ergibt wieder `NaN`, und weil jeder neue Wert gegen `smoothedRef.current` geglättet wird, bleibt die Ref für den Rest der Session vergiftet. Isoliert nachgewiesen: `shortestAngleDelta(90, NaN) === NaN`, `smoothAngle(NaN, 180, 0.15) === NaN`.
+
+**Es ist ein echter Regress, kein vorbestehender Zustand.** Gegengeprüft gegen `HEAD~1`: Der Vorgängerstand **erholt sich** (`rotate(210.679deg)` nach dem gültigen Heading), weil er jeden Wert unverändert durchreicht. Die Glättung hat die Anfälligkeit eingeführt.
+
+**Warum Medium und nicht High:** `NaN` ist kein von der DeviceOrientation-Spezifikation vorgesehener Wert; der Normalfall liefert Zahlen oder `null` (letzteres ist behandelt). Der Pfad ist über einen fehlerhaften Sensor oder Treiber erreichbar, nicht über normale Bedienung — und nicht über die importierte Quest-Datei, also nicht angreiferkontrolliert. Für den Spieler wäre die Auswirkung allerdings deutlich: Die Nadel ist bis zum Neuladen tot, ohne jede Erklärung. Das ist derselbe stille Ausfallmodus, den das Refinement vom 2026-09-06 beseitigen wollte.
+
+**Empfohlene Behebung (gehört nicht in QA):** In `applyHeading` einmal `Number.isFinite(next)` prüfen und nicht-endliche Werte verwerfen, bevor sie die Ref erreichen.
+
+### Security-Audit — ohne Befund
+
+Der Stationsname ist das einzige angreiferkontrollierte Feld auf diesem Screen. Mit `<img src=x onerror=alert(1)><script>alert(2)</script>` im Namen: **0 Dialoge, 0 injizierte `<img>`, 0 injizierte `<script>`** — der Wert wird als escapter Text gerendert.
+
+Bösartige Sensorwerte (`NaN`, `±Infinity`, `1e20`, `-99999`) erzeugen **kein** `NaN` oder `Infinity` im CSS-`transform` — die Anzeige wird nicht zerstört, sie friert nur ein (BUG-12). Kein Absturz, kein Auslesen fremder Daten, keine neue Netzwerkkommunikation. Die Winkelmathematik ist rein und ohne Seiteneffekte.
+
+### Weitere Prüfungen
+
+- **Responsive:** 320/390/430px und WebKit — **0px horizontaler Überlauf**, mit und ohne Kalibrierungs-Hinweis
+- **Edge Case 11 (richtungsloser Pfeil)** auf allen vier Kombinationen erhalten — die Dämpfung hat ihn nicht verwässert
+- **Konsolenfehler:** WebKit **0**. Chrome meldet 2–3 pro Route — **vorbestehend**, gegengeprüft auf `/about` (2 Fehler), das dieses Refinement nicht anfasst. Es ist das Vercel-Analytics-Skript, das nur in Production existiert
+- **Kontrast** des Kalibrierungs-Hinweises **16.22:1** bei 4.5:1 Vorgabe. Er nutzt `text-gq-lime`, einen festen Hex-Wert — unkritisch, weil `play/layout.tsx` das Theme fest auf `dark` stellt (geprüft, nicht angenommen; BUG-1-Falle vermieden)
+
+### Regression
+
+**Suiten gegen den Production-Build:** Unit **258/258**. E2E über beide Engines **994 passed / 52 skipped / 0 failed / 0 flaky**. Build und Lint sauber (0 Errors, 7 vorbestehende Warnungen, keine in geänderten Dateien).
+
+**0 Skips in den PROJ-3-Dateien** — alle 98 Tests (82 bestehende + 16 neue) laufen wirklich. Die 52 Skips liegen in anderen Features und sind aus früheren Sitzungen dokumentiert (PROJ-14 freigeschalteter Zustand, Plattformgrenzen in PROJ-12/13).
+
+Produktcode nach allen Gegenproben per `git status` als byte-identisch bestätigt.
+
+### Nicht abgedeckt und benannt
+
+- **Das Rauschverhalten echter Hardware.** Playwright emuliert keinen Magnetometer. Synthetische Events prüfen den vollständigen Pfad Sensor → Hook → Glättung → Rotation → CSS-Transform, aber nicht, wie stark ein reales iPhone tatsächlich schwankt. Ob sich die Dämpfung richtig *anfühlt*, kann kein Test beantworten — das bleibt der Handy-Test des Betreibers und ist die eigentliche Abnahme dieses Refinements
+- Ob 3 s Karenzzeit auf einem Gerät mit häufigen Sensor-Aussetzern die richtige Größe ist
+- Firefox (Binary fehlt trotz gegenteiliger `--dry-run`-Meldung; Risiko gering, da nur Winkelmathematik und CSS-Transform genutzt werden und zwei unabhängige Engines identisch messen)
 
 ## Implementation Notes — Ruhige Kompassnadel (2026-09-20)
 

@@ -18,7 +18,7 @@
 |----|---------|----------|--------------|--------|------|---------|
 | PROJ-1 | App Shell & Mode Switch | P0 | None | Deployed | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
-| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | In Progress | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
+| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | In Review | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | In Progress | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
 | PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
@@ -725,6 +725,22 @@ Ein weiterer Fehler lag ebenfalls im Test: Der Locator auf die Entfernung suchte
 **18 Fehlschläge in einem Zwischenlauf waren Last-Artefakte, nicht Regressionen** — alle auf Mobile Safari, alle in Dateien, die dieses Refinement nicht anfasst. Gegengeprüft: dieselben Dateien isoliert 31/31 grün, mit und ohne die Änderung. Das in INDEX.md dokumentierte Muster; mit weniger Workern verschwanden sie vollständig.
 
 **Nicht abgedeckt und benannt:** das **Rauschverhalten echter Hardware** (Playwright emuliert keinen Magnetometer — synthetische Events prüfen den ganzen Pfad, aber nicht, wie stark ein reales iPhone schwankt), ob 3 s Karenzzeit die richtige Größe ist, und Firefox. Ob sich die Dämpfung richtig *anfühlt*, entscheidet der Handy-Test des Betreibers.
+
+**QA am 2026-09-20 abgeschlossen: 8 von 9 Acceptance Criteria erfüllt, 1 Medium-Bug (BUG-12), keine Critical- oder High-Bugs.**
+
+**Der wichtigste Einzelbefund betrifft die Testabdeckung, nicht das Produkt:** Mit dem echten Vorgängerstand aus `HEAD~1` bestehen die **82 bestehenden PROJ-3-Tests vollständig** — sie hätten den gemeldeten Fehler nie gefangen, weil sie prüften, dass ein Pfeil *existiert* und eine Rotation *hat*, nie dass die Rotation sich sinnvoll verhält. Gegen denselben Stand fallen **10 von 16** neuen Tests, darunter der Kalibrierungs-Hinweis, den die Gegenprobe der Frontend-Phase nicht erfasst hatte (sie verstellte nur Parameter der neuen Fassung, statt die echte alte Komponente einzuspielen).
+
+Im Browser gemessen statt aus Testnamen abgeleitet, auf beiden Engines identisch: Die Rotationsfolge läuft durch null hindurch (`-0.1 → 1.5`), größter Einzelsprung **2.3°**; ±6° Sensorrauschen kommen als **0.99°** an; eine echte 90°-Drehung wird zu **88.6°** nachgeführt; der Kalibrierungs-Hinweis misst **16px** bei Kontrast **16.22:1**.
+
+**BUG-12 (Medium, offen): Die Nadel friert nach einem ungültigen Sensorwert dauerhaft ein.** Ein `deviceorientation`-Event mit `NaN` oder `Infinity` vergiftet `smoothedRef` — `NaN` ist in der Glättung absorbierend, und weil jeder neue Wert gegen die Ref geglättet wird, erholt sich der Pfeil bis zum Neuladen nicht mehr. **Echter Regress, gegengeprüft:** Der Vorgängerstand erholt sich (`rotate(210.679deg)`), weil er jeden Wert unverändert durchreicht. Medium, weil `NaN` kein spezifizierter Wert ist und der Pfad nur über einen fehlerhaften Sensor erreichbar ist, nicht über die importierte Quest-Datei — für den Spieler wäre die Wirkung aber ein stiller Totalausfall der Nadel. Ein Einzeiler (`Number.isFinite`) deckt es ab.
+
+**Security ohne Befund:** Markup im Stationsnamen wird als escapter Text gerendert (0 Dialoge, 0 injizierte Elemente). Bösartige Sensorwerte erzeugen kein `NaN` im CSS-`transform`. **Responsive** auf 320/390/430px und WebKit: 0px Überlauf. Edge Case 11 (richtungsloser Pfeil) auf allen Kombinationen erhalten.
+
+Die Chrome-Konsolenfehler sind **vorbestehend** — gegengeprüft auf `/about`, das dieses Refinement nicht anfasst; es ist das Vercel-Analytics-Skript, das nur in Production existiert.
+
+**Regression:** Unit **258/258**, E2E über beide Engines **994 passed / 52 skipped / 0 failed / 0 flaky**, Build und Lint sauber. **0 Skips in den PROJ-3-Dateien** — alle 98 Tests laufen wirklich.
+
+**Status bleibt In Review**, bis BUG-12 entschieden ist. Die eigentliche Abnahme ist der Handy-Test des Betreibers — ob sich die Dämpfung richtig anfühlt, kann keine Testumgebung beantworten.
 
 ## Offenes Refinement: Touch-Sortierung im Player (2026-09-20)
 **PROJ-4** geht von Deployed zurück auf In Progress. Betreiber-Befund: *"der Aufgabentyp sortieren auf dem handy fühlt sich mit touch merkwürdig an. Ich habe erwartet, dass das was ich anfasse sich ein wenig hebt und dann kann ich es per drag und drop verschieben."* Dazu die Frage, ob Pfeile auf kleinen Bildschirmen der bessere Weg wären.
