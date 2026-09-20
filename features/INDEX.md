@@ -27,7 +27,7 @@
 | PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Deployed | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
-| PROJ-12 | PWA-Installation | P0 | PROJ-1 | Approved | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
+| PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
@@ -644,6 +644,18 @@ Gemessen: Kontrast schlechtester Wert **6.61:1** (Vorgabe 4.5:1), Tap-Ziele 44px
 **Zwei Beobachtungen ohne Bug-Status:** Der Import-FAB überlappt die letzte Quest-Karte samt Titel — gegengeprüft mit weggeklicktem Hinweis: **identisch**, also vorbestehend aus PROJ-6. Und die lokalen Konsolenfehler stammen von Vercel Analytics, das nur in Production existiert.
 
 **Nicht abgedeckt:** die echte Safe Area am iPhone (Playwright meldet `env(safe-area-inset-bottom)` als 0 — gemessen wurde der 14px-Grundwert), Bildschirmtastatur, Firefox, und der echte `beforeinstallprompt`.
+
+**Am 2026-09-20 nach Production deployt** (Tag `v1.34.0-PROJ-12`, Commit `7ee010b`) — live auf https://geoquesty.vercel.app und dort verifiziert.
+
+**Alle Messwerte decken sich exakt mit den lokalen:** `fixed`/`z-50`, **72px**, **Layout-Beitrag 0px**, beide Plattform-Zweige mit 0 `<li>`, FAB ohne Überlappung und beim Wegklicken **+64px** zurück, 16px Luft zur letzten Quest-Karte, `padding-bottom: 14px`. Das neue Ereignis `gq:install-hint-changed` ist im ausgelieferten Bundle nachgewiesen. **WebKit mit 0 Konsolenfehlern.**
+
+Alle 10 Endpunkte HTTP 200 mit 0,06–0,08 s, Security-Header inkl. HSTS. Nachbarfeatures unbeschädigt: `/about` mit `FAQPage` und 1× Ko-fi, `/anleitung` weiterhin 0 Treffer für den Prompt, alle vier PWA-Icons byte-identisch zum Repo, Service Worker cacht weiterhin nur `/offline.html`.
+
+**Zwei Auffälligkeiten geprüft statt weggewunken:** Die `?_rsc=`-Fehlschläge stammen aus der schnellen Testnavigation — ein ruhiger Erstbesuch ergibt **0 Antworten ≥400**. Der verbleibende Konsolen-404 ist `/favicon.ico`, vorbestehend und bereits im Deploy vom 2026-09-19 dokumentiert.
+
+**Zwei Fehler in meiner eigenen Messung, offen benannt:** Mein erster „Ist es live?"-Check suchte den Overlay-Marker im **Server-HTML**, wo er nie erscheinen kann (der Hinweis rendert clientseitig) — er lief zehnmal ins Leere und hätte „nicht deployt" gemeldet, obwohl der Deploy live war. Und mein Icon-Check fragte zwei **erfundene** Dateinamen ab und meldete dafür 404; die vier echten Icons liefern 200 und sind byte-identisch.
+
+**PROJ-12 ist abgeschlossen.**
 
 ## Offenes Refinement: Ruhige Kompassnadel (2026-09-20)
 **PROJ-3** geht von Deployed zurück auf In Progress. Betreiber-Befund aus einem Handy-Test im Gelände: *"die Kompassnadel springt ab und zu wild hin und her, dreht sich um sich selbst"* — Navigation war über die Entfernungsanzeige möglich, aber der Pfeil ist das Kern-Element dieses Features und war unbrauchbar.

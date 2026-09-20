@@ -1,6 +1,6 @@
 # PROJ-12: PWA-Installation (Add to Homescreen)
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-09-18
 **Last Updated:** 2026-09-20 (Refinement: Installations-Hinweis wird schwebendes Overlay)
 
@@ -1042,3 +1042,33 @@ Alle **10 Endpunkte HTTP 200** mit korrektem Content-Type und 0,06–0,31 s (sie
 **Nicht prüfbar geblieben:** Offline-Navigation auf WebKit (`setOffline` + `goto` wirft dort „WebKit encountered an internal error" — dieselbe Playwright-Grenze wie lokal, unabhängig bestätigt) und das echte Homescreen-Icon auf einem Gerät.
 
 **Offen für den Betreiber:** `apple-mobile-web-app-status-bar-style` steht auf `black-translucent`. Die Spec führt die Statusleistenfarbe als offene Frage, die nur am echten iPhone zu beurteilen ist.
+
+### Deploy Refinement 2026-09-20 — Installations-Hinweis als schwebendes Overlay
+
+**Am 2026-09-20 nach Production deployt** (Tag `v1.34.0-PROJ-12`, Commit `7ee010b`) — live auf https://geoquesty.vercel.app und dort verifiziert. Vercel deployte automatisch von `main`.
+
+**Der Kern ist in Production bestätigt, am live ausgelieferten Code gemessen — nicht an der lokalen Datei.** Alle Werte decken sich **exakt** mit den lokalen Messungen:
+
+| Messung | Chrome (live) | WebKit (live) |
+|---|---|---|
+| `position` / `z-index` | `fixed` / 50 | `fixed` / 50 |
+| Höhe | 72px | 72px |
+| **Layout-Beitrag** | **0px** | **0px** |
+| Inhalt | „ALS APP INSTALLIEREN", 0 `<li>` | „Teilen → Home-Bildschirm", 0 `<li>` |
+| FAB überlappt Hinweis | nein (Unterkante 552) | nein (Unterkante 576) |
+| Luft zur letzten Quest-Karte | 16px | 16px |
+| FAB nach Wegklicken | 616 (**+64px**) | 640 (**+64px**) |
+| `padding-bottom` (Safe Area) | 14px | 14px |
+
+Das neue Ereignis `gq:install-hint-changed` ist im ausgelieferten Bundle `1befb48831a57cd2.js` nachgewiesen. **WebKit mit 0 Konsolenfehlern.**
+
+Alle **10 Endpunkte HTTP 200** mit 0,06–0,08 s, Security-Header aktiv inkl. HSTS. Nachbarfeatures unbeschädigt: `/about` mit `FAQPage` und 1× Ko-fi, `/anleitung` weiterhin **0 Treffer** für den zurückgehaltenen Prompt, alle vier PWA-Icons **byte-identisch** zum Repository, und der Service Worker cacht weiterhin nur `/offline.html`.
+
+**Zwei Auffälligkeiten geprüft statt weggewunken:** Die `?_rsc=`-Fehlschläge traten nur bei der schnellen Testnavigation auf — ein **ruhiger Erstbesuch** auf `/` und `/play` ergibt **0 Antworten ≥400**; es sind abgebrochene Next.js-Prefetches, das bereits im Deploy vom 2026-09-19 dokumentierte Muster. Der verbleibende Konsolen-404 ist `/favicon.ico`, ebenfalls vorbestehend und dort schon festgehalten (Chrome fragt es von sich aus an).
+
+**Zwei Fehler in meiner eigenen Messung, offen benannt:**
+
+1. Mein erster „Ist es live?"-Test suchte `fixed bottom-0` im **Server-HTML** — der Hinweis rendert aber ausschließlich clientseitig, der Marker konnte dort nie erscheinen. Der Check lief zehnmal ins Leere und hätte „nicht deployt" gemeldet, während der Deploy längst live war. Korrigiert durch eine Suche nach `gq:install-hint-changed` in den ausgelieferten JS-Bundles.
+2. Mein Icon-Check fragte `icon-maskable-192.png` und `icon-maskable-512.png` ab und meldete zwei 404. **Diese Dateien gibt es nicht und gab es nie** — die echten heißen `icon-maskable.png` und `apple-touch-icon.png`. Alle vier tatsächlich referenzierten Icons liefern 200 und sind byte-identisch zum Repository.
+
+**Nicht abgedeckt und unverändert benannt:** die echte Safe Area auf einem iPhone mit Home-Indikator (am Gerät zu begutachten), Bildschirmtastatur, Firefox, und der echte `beforeinstallprompt`.
