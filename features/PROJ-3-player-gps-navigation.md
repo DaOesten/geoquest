@@ -1,6 +1,6 @@
 # PROJ-3: Player — GPS-Navigation
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-08-23
 **Last Updated:** 2026-09-20
 
@@ -431,6 +431,39 @@ Keine neuen Packages erforderlich. Alle genutzten APIs:
 - Browser: Geolocation API, DeviceOrientation API, Vibration API
 - React: useState, useEffect, useCallback, useRef
 - Bestehend: Tailwind CSS, Lucide Icons, shadcn/ui Components
+
+## Deployment: Ruhige Kompassnadel (2026-09-20)
+
+**Live auf https://geoquesty.vercel.app** — Tag `v1.35.0-PROJ-3`, Commits `39d75ee` / `74d5ad7` / `7c2d855`. Vercel deployte automatisch von `main`.
+
+### Im Live-Browser verifiziert, nicht nur per HTTP-Status
+
+Ein statischer Bundle-Check reichte hier **nicht**: Der Navigations-Screen wird lazy geladen, sein Chunk taucht im ausgelieferten HTML von `/play` gar nicht auf. Ein erster Versuch, den Fix per `grep` über die referenzierten Chunks nachzuweisen, konnte deshalb nicht anschlagen — und `isFinite` allein wäre ohnehin kein Beweis gewesen, weil der Bezeichner in fünf fremden Chunks vorkommt. Verifiziert wurde stattdessen im echten Browser auf **beiden Engines**:
+
+| Prüfung | Chrome 152 | WebKit |
+|---------|-----------|--------|
+| Rotation verlässt 0..360 (fortlaufender Winkel) | **ja** | **ja** |
+| Ruhe bei ±6° Sensorrauschen | **1.56°** | **1.30°** |
+| BUG-12: erholt sich nach `NaN`/`±Infinity` | `-779.11` → `-888.72` | `-779.11` → `-888.71` |
+| Kalibrierungs-Hinweis | **16px**, neuer Wortlaut | **16px**, neuer Wortlaut |
+
+Die Rotationswerte von `-779` und `-888` sind der stärkste Einzelbeleg: Sie liegen weit außerhalb von 0..360 und können von der alten, normalisierten Fassung **prinzipiell nicht** stammen.
+
+### Umgebung
+
+Alle sieben Routen HTTP 200 mit 0,07–0,40 s. Security-Header aktiv inkl. HSTS (`max-age=63072000; includeSubDomains; preload`), `nosniff`, `X-Frame-Options: DENY`. `sw.js` und `manifest.webmanifest` liefern 200.
+
+**Nachbarfeatures unbeschädigt:** `/about` mit `FAQPage`-JSON-LD und 1× Ko-fi, `/anleitung` weiterhin **0 Treffer** für den zurückgehaltenen Prompt (PROJ-14), Service Worker und PWA-Manifest erreichbar.
+
+**WebKit mit 0 Konsolenfehlern und 0 fehlgeschlagenen Requests.**
+
+### Eine Auffälligkeit geprüft statt weggewunken
+
+Der Chrome-Durchlauf meldete 2 Konsolen-404. Gegengemessen: Ein ruhiger Besuch von `/`, `/about` und `/play` erzeugt **0 Requests mit Status 404**. Die beiden stammen aus `/play/<id>`, das serverseitig 404 liefert, weil Quests ausschließlich im localStorage liegen — für den Nutzer unsichtbar, vorbestehend und bereits im Deploy vom 2026-09-07 dokumentiert. Kein Regress dieses Features.
+
+### Offen
+
+Die inhaltliche Abnahme steht aus und kann nicht in dieser Umgebung stattfinden: **ob sich die Dämpfung am echten Gerät richtig anfühlt.** Playwright emuliert keinen Magnetometer; geprüft ist der vollständige Pfad vom Sensor-Event bis zum CSS-Transform, nicht das Rauschverhalten realer Hardware. Die Parameter (Glättungsfaktor 0,15, Schwelle 0,75°, Karenzzeit 3 s, Peilungsdämpfung 0,25 unter 200 m) sind zwei Konstanten im Hook und leicht nachzujustieren.
 
 ## QA Test Results — BUG-12-Behebung (2026-09-20)
 

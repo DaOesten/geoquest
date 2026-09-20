@@ -18,7 +18,7 @@
 |----|---------|----------|--------------|--------|------|---------|
 | PROJ-1 | App Shell & Mode Switch | P0 | None | Deployed | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
-| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Approved | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
+| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | In Progress | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
 | PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
@@ -762,7 +762,15 @@ Gegenprobe: ohne Guard fallen **6 von 8** Unit-Tests und **2 von 18** E2E-Tests.
 
 **Ein eigener Messfehler, offen benannt:** Meine erste Sonde meldete den alpha-Pfad als „nicht erholt" — Ursache war ein `p.reload()` in der Sonde, nach dem der Navigations-Screen nicht wieder erreicht wurde. Gemessen wurde ein leerer Screen. Das Produkt war richtig.
 
-**PROJ-3 ist ohne offene Bugs und deploybar.** Die eigentliche Abnahme bleibt der Handy-Test des Betreibers — ob sich die Dämpfung richtig anfühlt, kann keine Testumgebung beantworten.
+**Am 2026-09-20 nach Production deployt** (Tag `v1.35.0-PROJ-3`, Commits `39d75ee`/`74d5ad7`/`7c2d855`) — live auf https://geoquesty.vercel.app und dort verifiziert.
+
+**Ein statischer Bundle-Check reichte diesmal nicht:** Der Navigations-Screen wird lazy geladen, sein Chunk steht nicht im ausgelieferten HTML von `/play`. Ein erster `grep`-Nachweis über die referenzierten Chunks konnte deshalb gar nicht anschlagen — und `isFinite` allein wäre kein Beweis gewesen, weil der Bezeichner in fünf fremden Chunks vorkommt. Verifiziert wurde im echten Browser auf **beiden Engines**: Rotation verlässt 0..360 (gemessen `-779.11` und `-888.72` — von der alten normalisierten Fassung prinzipiell nicht erzeugbar), Ruhe bei ±6° Rauschen **1.56°** (Chrome) und **1.30°** (WebKit), BUG-12 erholt sich, Kalibrierungs-Hinweis **16px** im neuen Wortlaut.
+
+Alle sieben Routen HTTP 200 mit 0,07–0,40 s, Security-Header inkl. HSTS. Nachbarfeatures unbeschädigt (`/about` mit FAQPage + 1× Ko-fi, `/anleitung` weiterhin 0 Treffer für den Prompt, `sw.js` und Manifest 200). **WebKit mit 0 Konsolenfehlern und 0 fehlgeschlagenen Requests.**
+
+**Eine Auffälligkeit geprüft statt weggewunken:** Chrome meldete 2 Konsolen-404. Ein ruhiger Besuch von `/`, `/about` und `/play` erzeugt **0** davon — sie stammen aus `/play/<id>`, das serverseitig 404 liefert, weil Quests nur im localStorage liegen. Vorbestehend, seit dem Deploy vom 2026-09-07 dokumentiert.
+
+**PROJ-3 ist abgeschlossen.** Offen bleibt allein die inhaltliche Abnahme, die keine Testumgebung leisten kann: ob sich die Dämpfung am echten Gerät richtig anfühlt. Die Parameter sind zwei Konstanten im Hook.
 
 ## Offenes Refinement: Touch-Sortierung im Player (2026-09-20)
 **PROJ-4** geht von Deployed zurück auf In Progress. Betreiber-Befund: *"der Aufgabentyp sortieren auf dem handy fühlt sich mit touch merkwürdig an. Ich habe erwartet, dass das was ich anfasse sich ein wenig hebt und dann kann ich es per drag und drop verschieben."* Dazu die Frage, ob Pfeile auf kleinen Bildschirmen der bessere Weg wären.
