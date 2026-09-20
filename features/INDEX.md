@@ -19,7 +19,7 @@
 | PROJ-1 | App Shell & Mode Switch | P0 | None | Deployed | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
 | PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
-| PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Approved | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
+| PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
 | PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
 | PROJ-7 | Creator — Stationen-Editor | P0 | PROJ-6 | Deployed | [Spec](PROJ-7-creator-stationen-editor.md) | 2026-08-23 |
@@ -834,6 +834,18 @@ Weil das Feature in derselben Sitzung gebaut wurde, habe ich die zentralen Behau
 **Regression:** Unit **266/266**, E2E beide Engines **1003 passed / 0 failed / 0 flaky / 55 skipped**, neue Suite **3× seriell identisch grün** (keine Flakiness). Die 55 Skips sind nachvollzogen: 52 vorbestehend, 3 die Chromium-gebundenen CDP-Gesten-Tests. **WebKit mit 0 Konsolenfehlern**, Struktur und Anheben dort identisch gemessen und am Bildschirm abgenommen.
 
 **Eine Auffälligkeit geprüft statt weggewunken:** Konsolen-404s für `/_vercel/insights/script.js` treten auf `/about` — einer von diesem Feature unberührten Route — genauso auf. Vercel Analytics existiert nur in Production; vorbestehend, kein Regressionsbefund.
+
+**Am 2026-09-20 nach Production deployt** (Tag `v1.36.0-PROJ-4`, Commit `592b743`) — live auf https://geoquesty.vercel.app und dort verifiziert. Vercel deployte automatisch von `main`.
+
+**Ein statischer Bundle-Scan hätte hier nichts belegt — und das ist selbst ein Ergebnis.** Der Sortier-Code liegt in einem Chunk, den `/play` gar nicht referenziert (lokal gegengeprüft: 1 von 44 Chunks trägt das Label, `/play` lädt 16, keiner davon dieser); die Komponente lädt erst beim Öffnen einer Station. Mein erster Live-Check suchte im Bundle und fand nichts — das war ein Messfehler, kein fehlgeschlagener Deploy. Verifiziert wurde deshalb über eine echte Browser-Sitzung gegen die Live-Seite, auf **beiden Engines**.
+
+**Der entscheidende Wert ist `draggable="true"` = 0:** Das Attribut der alten HTML5-Implementierung ist verschwunden — damit ist belegt, dass die neue Fassung ausgeliefert wird und nicht die vorherige. Dazu live gemessen, auf Chrome und WebKit identisch: Anheben `matrix(1.03, 0, 0, 1.03, 0, 82)` mit Schatten und `z-index: 10`, `touch-action` `auto` auf der Zeile und `none` auf dem Handle, Handles 44×44, Umsortieren funktioniert, sauberes Ablegen. **WebKit mit 0 Konsolenfehlern.** Am Bildschirm abgenommen: Das gezogene Item schwebt mit Teal-Rahmen über der Liste, die übrigen geben die Lücke frei.
+
+Alle sieben Routen HTTP 200 mit 0,06–0,15 s, Security-Header aktiv inkl. HSTS. Nachbarfeatures unbeschädigt: `/about` mit `FAQPage` und 1× Ko-fi, `/anleitung` weiterhin 0 Treffer für den zurückgehaltenen Prompt, `sw.js` 200.
+
+**Eine Auffälligkeit geprüft statt weggewunken:** Der Durchlauf meldete `404 /play/prod` — systembedingt und vorbestehend, weil Quests nur im localStorage liegen und der Server die ID nicht kennen kann; der Client rendert korrekt, für den Nutzer unsichtbar. Gegenprobe mit `/play/irgendwas` liefert denselben 404. Bereits im Deploy vom 2026-09-07 dokumentiert.
+
+**PROJ-4 ist abgeschlossen.** Offen bleiben die beiden Low-Bugs BUG-13 (Greif-Handles fokussierbar, aber per Tastatur ohne Funktion) und BUG-14 (Anheben beim ersten Bewegen statt beim Halten, abgenommen) — beide nicht blockierend und ein eigenes Refinement wert, zusammen mit der Frage, ob der Creator dieselbe Anhebe-Rückmeldung bekommt.
 
 **Offen geblieben:** ob der Creator dieselbe Anhebe-Rückmeldung bekommt. Dort greift `@dnd-kit` bereits, aber das gezogene Element wird nur auf `opacity: 0.5` gesetzt — es hebt sich ebenfalls nicht sichtbar ab. Nicht gemeldet, nicht gemessen, daher nur notiert.
 

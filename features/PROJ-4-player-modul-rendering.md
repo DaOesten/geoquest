@@ -897,3 +897,44 @@ Damit kommen Long-Press, das sichtbare Anheben, die Ausweichanimation der übrig
 ### Nicht abgedeckt
 - **Das Gefühl am echten Gerät.** Gemessen ist, *dass* sich etwas hebt und *wann* es greift; ob 150 ms sich richtig anfühlen, entscheidet ein Daumen, kein Emulator.
 - **WebKit-Touch.** Die Messung lief über Chrome DevTools Protocol auf einem Pixel-7-Viewport; Playwright kann auf WebKit keine vergleichbaren Touch-Sequenzen senden. Der Befund ist engine-unabhängig (der fehlende `transform` steckt im Produktcode, nicht in der Engine), die Gegenprobe auf iOS Safari steht aber aus.
+
+## Deployment — Touch-Sortierung im Player (2026-09-20)
+
+**Live auf https://geoquesty.vercel.app** · Tag `v1.36.0-PROJ-4` · Commit `592b743`
+
+Vercel deployte automatisch von `main`. Pre-Deployment-Checks alle grün: Build sauber, Lint 0 Fehler (7 vorbestehende Warnungen, keine in geänderter Datei), QA approved ohne Critical/High, keine Secrets im Diff, Unit 266/266 und E2E 1003/1003 vor dem Push.
+
+### Der Kern ist in Production bestätigt — im echten Browser, nicht am Bundle
+
+**Ein statischer Bundle-Scan hätte hier nichts belegt**, und das ist selbst ein Ergebnis: Der Sortier-Code liegt in einem Chunk, den `/play` gar nicht referenziert (lokal gegengeprüft: 1 von 44 Chunks trägt das Label, `/play` lädt 16 davon, keiner davon dieser). Die Komponente lädt erst beim Öffnen einer Station. Verifiziert wurde deshalb über eine echte Browser-Sitzung gegen die Live-Seite, auf **beiden Engines**:
+
+| Geprüft | Chrome | WebKit |
+|---|---|---|
+| Greif-Handles vorhanden | 4 | 4 |
+| **`draggable="true"` (alte Fassung)** | **0** | **0** |
+| Anheben beim Ziehen | `matrix(1.03, 0, 0, 1.03, 0, 82)`, Schatten, `z-index: 10` | identisch |
+| `touch-action` Zeile / Handle | `auto` / `none` | `auto` / `none` |
+| Handle-Größe | 44×44 | 44×44 |
+| Umsortieren | ✅ | ✅ |
+| Ablegen | `transform: none`, kein Schatten | identisch |
+| Konsolenfehler | 2× der bekannte `/play/<id>`-404 | **0** |
+
+**`legacyDraggable: 0` ist der entscheidende Wert:** Das Attribut der alten HTML5-Implementierung ist verschwunden — damit ist belegt, dass die neue Fassung ausgeliefert wird und nicht die vorherige.
+
+**Am Bildschirm abgenommen:** Das gezogene Item schwebt mit Teal-Rahmen und Schatten sichtbar über der Liste und überlappt seinen Nachbarn, während die übrigen Zeilen die Lücke freigeben.
+
+### Infrastruktur
+
+Alle sieben Routen HTTP 200 mit **0,06–0,15 s**. Security-Header aktiv inkl. HSTS (`max-age=63072000; includeSubDomains; preload`), `x-frame-options: DENY`, `x-content-type-options: nosniff`, `referrer-policy: origin-when-cross-origin`.
+
+**Nachbarfeatures unbeschädigt:** `/about` mit `FAQPage`-JSON-LD und 1× Ko-fi, `/anleitung` weiterhin **0 Treffer** für den zurückgehaltenen Prompt, `sw.js` liefert 200.
+
+### Eine Auffälligkeit geprüft statt weggewunken
+
+Der Durchlauf meldete `404 /play/prod`. Das ist **systembedingt und vorbestehend**: Quests liegen nur im localStorage, der Server kann die ID nicht kennen — der Client rendert trotzdem korrekt, für den Nutzer unsichtbar. Bereits im Deploy vom 2026-09-07 dokumentiert. Gegenprobe: `/play/irgendwas` liefert denselben 404.
+
+### Offen
+
+Die beiden Low-Bugs aus der QA gehen bewusst mit live: **BUG-13** (Greif-Handles fokussierbar, aber per Tastatur ohne Funktion) und **BUG-14** (Anheben löst bei der ersten Bewegung aus statt beim reinen Halten, vom Betreiber abgenommen). Beide nicht blockierend, beide ein eigenes Refinement wert.
+
+Weiterhin nur am echten Gerät zu beurteilen: ob sich 150 ms Long-Press richtig anfühlen.
