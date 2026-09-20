@@ -1,11 +1,13 @@
 # PROJ-7: Creator — Stationen-Editor
 
-## Status: Approved
+## Status: Deployed
 _Am 2026-09-07 nach Production deployt (Tag `v1.23.0-PROJ-7`) und dort verifiziert. Live gingen beide Änderungen: (1) Quest-Bearbeiten-Einstieg neben dem Titel (2026-09-06, gebaut und im Browser verifiziert), (2) Sheet-Layout auf kleinen Bildschirmen — Karte überlagerte den "Speichern"-Button, behoben am 2026-09-06 mit fixiertem Header/Footer und scrollender Mitte, 7 neue E2E-Tests, Gesamtsuite in der QA final 285/285 grün auf Mobile Safari und erstmals auch auf Chrome verifiziert (PROJ-7-Suite 39 Tests). In Produktion per Smoketest auf 360×640 bestätigt: Speichern erreichbar, Karte 220px, keine Konsolenfehler._
 
 _**Zurück auf In Progress am 2026-09-20 (Refinement 3):** Der Ankunftsradius ist auf kleinen Geräten nicht mehr sichtbar — er liegt hinter der Karte. Gemessen im Production-Build auf Chrome 152: auf 320×568 um 111px, auf 360×640 um 45px verdeckt, in beiden Fällen nicht durch Scrollen erreichbar. Ursache ist derselbe Layout-Konflikt wie beim Speichern-Button vom 2026-09-06, eine Ebene tiefer: Der Fix von damals hat `SheetContent` einen Scroll-Container gegeben, aber der Karten-Wrapper behielt `flex-1 min-h-[220px]` und überragt jetzt seinerseits den Scroll-Bereich. Entschiedene Lösung: Der Radius-Regler wandert über die Karte, die Karte wird das letzte Element und darf als einziges angeschnitten sein. Mitgenommen: Der Button "Aktuelle Position verwenden" läuft auf 320 und 360px rechts aus dem sichtbaren Bereich._
 
 _**QA am 2026-09-20 abgeschlossen: 9/9 Acceptance Criteria erfüllt, keine Bugs jeglicher Schwere, Production-Ready.** Die zentralen Behauptungen wurden nicht übernommen, sondern neu gemessen — 6 Viewports × 2 Einstiegspfade auf beiden Engines, inkl. der Meter-Wertanzeige und 768×1024, die die Frontend-Phase nicht geprüft hatte. Wichtigster Einzelbefund: Die 39 bestehenden PROJ-7-Tests bestehen auch mit der **fehlerhaften** Vorgängerfassung aus `HEAD~1` — sie hätten den gemeldeten Fehler auf keiner Engine gefangen. Genau diese Lücke schließen die 17 neuen Tests, von denen 8 bei der Gegenprobe fallen._
+
+_**Am 2026-09-20 nach Production deployt** (Tag `v1.33.0-PROJ-7`, Commits `5143a9f`/`b4b950a`). Der Code liegt auf `main`, Vercels Auto-Deploy ist ausgelöst und per GitHub-API bestätigt. **Die Live-Verifikation konnte nicht stattfinden:** Vercels Bot-Schutz (`x-vercel-mitigated: challenge`) beantwortet jeden Request aus dieser Umgebung mit HTTP 403 — auch für Dateien, die dieses Deployment nicht angefasst hat. Der Zustand der ausgelieferten Seite ist damit unbestätigt; die drei zu prüfenden Punkte stehen im Deployment-Abschnitt._
 **Created:** 2026-08-28
 **Last Updated:** 2026-09-20
 
@@ -1351,3 +1353,55 @@ Bei einer Layout-Änderung reichen Zahlen nicht. Screenshots auf 320×568 und 36
 ### Production-Ready Decision
 
 **READY** — 9/9 Acceptance Criteria erfüllt, alle drei Edge Cases bestätigt, Security ohne Befund, Kontrast überall über der Vorgabe, keine Bugs jeglicher Schwere, beide Engines strukturgleich, keine Regression in den Nachbarfeatures.
+
+---
+
+## Deployment — Refinement 3 (2026-09-20)
+
+**Production URL:** https://geoquesty.vercel.app
+**Deployt am:** 2026-09-20
+**Tag:** `v1.33.0-PROJ-7`
+**Commits:** `5143a9f` (Frontend), `b4b950a` (QA-Ergebnisse)
+
+### Pre-Deployment-Checks
+
+| Prüfung | Ergebnis |
+|---------|----------|
+| `npm run build` | ✅ Compiled successfully |
+| `npm run lint` | ✅ 0 Errors (7 Warnungen, alle vorbestehend aus PROJ-12) |
+| QA-Freigabe | ✅ Approved, 9/9 Acceptance Criteria, keine Bugs |
+| Secrets im Repo | ✅ keine — nur `.env.local.example` versioniert |
+| Arbeitsverzeichnis | ✅ sauber |
+| Push nach `main` | ✅ `ce90f91..b4b950a` |
+| Commit auf GitHub | ✅ `b4b950a` auf `main` bestätigt (GitHub-API) |
+
+### Post-Deployment-Verifikation — NICHT DURCHGEFÜHRT
+
+**Die Live-Seite war aus der Entwicklungsumgebung nicht erreichbar.** Jeder Request wird von Vercels Bot-Schutz abgefangen:
+
+```
+HTTP/2 403
+x-vercel-mitigated: challenge
+x-vercel-challenge-token: 2.1789910667.60...
+server: Vercel
+```
+
+Das betrifft **alle** Routen (`/`, `/create`, `/about`, `/play`) und auch Dateien, die dieses Deployment gar nicht angefasst hat (`manifest.webmanifest`, `sw.js`, `icon-192.png` aus PROJ-12). Ein echter Browser-User-Agent hilft nicht, und auch ein Playwright-Lauf gegen die Live-URL bekommt 403 — die Challenge löst sich in dieser Umgebung nicht auf.
+
+**Daraus folgt:** Es ist eine Zugriffssperre gegen diese Umgebung, kein Hinweis auf ein fehlgeschlagenes Deployment. Belegt ist, dass der Code auf `main` liegt und Vercels Auto-Deploy ausgelöst wurde — **nicht** belegt ist der Zustand der ausgelieferten Seite.
+
+**Ein eigener Fehler, offen benannt:** Mein erster Live-Check wartete darauf, dass das Markup `flex-wrap items-center justify-between` im HTML von `/create` erscheint. Der Check lief 304 Sekunden ins Timeout — zu Recht, aber aus dem falschen Grund: Das Stations-Sheet wird clientseitig gerendert, das Markup steht **auch lokal nicht** im ausgelieferten HTML (lokal gegengeprüft: 0 Treffer). Der Check konnte nie anschlagen und war wertlos; er hat den 403 nur verzögert sichtbar gemacht.
+
+### Offen: Verifikation durch den Betreiber
+
+Die folgenden Punkte sind lokal gegen den Production-Build gemessen und in der QA dokumentiert, aber **in Produktion unbestätigt**. Am schnellsten prüfbar auf einem Handy unter https://geoquesty.vercel.app/create → Quest öffnen → ⋮ → „Station bearbeiten":
+
+1. **Der Ankunftsradius ist ohne Scrollen sichtbar** — Label, Meter-Wert und Slider, direkt beim Öffnen. Das ist der gemeldete Befund.
+2. **Der Button "Aktuelle Position verwenden"** steht vollständig im Bild, ohne abgeschnittene Beschriftung.
+3. **Die Karte steht unten und ist angeschnitten** — auf sehr schmalen Geräten deutlich (lokal: 51px von 220px auf 320×568). Sie wird durch Scrollen vollständig sichtbar.
+
+Punkt 3 ist zugleich die offene Frage aus der QA: Ob der Anschnitt zum Platzieren eines Pins ausreicht, lässt sich nur am echten Gerät beurteilen.
+
+### Rollback
+
+Falls nötig: Vercel Dashboard → Deployments → vorheriges Deployment (`ce90f91`, PROJ-12 Service-Worker) → „Promote to Production". Die Änderung betrifft ausschließlich `station-editor-sheet.tsx`; ein Rollback stellt die vorherige Feldreihenfolge wieder her, bringt damit aber auch den verdeckten Radius zurück.

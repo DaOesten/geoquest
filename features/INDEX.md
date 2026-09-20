@@ -22,7 +22,7 @@
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
 | PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
-| PROJ-7 | Creator — Stationen-Editor | P0 | PROJ-6 | Approved | [Spec](PROJ-7-creator-stationen-editor.md) | 2026-08-23 |
+| PROJ-7 | Creator — Stationen-Editor | P0 | PROJ-6 | Deployed | [Spec](PROJ-7-creator-stationen-editor.md) | 2026-08-23 |
 | PROJ-8 | Creator — Modul-Editor | P0 | PROJ-7 | Deployed | [Spec](PROJ-8-creator-modul-editor.md) | 2026-08-23 |
 | PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Deployed | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
@@ -248,6 +248,14 @@ Zusätzlich geprüft und in der Spec nicht gefordert: Tastatur-Reihenfolge (Slid
 **0 Skips in beiden PROJ-7-Dateien** — alle 56 Tests laufen wirklich. Suiten: **Chrome 152: 480 passed / 23 skipped / 0 failed. Mobile Safari: 474 passed / 29 skipped / 0 failed. Unit 226/226.** Build und Lint sauber. Produktcode nach den Gegenproben per `diff` als byte-identisch bestätigt.
 
 **Drei Beobachtungen ohne Bug-Status:** Die Karte ist auf 320×568 beim Öffnen auf **51px** angeschnitten (von 220px) — konstruktiv gewollt, per Scroll vollständig erreichbar, aber nur am echten Gerät zu beurteilen. Edge Case 16 (Bildschirmtastatur) bleibt wie seit 2026-09-06 konstruktiv abgedeckt. Und Firefox bleibt ungetestet (Binary fehlt trotz gegenteiliger `--dry-run`-Meldung; Risiko gering, da nur Flexbox-Standardverhalten genutzt wird und zwei unabhängige Engines identisch messen).
+
+**Am 2026-09-20 nach Production deployt** (Tag `v1.33.0-PROJ-7`, Commits `5143a9f`/`b4b950a`). Pre-Deployment-Checks alle grün: Build sauber, Lint 0 Errors, QA approved ohne Bugs, keine Secrets versioniert. Der Commit `b4b950a` ist per GitHub-API auf `main` bestätigt, Vercels Auto-Deploy damit ausgelöst.
+
+**Die Live-Verifikation konnte diesmal nicht stattfinden — anders als bei allen vorherigen Deploys.** Vercels Bot-Schutz beantwortet jeden Request aus dieser Umgebung mit HTTP 403 (`x-vercel-mitigated: challenge`), auch über einen echten Browser und einen Browser-User-Agent. Dass die Sperre **alle** Routen trifft und auch Dateien erfasst, die dieses Deployment gar nicht angefasst hat (`manifest.webmanifest`, `sw.js`, `icon-192.png` aus PROJ-12), belegt: Es ist eine Zugriffssperre gegen diese Umgebung, kein fehlgeschlagenes Deployment. Belegt ist der Code auf `main` — **nicht belegt ist der Zustand der ausgelieferten Seite.**
+
+**Ein eigener Messfehler, offen benannt:** Mein erster Live-Check wartete 304 Sekunden darauf, dass Sheet-Markup im HTML von `/create` erscheint. Der Check konnte nie anschlagen — das Stations-Sheet rendert clientseitig, das Markup steht auch lokal nicht im HTML (gegengeprüft: 0 Treffer). Er hat den 403 nur verzögert sichtbar gemacht.
+
+**Drei Punkte bleiben zur Prüfung durch den Betreiber** (Handy, `/create` → Quest → ⋮ → „Station bearbeiten"): dass der Ankunftsradius ohne Scrollen sichtbar ist, dass „Aktuelle Position verwenden" vollständig im Bild steht, und ob die unten angeschnittene Karte (lokal 51px von 220px auf 320×568) zum Platzieren eines Pins ausreicht. Der dritte Punkt ist zugleich die offene Frage aus der QA.
 
 ## Next Available ID: PROJ-15
 
