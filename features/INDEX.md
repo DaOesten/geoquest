@@ -22,12 +22,12 @@
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
 | PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
-| PROJ-7 | Creator — Stationen-Editor | P0 | PROJ-6 | Deployed | [Spec](PROJ-7-creator-stationen-editor.md) | 2026-08-23 |
+| PROJ-7 | Creator — Stationen-Editor | P0 | PROJ-6 | In Progress | [Spec](PROJ-7-creator-stationen-editor.md) | 2026-08-23 |
 | PROJ-8 | Creator — Modul-Editor | P0 | PROJ-7 | Deployed | [Spec](PROJ-8-creator-modul-editor.md) | 2026-08-23 |
 | PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Deployed | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
-| PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
+| PROJ-12 | PWA-Installation | P0 | PROJ-1 | In Progress | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
@@ -200,6 +200,24 @@ Alle sieben Routen HTTP 200 mit 0,30–0,47 s, Security-Header aktiv inkl. HSTS,
 **Eine Auffälligkeit geprüft statt weggewunken:** Der Durchlauf meldete 2 Konsolen-404s. Ein normaler Besuch von `/` und `/play` erzeugt **0 Requests mit Status 404** — die beiden stammen aus `/play/<id>`, das serverseitig 404 liefert, weil Quests nur im localStorage liegen. Für den Nutzer unsichtbar, vorbestehend, bereits im Deploy vom 2026-09-07 dokumentiert.
 
 **PROJ-3 ist abgeschlossen.**
+
+
+## Offenes Refinement: Ankunftsradius auf kleinen Geräten verdeckt (2026-09-20)
+**PROJ-7** geht von Deployed zurück auf In Progress. Betreiber-Befund: *"ich sehe den Radius mobile nicht mehr, wenn ich eine Station bearbeite"* — im Production-Build gegen Chrome 152 reproduziert und gemessen.
+
+**Der Radius liegt hinter der Karte, und Scrollen hilft nicht.** Gemessen im Pfad "Station bearbeiten": auf 320×568 um **111px** verdeckt, auf 360×640 um **45px**; ab 390px sichtbar. Auf 360×640 sind von der gesamten Radius-Einheit nur noch die Stufenbeschriftungen ("10 m / 25 m / 50 m / 100 m") unterhalb der Karte zu sehen — Label, Wertanzeige und Slider liegen dahinter.
+
+**Ursache: derselbe Konflikt wie beim Speichern-Button vom 2026-09-06, eine Ebene tiefer.** Der damalige Fix gab `SheetContent` einen Scroll-Container und rettete den Footer, ließ aber den Karten-Wrapper mit `flex-1 min-h-[220px]` unberührt. Auf kleinen Höhen gewinnt die Mindesthöhe gegen den verfügbaren Platz, der Wrapper wächst über die Unterkante des Scroll-Bereichs hinaus (320×568: Scroller endet bei y 470, Karten-Container bei y 524) und überlagert den dahinter liegenden Radius-Block. Scrollen löst es nicht, weil der Scroller weniger Überlauf hat (54px), als die Karte ihn überragt.
+
+**Entschiedene Lösung: Der Radius-Regler wandert über die Karte.** Neue Reihenfolge: Name → Position/GPS → Adresssuche → **Radius** → Karte. Die Karte wird das letzte Element und ist das einzige, das beim Öffnen angeschnitten sein darf — sie erfüllt ihren Zweck auch teilweise sichtbar und bleibt per Scroll vollständig erreichbar, während jedes Bedienelement über ihr angeschnitten unbrauchbar wäre. Damit kehrt sich die Priorität um: Die Karte war bisher das Element, das alles andere verdrängt hat, und ist jetzt das, was als erstes weicht. **Die 220px-Mindesthöhe vom 2026-09-06 bleibt unangetastet.**
+
+Erwogen und verworfen: die Karte schrumpfen zu lassen (hätte die 220px-Entscheidung umgekehrt und die Karte auf 320px auf ~160px gedrückt) und den Radius nur erscrollbar zu machen (hätte ihn erreichbar, aber beim Öffnen weiterhin unsichtbar gelassen — also den eigentlichen Befund nicht behoben).
+
+**Mitgenommen auf Betreiber-Entscheidung:** Der Button "Aktuelle Position verwenden" läuft auf 320 und 360px rechts aus dem sichtbaren Bereich. Gleiche Datei, gleiche Fehlerklasse (Layout auf schmalen Geräten), gleicher Prüf-Durchlauf — ein eigener Zyklus hätte für eine Zeile mehr gekostet als die Scope-Erweiterung.
+
+Spec ist aktualisiert (User Story 12, zwei neue Acceptance-Criteria-Blöcke mit 9 Kriterien, Edge Cases 17–19, 5 Technical Requirements, 4 Produkt- und 3 technische Entscheidungen, 6 neue Open Questions, dazu ein eigener Abschnitt "Refinement 3" mit der vollständigen Messtabelle).
+
+**Für `/frontend` zu beachten:** Die Reihenfolge-Änderung passiert im Markup, nicht per CSS `order` — sonst laufen visuelle und DOM-Reihenfolge auseinander (Tab-Reihenfolge und Screenreader folgen dem DOM). Bestehende PROJ-7-E2E-Tests, die Positionen im Sheet prüfen, werden durch die neue Reihenfolge möglicherweise falsch und sind zu ziehen, nicht zu löschen. Zwei Detailfragen sind bewusst offen gelassen und am Bildschirm zu entscheiden: ob der GPS-Button umbricht oder eine kürzere Beschriftung bekommt.
 
 ## Next Available ID: PROJ-15
 
@@ -471,3 +489,18 @@ Suite **776 passed / 2 skipped / 0 failed**, Unit 186/186, Build und Lint sauber
 Alle sieben Routen HTTP 200 mit 0,07–0,21s. Menu auf `/` mit vier Gruppen, sieben Links, 0 aktiv markiert. **0 Konsolenfehler, 0 fehlgeschlagene Requests.** WebKit gleichwertig, Security-Header aktiv.
 
 **PROJ-1 ist damit vollständig abgeschlossen** — Navigations-Refinement, Ko-fi-Eintrag und BUG-10 sind gebaut, QA-geprüft und live. Offen bleiben nur die beiden vorbestehenden, nicht blockierenden Befunde BUG-2 (16px-Schließen-X in allen Sheets) und BUG-9 (kein `:focus-visible` app-weit), beide unabhängig von diesem Feature.
+
+## Offenes Refinement: Service Worker nur in Production (2026-09-20)
+**PROJ-12** geht von Deployed zurück auf In Progress. Befund des Betreibers: Desktop-Safari zeigte beim Öffnen von `localhost` nur noch den Hinweis „Keine Verbindung".
+
+**Reproduziert und als korrektes Verhalten am falschen Ort identifiziert** — kein Produktfehler, und Production ist nicht betroffen. In WebKit gemessen: Mit laufendem Server übernimmt der Worker die Seite (Cache `["/offline.html"]`); nach dem Stoppen des Servers liefert er auf jede Navigation die Offline-Seite (`Titel: "Geo Quest — keine Verbindung"`). Läuft wieder ein Server, lädt die App normal (`Titel: "Geo Quest"`) — der Worker hängt also **nicht** fest. Auslöser war schlicht, dass kein Dev-Server lief.
+
+Zwei Dinge machen das lokal unangenehm: Lokal ist ein gestoppter Server der **Normalfall**, und die Offline-Seite verdeckt dann die wahre Ursache. Und der Worker-Scope ist die **Origin, nicht der Port** — ein auf `localhost` registrierter Worker gilt für **jedes** Projekt dieser Maschine, auch für fremde auf anderen Ports.
+
+Entschieden: Der Worker registriert sich **nur noch in Production**; zusätzlich meldet die App einen lokal bereits registrierten Worker aktiv ab und löscht dessen Caches (sonst bliebe er auf allen Entwicklerrechnern liegen). Verworfen wurde ein Opt-in-Schalter — die Offline-Seite ist gegen den Production-Build prüfbar, wo die Suite ohnehin läuft.
+
+**Der Fallstrick für `/frontend`, gemessen statt vermutet:** Die Unterscheidung muss über `process.env.NODE_ENV` laufen, **nicht** über den Hostnamen. `playwright.prod.config.ts` testet den echten Production-Build auf `localhost:3100`; eine Hostname-Prüfung auf `localhost` würde dort den Worker abschalten und die **37 Tests** in `proj-12-pwa-installation.spec.ts` entwerten, ohne dass der Produktcode kaputt aussieht — ein stiller Testverlust.
+
+Spec ist aktualisiert (6 neue Acceptance Criteria, Edge Cases 15–17, 1 Technical Requirement, 1 Produkt- und 3 technische Entscheidungen, 1 neue Open Question).
+
+**Sofortmaßnahme für den Betreiber** (unabhängig vom Fix): Safari → Entwickler → Caches leeren, oder Einstellungen → Datenschutz → Website-Daten verwalten → `localhost` entfernen. Danach `npm run dev` starten.

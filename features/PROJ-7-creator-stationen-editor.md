@@ -1,9 +1,11 @@
 # PROJ-7: Creator — Stationen-Editor
 
-## Status: Deployed
+## Status: In Progress
 _Am 2026-09-07 nach Production deployt (Tag `v1.23.0-PROJ-7`) und dort verifiziert. Live gingen beide Änderungen: (1) Quest-Bearbeiten-Einstieg neben dem Titel (2026-09-06, gebaut und im Browser verifiziert), (2) Sheet-Layout auf kleinen Bildschirmen — Karte überlagerte den "Speichern"-Button, behoben am 2026-09-06 mit fixiertem Header/Footer und scrollender Mitte, 7 neue E2E-Tests, Gesamtsuite in der QA final 285/285 grün auf Mobile Safari und erstmals auch auf Chrome verifiziert (PROJ-7-Suite 39 Tests). In Produktion per Smoketest auf 360×640 bestätigt: Speichern erreichbar, Karte 220px, keine Konsolenfehler._
+
+_**Zurück auf In Progress am 2026-09-20 (Refinement 3):** Der Ankunftsradius ist auf kleinen Geräten nicht mehr sichtbar — er liegt hinter der Karte. Gemessen im Production-Build auf Chrome 152: auf 320×568 um 111px, auf 360×640 um 45px verdeckt, in beiden Fällen nicht durch Scrollen erreichbar. Ursache ist derselbe Layout-Konflikt wie beim Speichern-Button vom 2026-09-06, eine Ebene tiefer: Der Fix von damals hat `SheetContent` einen Scroll-Container gegeben, aber der Karten-Wrapper behielt `flex-1 min-h-[220px]` und überragt jetzt seinerseits den Scroll-Bereich. Entschiedene Lösung: Der Radius-Regler wandert über die Karte, die Karte wird das letzte Element und darf als einziges angeschnitten sein. Mitgenommen: Der Button "Aktuelle Position verwenden" läuft auf 320 und 360px rechts aus dem sichtbaren Bereich._
 **Created:** 2026-08-28
-**Last Updated:** 2026-09-06
+**Last Updated:** 2026-09-20
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — für Routing und UI-Rahmen
@@ -27,6 +29,7 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 8. Als Ersteller möchte ich meinen Zwischenstand beim Bearbeiten einer Station nicht verlieren, auch wenn ich noch keine Position gesetzt habe, damit ich in Ruhe weiterarbeiten kann.
 10. Als Ersteller möchte ich eine Adresse (z.B. Straße und Hausnummer) in ein Suchfeld eingeben und aus Vorschlägen auswählen können, damit ich eine bekannte Adresse nicht mühsam auf der Karte suchen/scrollen muss (siehe Decision Log 2026-09-02).
 11. Als Ersteller möchte ich eine Station auch auf einem kleinen Handy speichern oder abbrechen können, ohne dass die Karte die Buttons verdeckt, damit ich meine Eingaben nicht verliere und den Dialog nicht neu starten muss (siehe Decision Log 2026-09-06).
+12. Als Ersteller möchte ich den Ankunftsradius auch auf einem kleinen Handy sehen und einstellen können, ohne dass die Karte ihn verdeckt, damit ich beim Anlegen einer Station bewusst entscheide, wie nah ein Spieler herankommen muss (siehe Decision Log 2026-09-20).
 
 ## Out of Scope
 - Modul-Editor für die 5 Modultypen (Text/Bild/Audio/Video/Task) an einer Station — PROJ-8. Jede Station bekommt hier einen "Module bearbeiten"-Button, der zu PROJ-8 führt, aber ohne Funktion, bis PROJ-8 gebaut ist
@@ -76,6 +79,19 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 - [ ] Angenommen das Sheet ist offen und der Nutzer tippt in das Namens- oder Adressfeld, wenn die Bildschirmtastatur aufgeht und die nutzbare Höhe schrumpft, dann bleiben "Abbrechen" und "Speichern" erreichbar (ggf. nach Schließen der Tastatur), ohne dass Inhalt unerreichbar aus dem Sheet herausgedrückt wird
 - [ ] Angenommen der Nutzer öffnet das Sheet auf einem großen Bildschirm (Desktop/Tablet), wenn der Inhalt vollständig hineinpasst, dann sieht das Sheet unverändert aus wie bisher — kein sichtbarer Scrollbalken, keine geänderte Kartengröße
 
+**Feldreihenfolge & Radius-Sichtbarkeit (neu seit Refine 2026-09-20):**
+- [ ] Angenommen der Nutzer öffnet das Stations-Sheet auf einer kleinen Viewport-Höhe (Referenz: 320×568 und 360×640 px), wenn das Sheet vollständig geöffnet ist, dann sind Label "Ankunftsradius", die Meter-Wertanzeige und der Slider vollständig sichtbar und bedienbar, ohne zu scrollen
+- [ ] Angenommen das Sheet ist offen, wenn der Inhalt gerendert wird, dann stehen die Felder in der Reihenfolge Stationsname → Position/GPS → Adresssuche → Ankunftsradius → Karte; die Karte ist das letzte Element des scrollbaren Bereichs
+- [ ] Angenommen der Nutzer bearbeitet eine bestehende Station mit einem von 10m abweichenden Radius, wenn das Sheet öffnet, dann ist der vorausgefüllte Wert sofort lesbar, ohne dass er erst durch eine Scroll-Bewegung gesucht werden muss
+- [ ] Angenommen der Inhalt ist höher als der scrollbare Bereich, wenn das Sheet öffnet, dann ist die Karte das einzige Element, das angeschnitten sein darf — kein Bedienelement über ihr wird von ihr überlagert
+- [ ] Angenommen die Karte ist angeschnitten, wenn der Nutzer im Bereich neben der Karte scrollt, dann wird sie vollständig erreichbar und behält dabei ihre Mindesthöhe von 220px
+- [ ] Angenommen der Nutzer öffnet das Sheet auf einem großen Bildschirm, wenn der gesamte Inhalt hineinpasst, dann ist außer der geänderten Feldreihenfolge nichts anders als bisher — insbesondere bleibt die Karte dort größer als 220px
+
+**Breite auf schmalen Geräten (neu seit Refine 2026-09-20):**
+- [ ] Angenommen der Nutzer öffnet das Stations-Sheet auf 320 px Breite, wenn die Positions-Zeile gerendert wird, dann ist der Button "Aktuelle Position verwenden" vollständig im sichtbaren Bereich — keine abgeschnittene Beschriftung, kein horizontaler Überlauf
+- [ ] Angenommen der Button ist vollständig sichtbar, wenn der Nutzer ihn antippt, dann behält er ein Tap-Ziel von mindestens 44px Höhe (PRD-Vorgabe)
+- [ ] Angenommen das Sheet ist auf einer beliebigen Breite zwischen 320 und 1440 px offen, wenn der Inhalt gerendert wird, dann entsteht an keiner Stelle ein horizontaler Scrollbalken
+
 **Speichern (Entwurfsprinzip):**
 - [ ] Angenommen das Sheet ist offen und der Nutzer hat nur einen Namen eingegeben, aber keine Position gesetzt, wenn er auf "Speichern" tippt, dann wird die Station trotzdem gespeichert (mit `lat`/`lng` als `null`/nicht gesetzt) und das Sheet schließt sich
 - [ ] Angenommen das Sheet ist offen und der Nutzer bricht ab, wenn er "Abbrechen" tippt oder das Sheet wegwischt, dann werden keine Änderungen übernommen
@@ -122,6 +138,9 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 14. **Sehr kleine Viewport-Höhe (z.B. 360×640 px, Browser-Adressleiste eingeblendet):** Der Sheet-Inhalt ist höher als die verfügbaren 92dvh. Der mittlere Bereich scrollt, Titelzeile und Button-Zeile bleiben fixiert — die Karte behält ihre Mindesthöhe von 220px, statt so weit zu schrumpfen, dass sie zum Platzieren unbrauchbar wird (siehe Decision Log 2026-09-06)
 15. **Scroll-Geste trifft die Karte:** Leaflet fängt Touch-Gesten innerhalb des Kartencontainers ab (Pan/Zoom) — ein Wisch über die Karte bewegt die Karte, nicht den Sheet-Inhalt. Das ist gewolltes Verhalten; gescrollt wird über die Bereiche außerhalb der Karte (Namensfeld, Adresssuche, Radius-Slider, Ränder)
 16. **Bildschirmtastatur verkleinert den sichtbaren Bereich:** Beim Fokussieren von Namens- oder Adressfeld schiebt die mobile Tastatur den nutzbaren Bereich zusammen. Da der Footer am Sheet-Rand fixiert ist und der Inhalt dazwischen scrollt, wird nichts unerreichbar aus dem Sheet herausgedrückt — nach Schließen der Tastatur ist der Ausgangszustand wiederhergestellt
+17. **Karte als letztes Element darf angeschnitten sein:** Auf sehr kleinen Höhen (320×568) passt der gesamte Sheet-Inhalt auch mit der neuen Reihenfolge nicht ohne Scrollen hinein. Angeschnitten wird bewusst die Karte, weil sie als einziges Element ihren Zweck auch teilweise sichtbar erfüllt (Pin setzen, Ausschnitt beurteilen) und per Scroll vollständig erreichbar bleibt — jedes Bedienelement darüber (Name, GPS, Adresssuche, Radius) wäre in angeschnittenem Zustand unbrauchbar
+18. **Radius-Wert beim Bearbeiten einer bestehenden Station:** Beim Öffnen über "Station bearbeiten" ist der gespeicherte Radius vorausgefüllt. Da er jetzt über der Karte steht, ist er ohne Scroll-Bewegung lesbar — das war der Auslöser dieses Refinements: Der Wert war auf 320×568 um 111px und auf 360×640 um 45px hinter die Karte gerutscht und damit beim Bearbeiten faktisch unsichtbar
+19. **Langer Button-Text auf schmalen Geräten:** "Aktuelle Position verwenden" ist die längste Beschriftung im Sheet. Auf 320px Breite reicht der horizontale Platz neben dem "Position"-Label nicht — der Button darf umbrechen, in eine eigene Zeile rutschen oder eine kürzere Beschriftung tragen, solange sein Tap-Ziel 44px hoch bleibt und kein horizontaler Überlauf entsteht
 
 ## Technical Requirements
 - Karten-Bibliothek: Leaflet + OpenStreetMap-Tiles (kostenlos, kein API-Key nötig) — neue Dependency, siehe Decision Log
@@ -140,6 +159,11 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 - Sheet-Layout (neu seit Refine 2026-09-06): Das Stations-Sheet muss auf jeder Viewport-Höhe eine dreiteilige Struktur haben — fixierte Titelzeile, scrollbarer Inhaltsbereich dazwischen, fixierte Button-Zeile am unteren Rand. Das `SheetContent` selbst darf nicht überlaufen; der Scroll-Container ist ausschließlich der mittlere Bereich
 - Die Karten-Mindesthöhe (220px) bleibt erhalten und darf nicht zugunsten der Höhenanpassung aufgegeben werden — stattdessen scrollt der Inhalt (siehe Decision Log 2026-09-06)
 - Referenz-Viewport für die Prüfung: 360×640 px (kleinstes im PRD genanntes Mobile-Format, 360–430px Breite) — dort müssen beide Footer-Buttons ohne Scrollen sichtbar sein
+- Feldreihenfolge im scrollbaren Bereich (neu seit Refine 2026-09-20): Stationsname → Positions-Zeile (Label + GPS-Button) → Adresssuche → Ankunftsradius → Karte. Die Karte ist das letzte Element; alle Bedienelemente stehen über ihr
+- Der Container um die Karte darf den scrollbaren Bereich nicht mehr überragen. Ursache des Radius-Befunds war, dass er `flex-1 min-h-[220px]` trug und auf kleinen Höhen über die Unterkante des Scroll-Containers hinauswuchs (gemessen auf 320×568: Scroll-Container endet bei y 470, Karten-Container bei y 524) — der Radius-Block lag damit optisch hinter der Karte, ohne durch Scrollen erreichbar zu sein
+- Die Karten-Mindesthöhe von 220px bleibt unverändert bestehen (Entscheidung vom 2026-09-06). Sie wird durch die neue Reihenfolge nicht angetastet — die Karte darf stattdessen als letztes Element angeschnitten sein und wird erscrollt
+- Prüfbreiten: 320, 360, 390, 430 und 1440 px. 320px ist kein PRD-Format, aber der Fall, in dem beide Befunde dieses Refinements am deutlichsten auftreten — die Prüfung dort deckt die PRD-Breiten mit ab
+- Die Positions-Zeile darf auf schmalen Breiten umbrechen. `flex items-center justify-between` in einer Zeile mit einem langen Button reicht ab 320px nicht mehr aus (gemessen: Beschriftung läuft rechts aus dem sichtbaren Bereich)
 
 ## Open Questions
 - [x] Welche konkrete Drag-and-Drop-Bibliothek soll verwendet werden? → Gelöst in `/architecture`: `@dnd-kit` (Begründung siehe Tech Design)
@@ -160,6 +184,14 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 **Neu seit Refine 2026-09-06 — noch nicht implementiert:**
 - [ ] `AppHeader`-Aufruf in `src/app/create/[id]/page.tsx` verliert die `rightAction`-Prop; der Stift-Button zieht in den Titel-Block darunter (neben `{quest.name}`), Sichtbarkeit weiterhin an `!locked` gekoppelt
 - [ ] Prüfen, ob das gleiche Muster auf `/play/[id]` (Stationsliste, PROJ-3) einen Gegenpart braucht — dort gibt es heute keine `rightAction`, die Frage ist nur, ob der Titel-Block optisch auseinanderläuft, wenn der Creator einen Stift trägt und der Player nicht
+
+**Neu seit Refine 2026-09-20 (Radius-Sichtbarkeit) — noch nicht implementiert:**
+- [ ] Felder in `station-editor-sheet.tsx` umsortieren: der `StationRadiusSlider` wandert aus der letzten Position vor den Karten-Block; die Karte wird das letzte Element des Scroll-Containers
+- [ ] Der Container um die Karte darf den Scroll-Container nicht mehr überragen — die heutige Kombination `flex-1 min-h-0` am Positions-Block plus `flex-1 min-h-[220px]` am Karten-Wrapper ist die Ursache und muss beim Umbau aufgelöst werden
+- [ ] Positions-Zeile auf 320px umbruchfähig machen (`flex items-center justify-between` reicht dort nicht), Tap-Ziel bleibt 44px
+- [ ] Auf 320×568 und 360×640 verifizieren: Label "Ankunftsradius", Wertanzeige und Slider vollständig sichtbar ohne Scrollen; kein horizontaler Überlauf
+- [ ] Offen: Soll die kürzere Button-Beschriftung („Aktuelle Position" oder nur das Crosshair-Icon) gewählt werden, oder bricht der Button in eine eigene Zeile um? Beide erfüllen die Acceptance Criteria — Entscheidung in `/frontend` am Bildschirm, wo sich das Ergebnis beurteilen lässt
+- [ ] Offen: Ob die bestehenden PROJ-7-E2E-Tests, die Positionen im Sheet prüfen, durch die neue Reihenfolge falsch werden — beim Umbau zu prüfen und zu ziehen, nicht zu löschen
 
 ## Decision Log
 
@@ -187,6 +219,10 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 | Fixierter Footer + scrollender Inhaltsbereich, statt die Karte schrumpfen zu lassen | Von drei erwogenen Optionen (Footer fixieren / Karten-Mindesthöhe aufgeben / Karte als Vollbild-Schritt) gewählt: Die Karte behält eine zum Platzieren brauchbare Größe, die Speichern-Aktion ist immer sichtbar, und es kommt kein zusätzlicher Bedienschritt hinzu. Eine schrumpfende Karte hätte auf sehr kleinen Geräten das eine Problem gegen ein anderes getauscht; der Vollbild-Schritt wäre deutlich mehr Umbau für einen Layoutfehler | 2026-09-06 |
 | Karten-Mindesthöhe von 220px bleibt unangetastet | Unter etwa dieser Höhe lässt sich ein Pin auf einer Karte per Touch nicht mehr sinnvoll platzieren — die Karte ist der einzige direkte Koordinaten-Eingabeweg (Decision 2026-08-28), also darf ihre Bedienbarkeit nicht dem Platzsparen geopfert werden | 2026-09-06 |
 | Fix bleibt auf das Stations-Sheet begrenzt, Modul-Editor (PROJ-8) wird nicht mitgezogen | Der Modul-Editor überläuft nicht — er scrollt als Ganzes, sein Speichern-Button wandert also nur mit, statt unerreichbar zu sein. Bewusste Entscheidung des Nutzers, den Scope eng am tatsächlichen Fehler zu halten, statt ein Refactoring über beide Sheets aufzumachen; die daraus folgende Uneinheitlichkeit ist als offener Punkt notiert | 2026-09-06 |
+| Radius-Regler wandert über die Karte (Feldreihenfolge geändert) | Der Radius war auf kleinen Geräten nicht mehr sichtbar — gemessen auf 320×568 um 111px und auf 360×640 um 45px hinter die Karte gerutscht, ohne durch Scrollen erreichbar zu sein. Von drei erwogenen Optionen (Karte schrumpfen lassen / Karte behält 220px und der Radius wird erscrollbar / Radius vor die Karte ziehen) gewählt, weil nur sie den Radius ohne jede Scroll-Bewegung sichtbar macht und dabei die 220px-Entscheidung vom 2026-09-06 unangetastet lässt. Die beiden anderen Wege hätten entweder die Karte unbrauchbar klein gemacht oder den Radius zwar erreichbar, aber beim Öffnen weiterhin unsichtbar gelassen | 2026-09-20 |
+| Die Karte ist das einzige Element, das angeschnitten sein darf | Sie erfüllt ihren Zweck auch teilweise sichtbar (Pin setzen, Ausschnitt beurteilen) und ist per Scroll vollständig erreichbar. Jedes Bedienelement über ihr — Name, GPS-Button, Adresssuche, Radius — wäre angeschnitten unbrauchbar. Damit kehrt sich die Priorität gegenüber dem ursprünglichen Layout um: Die Karte war bisher das Element, das alles andere verdrängt hat, und ist jetzt das, was als erstes weicht | 2026-09-20 |
+| Radius bleibt ein sichtbares Pflichtfeld, statt ihn hinter "Erweitert" o.ä. zu verstecken | Erwogen, weil der Standardwert 10m für viele Stationen passt. Verworfen: Der Ankunftsradius entscheidet, ob ein Spieler eine Station überhaupt auslösen kann — bei einem großen Platz oder ungenauem GPS-Empfang sind 10m zu eng. Ein Ersteller, der ihn nie zu Gesicht bekommt, merkt das erst, wenn die Quest draußen nicht funktioniert | 2026-09-20 |
+| Der abgeschnittene "Aktuelle Position verwenden"-Button wird im selben Refinement behoben | Gleiche Datei, gleiche Klasse von Fehler (Layout auf schmalen Geräten), gleicher Prüf-Durchlauf. Ein eigener Zyklus für eine Zeile hätte mehr gekostet als die Scope-Erweiterung. Entscheidung des Betreibers auf Nachfrage | 2026-09-20 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -208,6 +244,9 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 | `AbortController` für Race-Schutz UND Abbruch beim Sheet-Schließen in einem Mechanismus | Ein Werkzeug statt zweier getrennter Lösungen für Edge Case 11 (veraltete Antworten) und Edge Case 12 (Sheet schließt während laufender Suche) — weniger State, weniger Fehlerquellen | 2026-09-02 |
 | Positions-Auswahl aus der Adresssuche nutzt denselben `setPosition`/`setMapView`-Pfad wie "Aktuelle Position verwenden" | Kein separater Code-Pfad für "Position setzen" nötig — Adresssuche ist nur eine dritte Aufrufquelle desselben bestehenden Mechanismus, konsistent mit dem bereits etablierten Sheet-Datenfluss | 2026-09-02 |
 | Ursache des Überlagerungs-Bugs: `min-h-[220px]` der Karte gewinnt gegen `flex-1` im nicht-scrollbaren `SheetContent` | Das `SheetContent` ist `h-[92dvh] flex flex-col` ohne Scroll-Container. Auf kleinen Viewports übersteigt die Summe aus Header, Namensfeld, Positions-Zeile, Adresssuche, Karten-Mindesthöhe, Radius-Slider und Footer die verfügbare Höhe; da nichts scrollt, wird der `SheetFooter` schlicht aus dem sichtbaren Bereich herausgedrückt und liegt hinter/unter der Karte | 2026-09-06 |
+| Ursache des Radius-Befunds: der Karten-Container überragt seinerseits den Scroll-Container | Der Fix vom 2026-09-06 hat `SheetContent` einen Scroll-Container gegeben, aber der Zwischen-Container um die Karte behielt `flex-1 min-h-[220px]`. Auf kleinen Höhen gewinnt die Mindesthöhe gegen den verfügbaren Platz, und der Container wächst über die Unterkante des Scroll-Bereichs hinaus (gemessen 320×568: Scroller endet bei y 470, Karten-Container bei y 524). Der dahinter liegende Radius-Block wird dadurch überlagert und ist auch durch Scrollen nicht erreichbar, weil der Scroller weniger Überlauf hat als die Karte ihn überragt. Derselbe Konflikt wie beim Speichern-Button, nur eine Ebene tiefer | 2026-09-20 |
+| Reihenfolge-Änderung im Markup statt CSS-Order oder zweitem Scroll-Container | Die Felder stehen im JSX ohnehin sequenziell — sie umzusortieren ist die kleinste Änderung mit dem geringsten Risiko. `order`-Utilities hätten visuelle und DOM-Reihenfolge auseinanderlaufen lassen (Tab-Reihenfolge und Screenreader folgen dem DOM), ein zweiter Scroll-Container hätte das Layout weiter verschachtelt | 2026-09-20 |
+| Prüfbreite 320px, obwohl das PRD 360–430px nennt | 320×568 ist der Viewport, in dem beide Befunde dieses Refinements am deutlichsten auftreten (Radius 111px verdeckt, Button-Text abgeschnitten). Die Prüfung dort deckt die PRD-Breiten mit ab; umgekehrt hätte eine Prüfung nur auf 360px den Button-Befund knapper und den Radius-Befund milder gezeigt | 2026-09-20 |
 | Scroll-Container ist der mittlere Bereich, nicht das `SheetContent` selbst | `overflow-y-auto` auf dem `SheetContent` (so gelöst im Modul-Editor) würde den Footer mitscrollen lassen — genau das soll hier vermieden werden. Header und Footer bekommen `shrink-0`, der Bereich dazwischen `flex-1 min-h-0 overflow-y-auto` | 2026-09-06 |
 | Kein Eingriff in Leaflets Touch-Handling innerhalb des Kartencontainers | Leaflet fängt Wischgesten über der Karte ab (Pan/Zoom) — das ist für einen Karten-Editor korrekt und soll so bleiben. Gescrollt wird über die Bereiche außerhalb der Karte; ein Sonderfall-Handling wäre unnötige Komplexität für ein Verhalten, das Nutzer von jeder Karten-App kennen | 2026-09-06 |
 
@@ -1087,3 +1126,55 @@ Die Testquest wurde ausschließlich im `localStorage` des Testbrowsers angelegt 
 - **BUG-6 (Medium, PROJ-3)** unverändert offen — gehört in PROJ-3, kein Blocker
 - **BUG-2 / BUG-3** (gemeinsame Komponenten, in PROJ-1 dokumentiert) unverändert offen, nicht blockierend
 - **`playwright.config.ts`** trägt weiterhin die kaputte `chromium`-Konfiguration; die verifizierte Lösung (`channel: 'chrome'`) ist dokumentiert, aber nicht angewendet
+
+---
+
+## Refinement 3 (2026-09-20): Ankunftsradius auf kleinen Geräten verdeckt
+
+### Auslöser
+Betreiber-Befund nach Live-Nutzung: *"ich sehe den Radius mobile nicht mehr, wenn ich eine Station bearbeite"*.
+
+### Reproduktion und Messung
+Reproduziert im Production-Build (`next build` + `next start`) gegen Chrome 152, Pfad "Station bearbeiten" mit einer Station mit gesetzter Position und `radiusMeters: 25`. Alle Werte sind CSS-Pixel relativ zum Viewport:
+
+| Viewport | Scroll-Container endet | Karten-Container endet | Radius-Label bei | Sichtbar? |
+|----------|------------------------|------------------------|------------------|-----------|
+| 320×568 | y 470 | y 524 | y 413 | ❌ 111px hinter der Karte |
+| 360×640 | y 542 | y 530 | y 485 | ❌ 45px hinter der Karte |
+| 390×844 | y 746 | y 670 | y 689 | ✅ |
+| 430×932 | y 834 | y 758 | y 777 | ✅ |
+| 1440×900 | y 802 | y 726 | y 745 | ✅ |
+
+Im Screenshot auf 360×640 sind von der gesamten Radius-Einheit nur noch die Stufenbeschriftungen ("10 m / 25 m / 50 m / 100 m") unterhalb der Karte zu sehen — Label, Wertanzeige und Slider liegen dahinter. Der Befund trifft beide Pfade gleichermaßen ("Station hinzufügen" und "Station bearbeiten"), wirkt beim Bearbeiten aber schwerer, weil dort ein vorhandener Wert unsichtbar bleibt statt nur ein Standardwert.
+
+### Ursache
+Der Fix vom 2026-09-06 hat `SheetContent` einen Scroll-Container gegeben und damit den Footer gerettet. Der Zwischen-Container um die Karte behielt dabei `flex-1 min-h-[220px]`. Auf kleinen Höhen gewinnt diese Mindesthöhe gegen den verfügbaren Platz, der Container wächst über die Unterkante des Scroll-Bereichs hinaus (320×568: Scroller endet bei y 470, Karten-Container bei y 524) und überlagert den dahinter liegenden Radius-Block.
+
+Scrollen löst das nicht: Der Scroller hat auf 320×568 nur 54px Überlauf, die Karte überragt ihn aber um mehr. Der Radius bleibt in jeder Scroll-Position verdeckt.
+
+Es ist derselbe Konflikt wie beim Speichern-Button, nur eine Ebene tiefer — der damalige Fix hat die äußere Ebene behandelt und die innere unberührt gelassen.
+
+### Zweitbefund (im selben Durchlauf aufgefallen)
+Der Button "Aktuelle Position verwenden" läuft auf 320 und 360px Breite rechts aus dem sichtbaren Bereich; die Beschriftung ist abgeschnitten. Auf Betreiber-Entscheidung im selben Refinement mitgenommen — gleiche Datei, gleiche Fehlerklasse, gleicher Prüf-Durchlauf.
+
+### Entschiedene Lösung
+Der Radius-Regler wandert **über** die Karte. Neue Feldreihenfolge im scrollbaren Bereich:
+
+```
+Stationsname
+Positions-Zeile (Label + "Aktuelle Position verwenden")
+Adresssuche
+Ankunftsradius          ← neu an dieser Stelle
+Karte                   ← neu als letztes Element, darf angeschnitten sein
+```
+
+Die Karten-Mindesthöhe von 220px bleibt unverändert (Entscheidung vom 2026-09-06 wird nicht angetastet). Die Karte ist das einzige Element, das beim Öffnen angeschnitten sein darf, und bleibt per Scroll vollständig erreichbar.
+
+Erwogen und verworfen:
+- **Karte schrumpfen lassen** — hätte die 220px-Entscheidung umgekehrt und die Karte auf 320px auf etwa 160px gedrückt, also die Bedienbarkeit des einzigen direkten Koordinaten-Eingabewegs geopfert
+- **Karte behält 220px, Radius wird nur erscrollbar** — hätte den Radius zwar erreichbar gemacht, aber beim Öffnen weiterhin unsichtbar gelassen; der Auslöser des Befunds ("ich sehe ihn nicht") wäre nicht behoben
+
+### Was dieses Refinement nicht anfasst
+- Der Modul-Editor (PROJ-8) bleibt außen vor, konsistent mit der Scope-Entscheidung vom 2026-09-06
+- Die Radius-Stufen (10/25/50/100m) und ihre Logik bleiben unverändert — es geht ausschließlich um Sichtbarkeit
+- Der `SheetContent`-Rahmen (`h-[92dvh]`, fixierter Header/Footer) bleibt wie 2026-09-06 gebaut
