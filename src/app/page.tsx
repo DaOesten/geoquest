@@ -22,8 +22,15 @@ export default function StartScreen() {
 
           `top-3 right-3` statt der Screen-Gutter von 20px: das Tap-Ziel ist
           44x44 mit dem Icon in der Mitte, damit sitzt das Icon optisch auf
-          derselben Hoehe wie in `AppHeader`. */}
-      <div className="absolute top-3 right-3 z-10">
+          derselben Hoehe wie in `AppHeader`.
+
+          `pt-safe-top` haelt die Statusleiste der installierten App frei
+          (PROJ-12, Refinement 3). Eigene Stelle, weil `/` bewusst keinen
+          `AppHeader` traegt — die Polsterung sitzt hier am absolut
+          positionierten Wrapper und schiebt das Icon nach unten, statt `top-3`
+          zu ersetzen: so bleiben die 12px Abstand zur Statusleiste erhalten,
+          statt gegen sie ausgetauscht zu werden. */}
+      <div className="absolute top-3 right-3 z-10 pt-safe-top">
         <AppNavMenu />
       </div>
 

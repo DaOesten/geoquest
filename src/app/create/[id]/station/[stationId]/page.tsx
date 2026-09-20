@@ -181,7 +181,7 @@ export default function StationModulesPage({ params }: StationModulesPageProps) 
               type="button"
               onClick={handleAddModule}
               aria-label="Modul hinzufügen"
-              className="fixed bottom-6 right-5 z-40 flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg transition-all duration-base ease-gq active:scale-[0.96]"
+              className="fixed bottom-safe-6 right-5 z-40 flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg transition-all duration-base ease-gq active:scale-[0.96]"
             >
               <Plus className="w-5 h-5" strokeWidth={2.5} />
             </button>

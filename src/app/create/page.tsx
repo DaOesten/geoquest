@@ -216,7 +216,7 @@ export default function CreatePage() {
             {/* Actions revealed by the FAB */}
             <div
               className={cn(
-                "fixed bottom-[84px] right-5 z-40 flex flex-col items-end gap-3 transition-all duration-base ease-gq",
+                "fixed bottom-safe-fab-stack right-5 z-40 flex flex-col items-end gap-3 transition-all duration-base ease-gq",
                 fabOpen ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-3 pointer-events-none"
               )}
             >
@@ -260,7 +260,7 @@ export default function CreatePage() {
               onClick={() => setFabOpen((open) => !open)}
               aria-label={fabOpen ? "Aktionen schließen" : "Quest hinzufügen"}
               aria-expanded={fabOpen}
-              className="fixed bottom-6 right-5 z-40 flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg transition-all duration-base ease-gq active:scale-[0.96]"
+              className="fixed bottom-safe-6 right-5 z-40 flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg transition-all duration-base ease-gq active:scale-[0.96]"
             >
               <Plus
                 className={cn("w-5 h-5 transition-transform duration-base ease-gq", fabOpen && "rotate-45")}

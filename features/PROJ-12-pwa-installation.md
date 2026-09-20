@@ -705,7 +705,7 @@ Die bestehenden Assertions sind **gezogen, nicht gelöscht**: Der iOS-Test prüf
 
 ## Refinement 3 (2026-09-20) — Safe Area: die Statusleiste verdeckt die Kopfzeile
 
-**Status:** Spec aktualisiert, Umsetzung offen (`/frontend`)
+**Status:** Frontend umgesetzt am 2026-09-20, QA offen
 
 ### Der Befund
 
@@ -790,6 +790,75 @@ Playwright emuliert `env(safe-area-inset-*)` **nicht** — dieselbe Grenze, die 
 - dass die Kopfzeilen-Hintergrundfläche und ihr Inhalt dasselbe Element sind (kein Spalt-Konstrukt)
 
 Das tatsächliche Erscheinungsbild auf einem iPhone mit Notch prüft der Betreiber am Gerät. Mitzunehmen ist dabei Edge Case 25 (Sheet-Höhe gegen Dynamic Island) und Edge Case 26 (Player-Button gegen Home-Indikator).
+
+### Implementation Notes (Frontend, 2026-09-20)
+
+**Umgesetzt.** Sieben Dateien, kein neues Paket, keine neue Komponente, keine neue Route.
+
+#### Was gebaut wurde
+
+Drei benannte Utilities in `globals.css` statt wiederholter `calc()`-Zeichenketten an sechs Aufrufstellen — die Regel steht einmal da, mitsamt ihrer Begründung:
+
+| Utility | Wert |
+|---|---|
+| `.pt-safe-top` | `padding-top: env(safe-area-inset-top)` |
+| `.bottom-safe-6` | `bottom: calc(env(safe-area-inset-bottom) + 1.5rem)` |
+| `.bottom-safe-fab-stack` | `bottom: calc(env(safe-area-inset-bottom) + 84px)` |
+
+Angewandt oben in `app-header.tsx` (7 Screens), `page.tsx` (der schwebende Burger auf `/`) und `info-page-shell.tsx` (4 Info-Seiten); unten an den drei Creator-FABs.
+
+#### Eine Abweichung von der Spec, gemessen statt vermutet
+
+**Der Spec fehlte ein viertes unteres Element.** `create/page.tsx:219` trägt das ausgeklappte Aktionsmenü des FAB auf `bottom-[84px]` (24px Gutter + 48px Button + 12px Abstand). Ohne denselben Inset wäre der FAB auf einem Gerät mit Home-Indikator nach oben gerückt und das Menü nicht — der Abstand zwischen beiden wäre verschwunden. Daher die dritte Utility. Gemessen mit simuliertem Inset: FAB `bottom: 58px`, Menü `bottom: 118px`, Abstand exakt 12px.
+
+#### `box-content` — der Teil, der ohne Messung falsch geworden wäre
+
+`AppHeader` brauchte zusätzlich `box-content`. Tailwinds Preflight setzt `border-box` global; mit `h-14` plus `pt-safe-top` hätte der Inset die 56px **von innen aufgezehrt**, statt die Zeile nach unten zu schieben — bei 47px wären 9px Zeilenhöhe übrig geblieben. Die Kopfzeile wäre also gestaucht worden statt verschoben, und das Tap-Ziel hätte die 44px verfehlt. `InfoPageShell` braucht es nicht: Dort trägt ein inneres `div` die Höhe, das Padding am `<header>` addiert sich von selbst.
+
+#### Die Mechanik gemessen, nicht behauptet
+
+Playwright emuliert `env(safe-area-inset-*)` nicht. Gemessen wurde deshalb über eine Simulation: Dieselben Utilities mit festem Wert überschrieben, was exakt den Weg misst, den der echte Inset nimmt.
+
+| | Browser | Notch 47px | Dynamic Island 59px |
+|---|---|---|---|
+| Kopfzeile `top` | 0 | **0** | **0** |
+| Kopfzeilen-Höhe | 56 | 103 | 115 |
+| **Bedienelement `top`** | 6 | **53** | **65** |
+| Tap-Ziel-Höhe | 44 | **44** | **44** |
+| Burger auf `/` | 12 | **59** | 71 |
+| FAB `bottom` | 24px | **58px** | 58px |
+
+Die entscheidende Zeile ist das Bedienelement: bei 53 bzw. 65 liegt es **vollständig unterhalb** der 47/59px hohen Statusleiste — der gemeldete Fehler. Die Kopfzeile beginnt weiterhin bei `top: 0`, die Blur-Fläche reicht also bis zur obersten Kante (kein durchsichtiger Spalt), und die 44px bleiben erhalten.
+
+#### Der Browser-Zustand ist unverändert — gemessen
+
+Auf fünf Viewports (320×568 bis 1440×900): `padding-top: 0px` überall, Kopfzeilenhöhe 56px (64px ab `sm` auf `/about`, wie zuvor), Burger bei y=12 mit 44×44, FAB `bottom: 24px`, `/` scrollt auf 360×640 weiterhin nicht. Das ist die ausdrückliche Zusicherung an den Betreiber, und sie ist belegt statt behauptet.
+
+#### Testabdeckung
+
+**34 neue Tests** in `tests/proj-12-safe-area.spec.ts` (17 je Engine), in drei Gruppen: der unveränderte Browser-Zustand, die Mechanik unter simuliertem Inset, und der CSS-Vertrag (`env()` statt fester Werte, `box-content`, randlose Backdrops).
+
+**Per Gegenprobe geschärft:** Mit zurückgenommener Änderung fallen **16 von 34** — alle drei oberen Stellen auf beiden Engines, der Spalt-Wächter und der `box-content`-Wächter. Die Browser-Zustands-Tests bleiben dabei korrekterweise grün, weil sich im Browser tatsächlich nichts ändert. Produktcode danach per `diff` als unverändert bestätigt.
+
+#### Drei Fehler in meinen eigenen Messungen, offen benannt (das Produkt war jeweils richtig)
+
+1. **`/create` zeigte keinen FAB** — die Testumgebung hatte keine Quest im localStorage, also rendert die Leeransicht. Kein Produktfehler; nach dem Seeden erschienen alle Elemente.
+2. **Viewport-Arithmetik statt computed `bottom`** — `innerHeight - rect.bottom` ergab 37px auf Chrome und 50px auf WebKit bei identischem Produktwert. Ursache: `innerHeight` weicht je nach Engine vom Layout-Viewport ab (gemessen: 844 gegen 664 bei gleichem Geräteprofil). Der computed `bottom`-Wert ist der Produktwert, die Differenz war ein Messartefakt.
+3. **Messung während der Übergangsanimation** — `addStyleTag` löst einen Restyle aus; der FAB trägt `transition-all` und lieferte einen Zwischenwert (44.2548px statt 58px). Über den Accessible Name adressiert und `expect.poll` statt Einzelmessung.
+
+#### Ein vorbestehender Testfehlschlag, nicht von diesem Refinement
+
+`proj-12-pwa-installation.spec.ts:865` („der Import-Button faellt nach dem Wegklicken zurueck") schlägt reproduzierbar fehl: Der FAB bleibt nach dem Wegklicken des Hinweises auf y=648 stehen, statt zurückzufallen.
+
+**Ich hatte das zunächst mir zugeschrieben** — mein neues `.bottom-safe-6` steht in derselben `@layer utilities` wie Tailwinds `.bottom-6`, eine Spezifitätskollision lag nahe. **Die Gegenprobe widerlegt das:** Mit `git stash` — also ohne eine Zeile meiner Änderung — fällt derselbe Test. Er stammt aus `7ee010b` (Overlay-Refinement vom selben Tag), das laut INDEX.md mit der Frontend-Phase endet und **nie eine QA durchlaufen hat**. Bewusst nicht hier mitbehoben: Das wäre ein fremdes Feature in diesem Zyklus.
+
+#### Suiten
+
+**Unit 266/266.** E2E gegen den Production-Build über beide Engines: **1033 passed / 55 skipped / 4 unexpected**. Von den vier: einer ist der oben beschriebene vorbestehende Fehlschlag; die drei anderen sind Kompassnadel-Tests aus PROJ-3, die **einzeln grün** laufen — Last-Flakiness im parallelen Gesamtlauf, das in INDEX.md bereits dokumentierte Muster. Build sauber, `/`, `/play` und die Info-Seiten bleiben statisch. Lint 0 Fehler, 7 vorbestehende Warnungen, keine in geänderten Dateien.
+
+#### Nicht abgedeckt und benannt
+
+Das Erscheinungsbild auf einem echten iPhone (Playwright emuliert `env()` nicht — die Mechanik ist belegt, der Augenschein nicht), Edge Case 25 (Sheet-Höhe gegen Dynamic Island), Edge Case 26 (Player-Button gegen Home-Indikator) und Firefox.
 
 ### Was dieses Refinement über das vorige sagt
 

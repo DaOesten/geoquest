@@ -282,6 +282,24 @@ Warum nur installiert: Im Browser hält Safari mit seiner Adressleiste den Platz
 
 Spec ist aktualisiert (1 User Story, 9 Acceptance Criteria in einem eigenen Block, Edge Cases 22–26, 6 Technical Requirements, 4 Produkt- und 4 technische Entscheidungen, 3 neue Open Questions, 1 geschlossene, 3 Ergänzungen in Out of Scope, dazu ein eigener Abschnitt „Refinement 3" mit beiden Messtabellen).
 
+**Frontend umgesetzt am 2026-09-20.** Sieben Dateien, kein neues Paket, keine neue Komponente, keine neue Route. Drei benannte Utilities in `globals.css` statt wiederholter `calc()`-Zeichenketten an sechs Aufrufstellen; angewandt oben in `app-header.tsx` (7 Screens), `page.tsx` und `info-page-shell.tsx`, unten an den drei Creator-FABs.
+
+**Der Spec fehlte ein viertes unteres Element**, im Code gefunden: `create/page.tsx:219` trägt das ausgeklappte Aktionsmenü des FAB auf `bottom-[84px]`. Ohne denselben Inset wäre der FAB nach oben gerückt und das Menü nicht — der 12px-Abstand zwischen beiden wäre verschwunden.
+
+**Ein Teil wäre ohne Messung falsch geworden:** `AppHeader` brauchte zusätzlich `box-content`. Tailwinds Preflight setzt `border-box` global; mit `h-14` plus `pt-safe-top` hätte der Inset die 56px **von innen aufgezehrt** statt die Zeile nach unten zu schieben — bei 47px wären 9px Zeilenhöhe übrig geblieben, die Kopfzeile gestaucht statt verschoben und das Tap-Ziel unter 44px.
+
+**Die Mechanik ist gemessen, nicht behauptet.** Playwright emuliert `env()` nicht; gemessen wurde über eine Simulation derselben Utilities mit festem Wert. Das Bedienelement in der Kopfzeile liegt bei **53px (Notch 47) bzw. 65px (Dynamic Island 59)** — also vollständig unterhalb der Statusleiste, bei unveränderten 44px Tap-Höhe und weiterhin `top: 0` der Kopfzeile (kein durchsichtiger Spalt). **Der Browser-Zustand ist auf fünf Viewports unverändert:** `padding-top: 0px`, Kopfzeile 56px, Burger y=12/44×44, FAB `bottom: 24px`, `/` scrollt auf 360×640 nicht.
+
+**34 neue Tests**, per Gegenprobe geschärft: Mit zurückgenommener Änderung fallen **16 von 34** — alle drei oberen Stellen auf beiden Engines plus Spalt- und `box-content`-Wächter. Die Browser-Zustands-Tests bleiben dabei korrekterweise grün.
+
+**Drei Messfehler offen benannt, alle meine** (das Produkt war jeweils richtig): `/create` ohne geseedete Quest zeigt die Leeransicht statt des FAB; `innerHeight - rect.bottom` ergab 37px auf Chrome gegen 50px auf WebKit bei identischem Produktwert (`innerHeight` weicht je nach Engine vom Layout-Viewport ab, gemessen 844 gegen 664); und eine Messung mitten in der Übergangsanimation las 44.2548px statt 58px.
+
+**Ein vorbestehender Fehlschlag, den ich zunächst mir zugeschrieben hatte:** `proj-12-pwa-installation.spec.ts:865` („Import-Button faellt nach dem Wegklicken zurueck") schlägt reproduzierbar fehl. Eine Spezifitätskollision meines neuen `.bottom-safe-6` mit Tailwinds `.bottom-6` lag nahe — **die Gegenprobe widerlegt das:** Mit `git stash`, ohne eine Zeile meiner Änderung, fällt derselbe Test. Er stammt aus `7ee010b` (Overlay-Refinement vom selben Tag), das **nie eine QA durchlaufen hat**. Bewusst nicht hier mitbehoben.
+
+**Suiten:** Unit **266/266**. E2E gegen den Production-Build über beide Engines **1033 passed / 55 skipped / 4 unexpected** — einer der oben beschriebene vorbestehende, drei Kompassnadel-Tests aus PROJ-3, die **einzeln grün** laufen (Last-Flakiness im parallelen Lauf, das bereits dokumentierte Muster). Build sauber, Lint 0 Fehler.
+
+**Nicht abgedeckt:** das Erscheinungsbild am echten iPhone, Edge Case 25 (Sheet gegen Dynamic Island), Edge Case 26 (Player-Button gegen Home-Indikator) und Firefox.
+
 **Eine Vorhersage des vorigen Refinements hat sich bestätigt — und war zu eng.** Der Overlay-Eintrag vom selben Tag schloss mit „Nicht abgedeckt: die Safe Area auf einem echten iPhone … am Gerät zu bestätigen". Richtig vorhergesagt, aber nur für unten, wo sie behandelt war — nicht für oben, wo sie es nie war. Der Befund kam aus genau dem Gerätetest, den der Satz angekündigt hatte.
 
 ## Next Available ID: PROJ-15

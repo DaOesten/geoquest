@@ -83,8 +83,14 @@ export function InfoPageShell({
     // gleich. Der Wrapper trägt die Fläche, damit auch der Bereich unterhalb
     // des Inhalts mitfärbt.
     <div data-theme={theme} className="min-h-dvh bg-background">
-      {/* No border under the header — it would cut the page into two blocks. */}
-      <header className="sticky top-0 z-50 bg-background/70 backdrop-blur-sm">
+      {/* No border under the header — it would cut the page into two blocks.
+
+          `pt-safe-top` haelt die Statusleiste der installierten App frei
+          (PROJ-12, Refinement 3). Am `<header>` und nicht an der inneren Zeile,
+          damit die Blur-Flaeche bis zur obersten Kante reicht; `sticky top-0`
+          sorgt dafuer, dass das in jedem Scroll-Zustand gilt. Die Zeilenhoehe
+          (h-14 / sm:h-16) bleibt unberuehrt. */}
+      <header className="sticky top-0 z-50 bg-background/70 backdrop-blur-sm pt-safe-top">
         <div className={`${CONTAINER} flex h-14 items-center gap-3 sm:h-16`}>
           {backHref && (
             <Link

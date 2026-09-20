@@ -66,6 +66,45 @@
 }
 
 @layer utilities {
+  /* Safe Area — die Systemleisten der installierten App (PROJ-12, Refinement 3).
+     
+     `statusBarStyle: "black-translucent"` und `viewportFit: "cover"` im
+     Wurzel-Layout lassen die Seite bei y=0 beginnen und die Statusleiste
+     durchsichtig darueber schweben. Das ist der gewollte randlose Look — wer
+     so anfaengt, muss die Systemleisten aber selbst freihalten. Ohne das
+     verdecken Uhrzeit und Batterie die Kopfzeile (Betreiber-Befund am Geraet,
+     2026-09-20).
+
+     Bewusst `env()` statt einer festen Ersatzhoehe: Der Wert ist 0px ohne
+     Notch, 47px mit Notch und 59px bei Dynamic Island — jede Konstante waere
+     auf mindestens einer dieser Klassen falsch. Und bewusst ohne
+     Plattform-Abfrage: `env()` ist im Browser von selbst 0px, weil Safari den
+     Platz unter seiner Adressleiste schon freihaelt. Eine zusaetzliche
+     `isIOS()`- oder Standalone-Pruefung waere eine zweite Wahrheit ueber
+     denselben Sachverhalt — genau das Muster, das in BUG-6 (PROJ-3) live ging.
+
+     `pt-safe-top` gehoert INNERHALB das Kopfzeilen-Element, nicht davor: beide
+     Kopfzeilen haben einen halbtransparenten Blur-Hintergrund, und davor
+     gesetzt begaenne die Blur-Flaeche erst unterhalb der Statusleiste — darueber
+     stuende ein durchsichtiger Spalt mit blankem Inhalt. */
+  .pt-safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* Additiv zum bestehenden Abstand, damit Geraete ohne Home-Indikator exakt
+     ihre heutigen 24px behalten (env() ist dort 0px). */
+  .bottom-safe-6 {
+    bottom: calc(env(safe-area-inset-bottom) + 1.5rem);
+  }
+
+  /* Das ausgeklappte Aktionsmenue ueber dem FAB auf /create. Muss denselben
+     Inset tragen wie `bottom-safe-6`, sonst rueckt der FAB auf einem Geraet mit
+     Home-Indikator nach oben und das Menue nicht — der 12px-Abstand zwischen
+     beiden verschwaende. 84px = 24px Gutter + 48px FAB + 12px Abstand. */
+  .bottom-safe-fab-stack {
+    bottom: calc(env(safe-area-inset-bottom) + 84px);
+  }
+
   .text-display {
     font-family: var(--font-display);
     text-transform: uppercase;

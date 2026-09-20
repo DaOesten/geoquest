@@ -26,6 +26,13 @@ interface AppHeaderProps {
  * Inhalt, ohne beizutragen — die App-Screens sind Listen, die man von oben nach
  * unten liest. Die Info-Seiten (PROJ-13) behalten ihren Sticky-Header, weil das
  * lange Fließtext-Seiten sind.
+ *
+ * `pt-safe-top` hält die Statusleiste der installierten App frei (PROJ-12,
+ * Refinement 3). Diese eine Zeile deckt sieben Screens ab: /play, /create,
+ * Quest-Detail, Station-Detail, Station-Liste, Module und Navigation. Sie sitzt
+ * am `<header>` selbst und nicht an einem Wrapper davor — sonst begänne die
+ * Blur-Fläche erst unterhalb der Statusleiste. Die 56px Zeilenhöhe (`h-14`)
+ * bleiben unberührt, der Inset kommt darüber hinzu.
  */
 export function AppHeader({ title, backHref, onBack, transparent = false }: AppHeaderProps) {
   const backButtonClassName =
@@ -34,7 +41,7 @@ export function AppHeader({ title, backHref, onBack, transparent = false }: AppH
   return (
     <header
       className={
-        "flex h-14 items-center gap-3 px-5" +
+        "flex h-14 items-center gap-3 px-5 pt-safe-top box-content" +
         (transparent ? "" : " bg-background/80 backdrop-blur-sm border-b border-border")
       }
     >
