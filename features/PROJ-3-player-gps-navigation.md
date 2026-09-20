@@ -1,6 +1,6 @@
 # PROJ-3: Player — GPS-Navigation
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-08-23
 **Last Updated:** 2026-09-19
 
@@ -8,7 +8,7 @@
 
 > **Refinement (2026-09-07) — BUG-6 geklärt, umgesetzt und QA-geprüft:** Die iOS-Erkennung hinter dem "Kompass aktivieren"-Button ist zu grob. Sie schließt allein daraus auf iOS, dass `DeviceOrientationEvent.requestPermission` eine Funktion ist — das trifft auf Desktop-Chrome ebenfalls zu. Folge: Chrome-Nutzer bekommen einen Button angeboten, der garantiert fehlschlägt, statt des Hinweises, der ihnen hilft. BUG-6 war als vermutliches Testumgebungs-Artefakt notiert und ist als **echter Produktfehler bestätigt**. Siehe Acceptance Criteria "Richtungsanzeige ohne Heading", Edge Cases 13–14, Technical Requirements und Decision Log.
 
-> **Refinement (2026-09-19) — Gratulationsscreen (`ArrivalOverlay`), umgesetzt:** Drei Befunde aus dem Gebrauch, alle am Ankunfts-Screen. (1) Die Karte „Nächstes Ziel" nimmt vorweg, was der Spieler gerade erst verdient hat — sie entfällt ersatzlos. (2) Das Pin-Logo zeichnet sich als Rechteck vom Hintergrund ab, weil `mark-pin.jpg` ein JPEG ohne Transparenz ist — es bekommt ein freigestelltes PNG. (3) Das Konfetti rieselt von oben und läuft endlos; es soll einmalig wie aus einer Konfetti-Kanone von unten mittig nach oben schießen — das gilt für beide Screens, die `ConfettiEffect` nutzen (Ankunft und Outro/PROJ-5). Siehe Acceptance Criteria „Ankunft — Gratulationsscreen", Edge Cases 15–17, Technical Requirements und Decision Log.
+> **Refinement (2026-09-19) — Gratulationsscreen (`ArrivalOverlay`), umgesetzt und QA-geprüft:** Drei Befunde aus dem Gebrauch, alle am Ankunfts-Screen. (1) Die Karte „Nächstes Ziel" nimmt vorweg, was der Spieler gerade erst verdient hat — sie entfällt ersatzlos. (2) Das Pin-Logo zeichnet sich als Rechteck vom Hintergrund ab, weil `mark-pin.jpg` ein JPEG ohne Transparenz ist — es bekommt ein freigestelltes PNG. (3) Das Konfetti rieselt von oben und läuft endlos; es soll einmalig wie aus einer Konfetti-Kanone von unten mittig nach oben schießen — das gilt für beide Screens, die `ConfettiEffect` nutzen (Ankunft und Outro/PROJ-5). Siehe Acceptance Criteria „Ankunft — Gratulationsscreen", Edge Cases 15–17, Technical Requirements und Decision Log.
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — für Routing und UI-Rahmen
@@ -1009,3 +1009,168 @@ Keine Secrets im Repo (nur `.env.local.example` getrackt).
 **Rollback:** Vercel Dashboard → Deployments → vorheriges Deployment "Promote to Production".
 Der Fix beruehrt ausschliesslich `use-device-orientation.ts`; ein Rollback bringt den
 Sackgassen-Button auf Chrome zurueck, mehr nicht.
+---
+
+## QA Test Results — Gratulationsscreen (2026-09-20)
+
+**Ergebnis: 8 von 8 Acceptance Criteria erfüllt. Keine Critical-, High-, Medium- oder Low-Bugs. Production-Ready.**
+
+Getestet gegen den **Production-Build** (`next start`), nicht gegen den Dev-Server, auf **Desktop Chrome 152** und **Mobile Safari (WebKit)**.
+
+Weil das Feature in derselben Sitzung gebaut wurde, habe ich die beiden zentralen Behauptungen der Frontend-Phase **nicht übernommen, sondern mit eigenen Sonden neu gemessen** — und in einem Punkt ein schärferes Ergebnis erzielt als die Frontend-Phase selbst.
+
+### Der Pin: unabhängig nachgemessen, mit dem entscheidenden Test, der vorher fehlte
+
+Die Frontend-Phase prüfte die **vier Eckpixel** des PNG. Das ist notwendig, aber nicht hinreichend — es beweist nicht, dass der Pin auf dem echten App-Hintergrund keine Kante mehr zeigt. Genau das habe ich nachgeholt:
+
+| Messung | Ergebnis |
+|---------|----------|
+| Ausgeliefertes PNG vs. Repo-Datei | **byte-identisch** (`cmp`) |
+| **Jeder** Randpixel (nicht nur die 4 Ecken) | höchster Alpha-Wert **0**, Pixel mit Alpha>0: **0** |
+| Flächenverteilung | 23,1% opak · 3,4% teiltransparent (Glow) · 73,4% frei |
+| Motiv-Bounding-Box | x 32..418, y 25..534 — Motiv vollständig erhalten |
+| **PNG auf `#0B0F12` kompositiert, äußerer 12px-Rahmen** | **max. Farbabweichung 0** über alle Randpixel |
+| **Gegenprobe: altes JPEG auf `#0B0F12`** | **max. Farbabweichung 43** — das war die sichtbare Kante |
+
+Die letzten beiden Zeilen sind der eigentliche Beweis: Auf dem realen App-Hintergrund ist das freigestellte PNG **mathematisch nicht vom Hintergrund unterscheidbar**, während das JPEG dort um 43 Stufen abweicht. Der vom Betreiber gemeldete Befund ist damit nicht nur behoben, sondern die Behebung ist messbar belegt.
+
+### Das Konfetti: gemessen statt geglaubt
+
+| Messung | Ergebnis |
+|---------|----------|
+| Ursprung | `bottom: 0px`, `left: 195px` bei 390px Breite — exakt unten mittig |
+| Animation | `gq-cannon`, `animation-iteration-count: 1` auf allen 70 Partikeln |
+| **Ruhe nach dem Schuss** (3,5 s + 0,7 s Nachmessung) | **0 von 70** Partikeln bewegt, **0** noch sichtbar |
+| Klick-Durchlässigkeit | Layer `pointer-events: none`; CTA-Klick führt in den Modul-Screen |
+| Screenreader | Layer trägt `aria-hidden="true"` |
+
+### Acceptance Criteria
+
+| # | Kriterium | Ergebnis |
+|---|-----------|----------|
+| 1 | Kein Hinweis auf die nächste Station | **Pass** — weder „Nächstes Ziel" noch der Name der Folgestation im DOM, auch bei vorhandener zweiter Station |
+| 2 | Reihenfolge Pin → Headline → Name → CTA ohne Element dazwischen | **Pass** — y-Positionen streng aufsteigend gemessen |
+| 3 | Keine Kante, kein Rechteck um den Pin | **Pass** — Randabweichung 0 auf dem App-Hintergrund (siehe Tabelle) |
+| 4 | Haken-Badge überlappt das Motiv, nicht eine Bildkante | **Pass** — `border-radius: 0px`, keine Bildkante mehr vorhanden |
+| 5 | Partikel schießen von unten mittig auf | **Pass** — `bottom: 0`, `left: 50%`, Aufstieg gemessen |
+| 6 | Nach dem Schuss bleibt der Screen ruhig, kein `infinite` | **Pass** — `iteration-count: 1`, 0 Bewegung nach 3,5 s |
+| 7 | Outro-Screen (PROJ-5) verhält sich identisch | **Pass** — eigener Durchlauf bis zum Quest-Ende, siehe Regression |
+| 8 | `prefers-reduced-motion`: kein Schuss, Screen vollständig | **Pass** — 0 sichtbare Partikel, alle vier Schritte bei **opacity 1** |
+
+Zu Kriterium 8: Geprüft wurde nicht nur die Abwesenheit der Partikel, sondern auch, dass die Einblend-Schritte nicht auf `opacity: 0` hängen bleiben — der naheliegende Folgefehler, wenn man Animationen pauschal abschaltet. Alle vier Schritte messen `opacity: 1`, der CTA ist klickbar und führt in den Modul-Screen.
+
+### Edge Cases
+
+| # | Fall | Ergebnis |
+|---|------|----------|
+| 15 | Letzte Station erreicht | **Pass** — Screen identisch zu jeder anderen Station; der frühere Sonderfall existiert nicht mehr |
+| 16 | Sehr langer Stationsname auf 320×568 | **Pass** — 5 Zeilen Umbruch, **nicht** abgeschnitten (`scrollWidth == clientWidth`), CTA endet bei 506 von 568 px |
+| 17 | `prefers-reduced-motion` aktiv | **Pass** — siehe Kriterium 8 |
+
+**Zusätzlich geprüft (nicht in der Spec):**
+
+| Fall | Ergebnis |
+|------|----------|
+| Umlaute, Emoji und Markup im Stationsnamen | **Pass** — „ÖKOZENTRUM „GRÜSSE" 🎉 `<B>X</B>`" als Text gerendert |
+| Leerer Stationsname | **Pass** — Headline und CTA bleiben vorhanden und klickbar, kein Layout-Bruch |
+| Tastaturbedienung | **Pass** — der Screen hat **genau ein** fokussierbares Element (den CTA): 1× Tab, Enter öffnet den Modul-Screen. Nichts konkurriert um den Fokus |
+
+### Responsive (fünf Viewports, beide Engines)
+
+| Viewport | CTA-Unterkante | Höhe | Über dem Falz | Tap ≥44px | Overflow-X |
+|----------|----------------|------|---------------|-----------|------------|
+| 320×568 | 464 / 463 | 56 | ja | ja | nein |
+| 375×667 | 516 / 513 | 56 | ja | ja | nein |
+| 390×844 | 604 / 602 | 56 | ja | ja | nein |
+| 768×1024 | 705 / 705 | 56 | ja | ja | nein |
+| 1440×900 | 645 / 643 | 56 | ja | ja | nein |
+
+(Chrome / WebKit; die Differenzen von 1–3 px sind Font-Metrik, kein Layout-Unterschied.)
+
+### Kontrast (WCAG AA, Vorgabe 4.5:1)
+
+| Element | Verhältnis | Farbe |
+|---------|-----------|-------|
+| Stationsname | **7,97:1** | `rgb(160,167,173)` auf `rgb(10,14,15)` |
+| Headline „Ziel erreicht!" | **19,40:1** | `rgb(255,255,255)` |
+| CTA „Station entdecken" | **11,53:1** | dunkle Schrift auf `rgb(0,224,209)` |
+
+Der Stationsname nutzt den festen Hex-Wert `text-gq-grey` — genau die Klasse, die als **BUG-1** im Light Theme auf 2,29:1 fällt. Hier ist das **kein Fehler**: `src/app/play/layout.tsx` setzt `data-theme="dark"` fest, der Grund bleibt also garantiert dunkel. Das Design System erlaubt die festen Werte genau für diesen Fall, und fünf weitere Stellen derselben Datei nutzen sie seit jeher ebenso. Geprüft, nicht angenommen.
+
+### Regression: PROJ-5 (Outro-Screen)
+
+`ConfettiEffect` und das Pin-Asset sind geteilt — der Outro wurde deshalb als eigener Durchlauf bis zum Quest-Ende geprüft, auf **beiden Engines identisch**:
+
+- Pin `/assets/mark-pin.png`, `border-radius: 0px`, Bild tatsächlich geladen (`naturalWidth > 0`)
+- Animation `gq-cannon`, `iteration-count: 1`, Ursprung `bottom: 0`, 70 Partikel
+- Inhalt vollständig: Quest-Name, „1 von 1 Station abgeschlossen", Outro-Text, „Fertig"-Button sichtbar
+- „Fertig" führt zurück nach `/play`
+
+Damit ist auch die Beobachtung aus der Frontend-Phase geklärt, der Outro-Screenshot sei „leer" gewesen: Das war reine Aufnahme-Zeit vor Ablauf der Einblend-Animationen. Nach 1,5 s ist der Screen vollständig.
+
+### Security-Audit (Red Team)
+
+**Ohne Befund.**
+
+Der Gratulationsscreen rendert genau ein angreiferkontrolliertes Feld: den **Stationsnamen** aus importiertem Quest-JSON. Genau dort habe ich angesetzt:
+
+| Angriff | Ergebnis |
+|---------|----------|
+| `<img src=x onerror="window.__pwned=1">` im Stationsnamen | **abgewehrt** — `window.__pwned` bleibt `null`, 0 injizierte `<img>` |
+| `<script>window.__pwned2=1</script>` im Stationsnamen | **abgewehrt** — `window.__pwned2` bleibt `null`, 0 injizierte `<script>` |
+| Dialoge/`alert()` | **keine** |
+| Darstellung des Payloads | als **escapter Text** (`&lt;img src=x onerror=…`) — sichtbar, aber wirkungslos |
+| Secrets in den Client-Bundles | **keine Treffer** über 20 geprüfte Chunks |
+| Security-Header | `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy` aktiv |
+
+Die Partikel sind rein dekorativ, tragen `aria-hidden` und `pointer-events: none` — sie können weder Klicks abfangen (per echtem CTA-Klick verifiziert) noch Inhalt vortäuschen.
+
+**Kein neuer externer Host, keine neue Eingabe, kein neuer Speicherzugriff.** Die Änderung entfernt Code und tauscht ein Bild; sie vergrößert die Angriffsfläche nicht.
+
+### Gegenprobe: Fangen die Tests den Fehler überhaupt?
+
+Jede der drei Änderungen einzeln zurückgebaut, gebaut und gemessen:
+
+| Zurückgebaut | Fallende Tests |
+|--------------|----------------|
+| „Nächstes Ziel"-Karte zurück | **genau 2** (kein Hinweis auf die nächste Station, letzte Station) |
+| JPEG mit `rounded-2xl` zurück | **genau 2** (PNG-Nachweis, Border-Radius) |
+| **Echte alte Konfetti-Komponente** (`HEAD~1`, 40 Partikel, Rieseln von oben) | **7** (Ursprung, `infinite`, Aufstieg, Ruhe, **Fächer**, Klick-Durchlässigkeit, `aria-hidden`) |
+| `prefers-reduced-motion`-Block entfernt | **genau 1** (der zuständige Test) |
+
+Bemerkenswert an der dritten Zeile: Die Frontend-Phase hatte notiert, der Fächer-Test fange die alte Fassung **nicht**. Gegen die **tatsächliche** alte Komponente aus der Git-History fällt er sehr wohl. Die dortige Gegenprobe hatte nur einzelne Parameter der neuen Fassung verändert, nicht die alte Komponente eingespielt — der Test ist also schärfer als dort angenommen.
+
+Nach allen Gegenproben wurde der Produktcode wiederhergestellt und per `git diff` als **byte-identisch** bestätigt.
+
+### Automatisierte Tests
+
+| Suite | Chrome 152 | Mobile Safari |
+|-------|-----------|---------------|
+| Unit (Vitest) | **219 / 219** | — |
+| Gesamt E2E | **460 passed / 23 skipped / 0 failed** | **454 passed / 29 skipped / 0 failed** |
+| `proj-3-gratulationsscreen.spec.ts` | **19 / 19** | **19 / 19** |
+
+Build und Lint sauber (0 Errors; die 7 Warnungen sind vorbestehend und betreffen `<img>`-Nutzung sowie eine Hook-Abhängigkeit in fremden Dateien).
+
+### Fehler in meinen eigenen Messungen (offen benannt)
+
+Drei Auffälligkeiten des ersten Durchlaufs waren **Messfehler**, nicht Produktfehler:
+
+1. Eine Sonde meldete, der Stationsname fehle (`stationName: false`). Ursache: Meine Regex prüfte gegen `innerText`, der durch `uppercase` transformiert ist. Der Name stand sehr wohl da.
+2. Der XSS-Test schlug zunächst mit einem Locator-Timeout fehl. Ursache: Der Stationsname steckt im `aria-label` des Buttons, der Payload machte den Textfilter unbrauchbar. Umgestellt auf `button[aria-label^="Navigation zu"]`.
+3. Ein Hintergrundlauf der Gesamtsuite blieb hängen, während parallel Sonden gegen denselben Server liefen — **genau das in INDEX.md dokumentierte Muster.** Prozesse beendet, Suiten danach einzeln gefahren.
+
+Zusätzlich sind die lokalen Konsolenfehler geprüft: Sie stammen ausschließlich von **Vercel Analytics** (`/_vercel/insights/script.js`, 404), das nur in Production existiert. Sie treten auf allen Routen auf, auch auf unveränderten — vorbestehend und in früheren QA-Läufen bereits so dokumentiert.
+
+### Nicht abgedeckt (ehrliche Einschränkung)
+
+- **Das Erscheinungsbild auf einem echten Gerätedisplay.** Der Pin ist rechnerisch kantenfrei und im Screenshot sauber; wie er auf einem OLED-Handy bei Sonnenlicht wirkt, ist damit nicht beantwortet.
+- **Die Performance von 70 Partikeln auf schwacher Android-Hardware.** Lokal kein solches Gerät; auf Chrome und WebKit am Desktop läuft der Schuss ohne sichtbares Ruckeln.
+- **Firefox** — Binary fehlt trotz gegenteiliger `--dry-run`-Meldung, kein Firefox in `/Applications`. Risiko gering: Die Änderung nutzt nur CSS-Animationen, `transform` und PNG-Alpha, alles seit Jahren universell unterstützt.
+- **Der Vibrations-Pfad** (`navigator.vibrate`) ist unverändert und wurde nicht erneut geprüft.
+
+### Production-Ready Decision
+
+**READY.** Keine Critical-, High-, Medium- oder Low-Bugs. Alle 8 Acceptance Criteria erfüllt, alle 3 Edge Cases bestätigt, drei zusätzliche Grenzfälle geprüft, Security-Audit ohne Befund, PROJ-5 regressionsfrei, beide Engines gleichwertig.
+
+Der vom Betreiber gemeldete Befund zum Pin ist nicht nur behoben, sondern mit einer Messung belegt, die die Frontend-Phase noch nicht geführt hatte: **Randabweichung 0 gegen 43 beim alten JPEG.**

@@ -18,7 +18,7 @@
 |----|---------|----------|--------------|--------|------|---------|
 | PROJ-1 | App Shell & Mode Switch | P0 | None | Deployed | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
-| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | In Progress | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
+| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Approved | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
 | PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
@@ -164,6 +164,28 @@ Spec ist aktualisiert (8 neue Acceptance Criteria im Block „Ankunft — Gratul
 19 neue Tests, per Gegenprobe geschärft: JPEG zurück → genau 2 Tests fallen, Karte zurück → genau 2, altes Rieseln zurück → genau 6. Suiten gegen den Production-Build: **Chrome 152: 460 passed / 23 skipped / 0 failed. Mobile Safari: 454 passed / 29 skipped / 0 failed. Unit 219/219.** Build und Lint sauber.
 
 Nicht abgedeckt und benannt: der Pin auf einem echten Gerätedisplay, die Performance von 70 Partikeln auf schwacher Android-Hardware, und der unveränderte Vibrations-Pfad.
+
+**QA am 2026-09-20 abgeschlossen: 8/8 Acceptance Criteria erfüllt, keine Bugs jeglicher Schwere, Production-Ready.**
+
+Weil das Feature in derselben Sitzung gebaut wurde, habe ich die zentralen Behauptungen **nicht übernommen, sondern neu gemessen** — und beim Pin ein schärferes Ergebnis erzielt als die Frontend-Phase. Die prüfte die vier Eckpixel des PNG; das beweist aber nicht, dass der Pin auf dem **echten App-Hintergrund** kantenfrei ist. Nachgeholt: Das PNG auf `#0B0F12` kompositiert ergibt über den gesamten äußeren 12px-Rahmen eine **maximale Farbabweichung von 0** — mathematisch nicht vom Hintergrund unterscheidbar. Die Gegenprobe mit dem alten JPEG ergibt **43**. Das war die Kante, die der Betreiber sah. Dazu: **jeder** Randpixel (nicht nur die Ecken) hat Alpha 0, das ausgelieferte PNG ist byte-identisch zur Repo-Datei, 23,1% opakes Motiv und 3,4% Teil-Alpha für den Glow.
+
+Konfetti gemessen: Ursprung `bottom: 0` / `left: 195px` bei 390px Breite (exakt mittig), `iteration-count: 1` auf allen 70 Partikeln, und nach 3,5 s **0 von 70** bewegt, **0** sichtbar. Bei `prefers-reduced-motion` nicht nur 0 Partikel, sondern auch alle vier Einblend-Schritte bei **opacity 1** — der naheliegende Folgefehler (Inhalt bleibt unsichtbar hängen) tritt nicht ein.
+
+Kontrast: Stationsname **7,97:1**, Headline 19,40:1, CTA 11,53:1. Der Name nutzt `text-gq-grey` — die Klasse der BUG-1-Falle; hier unkritisch, weil `play/layout.tsx` `data-theme="dark"` festsetzt. Geprüft, nicht angenommen.
+
+**Security ohne Befund:** Der Stationsname ist das einzige angreiferkontrollierte Feld auf dem Screen. `<img onerror>` und `<script>` im Namen werden als **escapter Text** gerendert, keine Ausführung, keine injizierten Elemente, keine Dialoge. Keine Secrets in 20 Bundles, Header aktiv.
+
+**PROJ-5 regressionsfrei:** Eigener Durchlauf bis zum Quest-Ende auf beiden Engines — der Outro erbt PNG und Kanone, Inhalt vollständig, „Fertig" führt nach `/play`. Damit ist auch die „leere Outro-Screenshot"-Beobachtung der Frontend-Phase geklärt: reine Aufnahme-Zeit vor Ablauf der Einblend-Animationen.
+
+**Gegenproben schärfer geführt als in der Frontend-Phase:** Karte zurück → genau 2 Tests fallen, JPEG zurück → genau 2, `prefers-reduced-motion` entfernt → genau 1. Und die **echte alte Konfetti-Komponente aus `HEAD~1`** eingespielt → **7** Tests fallen, darunter der Fächer-Test, den die Frontend-Phase als wirkungslos notiert hatte. Sie hatte nur einzelne Parameter der neuen Fassung verändert, nicht die alte Komponente. Produktcode danach per `git diff` als byte-identisch bestätigt.
+
+Zusätzlich geprüft und in der Spec nicht gefordert: Umlaute/Emoji/Markup im Namen, leerer Stationsname, Tastaturbedienung (der Screen hat **genau ein** fokussierbares Element — 1× Tab, Enter öffnet den Modul-Screen).
+
+Suiten gegen den Production-Build: **Unit 219/219. Chrome 152: 460 passed / 23 skipped / 0 failed. Mobile Safari: 454 passed / 29 skipped / 0 failed.** Build und Lint sauber.
+
+**Drei Messfehler offen benannt** (alle meine, nicht das Produkt): eine Regex gegen `innerText` bei `uppercase`-Transform; ein Locator-Timeout, weil der Stationsname im `aria-label` steckt und der Payload den Textfilter unbrauchbar machte; und ein hängender Hintergrundlauf durch parallele Sonden gegen denselben Server — genau das in INDEX.md dokumentierte Muster.
+
+**Nicht abgedeckt:** das Erscheinungsbild auf einem echten Gerätedisplay, 70 Partikel auf schwacher Android-Hardware, Firefox (Binary fehlt; Risiko gering, da nur CSS-Animationen und PNG-Alpha genutzt werden), und der unveränderte Vibrations-Pfad.
 
 ## Next Available ID: PROJ-15
 
