@@ -22,7 +22,7 @@
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
 | PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
-| PROJ-7 | Creator — Stationen-Editor | P0 | PROJ-6 | In Progress | [Spec](PROJ-7-creator-stationen-editor.md) | 2026-08-23 |
+| PROJ-7 | Creator — Stationen-Editor | P0 | PROJ-6 | Approved | [Spec](PROJ-7-creator-stationen-editor.md) | 2026-08-23 |
 | PROJ-8 | Creator — Modul-Editor | P0 | PROJ-7 | Deployed | [Spec](PROJ-8-creator-modul-editor.md) | 2026-08-23 |
 | PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Deployed | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
@@ -232,6 +232,22 @@ Gemessen im Production-Build: Der Radius ist auf **allen fünf Viewports ohne je
 17 neue Tests, PROJ-7 jetzt **56 statt 39**. Suiten gegen den Production-Build: **Chrome 152: 480 passed / 23 skipped / 0 failed. Mobile Safari: 474 passed / 29 skipped / 0 failed. Unit 226/226.** Build und Lint sauber.
 
 **Nicht abgedeckt:** Edge Case 16 (Bildschirmtastatur, seit 2026-09-06 offen) und die Frage, ob die auf 320×568 stark angeschnittene Karte (~50px von 220px beim Öffnen) am echten Gerät zum Platzieren ausreicht.
+
+**QA am 2026-09-20 abgeschlossen: 9/9 Acceptance Criteria erfüllt, keine Bugs jeglicher Schwere, Production-Ready.**
+
+Weil das Feature in derselben Sitzung gebaut wurde, habe ich die zentralen Behauptungen **nicht übernommen, sondern neu gemessen** — auf 6 Viewports × 2 Einstiegspfaden statt 5, zusätzlich auf WebKit, und um zwei Dinge erweitert, die die Frontend-Phase nicht prüfte: die **Meter-Wertanzeige** (sie war im Originalbefund mit verdeckt und ist das, was der Ersteller liest) und **768×1024**. Alle 12 Kombinationen bestätigen Sichtbarkeit bei `scrollTop: 0`, zusätzlich per Hit-Test als oberstes Element.
+
+**Der wichtigste Einzelbefund betrifft die Testqualität, nicht das Produkt:** Mit der echten Vorgängerfassung aus `HEAD~1` bestehen die **39 bestehenden PROJ-7-Tests auf beiden Engines vollständig**. Sie hätten den gemeldeten Fehler nie gefangen — sie prüften `toBeVisible()` und Geometrie gegen den Footer, während der Radius im DOM war, formal sichtbar und vom Footer weit entfernt, nur eben hinter der Kartenfläche. Genau diese Lücke schließen die 17 neuen Tests, von denen **8** bei derselben Gegenprobe fallen.
+
+Zusätzlich geprüft und in der Spec nicht gefordert: Tastatur-Reihenfolge (Slider wird **vor** der Karte fokussiert — die Umsortierung im Markup statt per CSS `order` hat ihren Zweck erfüllt), Radius per Tastatur inkl. Deckelung am Maximum, BUG-2-Regression mit `radiusMeters: 37`, und dass die auf 51px angeschnittene Karte trotzdem zuverlässig einen Pin setzt.
+
+**Security ohne Befund:** Markup im Stationsnamen wird als Feldwert gerendert — 0 injizierte Elemente, 0 Dialoge, Sanitizing greift beim Speichern. Manipulierte `radiusMeters` (999999, -5, 0) und ein 200-Zeichen-Name sprengen das Layout nicht.
+
+**Kontrast gemessen:** Label und Wertanzeige 18.21:1, Stufenbeschriftungen 5.30:1, GPS-Button 18.21:1 — alle über der 4.5:1-Vorgabe. Die Stufenbeschriftungen nutzen das Token `text-muted-foreground`, nicht den festen Hex-Wert `text-gq-grey`; die BUG-1-Falle ist vermieden.
+
+**0 Skips in beiden PROJ-7-Dateien** — alle 56 Tests laufen wirklich. Suiten: **Chrome 152: 480 passed / 23 skipped / 0 failed. Mobile Safari: 474 passed / 29 skipped / 0 failed. Unit 226/226.** Build und Lint sauber. Produktcode nach den Gegenproben per `diff` als byte-identisch bestätigt.
+
+**Drei Beobachtungen ohne Bug-Status:** Die Karte ist auf 320×568 beim Öffnen auf **51px** angeschnitten (von 220px) — konstruktiv gewollt, per Scroll vollständig erreichbar, aber nur am echten Gerät zu beurteilen. Edge Case 16 (Bildschirmtastatur) bleibt wie seit 2026-09-06 konstruktiv abgedeckt. Und Firefox bleibt ungetestet (Binary fehlt trotz gegenteiliger `--dry-run`-Meldung; Risiko gering, da nur Flexbox-Standardverhalten genutzt wird und zwei unabhängige Engines identisch messen).
 
 ## Next Available ID: PROJ-15
 

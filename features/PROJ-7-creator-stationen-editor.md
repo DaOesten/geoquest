@@ -1,9 +1,11 @@
 # PROJ-7: Creator — Stationen-Editor
 
-## Status: In Progress
+## Status: Approved
 _Am 2026-09-07 nach Production deployt (Tag `v1.23.0-PROJ-7`) und dort verifiziert. Live gingen beide Änderungen: (1) Quest-Bearbeiten-Einstieg neben dem Titel (2026-09-06, gebaut und im Browser verifiziert), (2) Sheet-Layout auf kleinen Bildschirmen — Karte überlagerte den "Speichern"-Button, behoben am 2026-09-06 mit fixiertem Header/Footer und scrollender Mitte, 7 neue E2E-Tests, Gesamtsuite in der QA final 285/285 grün auf Mobile Safari und erstmals auch auf Chrome verifiziert (PROJ-7-Suite 39 Tests). In Produktion per Smoketest auf 360×640 bestätigt: Speichern erreichbar, Karte 220px, keine Konsolenfehler._
 
 _**Zurück auf In Progress am 2026-09-20 (Refinement 3):** Der Ankunftsradius ist auf kleinen Geräten nicht mehr sichtbar — er liegt hinter der Karte. Gemessen im Production-Build auf Chrome 152: auf 320×568 um 111px, auf 360×640 um 45px verdeckt, in beiden Fällen nicht durch Scrollen erreichbar. Ursache ist derselbe Layout-Konflikt wie beim Speichern-Button vom 2026-09-06, eine Ebene tiefer: Der Fix von damals hat `SheetContent` einen Scroll-Container gegeben, aber der Karten-Wrapper behielt `flex-1 min-h-[220px]` und überragt jetzt seinerseits den Scroll-Bereich. Entschiedene Lösung: Der Radius-Regler wandert über die Karte, die Karte wird das letzte Element und darf als einziges angeschnitten sein. Mitgenommen: Der Button "Aktuelle Position verwenden" läuft auf 320 und 360px rechts aus dem sichtbaren Bereich._
+
+_**QA am 2026-09-20 abgeschlossen: 9/9 Acceptance Criteria erfüllt, keine Bugs jeglicher Schwere, Production-Ready.** Die zentralen Behauptungen wurden nicht übernommen, sondern neu gemessen — 6 Viewports × 2 Einstiegspfade auf beiden Engines, inkl. der Meter-Wertanzeige und 768×1024, die die Frontend-Phase nicht geprüft hatte. Wichtigster Einzelbefund: Die 39 bestehenden PROJ-7-Tests bestehen auch mit der **fehlerhaften** Vorgängerfassung aus `HEAD~1` — sie hätten den gemeldeten Fehler auf keiner Engine gefangen. Genau diese Lücke schließen die 17 neuen Tests, von denen 8 bei der Gegenprobe fallen._
 **Created:** 2026-08-28
 **Last Updated:** 2026-09-20
 
@@ -1226,3 +1228,126 @@ Die Karte ist per Scroll vollständig erreichbar: Nach `scrollTop = scrollHeight
 **Suiten gegen den Production-Build:** Chrome 152: **480 passed / 23 skipped / 0 failed**. Mobile Safari: **474 passed / 29 skipped / 0 failed**. Unit: **226/226**. Build und Lint sauber (7 Warnungen, alle vorbestehend aus PROJ-12, 0 Errors).
 
 **Nicht abgedeckt und benannt:** Edge Case 16 (Bildschirmtastatur) bleibt wie seit 2026-09-06 nur konstruktiv abgedeckt — Playwright emuliert keine mobile Tastatur. Und die Karte ist auf 320×568 beim Öffnen stark angeschnitten (~50px von 220px sichtbar); konstruktiv gewollt und per Scroll erreichbar, aber ob das zum Platzieren eines Pins als zu wenig empfunden wird, zeigt erst die Nutzung am echten Gerät.
+
+---
+
+## QA Test Results — Refinement 3 (2026-09-20)
+
+**Getestet gegen den Production-Build** (`next build` + `next start`), nicht gegen den Dev-Server. Engines: Desktop Chrome 152 und Mobile Safari (WebKit). Firefox weiterhin nicht lauffähig — `--dry-run` meldet es als vorhanden, auf der Platte liegt es nicht, und in `/Applications` ist es ebenfalls nicht. Chromium unverändert die bekannte 428-KB-Ruine.
+
+**Weil das Feature in derselben Sitzung gebaut wurde, habe ich die zentralen Behauptungen nicht übernommen, sondern mit eigenen Sonden neu gemessen** — auf 6 Viewports × 2 Einstiegspfaden statt der 5 Viewports der Frontend-Phase, und zusätzlich auf WebKit.
+
+### Acceptance Criteria
+
+**Feldreihenfolge & Radius-Sichtbarkeit — 6/6 erfüllt**
+
+| # | Kriterium | Ergebnis |
+|---|-----------|----------|
+| 1 | Label, Wert und Slider vollständig sichtbar ohne Scrollen (320×568, 360×640) | ✅ auf **beiden** Pfaden (Bearbeiten und Hinzufügen), `scrollTop: 0`, alle drei Teile zusätzlich per Hit-Test als oberstes Element bestätigt |
+| 2 | Reihenfolge Name → Position → Adresse → Radius → Karte, Karte zuletzt | ✅ geometrisch auf 6 Viewports und im DOM per `compareDocumentPosition` |
+| 3 | Vorausgefüllter Radius beim Bearbeiten sofort lesbar | ✅ für **alle vier** Stufen (10/25/50/100m) einzeln geprüft |
+| 4 | Karte ist das einzige angeschnittene Element, überlagert kein Bedienelement | ✅ 0 überlappte Bedienelemente innerhalb des Scroll-Containers, auf allen 6 Viewports |
+| 5 | Karte per Scroll vollständig erreichbar, behält 220px | ✅ Unterkante trifft exakt die Scroller-Unterkante, Höhe 220px, "Speichern" bleibt sichtbar |
+| 6 | Auf großen Bildschirmen nur die Reihenfolge anders, Karte > 220px | ✅ 304px (390), 408px (430), 493px (768), 379px (1440) |
+
+**Breite auf schmalen Geräten — 3/3 erfüllt**
+
+| # | Kriterium | Ergebnis |
+|---|-----------|----------|
+| 7 | "Aktuelle Position verwenden" vollständig sichtbar auf 320px | ✅ x 24..296 bei 320px Viewport, Textüberlauf **0px** |
+| 8 | Tap-Ziel ≥ 44px | ✅ exakt 44px auf allen 6 Viewports |
+| 9 | Kein horizontaler Scrollbalken zwischen 320 und 1440px | ✅ weder Seite noch Sheet, auf 320/360/390/430/768/1440 |
+
+**Gesamt: 9/9 Acceptance Criteria erfüllt**, identisch auf Chrome und WebKit.
+
+### Eigene Messung statt Übernahme
+
+Die Frontend-Phase prüfte Label und Slider. **Die Meter-Wertanzeige habe ich ergänzt** — sie war im Originalbefund mit verdeckt und ist das, was der Ersteller tatsächlich liest. Gemessen: sichtbar und obenauf in allen 12 Kombinationen.
+
+Ebenfalls ergänzt: **768×1024** (Tablet, im Skill-Checkliste gefordert, in der Frontend-Phase nicht geprüft) — Karte 493px, alles korrekt.
+
+### Edge Cases
+
+| Edge Case | Ergebnis |
+|-----------|----------|
+| 17 — Karte angeschnitten, per Scroll erreichbar | ✅ 51px sichtbar beim Öffnen auf 320×568, nach Scroll vollständig, 220px erhalten |
+| 18 — Vorausgefüllter Radius lesbar | ✅ alle vier Stufen |
+| 19 — Langer Button-Text bricht um | ✅ Button in eigener Zeile auf 320/360/390px, ab 430px wieder einzeilig |
+
+**Zusätzlich geprüft, in der Spec nicht gefordert:**
+- **Tastatur-Reihenfolge:** Der Slider wird **vor** der Karte fokussiert (Chrome Position 2 vs. 3, WebKit 1 vs. 2) — die Umsortierung im Markup statt per CSS `order` hat ihren Zweck erfüllt
+- **Radius per Tastatur:** 10m → dreimal ArrowRight → 100m, Deckelung am Maximum greift, Wert korrekt gespeichert
+- **BUG-2-Regression:** `radiusMeters: 37` aus einem Import bleibt sichtbar, lesbar und wird unverändert als `37` gespeichert
+- **Karte trotz Anschnitt bedienbar:** Klick auf die sichtbare Fläche (50px hoch) setzt zuverlässig einen Pin
+
+### Security-Audit — ohne Befund
+
+Der Stationsname ist das einzige angreiferkontrollierte Feld im Sheet.
+
+| Prüfung | Ergebnis |
+|---------|----------|
+| `<img src=x onerror=alert(1)><script>alert(2)</script>` im Namen | ✅ als Feldwert gerendert, **0** injizierte `<img src="x">`, **0** `<script>`, **0** Dialoge |
+| Sanitizing beim Speichern | ✅ `<script>`-Tags entfernt (`stripHtmlTags`) |
+| `radiusMeters` aus manipuliertem Storage (999999, -5, 0) | ✅ Layout hält, Radius sichtbar, kein Überlauf |
+| Stationsname mit 200 Zeichen | ✅ Layout hält, kein horizontaler Überlauf |
+
+### Kontrast (gemessen, nicht geschätzt)
+
+| Element | Verhältnis | Vorgabe |
+|---------|-----------|---------|
+| Label "Ankunftsradius" | **18.21:1** | 4.5:1 |
+| Meter-Wertanzeige | **18.21:1** | 4.5:1 |
+| Stufenbeschriftungen (10/25/50/100 m) | **5.30:1** | 4.5:1 |
+| "Aktuelle Position verwenden" | **18.21:1** | 4.5:1 |
+
+Die Stufenbeschriftungen nutzen `text-muted-foreground` (Token), nicht den festen Hex-Wert `text-gq-grey` — die BUG-1-Falle ist vermieden. Der Wert 5.30:1 entspricht exakt dem im Design System dokumentierten Light-Wert des Tokens.
+
+**Geprüft und als kein Befund eingestuft:** Label und GPS-Button messen 10px, das PRD nennt "min. 16px Body-Text". Das Design System erlaubt für Tech/UI-Labels (Orbitron) ausdrücklich 9–20px, und die Werte sind gegenüber der Vorgängerfassung byte-identisch — vorbestehend und regelkonform.
+
+### Gegenproben — schärfer geführt als in der Frontend-Phase
+
+Statt einzelne Parameter zu verändern habe ich die **echte Vorgängerfassung aus `HEAD~1`** eingespielt:
+
+| Suite gegen die fehlerhafte Fassung | Ergebnis |
+|--------------------------------------|----------|
+| Neue Tests (`proj-7-radius-sichtbarkeit`) | **8 von 17 fallen** |
+| Bestehende PROJ-7-Suite, Chrome | **39/39 bestehen** |
+| Bestehende PROJ-7-Suite, WebKit | **39/39 bestehen** |
+
+**Der mittlere Befund ist der wichtigste Einzelbefund dieser QA:** Die 39 bestehenden Tests hätten den gemeldeten Fehler auf **keiner** Engine gefangen. Sie prüften Sichtbarkeit über `toBeVisible()` und Geometrie gegen den Footer — der Radius war im DOM, formal sichtbar und vom Footer weit entfernt, nur eben hinter der Kartenfläche. Genau diese Lücke schließen die 17 neuen Tests.
+
+Nebenbefund: `clickMapCenter` besteht auch gegen die alte Fassung — der Helfer ist nicht auf die neue Fassung zugeschnitten.
+
+Produktcode danach per `diff` als **byte-identisch** bestätigt, `git status` sauber.
+
+### Regression
+
+| Bereich | Ergebnis |
+|---------|----------|
+| PROJ-7 gesamt | ✅ 56/56 auf beiden Engines |
+| PROJ-8 (Modul-Editor, gleiche Sheet-Struktur) | ✅ unverändert grün |
+| PROJ-6 / PROJ-9 (Stationsdaten, Export) | ✅ unverändert grün |
+| Volle Suite Chrome 152 | ✅ **480 passed / 23 skipped / 0 failed** |
+| Volle Suite Mobile Safari | ✅ **474 passed / 29 skipped / 0 failed** |
+| Unit | ✅ **226/226** |
+| Build / Lint | ✅ sauber (7 Warnungen, alle vorbestehend aus PROJ-12, 0 Errors) |
+
+**Die Skips sind nachvollzogen:** 0 davon liegen in PROJ-7 — alle 56 Tests laufen wirklich. Die 23/29 verteilen sich auf PROJ-12 (PWA-Pfade), PROJ-13 (Clipboard in WebKit), PROJ-1 (kein Hover auf Touch) und PROJ-14 (Anleitung-Schalter) und sind vorbestehende, unabhängig verifizierte Plattformgrenzen.
+
+### Sichtprüfung am Bildschirm
+
+Bei einer Layout-Änderung reichen Zahlen nicht. Screenshots auf 320×568 und 360×640 (Chrome) sowie 390×664 (WebKit), jeweils ungescrollt und gescrollt: "ANKUNFTSRADIUS — 50 m" mit Slider und allen vier Stufenbeschriftungen vollständig, GPS-Button ungekürzt, Karte als angeschnittenes letztes Element. Im gescrollten Zustand steht die Karte vollständig im Bild mit gesetztem Pin, während der Radius darüber sichtbar bleibt und die Buttons feststehen.
+
+### Bugs
+
+**Keine.** Keine Critical-, High-, Medium- oder Low-Bugs gefunden.
+
+### Beobachtungen ohne Bug-Status
+
+1. **Die Karte ist auf 320×568 beim Öffnen auf 51px angeschnitten** (von 220px). Konstruktiv so entschieden und per Scroll vollständig erreichbar; ein Klick auf die sichtbare Fläche setzt nachweislich einen Pin. Ob das zum Platzieren am echten Gerät als zu wenig empfunden wird, lässt sich nur am Handy beurteilen — als offene Frage in der Spec geführt.
+2. **Edge Case 16 (Bildschirmtastatur)** bleibt wie seit 2026-09-06 nur konstruktiv abgedeckt; Playwright emuliert keine mobile Tastatur.
+3. **Firefox weiterhin ungetestet** — Binary fehlt trotz gegenteiliger `--dry-run`-Meldung. Risiko gering, da die Änderung ausschließlich Flexbox-Standardverhalten nutzt und auf zwei unabhängigen Engines identisch misst.
+
+### Production-Ready Decision
+
+**READY** — 9/9 Acceptance Criteria erfüllt, alle drei Edge Cases bestätigt, Security ohne Befund, Kontrast überall über der Vorgabe, keine Bugs jeglicher Schwere, beide Engines strukturgleich, keine Regression in den Nachbarfeatures.
