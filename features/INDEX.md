@@ -19,7 +19,7 @@
 | PROJ-1 | App Shell & Mode Switch | P0 | None | Deployed | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
 | PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
-| PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | In Progress | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
+| PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Approved | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
 | PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
 | PROJ-7 | Creator — Stationen-Editor | P0 | PROJ-6 | Deployed | [Spec](PROJ-7-creator-stationen-editor.md) | 2026-08-23 |
@@ -792,6 +792,48 @@ Spec ist aktualisiert (8 neue Acceptance Criteria in einem eigenen Block, Edge C
 **Für `/frontend` zu beachten:** Der gelöste/read-only-Zustand (Edge Case 11) darf sich nicht ändern — die bestehenden Tests dazu müssen grün bleiben, **ohne angefasst zu werden**, sie sind der Wächter gegen Kollateralschaden. Bestehende Assertions auf `div[draggable="true"]` werden durch den Umbau falsch und sind zu **ziehen, nicht zu löschen**. Und der eigentliche Regressionswächter fehlt bisher ganz: Kein Test hält fest, dass ein Wisch *ohne* Long-Press die Reihenfolge unverändert lässt — genau diese Lücke hat den Zweitbefund durchgelassen, während die Suite grün war.
 
 **Nicht abgedeckt:** das Gefühl am echten Gerät (ob 150 ms richtig sind, entscheidet ein Daumen, kein Emulator) und die Gegenprobe auf iOS Safari (Playwright kann auf WebKit keine vergleichbaren Touch-Sequenzen senden; der fehlende `transform` steckt aber im Produktcode, nicht in der Engine).
+
+**Frontend umgesetzt am 2026-09-20.** Eine Produktivdatei (`sorting-task.tsx`), kein neues Paket, keine neue Komponente, keine neue Route. Die handgeschriebene Touch-Rechnung und die HTML5-`draggable`-Handler sind ersatzlos entfallen — ein `@dnd-kit`-Pfad bedient jetzt Maus und Finger zugleich.
+
+**Der gemeldete Befund ist behoben, gemessen an denselben Punkten, an denen vorher überall `none` stand:** Das gegriffene Item misst `matrix(1.03, …)`, trägt Schatten und `z-index: 10`, und der Translate-Anteil ändert sich bei **6 von 6** Messungen — es folgt dem Finger, statt in 58-px-Stufen zu springen. Nach dem Loslassen legt es sich ab (`transform: none`, kein Schatten).
+
+**Der Zweitbefund ebenfalls, nach Fläche getrennt:** Ein 41 ms schneller Wisch über dem Zeilentext scrollt jetzt die Seite (2077 → 4099) und lässt die Reihenfolge **unverändert**; derselbe Wisch auf dem Greif-Handle zieht. `touch-action` misst `auto` auf der Zeile, `none` auf dem Handle.
+
+**Ein echter Implementierungsfehler von mir, durch Messen gefunden:** Der erste Entwurf legte Drag-Listener und `touch-action: none` auf die **ganze Zeile** statt nur auf das Handle — damit war die Zeile nirgends mehr Scroll-Fläche und der Zweitbefund blieb bestehen (39 ms Wisch sortierte weiter um, bei 2022 px Scroll-Reserve). Korrigiert auf das Muster des Creators.
+
+**Ein Messfehler mit Lehrwert für künftige Läufe:** Meine erste Sonde meldete, eine schnelle Wischbewegung sortiere um. Die Geste dauerte real **420 ms** — ein `await page.waitForTimeout(10)` plus `evaluate`-Roundtrip je Schritt kosten ~35 ms, und die 150-ms-Schwelle misst echte Zeit. Meine "schnelle Wischbewegung" war ein langsames Halten. Aussagekräftig wurde der Test erst ohne `await` zwischen den Schritten (39–48 ms).
+
+**Ein bestehender Test war zu Recht falsch geworden, aber nicht aus dem naheliegenden Grund:** *"shows solved feedback once the items are dragged…"* fiel auf beiden Engines. Ursache ist nicht das Produkt — Playwrights `dragTo` bewegt mit `@dnd-kit` **gar nichts**, weil es zu wenige Zwischenschritte sendet; mit HTML5-`draggable` genügte das Drop-Ereignis. Neuer Helfer zieht in 10 Schritten am Handle, der Test besteht auf Chrome **und** WebKit — womit belegt ist, dass das Ziehen auf beiden Engines funktioniert.
+
+**Eine Erwartung bleibt bewusst unerfüllt, nach Rückfrage entschieden:** Reines Halten ohne Bewegung hebt das Item nicht an (400 ms gehalten, 0 px bewegt → `transform: none`); es hebt sich beim ersten Bewegen. Die Alternative hätte ~20 Zeilen eigenen Zustand neben `@dnd-kit` gekostet — genau die Handarbeit, die dieses Refinement abbaut.
+
+5 neue Tests, aufgeteilt in zwei Gruppen: Zwei Zusicherungen brauchen keine CDP-Touch-Events und laufen auf **beiden** Engines, drei Gesten-Tests sind Chromium-gebunden. Per Gegenprobe geschärft: Mit der echten Vorgängerfassung fallen **4 von 5**; der fünfte (gelöster Zustand) besteht in beiden Fassungen — richtig so, er ist der Wächter gegen Kollateralschaden. Offen benannt: Die 4 fallen per Timeout statt mit sauberer Assertion, weil das Greif-Handle in der alten Fassung nicht existiert.
+
+**Suiten gegen den Production-Build:** Unit **266/266**, E2E über beide Engines **1003 passed / 0 failed / 0 flaky / 55 skipped** (vorher 57). Build und Lint sauber. **Am Bildschirm abgenommen:** Teal-Rahmen, Schatten und Vergrößerung beim Greifen, das Item schwebt während der Bewegung sichtbar über der Liste, die übrigen Zeilen geben die Lücke frei, nach dem Loslassen gleichmäßiger Rhythmus ohne Restschatten.
+
+**Nicht abgedeckt:** das Gefühl am echten Gerät, echte Touch-Gesten auf iOS Safari (dort ist die Struktur geprüft, das Ziehen über den Maus-Pfad), Firefox, und ob der Creator dieselbe Anhebe-Rückmeldung bekommen soll (dort weiterhin nur `opacity: 0.5`).
+
+**QA am 2026-09-20 abgeschlossen: 7 von 8 Acceptance Criteria erfüllt, 1 Kriterium als Spec-Fehler identifiziert, 2 neue Low-Bugs, keine Critical/High. Production-Ready.**
+
+Weil das Feature in derselben Sitzung gebaut wurde, habe ich die zentralen Behauptungen **neu gemessen statt übernommen** — auf drei Viewports statt einem (Pixel 7, iPhone 13, 320×568), zusätzlich auf WebKit, und um die drei Kriterien erweitert, die die Frontend-Phase nicht isoliert geprüft hatte (Lückenbildung, Parallel-Scroll, Ziehen über den Listenrand).
+
+**Der wichtigste Einzelbefund ist ein Fehler in der Spec, nicht im Produkt.** AC-6 ("die Seite scrollt während des Ziehens nicht mit") schien zunächst verletzt (2130 → 2088). Statt das zu melden, habe ich instrumentiert: Die Seite steht bei **8 von 10** Bewegungsschritten still und scrollt erst, wenn der Finger den Bildschirmrand erreicht. Gegenprobe mit zwei Zuggrößen: bildschirmmittiger Zug → **0 px Scroll**, Zug bis 120 px an den Rand → −9 px. Das ist `@dnd-kit`s Auto-Scroll — die Funktion, ohne die sich ein Item gar nicht an eine Position außerhalb des sichtbaren Bereichs ziehen ließe. Wörtlich genommen würde AC-6 lange Listen unbedienbar machen; das Kriterium ist zu absolut formuliert und in der Spec entsprechend korrigiert.
+
+**Gegenprobe schärfer geführt als in der Frontend-Phase:** Mit der echten Vorgängerfassung aus `HEAD` fallen **9 Tests** statt 4 — weil ich die nachgezogenen Bestandstests einbezogen habe. Darunter beide gemeldeten Befunde und der `touch-action`-Wächter **auf beiden Engines**. Produktcode danach per `diff` als byte-identisch bestätigt.
+
+**Security ohne Befund:** Markup in Frage und Items wird als escapter Text gerendert — 0 injizierte Elemente, 0 Dialoge, kein `window.__pwned`. Die Roh-Texte landen zusätzlich im `aria-label` der Greif-Buttons, dort als Attributwert statt als Markup. Ein 200-Zeichen-Item erzeugt keinen horizontalen Scrollbalken.
+
+**Kontrast gemessen:** Item-Text **19,24:1**, Greif-Icon **7,90:1**, Tap-Ziele 44×44 auf allen drei Viewports.
+
+**Zusätzlich geprüft und nicht in der Spec gefordert:** doppelte Item-Texte (die stabilen IDs verhindern React-Key-Kollisionen — 4 von 4 Items überleben das Ziehen), 2 und 8 Items, der volle Durchlauf bis "Station abschließen", und die Tastaturbedienung.
+
+**Zwei neue Low-Bugs, beide nicht blockierend:**
+- **BUG-13:** `@dnd-kit` setzt `role="button"` und `tabindex="0"` auf die Greif-Handles — sie sind in 3 Tabs erreichbar und geben sich als bedienbar aus, aber ohne registrierten `KeyboardSensor` passiert bei Space/Pfeiltasten nichts. Folge der bewussten Entscheidung "nur Ziehen", ein eigener Refinement-Anlass.
+- **BUG-14:** Das Anheben löst bei der ersten Bewegung aus, nicht beim reinen Halten (400 ms gehalten, 0 px bewegt → `transform: none`). Vom Betreiber während der Frontend-Phase abgenommen; als Bug geführt, weil Spec-Wortlaut und Implementierung auseinandergehen.
+
+**Regression:** Unit **266/266**, E2E beide Engines **1003 passed / 0 failed / 0 flaky / 55 skipped**, neue Suite **3× seriell identisch grün** (keine Flakiness). Die 55 Skips sind nachvollzogen: 52 vorbestehend, 3 die Chromium-gebundenen CDP-Gesten-Tests. **WebKit mit 0 Konsolenfehlern**, Struktur und Anheben dort identisch gemessen und am Bildschirm abgenommen.
+
+**Eine Auffälligkeit geprüft statt weggewunken:** Konsolen-404s für `/_vercel/insights/script.js` treten auf `/about` — einer von diesem Feature unberührten Route — genauso auf. Vercel Analytics existiert nur in Production; vorbestehend, kein Regressionsbefund.
 
 **Offen geblieben:** ob der Creator dieselbe Anhebe-Rückmeldung bekommt. Dort greift `@dnd-kit` bereits, aber das gezogene Element wird nur auf `opacity: 0.5` gesetzt — es hebt sich ebenfalls nicht sichtbar ab. Nicht gemeldet, nicht gemessen, daher nur notiert.
 

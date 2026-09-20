@@ -1,8 +1,8 @@
 # PROJ-4: Player — Modul-Rendering
 
-## Status: Deployed
+## Status: In Progress
 **Created:** 2026-08-24
-**Last Updated:** 2026-08-30
+**Last Updated:** 2026-09-20
 
 ## Dependencies
 - Requires: PROJ-2 (Quest Data Model & JSON Import) — für Modul-Datenstruktur
@@ -87,6 +87,16 @@ Nach der Ankunft an einer Station werden dem Spieler die Stations-Inhalte (Modul
 - [ ] Angenommen der Spieler hat die Items per Drag & Drop umsortiert, wenn er "Prüfen" tippt und die Reihenfolge korrekt ist, dann erscheint grünes Feedback
 - [ ] Angenommen der Spieler hat die Items umsortiert, wenn er "Prüfen" tippt und die Reihenfolge falsch ist, dann erscheint rotes Feedback mit Shake-Animation
 
+**Task: Sortierung — Touch-Verhalten (Refinement 2026-09-20):**
+- [~] Angenommen der Spieler berührt ein Sortier-Item und hält, wenn die Long-Press-Schwelle (150 ms) erreicht ist, dann hebt sich das Item sichtbar ab — Skalierung > 1, Schatten und erhöhtes `z-index` — und ist damit als "gegriffen" erkennbar, bevor es bewegt wird — **teilweise erfüllt: das Anheben löst bei der ersten Bewegung aus, nicht beim reinen Halten (BUG-14, vom Betreiber abgenommen)**
+- [x] Angenommen ein Item ist gegriffen, wenn der Spieler den Finger bewegt, dann folgt das Item dem Finger kontinuierlich (`transform` ändert sich mit jeder Bewegung), statt erst nach einer festen Pixelschwelle zu springen
+- [x] Angenommen ein Item wird über eine andere Position gezogen, wenn es diese erreicht, dann weichen die übrigen Items animiert aus und geben die Lücke frei, sodass das Ziel vor dem Loslassen erkennbar ist
+- [x] Angenommen der Spieler lässt ein gezogenes Item los, wenn es an der neuen Position landet, dann legt es sich ab (Skalierung und Schatten zurück auf den Ruhezustand) und die neue Reihenfolge bleibt bestehen
+- [x] Angenommen der Spieler wischt über ein Sortier-Item, **ohne** vorher die Long-Press-Schwelle zu erreichen, wenn die Seite scrollbar ist, dann scrollt die Seite und die Reihenfolge bleibt **unverändert**
+- [~] ~~Angenommen der Spieler zieht ein Item aktiv, wenn er den Finger bewegt, dann scrollt die Seite **nicht** gleichzeitig mit~~ — **als Spec-Fehler identifiziert (QA 2026-09-20):** Zu absolut formuliert. Gemessen scrollt die Seite bei einem bildschirmmittigen Zug **0 px** und erst, wenn der Finger den Bildschirmrand erreicht — das ist `@dnd-kit`s Auto-Scroll, ohne das sich ein Item nicht an eine Position außerhalb des sichtbaren Bereichs ziehen ließe. Gemeint war "der Wisch löst kein konkurrierendes Scrollen aus", und das deckt das Kriterium darüber ab
+- [x] Angenommen der Spieler zieht ein Item über den oberen oder unteren Rand der Liste hinaus, wenn er dort verharrt, dann bricht die Interaktion nicht ab — das Item bleibt gegriffen und die Reihenfolge bleibt konsistent
+- [x] Angenommen ein Sortier-Task ist gelöst oder wird im Ansichtsmodus gezeigt, wenn der Spieler ein Item berührt und hält, dann passiert nichts (kein Anheben, keine Umsortierung) — der read-only-Zustand aus Edge Case 11 bleibt unberührt
+
 **Fortschritt & Wiedereinstieg:**
 - [ ] Angenommen der Spieler hat Tasks gelöst und verlässt den Stations-Screen, wenn er später zur gleichen Station zurückkehrt, dann sind die gelösten Tasks weiterhin als gelöst markiert
 - [ ] Angenommen der Spieler hat eine Station bereits erreicht (Ankunft erkannt), wenn er in der Stationsliste auf diese Station tippt, dann öffnet sich direkt der Modul-Screen (ohne erneute GPS-Navigation)
@@ -104,13 +114,17 @@ Nach der Ankunft an einer Station werden dem Spieler die Stations-Inhalte (Modul
 2. **Station mit nur Tasks (kein Text/Medien):** Funktioniert normal — nur Task-Module in der Liste.
 3. **Medien-URL nicht erreichbar:** Placeholder-Anzeige, blockiert nicht den Fortschritt. Nur Tasks blockieren.
 4. **Sehr langer Text:** Scrollbar, keine Begrenzung. Text wird mit Zeilenumbrüchen korrekt dargestellt.
-5. **Drag & Drop auf kleinem Bildschirm:** Touch-Hold aktiviert Drag. Visuelles Feedback (Item hebt sich ab, Schatten). Drop-Zone klar erkennbar.
+5. **Drag & Drop auf kleinem Bildschirm:** Touch-Hold (150 ms) aktiviert Drag. Visuelles Feedback (Item hebt sich ab, Schatten). Drop-Zone klar erkennbar. — *Diese Vorgabe stand seit 2026-08-24 in der Spec, war bis zum Refinement am 2026-09-20 aber nie umgesetzt: Gemessen war `transform: none`, `box-shadow: none` und `opacity: 1` in jeder Phase der Berührung. Siehe Refinement "Touch-Sortierung" unten.*
 6. **Spieler gibt leeren String als Code-Antwort ein:** "Prüfen"-Button ist deaktiviert bei leerem Eingabefeld.
 7. **Sehr viele Module (>10):** Scrollbare Liste, kein Performance-Problem (Module werden linear gerendert, kein Lazy Loading nötig).
 8. **App wird während Audio/Video-Wiedergabe geschlossen:** Wiedergabe stoppt automatisch (Browser-Verhalten). Beim Wiedereinstieg startet das Medium von vorne — kein Playback-Fortschritt gespeichert.
 9. **Datenmodell-Migration (correctIndex → correctIndices):** Altes Feld `correctIndex` wird beim Laden zu `[correctIndex]` konvertiert. Neue Quests nutzen `correctIndices`.
 10. **Station ohne Tasks (nur Content-Module) ist abgeschlossen:** Ansichtsmodus funktioniert identisch — es gibt einfach keine Task-Module, die read-only dargestellt werden müssten.
 11. **Sortierungs-Task im Ansichtsmodus:** Verhält sich wie der bestehende "gelöst"-Zustand (`solved === true`) — zeigt die korrekte Reihenfolge weiterhin als Liste (Drag deaktiviert) plus "Richtig" mit Häkchen (aktualisiert am 2026-09-02, siehe Implementation Notes — ursprünglich verschwand die Item-Liste im gelösten Zustand vollständig, das wurde auf Nutzerwunsch geändert).
+12. **Wischen über einem Sortier-Item zum Scrollen:** Die Berührung gilt erst nach 150 ms Halten als Drag. Wer schneller wischt, scrollt die Seite — die Reihenfolge bleibt unverändert. *(Vor dem Refinement am 2026-09-20 reorderte jede vertikale Wischbewegung über einem Item die Liste, auch wenn der Spieler nur scrollen wollte — gemessen an einer bis zum Anschlag gescrollten Station: Die Seite konnte nicht weiter scrollen, die Items tauschten trotzdem die Plätze.)*
+13. **Finger rutscht beim Long-Press:** Bewegt sich der Finger während der 150 ms um mehr als 8 px, gilt die Geste als Scrollen, nicht als Drag. Kein Anheben, keine Umsortierung.
+14. **Zweiter Finger während des Ziehens:** Die Sortierung reagiert nur auf den ersten Kontaktpunkt. Ein zweiter Finger (z.B. beim Zoom-Versuch) bricht das Ziehen nicht in einen inkonsistenten Zustand ab — entweder es läuft weiter oder es endet sauber an der aktuellen Position.
+15. **Sortier-Task auf einer Station mit vielen Modulen:** Die Liste liegt ggf. weit unten und wird nur teilweise sichtbar erreicht. Das Ziehen funktioniert unabhängig von der Scroll-Position; während des Ziehens scrollt die Seite nicht konkurrierend mit.
 
 ## Technical Requirements
 - Datenmodell-Erweiterung: `correctIndex: number` → `correctIndices: number[]` (abwärtskompatibel)
@@ -118,6 +132,12 @@ Nach der Ankunft an einer Station werden dem Spieler die Stations-Inhalte (Modul
 - Code-Eingabe-Vergleich: `answer.trim().toLowerCase() === input.trim().toLowerCase()`
 - Sortierung: Items starten in zufälliger Reihenfolge (deterministic shuffle bei Render, nicht bei jedem Re-Render)
 - Drag & Drop: Touch-kompatibel, min. 44px Touch-Targets
+- **Sortierung — Drag & Drop über `@dnd-kit` (Refinement 2026-09-20):** `DndContext` + `SortableContext` mit `verticalListSortingStrategy`, wie bereits im Creator (`module-editor-sheets.tsx`). Kein neues Paket — `@dnd-kit/core`, `/sortable` und `/utilities` sind seit PROJ-8 Abhängigkeiten
+- **Sensoren:** `PointerSensor` mit `activationConstraint: { distance: 8 }` (Maus/Stift) und `TouchSensor` mit `activationConstraint: { delay: 150, tolerance: 8 }` (Finger) — identische Werte wie im Creator, damit beide Hälften der App gleich reagieren und es nur eine Zahl zum Nachjustieren gibt
+- **Anheben sichtbar machen:** Das gegriffene Item bekommt Skalierung (> 1), Schatten und erhöhtes `z-index`; `transform` kommt aus `CSS.Transform.toString(transform)`, damit es dem Finger folgt. Der bisherige `opacity: 0.5`-Zustand allein genügt nicht — er zeigt nicht, *wo* das Item gerade ist
+- **`touch-action: none` auf dem Drag-Handle** — verhindert, dass der Browser dieselbe Geste zusätzlich als Scrollen auswertet (im Creator bereits gesetzt, im Player bisher nicht)
+- **Die handgeschriebene Touch-Mechanik entfällt ersatzlos:** `handleTouchStart`/`handleTouchMove`/`handleTouchEnd`, die Refs `touchStartY`/`touchItem` und die hartkodierte Konstante `itemHeight = 58` in `sorting-task.tsx`. Ebenso die HTML5-`draggable`-Handler — `@dnd-kit` bedient Maus und Touch über **einen** Pfad, statt zwei getrennte Implementierungen zu pflegen, von denen auf dem Handy nur eine je läuft
+- **Der gelöste/read-only-Zustand bleibt unverändert:** Im Zustand `solved` wird kein `useSortable` aktiviert (keine Listener, keine Handles aktiv) — Edge Case 11 gilt weiter
 - Task-Fortschritt: localStorage unter `gq_progress_{questId}` erweitern um `solvedTasks: string[]` (Modul-Indices pro Station)
 - Medien-Fehlerbehandlung: `onError`-Handler auf `<img>`, `<audio>`, `<video>` für Placeholder
 - Kein Autoplay bei Video/Audio
@@ -126,7 +146,14 @@ Nach der Ankunft an einer Station werden dem Spieler die Stations-Inhalte (Modul
 - Ansichtsmodus für abgeschlossene Stationen: `StationModules` erhält einen `readOnly`-Flag (abgeleitet aus `completedStations.includes(station.id)`), der den "Station abschließen"-Button durch einen deaktivierten "Bereits abgeschlossen"-Button ersetzt; alle Task-Module werden mit `solved={true}` gerendert (unabhängig vom tatsächlichen `solvedTasks`-Eintrag), da bei einer abgeschlossenen Station laut Datenmodell ohnehin alle Tasks gelöst sind
 
 ## Open Questions
-_Keine offenen Fragen._
+### Refinement 2026-09-20: Touch-Sortierung
+- [x] Pfeile statt Drag & Drop auf kleinen Bildschirmen? → Nein. Der Befund ist ein nicht gebautes Drag & Drop, kein falsch gewähltes Interaktionsmuster; Pfeile hätten zwei dokumentierte Entscheidungen umgekehrt, um einen Fehler zu umgehen (2026-09-20)
+- [x] Womit wird das Ziehen gebaut? → `@dnd-kit`, seit PROJ-8 ohnehin im Projekt, treibt bereits den Creator (2026-09-20)
+- [x] Zusätzlicher Bedienweg ohne Ziehen (sichtbare Pfeile oder Tastatur)? → Nein, vorerst nur Ziehen. Nachrüstbar, sobald es einen Anlass gibt (2026-09-20)
+- [ ] Fühlen sich 150 ms Long-Press am echten Gerät richtig an? Am Emulator ist die Schwelle messbar, aber nicht beurteilbar — der Wert steht bewusst als eine Zahl an einer Stelle, damit er sich nach einem Handy-Test in einem Zug nachjustieren lässt
+- [ ] Braucht das Anheben eine Vibration (Haptik), wie iOS sie beim Greifen einer Listenzeile gibt? PROJ-3 nutzt `navigator.vibrate` bereits bei der Stationsankunft, die Hürde wäre also klein. Bewusst nicht Teil dieses Refinements, um den Befund nicht mit einer Zusatzidee zu vermischen
+- [ ] Soll der Creator dieselbe Anhebe-Rückmeldung bekommen? Dort greift `@dnd-kit` bereits, aber das gezogene Element wird nur auf `opacity: 0.5` gesetzt — es hebt sich ebenfalls nicht sichtbar ab. Nicht gemeldet und nicht gemessen, daher hier nur notiert
+
 
 ### Refine 2026-08-30: Ansichtsmodus für abgeschlossene Stationen
 - [x] Was passiert beim Tippen auf eine bereits abgeschlossene Station in der Stationsliste? → Modul-Screen öffnet sich (statt bisher: kein Effekt), read-only (2026-08-30)
@@ -155,6 +182,10 @@ _Keine offenen Fragen._
 | Abgeschlossene Stationen sind in der Stationsliste antippbar und öffnen den Modul-Screen im Ansichtsmodus | Spieler wollen Inhalte (Texte, Medien) nachträglich nachlesen können, ohne den Fortschritt erneut zu bestätigen — bisher passierte beim Tippen auf eine abgeschlossene Station gar nichts | 2026-08-30 |
 | "Station abschließen"-Button bleibt im Ansichtsmodus sichtbar, aber deaktiviert mit Text "Bereits abgeschlossen" + Häkchen | Gibt dem Spieler eine klare visuelle Bestätigung, dass er im Rückblick-Modus ist, statt den Button ersatzlos verschwinden zu lassen | 2026-08-30 |
 | Tasks im Ansichtsmodus sind read-only (kein erneutes Lösen möglich) | Konsistent mit dem bereits bestehenden "gelöst"-Zustand der Task-Module, kein neuer Interaktionszustand nötig, verhindert Verwirrung durch nochmaliges Beantworten bereits gelöster Rätsel | 2026-08-30 |
+| Drag & Drop bleibt der einzige Weg zum Umsortieren — keine Hoch/Runter-Pfeile | Der Befund ist nicht "Ziehen ist der falsche Weg", sondern "Ziehen ist nicht gebaut". Pfeile hätten zwei dokumentierte Entscheidungen umgekehrt (2026-08-24 "gamiger, Zielgruppe ist Touch-affin" und 2026-09-02, als ein Mockup mit Auf/Ab-Pfeilen ausdrücklich verworfen wurde), um einen Fehler zu umgehen statt ihn zu beheben. Bei 3–6 Items ist Ziehen zudem schneller als mehrfaches Tippen | 2026-09-20 |
+| Das Item muss sich sichtbar anheben, bevor es bewegt wird | Der Betreiber-Befund im Wortlaut: "Ich habe erwartet, dass das was ich anfasse sich ein wenig hebt." Genau das fehlt — gemessen `transform: none` und `box-shadow: none` in jeder Phase. Das Anheben ist die Rückmeldung "ich habe dich verstanden"; ohne sie wirkt jede folgende Bewegung wie ein Fehler der App | 2026-09-20 |
+| Versehentliches Umsortieren beim Scrollen wird als Teil dieses Refinements behoben | Nicht vom Betreiber gemeldet, aber beim Nachmessen aufgedeckt und schwerwiegender als der gemeldete Befund: Ein Wisch über einem Item verändert die Reihenfolge, ohne dass der Spieler sie anfassen wollte — er kann eine bereits richtige Lösung zerstören, während er nur weiterlesen will. Gleiche Datei, gleiche Ursache, gleicher Prüf-Durchlauf | 2026-09-20 |
+| Long-Press-Schwelle 150 ms, Toleranz 8 px — identisch zum Creator | Ein Wert für die ganze App statt zwei, die auseinanderdriften. 150 ms liegt im üblichen Korridor (iOS-Listen ~200 ms, Material ~180 ms); darunter stiehlt die Sortierung Scroll-Gesten, darüber wirkt sie träge | 2026-09-20 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -163,12 +194,16 @@ _Keine offenen Fragen._
 | Neuer Screen "modules" in bestehender State Machine | Erweitert PROJ-3 Flow natürlich: Arrival → Module → Stationsliste. Kein neues Routing nötig | 2026-08-24 |
 | `completedStations` + `solvedTasks` in localStorage | Trennung: "besucht" (GPS-Ankunft) vs. "abgeschlossen" (Tasks gelöst). Granularer Task-Fortschritt ermöglicht Wiedereinstieg | 2026-08-24 |
 | correctIndices als Array mit Abwärtskompatibilität | Altes correctIndex wird beim Import konvertiert. Kein Breaking Change für bestehende Quest-Dateien | 2026-08-24 |
-| HTML5 DnD + Touch zuerst, @dnd-kit als Fallback | Kein externes Package wenn nativ funktioniert. dnd-kit nur nachrüsten falls iOS Safari Probleme macht | 2026-08-24 |
+| ~~HTML5 DnD + Touch zuerst, @dnd-kit als Fallback~~ **(überholt am 2026-09-20)** | Kein externes Package wenn nativ funktioniert. dnd-kit nur nachrüsten falls iOS Safari Probleme macht — **die Fallback-Bedingung ist eingetreten**: Die handgeschriebene Touch-Variante hebt nichts an, springt in 58px-Stufen und reordert beim Scrollen. `@dnd-kit` ist seit PROJ-8 ohnehin Abhängigkeit, der Sparzweck damit gegenstandslos | 2026-08-24 |
 | Kein Lazy-Loading für Module | Max. 20 Module pro Station (Schema-Limit), alle gleichzeitig rendern ist performant genug | 2026-08-24 |
 | Separate Komponente pro Modul-Typ | Single Responsibility, isoliert testbar, einfach erweiterbar für zukünftige Modul-Typen | 2026-08-24 |
 | Feedback-Animationen rein CSS | Keine Animation-Library nötig. Shake = CSS keyframe, Grün-Highlight = Transition | 2026-08-24 |
 | Audio-Player custom (kein natives `controls`) | Native Audio-Controls sind nicht themebar. Eigener Player mit Play/Pause + Fortschrittsleiste passt zum Design-System | 2026-08-24 |
 | Video-Player mit nativen Controls | Video-Controls sind komplex (Fullscreen, Scrubbing). Native Controls sind funktional und von Nutzern erwartet | 2026-08-24 |
+| Player-Sortierung auf `@dnd-kit` umstellen (kein neues Paket) | `@dnd-kit/core`, `/sortable`, `/utilities` sind seit PROJ-8 Abhängigkeiten und treiben bereits drei Listen im Creator. Die Bibliothek löst Long-Press, Anheben, Ausweichanimation und `touch-action` von selbst — alles Mechanik, die hier von Hand gebaut und dabei falsch gebaut wurde | 2026-09-20 |
+| Maus- und Touch-Pfad zusammenlegen (ein Pfad statt zwei) | Heute bedient HTML5 `draggable` die Maus und eine eigene `onTouchMove`-Rechnung den Finger. `draggable` feuert auf Touch gar nicht — also lief auf dem Handy nie der Code, der am Desktop getestet wurde. Zwei Implementierungen für eine Geste sind die eigentliche Fehlerquelle | 2026-09-20 |
+| `touch-action: none` auf dem Drag-Handle | Ohne diese Angabe wertet der Browser dieselbe Geste zusätzlich als Scrollen. Im Creator ist sie gesetzt, im Player fehlte sie — das ist der technische Kern des Scroll-Konflikts | 2026-09-20 |
+| Die hartkodierte `itemHeight = 58` entfällt ersatzlos | Die Konstante muss der tatsächlichen Zeilenhöhe plus Abstand entsprechen und bricht still, sobald sich das Styling ändert. Sie war bereits einmal falsch (BUG-3, von 56 auf 58 korrigiert) — ein Wert, der nur durch Nachmessen richtig bleibt, ist ein Fehler, der auf seine Wiederholung wartet | 2026-09-20 |
 
 ## Tech Design (Solution Architect)
 
@@ -320,6 +355,146 @@ Umsetzung des in `/refine` festgelegten Deltas — nur die drei betroffenen Date
 - Kein automatisierter E2E-Test (`tests/`) für dieses Delta ergänzt — die manuelle Playwright-Verifikation deckt den Kern-Flow ab, ein dauerhafter Regressionstest sollte bei `/qa` nachgezogen werden
 
 ---
+
+
+### Frontend-Umsetzung (2026-09-20)
+
+**Eine Produktivdatei** (`src/components/modules/sorting-task.tsx`), kein neues Paket, keine neue Komponente, keine neue Route. Die handgeschriebene Touch-Mechanik (`handleTouchStart`/`Move`/`End`, die Refs `touchStartY`/`touchItem`, die Konstante `itemHeight = 58`) und die HTML5-`draggable`-Handler sind ersatzlos entfallen; an ihrer Stelle steht ein `@dnd-kit`-Pfad für Maus und Finger zugleich.
+
+**Der gemeldete Befund ist am Bildschirm und in Zahlen behoben.** Gemessen auf dem Pixel-7-Viewport gegen den Production-Build, an denselben Punkten, an denen vorher überall `none` stand:
+
+| Phase | Vorher | Nachher |
+|---|---|---|
+| Ruhezustand | `transform: none`, `box-shadow: none` | unverändert (richtig so) |
+| Gegriffen und bewegt | `transform: none`, `box-shadow: none`, `z-index: auto` | **`matrix(1.03, 0, 0, 1.03, …)`, Schatten, `z-index: 10`** |
+| Während der Bewegung | `transform: none` (Item blieb stehen) | **6 von 6 Messungen verschieden** — folgt dem Finger |
+| Nach dem Loslassen | — | `transform: none`, kein Schatten (legt sich ab) |
+
+**Der Zweitbefund ebenfalls, und zwar nach Fläche getrennt:** Ein 41 ms schneller Wisch über dem Zeilentext scrollt jetzt die Seite (2077 → 4099) und lässt die Reihenfolge **unverändert**; derselbe Wisch auf dem Greif-Handle zieht. `touch-action` misst `auto` auf der Zeile und `none` auf dem Handle.
+
+**Zwei Fehler in meiner eigenen Arbeit, beide durch Messen gefunden:**
+
+1. **Ein echter Implementierungsfehler.** Der erste Entwurf legte Drag-Listener **und** `touch-action: none` auf die **ganze Zeile** statt nur auf das Handle. Damit war die Zeile nirgends mehr Scroll-Fläche, und der Zweitbefund blieb bestehen — ein 39 ms schneller Wisch sortierte weiter um, obwohl 2022 px Scroll-Reserve vorhanden waren. Korrigiert auf das Muster des Creators: Listener und `touch-action` gehören auf das Handle.
+2. **Ein widersprüchlicher Code-Kommentar.** Der erste Entwurf schrieb `scaleX/scaleY: 1` fest in den Inline-`transform` und setzte gleichzeitig `scale-[1.03]` als Klasse — die Klasse hätte nie gewirkt, weil der Inline-Stil dieselbe Eigenschaft setzt. Der Kommentar daneben behauptete bereits das Richtige. Jetzt steht die Skalierung tatsächlich im Inline-`transform`.
+
+**Ein Messfehler, der wie ein Produktfehler aussah:** Meine erste Sonde meldete, eine schnelle Wischbewegung sortiere um. Die Gegenprobe zeigte, dass die Geste **420 ms** dauerte — ein `await page.waitForTimeout(10)` plus ein `evaluate`-Roundtrip je Schritt kosten real ~35 ms, und die 150-ms-Schwelle misst echte Zeit. Meine "schnelle Wischbewegung" war ein langsames Halten. Erst ohne `await` zwischen den Schritten (39–48 ms Gesamtdauer) war der Test aussagekräftig. Zweiter Messfehler derselben Art: Die Sonde maß die Zeile über `nth(0)`, das nach einer Umsortierung auf ein **anderes** Element zeigt — die neuen Tests binden sich deshalb an einen Knoten mit festem Text.
+
+**Eine Erwartung ist bewusst nicht erfüllt, nach Rückfrage beim Betreiber:** Reines Halten ohne Bewegung hebt das Item **nicht** an (400 ms gehalten, 0 px bewegt → `transform: none`). Der `TouchSensor` braucht nach der Wartezeit noch eine Bewegung über die 8-px-Toleranz. Das Item hebt sich also beim ersten Bewegen, nicht beim Anfassen. Die Alternative hätte ~20 Zeilen eigenen Zustand neben `@dnd-kit` gekostet — genau die Handarbeit, die dieses Refinement abbaut. Entscheidung des Betreibers: so lassen.
+
+**Ein bestehender Test war zu Recht falsch geworden — und die Diagnose wäre ohne Gegenprobe falsch gewesen.** *"shows solved feedback once the items are dragged into the correct order"* schlug auf **beiden** Engines fehl. Gemessen liegt es nicht am Produkt: Playwrights `dragTo` bewegt mit `@dnd-kit` **gar nichts** (Reihenfolge nach `dragTo(0→2)` unverändert), weil es zu wenige Zwischenschritte sendet, als dass der Sensor die Bewegung verfolgen könnte. Mit HTML5-`draggable` genügte das Drop-Ereignis allein. Neuer Helfer `dragSortingItem()` fährt die Bewegung in 10 Schritten am Handle; der Test besteht danach auf Chrome **und** WebKit — womit nebenbei belegt ist, dass das Ziehen auf beiden Engines funktioniert.
+
+**Tests:** 5 neue in `tests/proj-4-sorting-touch.spec.ts`, aufgeteilt in zwei Gruppen. Zwei Zusicherungen brauchen keine CDP-Touch-Events (`touch-action`-Aufteilung, Abwesenheit der Greif-Buttons im gelösten Zustand) und laufen auf **beiden** Engines; die drei Gesten-Tests sind Chromium-gebunden, weil Playwright auf WebKit keine vergleichbaren Touch-Sequenzen senden kann. Dadurch sinken die WebKit-Skips dieser Datei von 5 auf 3.
+
+**Per Gegenprobe geschärft:** Mit der echten Vorgängerfassung aus `HEAD` fallen **4 der 5** neuen Tests; der fünfte (gelöster Zustand) besteht in beiden Fassungen — richtig so, denn er ist der Wächter dafür, dass der Umbau den read-only-Zustand nicht mitreißt. Einschränkung offen benannt: Die 4 fallen per 30-s-Timeout statt mit sauberer Assertion, weil der Locator auf das Greif-Handle zielt, das es in der alten Fassung nicht gibt. Produktcode danach per `diff` als byte-identisch bestätigt.
+
+**Suiten gegen den Production-Build:** Unit **266/266**. E2E über beide Engines **1003 passed / 0 failed / 0 flaky / 55 skipped** (vorher 57 — die Differenz sind die zwei auf WebKit nachgezogenen Tests). Build und Lint sauber (0 Fehler, 7 vorbestehende Warnungen, keine in der geänderten Datei).
+
+**Am Bildschirm abgenommen, nicht nur gemessen** — bei einer Gefühls-Änderung reichen Zahlen nicht: Das gegriffene Item trägt Teal-Rahmen, Schatten und sichtbare Vergrößerung, schwebt während der Bewegung erkennbar **über** der Liste und überlappt seinen Nachbarn, während die übrigen Zeilen die Lücke freigeben; nach dem Loslassen sitzt es bündig im gleichmäßigen Rhythmus, ohne Restschatten.
+
+**Nicht abgedeckt und benannt:** das Gefühl am echten Gerät (ob 150 ms richtig sind, entscheidet ein Daumen); echte Touch-Gesten auf iOS Safari (nur die Struktur ist dort geprüft, das Ziehen selbst über den Maus-Pfad); Firefox (Binary fehlt); und die Frage, ob der Creator dieselbe Anhebe-Rückmeldung bekommen soll — dort ist es weiterhin nur `opacity: 0.5`.
+
+
+## QA Test Results — Touch-Sortierung im Player (2026-09-20)
+
+**Ergebnis: 7 von 8 Acceptance Criteria erfüllt, 1 Kriterium als Spec-Fehler identifiziert, 2 neue Low-Bugs. Keine Critical- oder High-Bugs. Production-Ready.**
+
+Das Feature wurde in derselben Sitzung gebaut, deshalb habe ich die zentralen Behauptungen **nicht übernommen, sondern mit eigenen Sonden neu gemessen** — auf drei Viewports statt einem (Pixel 7, iPhone 13, 320×568), zusätzlich auf WebKit, und um die Kriterien erweitert, die die Frontend-Phase nicht isoliert geprüft hatte (AC-3 Lückenbildung, AC-6 kein Parallel-Scroll, AC-7 Ziehen über den Listenrand).
+
+### Acceptance Criteria
+
+| # | Kriterium | Status | Messung |
+|---|---|---|---|
+| 1 | Item hebt sich ab, **bevor es bewegt wird** | ⚠️ **teilweise** | Halten allein (400 ms, 0 px) → `transform: none`. Nach der ersten Bewegung → `matrix(1.03, …)`, Schatten, `z-index: 10`. Siehe BUG-14 |
+| 2 | Folgt dem Finger kontinuierlich | ✅ | **8 von 8** Messungen verschieden, auf allen drei Viewports |
+| 3 | Übrige Items weichen aus und geben die Lücke frei | ✅ | 3 von 5 Zeilen verschieben sich messbar während des Ziehens, 5 tragen einen Transform |
+| 4 | Legt sich nach dem Loslassen ab | ✅ | `transform: none`, `box-shadow: none`, `z-index: auto` |
+| 5 | Wisch ohne Long-Press scrollt, Reihenfolge unverändert | ✅ | 47-ms-Wisch bei 2022 px Scroll-Reserve: `reordered: false`, `scrolled: true` |
+| 6 | Kein gleichzeitiges Scrollen während des Ziehens | ❌ **Spec-Fehler** | Siehe unten — das Kriterium ist so nicht haltbar |
+| 7 | Ziehen über den Listenrand bricht nicht ab | ✅ | 900 px über die Unterkante hinaus: Item bleibt gegriffen, 5 von 5 Items erhalten, Reihenfolge konsistent |
+| 8 | Gelöster Zustand unberührt (kein Anheben, kein Umsortieren) | ✅ | 0 Greif-Buttons; erzwungener Drag-Versuch ändert nichts |
+
+### AC-6 ist ein Fehler in der Spec, nicht im Produkt
+
+Die Messung zeigte zunächst einen Verstoß (Scroll 2130 → 2088 während eines aktiven Drags). Statt das als Bug zu melden, habe ich instrumentiert: Die Seite steht bei **8 von 10** Bewegungsschritten still und scrollt erst ab Schritt 9 — genau dann, wenn der Finger den oberen Bildschirmrand erreicht.
+
+Gegenprobe mit zwei Zuggrößen:
+
+| Zug | Endposition des Fingers | Scroll |
+|---|---|---|
+| Kurz (bleibt bildschirmmittig) | 300 px vom oberen Rand | **0 px** |
+| Lang (bis an den Rand) | 120 px vom oberen Rand | −9 px |
+
+Das ist `@dnd-kit`s **Auto-Scroll**: die Funktion, die es überhaupt erst erlaubt, ein Item an eine Position außerhalb des sichtbaren Bereichs zu ziehen. AC-6 wörtlich genommen würde genau diese Funktion verbieten und lange Listen unbedienbar machen. Das Kriterium ist beim Schreiben der Spec zu absolut formuliert worden — gemeint war "der Wisch löst kein konkurrierendes Scrollen aus", und das ist durch AC-5 bereits abgedeckt. **Kein Produktfehler; das Kriterium gehört präzisiert.**
+
+### Gegenprobe: Fangen die Tests den gemeldeten Fehler wirklich?
+
+Mit der **echten Vorgängerfassung aus `HEAD`** fallen **9 Tests** — mehr als die 4, die die Frontend-Phase gemessen hatte, weil ich die nachgezogenen Bestandstests in die Gegenprobe einbezogen habe:
+
+- `das gegriffene Item hebt sich sichtbar ab und folgt dem Finger` (Chrome) — **der gemeldete Befund**
+- `ein Wisch ueber dem Zeilentext … laesst die Reihenfolge in Ruhe` (Chrome) — **der Zweitbefund**
+- `das Handle ist Drag-Flaeche, der Zeilenkoerper Scroll-Flaeche` (**Chrome und WebKit**)
+- `ein Zug am Handle sortiert um` (Chrome)
+- `renders items with drag handles…` und `shows solved feedback once…` (je Chrome und WebKit)
+
+Produktcode danach per `diff` als byte-identisch bestätigt.
+
+### Zusätzlich geprüft (in der Spec nicht gefordert)
+
+- **Doppelte Item-Texte:** `["Gleich","Gleich","Anders","Extra"]` — Ziehen funktioniert, 4 von 4 Items erhalten, keine React-Key-Kollision. Die stabilen IDs (statt Index oder Text als Key) sind hier die Absicherung.
+- **2 Items** (Minimum) und **8 Items** (über der Creator-Grenze von 6): beide rendern und funktionieren.
+- **Voller Spieldurchlauf:** Sortieren → "Prüfen" → "Richtig" → 0 Greif-Buttons → "Station abschließen" aktiv.
+- **Tastatur:** Die Handles sind in 3 Tabs erreichbar und in sinnvoller Reihenfolge, mit sprechenden Labels ("Zwei verschieben"). Umsortieren per Tastatur funktioniert **nicht** — siehe BUG-13.
+- **WebKit:** Struktur identisch (`touch-action` auto/none, Handle 44×44), Ziehen funktioniert, Anheben sichtbar (`matrix(1.03, …)`, Schatten, `z-index: 10`), **0 Konsolenfehler**.
+
+### Security-Audit — ohne Befund
+
+Die Item-Texte und die Frage sind die einzigen angreiferkontrollierten Felder.
+
+- `<img src=x onerror=…>` und `<script>` in Frage **und** Items: **0 injizierte Elemente, 0 Dialoge, kein `window.__pwned`** — als escapter Text gerendert
+- Die Roh-Texte landen zusätzlich in `aria-label` der Greif-Buttons — als **Attributwert**, nicht als Markup
+- Umlaute, ß und Emoji rendern korrekt
+- Ein 200-Zeichen-Item erzeugt **keinen horizontalen Scrollbalken** (`scrollWidth == innerWidth`)
+
+### Kontrast & Touch-Targets
+
+| Element | Gemessen | Vorgabe |
+|---|---|---|
+| Item-Text | **19,24:1** | 4,5:1 |
+| Greif-Icon | **7,90:1** | 4,5:1 |
+| Greif-Button | **44×44 px** auf allen drei Viewports | 44 px |
+
+### Bugs
+
+#### BUG-13 (Low, neu): Greif-Handles sind fokussierbar, aber per Tastatur ohne Funktion
+- **Beschreibung:** `@dnd-kit` setzt über `{...attributes}` ein `role="button"` und `tabindex="0"` auf die Handles. Sie sind damit in der Tab-Reihenfolge und geben sich als bedienbar aus — es ist aber kein `KeyboardSensor` registriert, also passiert bei Space/Enter/Pfeiltasten nichts.
+- **Auswirkung:** Ein Screenreader kündigt eine Schaltfläche an, die auf Aktivierung nicht reagiert. Tastaturnutzer können die Aufgabe nicht lösen.
+- **Schwere: Low** — die Zielgruppe spielt auf dem Handy per Touch, und die Entscheidung "nur Ziehen, kein zweiter Bedienweg" ist im Refinement bewusst getroffen worden. Der Befund ist die *Folge* dieser Entscheidung, nicht ihr Widerspruch.
+- **Reproduktion:** Sortier-Aufgabe öffnen → 3× Tab → Space/Pfeiltasten → keine Änderung.
+- **Anmerkung:** Mit `@dnd-kit` wäre das ein `useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })` — ein eigener Refinement-Anlass, nicht Teil dieses Scopes.
+
+#### BUG-14 (Low, neu): Das Anheben löst erst bei der ersten Bewegung aus, nicht beim Halten
+- **Beschreibung:** AC-1 verlangt das Anheben, "bevor es bewegt wird". Gemessen: 400 ms gehalten, 0 px bewegt → `transform: none`, kein Schatten. Der `TouchSensor` braucht nach der Wartezeit zusätzlich eine Bewegung über die 8-px-Toleranz.
+- **Auswirkung:** Die vom Betreiber beschriebene Erwartung ("das was ich anfasse hebt sich") ist um einen Sekundenbruchteil versetzt erfüllt — das Item hebt sich beim ersten Bewegen statt beim Anfassen.
+- **Schwere: Low** — **bekannt und vom Betreiber während der Frontend-Phase abgenommen**; die Alternative hätte ~20 Zeilen eigenen Zustand neben `@dnd-kit` gekostet, also genau die Handarbeit, die dieses Refinement abbaut. Als Bug geführt, weil die Spec-Formulierung und die Implementierung auseinandergehen; zu beheben wäre entweder das AC oder der Code.
+
+### Regression
+
+| Suite | Ergebnis |
+|---|---|
+| Unit | **266/266** |
+| E2E beide Engines (Production-Build) | **1003 passed / 0 failed / 0 flaky / 55 skipped** |
+| Neue Suite, 3× seriell | **3/3 Läufe identisch grün** (7 passed, 3 skipped) — keine Flakiness |
+| Build / Lint | sauber (0 Fehler, 7 vorbestehende Warnungen, keine in geänderter Datei) |
+
+Die 55 Skips sind nachvollzogen: 52 vorbestehend, 3 aus der neuen Datei (die CDP-Gesten-Tests laufen nur unter Chromium — eine echte, dokumentierte Engine-Grenze). **Die beiden strukturellen Zusicherungen laufen auf beiden Engines**, damit ist die WebKit-Abdeckung nicht blind.
+
+**Konsolenfehler geprüft statt weggewunken:** Der Durchlauf meldete 404s für `/_vercel/insights/script.js`. Gegenprobe auf `/about` — einer von diesem Feature unberührten Route — zeigt denselben 404. Vercel Analytics existiert nur in Production; **vorbestehend, kein Regressionsbefund.**
+
+### Nicht abgedeckt
+
+- **Das Gefühl am echten Gerät.** Ob 150 ms Long-Press richtig sind, entscheidet ein Daumen, kein Emulator.
+- **Echte Touch-Gesten auf iOS Safari.** Playwright kann auf WebKit keine vergleichbaren Touch-Sequenzen senden; dort sind Struktur, Anheben und Ziehen über den Maus-Pfad geprüft.
+- **Firefox** (Binary fehlt). Risiko gering: genutzt werden CSS-Transforms und Pointer Events, beide Engines messen identisch.
 
 ## QA Test Results
 
@@ -672,3 +847,53 @@ Per Playwright/WebKit direkt gegen die Produktions-URL verifiziert (nicht nur lo
 
 ### Bekannte offene Punkte
 Keine.
+
+## Refinement 2026-09-20: Touch-Sortierung im Player
+
+### Anlass
+Betreiber-Befund im Wortlaut: *"der Aufgabentyp sortieren auf dem handy fühlt sich mit touch merkwürdig an. Ich habe erwartet, dass das was ich anfasse sich ein wenig hebt und dann kann ich es per drag und drop verschieben."*
+
+Die Erwartung deckt sich mit dem, was in dieser Spec seit dem 2026-08-24 als **Edge Case 5** steht — *"Touch-Hold aktiviert Drag. Visuelles Feedback (Item hebt sich ab, Schatten)"*. Gebaut wurde es nie.
+
+### Was tatsächlich passiert
+`sorting-task.tsx` hat **zwei getrennte Implementierungen** für dieselbe Geste:
+- **Maus:** HTML5 `draggable` + `onDragStart`/`onDrop` — funktioniert, feuert aber auf Touch **gar nicht**
+- **Finger:** eine eigene `onTouchMove`-Rechnung, die die zurückgelegte Strecke durch die hartkodierte Konstante `itemHeight = 58` teilt und die Liste umsortiert, sobald das Ergebnis eine ganze Zahl ergibt
+
+Der Finger-Pfad zieht nichts. Er misst, wie weit der Finger gewandert ist, und tauscht Listeneinträge. Das Element unter dem Finger bleibt, wo es ist.
+
+### Messung (Production-Build, Pixel-7-Viewport, echte Touch-Events via CDP)
+| Geprüft | Erwartet laut Edge Case 5 | Gemessen |
+|---|---|---|
+| `transform` beim Halten (250 ms) | Item hebt sich ab | **`none`** |
+| `box-shadow` beim Halten | Schatten | **`none`** |
+| `opacity` beim Ziehen | Zustandswechsel sichtbar | **`1`** |
+| Element folgt dem Finger | ja | **nein** — `transform` bleibt `none` über die gesamte Bewegung |
+| Reihenfolgewechsel | fließend am Ziel | **Sprung bei exakt 58 px** |
+| Zeilenhöhe / Rasterabstand | — | 52 px / **58 px** (bestätigt die Konstante) |
+
+### Zweitbefund: Scrollen sortiert um
+Nicht gemeldet, beim Nachmessen aufgedeckt, und in der Auswirkung schwerwiegender als der gemeldete Befund.
+
+`handleTouchMove` ruft nie `preventDefault()`, und dem Drag-Handle fehlt `touch-action: none`. Jede vertikale Wischbewegung über einem Item verändert damit die Reihenfolge — auch wenn der Spieler nur weiterlesen will.
+
+Gemessen auf einer Station mit mehreren Modulen über der Aufgabe, bis zum Anschlag gescrollt (`scrollTop 2689` von 2689, also **keine** Scroll-Reserve mehr): Ein Wisch nach oben über einem Item ließ die Seite erwartungsgemäß stehen — **und tauschte trotzdem zwei Items**. Ein Spieler kann so eine bereits korrekt sortierte Liste zerstören, ohne sie angefasst zu haben, und merkt es erst bei "Prüfen".
+
+### Entschiedene Lösung
+Die handgeschriebene Touch-Mechanik **und** die HTML5-`draggable`-Handler entfallen; beide werden durch **einen** `@dnd-kit`-Pfad ersetzt — dieselbe Bibliothek, die im Creator bereits drei sortierbare Listen trägt, und seit PROJ-8 ohnehin Abhängigkeit. Kein neues Paket.
+
+Damit kommen Long-Press, das sichtbare Anheben, die Ausweichanimation der übrigen Items und `touch-action: none` aus einer Quelle, statt einzeln nachgebaut zu werden. Sensoren-Werte identisch zum Creator (150 ms / 8 px).
+
+**Erwogen und verworfen:**
+- **Hoch/Runter-Pfeile statt Ziehen** — hätte zwei dokumentierte Entscheidungen umgekehrt (2026-08-24 "gamiger, Zielgruppe ist Touch-affin"; 2026-09-02 wurden Pfeil-Buttons aus einem Mockup ausdrücklich nicht übernommen), um einen Fehler zu umgehen statt ihn zu beheben. Bei 3–6 Items ist Ziehen zudem schneller als mehrfaches Tippen.
+- **Die eigene Touch-Mechanik reparieren** — hätte genau die Mechanik nachgebaut, die `@dnd-kit` fertig mitbringt und die hier bereits einmal misslungen ist (BUG-3 korrigierte `itemHeight` von 56 auf 58; der Wert bricht bei jeder Styling-Änderung erneut still).
+
+### Für `/frontend` zu beachten
+- **Der gelöste/read-only-Zustand darf sich nicht ändern.** Edge Case 11 und die Ansichtsmodus-Kriterien gelten unverändert: Im Zustand `solved` wird kein `useSortable` aktiviert. Die bestehenden Tests dazu (*"keeps the correct order visible but disables dragging once solved"*) müssen grün bleiben, ohne angefasst zu werden — sie sind der Wächter dafür, dass der Umbau nichts Bestehendes mitreißt.
+- **Bestehende PROJ-4-Tests prüfen `div[draggable="true"]`** als Selektor für Sortier-Items. Mit `@dnd-kit` verschwindet dieses Attribut; diese Assertions sind zu **ziehen, nicht zu löschen**.
+- **Der eigentliche Regressionswächter fehlt bisher ganz:** kein Test hält fest, dass ein Wisch *ohne* Long-Press die Reihenfolge unverändert lässt. Genau diese Lücke hat den Zweitbefund durchgelassen — die Suite war grün, während die Liste beim Scrollen durcheinanderging.
+- Der Shuffle beim Start (garantiert nicht bereits korrekte Reihenfolge) bleibt unberührt.
+
+### Nicht abgedeckt
+- **Das Gefühl am echten Gerät.** Gemessen ist, *dass* sich etwas hebt und *wann* es greift; ob 150 ms sich richtig anfühlen, entscheidet ein Daumen, kein Emulator.
+- **WebKit-Touch.** Die Messung lief über Chrome DevTools Protocol auf einem Pixel-7-Viewport; Playwright kann auf WebKit keine vergleichbaren Touch-Sequenzen senden. Der Befund ist engine-unabhängig (der fehlende `transform` steckt im Produktcode, nicht in der Engine), die Gegenprobe auf iOS Safari steht aber aus.

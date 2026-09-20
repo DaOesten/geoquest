@@ -1,6 +1,17 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState } from "react";
+import {
+  DndContext,
+  PointerSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Check, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -21,24 +32,32 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 export function SortingTask({ question, items: correctOrder, solved, onSolved }: SortingTaskProps) {
-  const [items, setItems] = useState<string[]>(() => {
+  // Stable ids: the item text may repeat, and dnd-kit needs a key that survives reordering.
+  const [items, setItems] = useState<{ id: string; value: string }[]>(() => {
     let shuffled = shuffle(correctOrder);
     while (shuffled.join(",") === correctOrder.join(",") && correctOrder.length > 1) {
       shuffled = shuffle(correctOrder);
     }
-    return shuffled;
+    return shuffled.map((value, i) => ({ id: `item-${i}-${crypto.randomUUID()}`, value }));
   });
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
-  const [dragging, setDragging] = useState<number | null>(null);
-  const [dragOver, setDragOver] = useState<number | null>(null);
-  const touchStartY = useRef(0);
-  const touchItem = useRef<number | null>(null);
+
+  /**
+   * Long-press before a drag begins (150ms/8px), identical to the creator's
+   * sortable lists. Without the delay, every vertical swipe across an item
+   * reorders the list while the player only wanted to scroll past it.
+   */
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } })
+  );
+
   // Checking only succeeds when `items` already equals `correctOrder`, so once solved,
   // the canonical order IS the submitted order — display it directly rather than storing it.
-  const displayItems = solved ? correctOrder : items;
+  const displayItems = solved ? correctOrder : items.map((i) => i.value);
 
   const handleCheck = () => {
-    if (items.join(",") === correctOrder.join(",")) {
+    if (items.map((i) => i.value).join(",") === correctOrder.join(",")) {
       setFeedback("correct");
       onSolved();
     } else {
@@ -47,65 +66,17 @@ export function SortingTask({ question, items: correctOrder, solved, onSolved }:
     }
   };
 
-  const moveItem = useCallback((from: number, to: number) => {
-    setItems((prev) => {
-      const next = [...prev];
-      const [moved] = next.splice(from, 1);
-      next.splice(to, 0, moved);
-      return next;
-    });
-  }, []);
-
-  const handleDragStart = (e: React.DragEvent, index: number) => {
-    setDragging(index);
-    e.dataTransfer.effectAllowed = "move";
-  };
-
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    setDragOver(index);
-  };
-
-  const handleDrop = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    if (dragging !== null && dragging !== index) {
-      moveItem(dragging, index);
-    }
-    setDragging(null);
-    setDragOver(null);
-  };
-
-  const handleDragEnd = () => {
-    setDragging(null);
-    setDragOver(null);
-  };
-
-  const handleTouchStart = (e: React.TouchEvent, index: number) => {
-    touchStartY.current = e.touches[0].clientY;
-    touchItem.current = index;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (touchItem.current === null) return;
-    const currentY = e.touches[0].clientY;
-    const diff = currentY - touchStartY.current;
-    // min-h-[52px] row + 6px (space-y-1.5) gap between rows
-    const itemHeight = 58;
-    const steps = Math.round(diff / itemHeight);
-    if (steps !== 0) {
-      const from = touchItem.current;
-      const to = Math.max(0, Math.min(items.length - 1, from + steps));
-      if (from !== to) {
-        moveItem(from, to);
-        touchItem.current = to;
-        touchStartY.current = currentY;
-      }
-    }
-  };
-
-  const handleTouchEnd = () => {
-    touchItem.current = null;
-  };
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = items.findIndex((i) => i.id === active.id);
+    const newIndex = items.findIndex((i) => i.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const reordered = [...items];
+    const [moved] = reordered.splice(oldIndex, 1);
+    reordered.splice(newIndex, 0, moved);
+    setItems(reordered);
+  }
 
   const borderClass = solved
     ? "border-2 border-gq-lime/60"
@@ -119,34 +90,31 @@ export function SortingTask({ question, items: correctOrder, solved, onSolved }:
       <p className="font-body text-base leading-relaxed text-foreground mt-1 mb-4">{question}</p>
 
       <div className="space-y-3">
-        <div className="space-y-1.5">
-          {displayItems.map((item, i) => (
-            <div
-              key={`${item}-${i}`}
-              draggable={!solved}
-              onDragStart={solved ? undefined : (e) => handleDragStart(e, i)}
-              onDragOver={solved ? undefined : (e) => handleDragOver(e, i)}
-              onDrop={solved ? undefined : (e) => handleDrop(e, i)}
-              onDragEnd={solved ? undefined : handleDragEnd}
-              onTouchStart={solved ? undefined : (e) => handleTouchStart(e, i)}
-              onTouchMove={solved ? undefined : handleTouchMove}
-              onTouchEnd={solved ? undefined : handleTouchEnd}
-              className={`flex items-center gap-2 min-h-[52px] px-3 py-3 rounded-[12px] border bg-gq-black/30 select-none transition-all duration-fast ${
-                solved
-                  ? "border-border/30"
-                  : "cursor-grab active:cursor-grabbing " +
-                    (dragging === i
-                      ? "opacity-50 scale-95"
-                      : dragOver === i
-                        ? "border-gq-teal/60 bg-gq-teal/5"
-                        : "border-border/30")
-              }`}
-            >
-              <GripVertical className={`w-5 h-5 shrink-0 ${solved ? "text-gq-grey/30" : "text-gq-grey"}`} />
-              <span className="font-body text-sm text-foreground">{item}</span>
-            </div>
-          ))}
-        </div>
+        {solved ? (
+          <div className="space-y-1.5">
+            {displayItems.map((item, i) => (
+              <div
+                key={`${item}-${i}`}
+                className="flex items-center gap-2 min-h-[52px] pr-3 py-3 rounded-[12px] border border-border/30 bg-gq-black/30 select-none"
+              >
+                <span className="flex-shrink-0 w-11 h-11 -my-1 grid place-items-center">
+                  <GripVertical className="w-5 h-5 text-gq-grey/30" />
+                </span>
+                <span className="font-body text-sm text-foreground">{item}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+              <div className="space-y-1.5">
+                {items.map((item) => (
+                  <SortableItemRow key={item.id} id={item.id} value={item.value} />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        )}
 
         {solved ? (
           <div className="flex items-center gap-2 text-gq-lime">
@@ -171,6 +139,47 @@ export function SortingTask({ question, items: correctOrder, solved, onSolved }:
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+function SortableItemRow({ id, value }: { id: string; value: string }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        // The lift scale goes into the same transform as dnd-kit's translate.
+        // A Tailwind `scale-*` class would set `transform` too and lose to this
+        // inline style, so the item would follow the finger but never grow.
+        transform: CSS.Transform.toString(
+          transform ? { ...transform, scaleX: isDragging ? 1.03 : 1, scaleY: isDragging ? 1.03 : 1 } : null
+        ),
+        transition,
+      }}
+      className={
+        "flex items-center gap-2 min-h-[52px] pr-3 py-3 rounded-[12px] border bg-gq-black/30 select-none transition-shadow duration-fast ease-gq " +
+        (isDragging
+          ? "border-gq-teal/60 shadow-card-hover z-10 relative"
+          : "border-border/30")
+      }
+    >
+      {/*
+        Drag listeners and `touch-action: none` belong on the handle, not the row:
+        with them on the row, the browser may never scroll from anywhere on it, so
+        a quick swipe to read on is swallowed instead of falling through to a scroll.
+      */}
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        aria-label={`${value} verschieben`}
+        className="flex-shrink-0 w-11 h-11 -my-1 rounded-full grid place-items-center text-gq-grey cursor-grab active:cursor-grabbing touch-none"
+      >
+        <GripVertical className="w-5 h-5" />
+      </button>
+      <span className="font-body text-sm text-foreground">{value}</span>
     </div>
   );
 }

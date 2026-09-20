@@ -119,6 +119,45 @@ async function seedProgress(
 
 const ALL_STATION_IDS = TEST_QUEST.stations.map((s) => s.id);
 
+/**
+ * Sortier-Items im Player.
+ *
+ * Seit dem Umbau auf @dnd-kit (Refinement 2026-09-20) tragen die Zeilen kein
+ * `draggable="true"` mehr — das Attribut gehoerte zur HTML5-Drag-Implementierung,
+ * die auf Touch ohnehin nie gefeuert hat. Erkennungsmerkmal ist jetzt der
+ * Greif-Button, der die Drag-Listener traegt.
+ */
+function sortingRows(page: Page) {
+  return page.locator('div:has(> button[aria-label$="verschieben"])');
+}
+
+/**
+ * Ein Sortier-Item an die Position eines anderen ziehen.
+ *
+ * Playwrights `dragTo` wirkt hier nicht: Es sendet zu wenige Zwischenschritte,
+ * als dass dnd-kits Sensor die Bewegung verfolgen koennte — gemessen bleibt die
+ * Reihenfolge unveraendert. Vor dem Umbau funktionierte es, weil die HTML5-
+ * `draggable`-Implementierung auf das blosse drop-Ereignis reagiert hat.
+ * Gegriffen wird am Handle, weil nur dort die Drag-Listener haengen.
+ */
+async function dragSortingItem(page: Page, from: number, to: number) {
+  const rows = sortingRows(page);
+  const handle = await rows.nth(from).getByRole("button").boundingBox();
+  const targetRow = await rows.nth(to).boundingBox();
+  const x = handle!.x + handle!.width / 2;
+  const y = handle!.y + handle!.height / 2;
+  const dy = targetRow!.y + targetRow!.height / 2 - y;
+
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  for (let i = 1; i <= 10; i++) {
+    await page.mouse.move(x, y + (dy * i) / 10, { steps: 2 });
+    await page.waitForTimeout(15);
+  }
+  await page.mouse.up();
+  await page.waitForTimeout(250);
+}
+
 async function openStation(page: Page, stationName: string) {
   await page.goto(`/play/${TEST_QUEST.id}`);
   await page.getByRole("button", { name: new RegExp(`${stationName}.*Aufgaben fortsetzen`) }).click();
@@ -446,7 +485,7 @@ test.describe("PROJ-4: Player — Modul-Rendering", () => {
       await seedProgress(page, { visitedStations: [ALL_STATION_IDS[4]] });
       await openStation(page, "Sorting Station");
 
-      const rows = page.locator('div[draggable="true"]');
+      const rows = sortingRows(page);
       await expect(rows).toHaveCount(3);
       const order = await rows.allTextContents();
       expect(order).not.toEqual(["Eins", "Zwei", "Drei"]);
@@ -471,15 +510,14 @@ test.describe("PROJ-4: Player — Modul-Rendering", () => {
 
       const target = ["Eins", "Zwei", "Drei"];
       for (let i = 0; i < target.length; i++) {
-        const rows = page.locator('div[draggable="true"]');
-        const current = await rows.allTextContents();
+        const current = await sortingRows(page).allTextContents();
         const from = current.indexOf(target[i]);
         if (from !== i) {
-          await rows.nth(from).dragTo(rows.nth(i));
+          await dragSortingItem(page, from, i);
         }
       }
 
-      const finalOrder = await page.locator('div[draggable="true"]').allTextContents();
+      const finalOrder = await sortingRows(page).allTextContents();
       expect(finalOrder).toEqual(target);
 
       await page.getByRole("button", { name: "Prüfen" }).click();
@@ -498,7 +536,7 @@ test.describe("PROJ-4: Player — Modul-Rendering", () => {
       await expect(page.getByText("Eins")).toBeVisible();
       await expect(page.getByText("Zwei")).toBeVisible();
       await expect(page.getByText("Drei")).toBeVisible();
-      await expect(page.locator('div[draggable="true"]')).toHaveCount(0);
+      await expect(sortingRows(page)).toHaveCount(0);
     });
   });
 
