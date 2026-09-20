@@ -27,8 +27,8 @@
 | PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Deployed | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
-| PROJ-12 | PWA-Installation | P0 | PROJ-1 | In Progress | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-12 | PWA-Installation | P0 | PROJ-1 | In Review | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
 <!-- Add features above this line -->
@@ -867,3 +867,22 @@ Alle sieben Routen HTTP 200 mit 0,06–0,15 s, Security-Header aktiv inkl. HSTS.
 
 **Offen geblieben:** ob der Creator dieselbe Anhebe-Rückmeldung bekommt. Dort greift `@dnd-kit` bereits, aber das gezogene Element wird nur auf `opacity: 0.5` gesetzt — es hebt sich ebenfalls nicht sichtbar ab. Nicht gemeldet, nicht gemessen, daher nur notiert.
 
+
+## Offenes Refinement: Logo auf `/about` am Desktop unsichtbar (2026-09-20)
+**PROJ-13** geht von Deployed zurück auf In Progress. Betreiber-Befund: *„ich kann auf /about auf dem desktop das Logo nicht mehr sehen."* Im Code bestätigt und gegen den Production-Build gemessen.
+
+**Ursache: `lg:hidden` am Logo-Lockup in `info-page-shell.tsx`** — gesetzt am 2026-09-09 als Eingriff 1 der BUG-7-Behebung. Gemessen ist das Lockup auf 320–768px sichtbar und auf **allen fünf Desktop-Viewports** (1024–1920px) ausgeblendet. Betroffen ist nur `/about`; es ist die einzige Seite, die `showLogo` setzt.
+
+**Die Entscheidung von damals stand auf zwei Gründen — einer war nie ein Argument.** Gültig war die Höhe: Das Lockup schob den CTA auf 1366×768 um 140px unter den Falz. Nie tragfähig war der zweite: *„Am Desktop stehen Navigation und ‚Zur App' ohnehin im Header."* Das Lockup ist eine **Bildmarke**; „Zur App" ist ein Button in Tech-Schrift, die Navigation waren Textlinks — keines davon zeigt je das Logo. Der Satz hat Navigation mit Marke verwechselt. Seit **PROJ-14** (2026-09-18) `HEADER_NAV_LINKS` geleert hat, ist die Kopfzeile zusätzlich leer: Ko-fi-Icon, „Zur App", Burger — keine Marke. Damit zeigt ausgerechnet die Seite des Erstkontakts (QR-Code, geteilter Link, Suchergebnis) einem Desktop-Besucher gar keine Bildmarke.
+
+**Das Höhen-Argument ist inzwischen entfallen**, durch zwei Kürzungen aus anderen Anlässen: zwei Hero-Absätze (168px, 2026-09-09, Betreiber-Wunsch) und der zweite CTA „Mit KI erstellen" (PROJ-14, 2026-09-18).
+
+**Gemessen mit zurückgeholtem Lockup** (volle `sm`-Größe 280×147, Production-Build): Der CTA bleibt auf **allen elf Referenz-Viewports** über dem Falz — knappster Fall 1366×768 mit **45px**, dazu 1024×768 mit 69px und 1280×800 mit 77px. Keine Überlappung mit dem `aside`-Bild, kein horizontaler Scrollbalken. Am Bildschirm abgenommen: Auf 1366×768 steht der gesamte Hero über dem Falz.
+
+**Entschieden: `lg:hidden` entfällt ersatzlos.** Eine Zeile, kein neuer Breakpoint, keine neue Prop. Die 45px Rest-Luft sind eng und vom Betreiber bewusst akzeptiert — sie sind überwacht, weil der bestehende BUG-7-Wächter den CTA auf elf Viewports gegen die Bildschirmkante misst und bei künftigem Hero-Wachstum sofort rot wird.
+
+Erwogen und verworfen: eine verkleinerte Desktop-Fassung (löst ein Problem, das die Messung nicht bestätigt, und machte die Marke am Desktop kleiner als am Tablet), Einblenden erst ab `xl` (ließe den Befund auf 1024×768 und 1366×768 bestehen) und eine Bildmarke in der Kopfzeile von `InfoPageShell` (träfe alle vier Info-Seiten — `/impressum` und `/datenschutz` tragen bewusst `theme="light"` als nüchterne Fließtextseiten; dazu zwei Markenanker auf einem Screen und ein fünfter Schalter an der Shell).
+
+**Für `/frontend` zu beachten:** `tests/proj-13-landing-qa.spec.ts:224` prüft heute ausdrücklich `toBeHidden()` auf 1366×768 und trägt im Fehlertext die abgelaufene Begründung („Marke steht im Header"). Der Test ist zu **ziehen, nicht zu löschen** — seine beiden Zusicherungen für 390px und 768px bleiben richtig. Der BUG-7-Wächter darüber bleibt unangetastet.
+
+**Beobachtung ohne Bug-Status, vorbestehend:** `logo-lockup.png` ist 8-bit RGB **ohne Alpha-Kanal** und bringt eine opake Platte mit — gemessen rgb(5–6,7–8,9–10) im äußeren Rahmen gegen einen Seitenhintergrund von rgb(11,15,18). Sie zeichnet sich als dezentes dunkles Rechteck ab. Dieselbe Datei steht unverändert auf `/` und auf `/about` mobil; dieses Refinement macht den Effekt auf einem weiteren Breakpoint sichtbar, erzeugt ihn aber nicht. Gleiche Fehlerklasse wie `mark-pin.jpg` (PROJ-3, 2026-09-19). Als Open Question vermerkt, bewusst nicht in den Scope gezogen — der gemeldete Befund ist die Abwesenheit der Marke, nicht ihre Kante.

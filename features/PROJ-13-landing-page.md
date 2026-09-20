@@ -1,9 +1,11 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Deployed
+## Status: In Progress
 _Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und dort verifiziert (Tag `v1.26.0-PROJ-13`). Refinement 6 (Ko-fi-Icon in der Kopfzeile, Tooltip, JSON-LD-Altersnachzug) ist **am 2026-09-10 nach Production deployt und dort verifiziert** (Tag `v1.27.0-PROJ-13`)._
+
+_**Refinement 7 (2026-09-20): Das Logo-Lockup kehrt auf den Desktop zurück.** Betreiber-Befund: „ich kann auf /about auf dem desktop das Logo nicht mehr sehen." Bestätigt und gemessen — `lg:hidden` blendet es ab 1024px aus. Spec ist aktualisiert, Umsetzung steht aus._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-10 (Refinement 6 deployt)
+**Last Updated:** 2026-09-20 (Refinement 7 spezifiziert)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -223,6 +225,14 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] Angenommen ein Besucher erreicht das Icon per Tastatur, wenn es den Fokus hat, dann erscheint derselbe Tooltip — er ist nicht auf Maus-Hover beschränkt
 - [x] Angenommen ein Besucher nutzt ein Touch-Gerät, wenn er die Seite betrachtet, dann trägt das Icon seine Bedeutung weiterhin über das `aria-label` — der Tooltip ist eine Ergänzung, kein Ersatz
 
+### Logo-Lockup kehrt auf den Desktop zurück (Refinement 7, 2026-09-20)
+- [ ] Angenommen ein Besucher öffnet `/about` auf einem Desktop-Bildschirm ab 1024px, wenn die Seite lädt, dann ist das Logo-Lockup über der Headline sichtbar — so wie auf Handy und Tablet
+- [ ] Angenommen ein Besucher öffnet `/about` auf 1366×768 (der flachste verbreitete Laptop), wenn die Seite lädt, dann ist der primäre CTA „Quest erstellen" **vollständig über dem Falz** sichtbar, ohne zu scrollen — BUG-7 bleibt behoben
+- [ ] Angenommen dieselbe Prüfung läuft auf allen elf Referenz-Viewports (320×568 bis 1920×1080), wenn der CTA gemessen wird, dann liegt seine Unterkante auf **jedem** über der Bildschirmkante
+- [ ] Angenommen ein Besucher betrachtet den Hero am Desktop, wenn Lockup und `aside`-Bild nebeneinander stehen, dann überlappen sie sich nicht und es entsteht kein horizontaler Scrollbalken
+- [ ] Angenommen ein Besucher öffnet `/anleitung`, `/impressum` oder `/datenschutz`, wenn die Seiten laden, dann sind sie durch dieses Refinement **unverändert** — nur `/about` setzt `showLogo`
+- [ ] Angenommen das Lockup ist auf dem Desktop zurück, wenn seine Größe gemessen wird, dann trägt es dieselbe Größe wie ab `sm` (280px) — es gibt keinen eigenen Desktop-Breakpoint für die Marke
+
 ### Prompt-Vorlage
 - [x] Angenommen ein Nutzer ist bei der Anleitungs-Sektion, wenn er die Seite betrachtet, dann ist die vollständige Prompt-Vorlage als lesbarer Text sichtbar und manuell markierbar
 - [x] Angenommen ein Nutzer klickt den Kopieren-Button, wenn das Kopieren erfolgreich ist, dann erhält er eine sichtbare Bestätigung (z.B. „Kopiert!")
@@ -281,6 +291,8 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] ~~Wann und wohin genau zeigt der Ko-fi-Link?~~ → Geklärt am 2026-09-09 (Refinement 6): Ziel ist https://ko-fi.com/technolomagie. „Zur App" bleibt als Aktions-Button erhalten — es ist der Conversion-Weg der Seite; Ko-fi bekommt links daneben einen Icon-Button ohne Text, nur auf `/about` und `/anleitung`. Die ausgeschriebene Beschriftung „Support me" trägt das Burger-Menu (PROJ-1)
 - [x] ~~Bekommt der Icon-Button auf dem Desktop einen sichtbaren Tooltip?~~ → Ja, umgesetzt am 2026-09-10: Tooltip „Unterstütze mich" bei Hover und Tastatur-Fokus, als eigene Client-Komponente `support-link.tsx`, damit die Shell serverseitig bleibt. Das `aria-label` bleibt daneben bestehen — auf Touch ist der Tooltip unsichtbar
 - [ ] Sollen `/impressum` und `/datenschutz` das Icon nachträglich auch bekommen? Zunächst bewusst nicht (2026-09-09)
+- [x] ~~Trägt der Desktop-Header die Marke ausreichend, sodass das Hero-Lockup ab `lg` entfallen kann?~~ → **Nein, die Annahme war von Anfang an falsch** (geklärt 2026-09-20, Refinement 7). Der Header führte nie eine Bildmarke — „Zur App" ist ein Button in Tech-Schrift, die Navigation waren Textlinks. Seit PROJ-14 `HEADER_NAV_LINKS` geleert hat, ist die Zeile zusätzlich leer. Das Lockup kehrt ab `lg` zurück
+- [ ] Soll das Logo-Lockup ein freigestelltes PNG mit Alpha bekommen? `logo-lockup.png` ist 8-bit RGB **ohne Alpha-Kanal** und bringt eine opake Platte von rgb(5–6,7–8,9–10) mit, während der Seitenhintergrund rgb(11,15,18) misst — die Platte zeichnet sich als dunkles Rechteck ab. **Vorbestehend und nicht von diesem Refinement verursacht:** dieselbe Datei steht unverändert auf `/` und auf `/about` mobil. Gleiche Fehlerklasse wie `mark-pin.jpg` (PROJ-3, 2026-09-19), wo ein eingechecktes Freistell-Skript die Lösung war (2026-09-20)
 - [x] ~~Braucht `/about` zusätzlich einen Footer mit Impressum/Datenschutz für Desktop-Besucher?~~ → Ja, entschieden am 2026-09-05: Footer auf allen Info-Seiten mit Kontakt und Rechtslinks; die Links verlassen dafür den Desktop-Header
 - [x] ~~Welche konkreten Angaben kommen ins Impressum?~~ → Vom Betreiber geliefert und eingetragen (2026-09-05)
 
@@ -348,6 +360,10 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 | Ghost-Optik statt Rahmen oder Füllung | Zwei gleichgewichtige Buttons nebeneinander lassen den Besucher raten, welcher gemeint ist. Ohne Rahmen ist die Rangfolge auf einen Blick klar: „Zur App" führt weiter, die Tasse ist ein Angebot | 2026-09-09 |
 | Nur auf `/about` und `/anleitung`, nicht auf `/impressum` und `/datenschutz` | Die beiden erklären das Produkt und sind die Seiten, auf denen Sympathie entsteht. Rechtstexte liest niemand aus Sympathie — dort wäre das Icon Dekoration mit einer Bitte dran | 2026-09-09 |
 | Die Fachbeispiele in der Schul-Karte entfallen | Sie waren in Refinement 4 die Begründung dafür, die eigene Lernpfad-Sektion zu streichen. Der Betreiber hat die Kürzung nach Rückfrage bestätigt: Vier gleich lange Zielgruppen-Karten lesen sich ruhiger, und der Lernpfad-Gedanke bleibt auch ohne Fächerliste stehen | 2026-09-09 |
+| Das Logo-Lockup kehrt ab `lg` auf `/about` zurück; `lg:hidden` entfällt ersatzlos | `/about` ist die Seite, die per QR-Code, Social-Media-Link oder Suchergebnis den Erstkontakt trägt — und zeigte einem Desktop-Besucher seit dem 2026-09-09 gar keine Bildmarke. Der Grund von damals („Marke steht im Header") ist seit PROJ-14 (2026-09-18) auch sichtbar falsch: `HEADER_NAV_LINKS` ist leer, die Kopfzeile trägt nur noch Ko-fi-Icon, „Zur App" und Burger — kein Logo | 2026-09-20 |
+| Keine verkleinerte Desktop-Fassung und kein eigener `lg`-Breakpoint für die Marke | Löste ein Problem, das die Messung nicht bestätigt: Mit dem Lockup in voller `sm`-Größe bleiben auf dem knappsten Viewport (1366×768) 45px Luft unter dem CTA. Ein zusätzlicher Breakpoint für ~100px hätte die Marke am Desktop kleiner gemacht als am Tablet | 2026-09-20 |
+| Die Marke zieht **nicht** in die Kopfzeile von `InfoPageShell` | Träfe alle vier Info-Seiten. `/impressum` und `/datenschutz` tragen bewusst `theme="light"` als „nüchterne Fließtextseiten, die gelesen und nicht inszeniert werden" (2026-09-06) — eine Bildmarke dort widerspricht dieser Entscheidung. Auf `/about` entstünden zudem zwei Markenanker in einem Screen (Zeile + Headline), auf Mobile drei | 2026-09-20 |
+| 45px Rest-Luft auf 1366×768 werden akzeptiert | Vom Betreiber entschieden. Der CTA steht auf allen elf Referenz-Viewports vollständig über dem Falz; der bestehende BUG-7-Wächter hält genau das fest und würde bei künftigem Hero-Wachstum sofort rot — die Enge ist damit überwacht, nicht bloß in Kauf genommen | 2026-09-20 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -383,6 +399,9 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 
 ---
 <!-- Sections below are added by subsequent skills -->
+| Rückbau über das Entfernen von `lg:hidden`, nicht über eine neue Prop | Die Sichtbarkeit der Marke ist keine Eigenschaft, die eine Seite einstellen muss — `showLogo` steuert bereits, *ob* eine Seite das Lockup führt. Ein zweiter Schalter für *wo* wäre der fünfte an `InfoPageShell` (nach `backHref`, `eyebrow`, `showSupport`, `theme`) und beim nächsten Seitenzuwachs still falsch | 2026-09-20 |
+| Der bestehende Test „das Logo-Lockup weicht ab lg" wird **gezogen, nicht gelöscht** | `proj-13-landing-qa.spec.ts:224` behauptet heute das Gegenteil des gewünschten Zustands und trägt im Fehlertext die abgelaufene Begründung („Marke steht im Header"). Gelöscht verlöre die Suite die Zusicherung, dass die Marke auf Handy und Tablet steht; invertiert deckt sie beides ab | 2026-09-20 |
+| Der BUG-7-Wächter über elf Viewports bleibt unangetastet | Er ist der Grund, warum dieses Refinement überhaupt risikoarm ist: Er misst den CTA gegen die Bildschirmkante und ist der einzige Test, der ein künftiges Hero-Wachstum an genau der Stelle stoppt, an der BUG-7 entstand | 2026-09-20 |
 
 ## Tech Design (Solution Architect)
 
@@ -1684,8 +1703,10 @@ Der primäre CTA „Quest erstellen" lag auf verbreiteten Laptop-Auflösungen un
 
 ### Drei Eingriffe
 
-**1. Das Logo-Lockup weicht ab `lg`** (`lg:hidden` in `InfoPageShell`).
+**1. Das Logo-Lockup weicht ab `lg`** (`lg:hidden` in `InfoPageShell`). — ⚠️ **Am 2026-09-20 zurückgenommen, siehe Refinement 7.**
 Genau dort trägt es am wenigsten: Am Desktop stehen Navigation und „Zur App" ohnehin im Header, und die Headline nennt die Marke. Auf Handy und Tablet — wo die Höhe reicht und der Header schmal ist — bleibt es der Markenanker. Es wächst außerdem nicht mehr auf 320px, weil Laptops breit, aber flach sind.
+
+> **Nachtrag 2026-09-20:** Dieser zweite Halbsatz war schon bei der Niederschrift falsch. Das Lockup ist eine **Bildmarke**; „Zur App" ist ein Button in Tech-Schrift und die Navigation waren Textlinks — keines davon zeigt je das Logo. Der Satz hat Navigation mit Marke verwechselt. Seit PROJ-14 (2026-09-18) `HEADER_NAV_LINKS` geleert hat, ist die Zeile zusätzlich leer, womit der Fehler auch sichtbar wurde. Das Höhen-Argument (erster Halbsatz) war dagegen korrekt und ist inzwischen durch zwei unabhängige Kürzungen des Hero entfallen.
 
 **2. Der Kopfabstand steigt erst ab `xl` wieder** (`pt-6 sm:pt-10 xl:pt-16` statt `sm:pt-12 lg:pt-16`).
 Ab `lg` ist die Bildschirmhöhe der knappe Faktor, nicht die Breite. Erst ab `xl`, wo auch flache Geräte Platz haben, darf der Abstand großzügig sein.
@@ -1985,3 +2006,92 @@ Weiterhin offen aus früheren Runden: **BUG-8** (Sektions-Kicker als `h2`, die e
 - **BUG-2 / BUG-3** aus PROJ-1 — vorbestehend
 - **Firefox** — Binary nicht lauffähig
 - **Beobachtung:** 320×568 hat nur 27px Luft unter dem CTA. Kein Fehler, aber die Stelle, die zuerst kippt, falls der Hero wächst
+
+---
+
+## Refinement 7 (2026-09-20) — Logo-Lockup kehrt auf den Desktop zurück
+
+### Der Befund
+Betreiber: *„ich kann auf /about auf dem desktop das Logo nicht mehr sehen."*
+
+Bestätigt im Code und gegen den Production-Build gemessen. `lg:hidden` an der `Image`-Komponente in `info-page-shell.tsx` blendet das Lockup ab 1024px aus:
+
+| Viewport | Lockup | CTA-Unterkante | Luft bis zum Falz |
+|---|---|---|---|
+| 320×568 | 220×115 @y80 | 541 | 27px |
+| 360×640 | 220×115 @y80 | 525 | 115px |
+| 390×844 | 220×115 @y80 | 503 | 341px |
+| 430×932 | 220×115 @y80 | 503 | 429px |
+| 768×1024 | 280×147 @y104 | 624 | 400px |
+| 1024×768 | **HIDDEN** | 536 | 232px |
+| 1280×800 | **HIDDEN** | 560 | 240px |
+| 1366×768 | **HIDDEN** | 560 | 208px |
+| 1440×900 | **HIDDEN** | 560 | 340px |
+| 1680×1050 | **HIDDEN** | 560 | 490px |
+| 1920×1080 | **HIDDEN** | 560 | 520px |
+
+Betroffen ist **nur `/about`** — es ist die einzige Seite, die `showLogo` setzt.
+
+### Warum die Entscheidung von 2026-09-09 nicht mehr trägt
+
+Sie stand auf zwei Gründen. Nur einer war je ein Argument.
+
+**Der gültige — Höhe.** Auf 1366×768 schob das Lockup den CTA 140px unter den Falz. Echter, gemessener Schaden. **Dieser Grund ist inzwischen entfallen**, durch zwei Kürzungen, die beide aus anderen Anlässen kamen:
+
+| Wegfall aus dem Hero | Datum | Anlass |
+|---|---|---|
+| Zwei Absätze (Zielgruppen-Aufzählung, Spielmechanik) — 168px | 2026-09-09 | Betreiber-Wunsch, über die Bugbehebung hinaus |
+| Zweiter CTA „Mit KI erstellen" | 2026-09-18 | PROJ-14, Anleitung wird zurückgehalten |
+
+**Der nie tragfähige — *„Am Desktop stehen Navigation und ‚Zur App' ohnehin im Header."*** Das Lockup ist eine Bildmarke. „Zur App" ist ein Button in Tech-Schrift, die Navigation waren Textlinks. Keines davon zeigt je das Logo; der Satz hat Navigation mit Marke verwechselt. Die Marke stand auf dem Desktop schon am 2026-09-09 nirgends — das fiel nur nicht auf, solange wenigstens Textlinks die Zeile füllten.
+
+Seit PROJ-14 (2026-09-18) ist `HEADER_NAV_LINKS` leer. Die Kopfzeile trägt nur noch Ko-fi-Icon, „Zur App" und Burger. Damit ist der schwächere Grund nicht nur falsch, sondern sichtbar falsch — und `/about`, die Seite des Erstkontakts per QR-Code und geteiltem Link, zeigt einem Desktop-Besucher keinerlei Bildmarke.
+
+### Gemessen: das Höhenbudget trägt
+
+Mit zurückgeholtem Lockup in voller `sm`-Größe (280×147), gegen den Production-Build:
+
+| Viewport | CTA-Unterkante | Luft | Überlappung mit `aside` | H-Scroll |
+|---|---|---|---|---|
+| 1024×768 | 699 | 69px | nein | nein |
+| 1280×800 | 723 | 77px | nein | nein |
+| **1366×768** | 723 | **45px** ← knappster | nein | nein |
+| 1440×900 | 723 | 177px | nein | nein |
+| 1680×1050 | 723 | 327px | nein | nein |
+| 1920×1080 | 723 | 357px | nein | nein |
+
+**Der CTA bleibt auf allen elf Referenz-Viewports über dem Falz.** BUG-7 kehrt nicht zurück.
+
+Am Bildschirm abgenommen, nicht nur gemessen: Auf 1366×768 steht der gesamte Hero — Lockup, Headline, beide Lead-Sätze, Preiszeile und CTA — neben dem `aside`-Bild über dem Falz.
+
+### Die Entscheidung: `lg:hidden` entfällt ersatzlos
+
+Eine Zeile. Kein neuer Einbauort, kein neuer Breakpoint, keine neue Prop. Mobile und Desktop tragen wieder dieselbe Marke.
+
+**Erwogen und verworfen:**
+
+- **Verkleinerte Desktop-Fassung** (`lg:w-[220px]`) — löst ein Problem, das die Messung nicht bestätigt, und machte die Marke am Desktop kleiner als am Tablet.
+- **Erst ab `xl` einblenden** — ließe den gemeldeten Befund auf 1024×768 und 1366×768 bestehen, also auf genau den Geräten, die ihn ausgelöst haben können.
+- **Bildmarke in die Kopfzeile von `InfoPageShell`** — träfe alle vier Info-Seiten. `/impressum` und `/datenschutz` tragen bewusst `theme="light"` als „nüchterne Fließtextseiten, die gelesen und nicht inszeniert werden" (2026-09-06); eine Marke dort widerspricht dem. Auf `/about` entstünden zwei Markenanker in einem Screen (Zeile + Headline), auf Mobile drei. Dazu wäre es der fünfte Schalter an `InfoPageShell`.
+
+Die 45px Rest-Luft auf 1366×768 sind eng und vom Betreiber bewusst akzeptiert. Sie sind überwacht: Der bestehende BUG-7-Wächter misst den CTA auf elf Viewports gegen die Bildschirmkante und wird rot, sobald der Hero wieder wächst.
+
+### Für `/frontend` zu beachten
+
+**Ein bestehender Test behauptet das Gegenteil und ist zu ziehen, nicht zu löschen.** `tests/proj-13-landing-qa.spec.ts:224` — „das Logo-Lockup weicht ab lg, bleibt auf Handy und Tablet" — prüft auf 1366×768 ausdrücklich `toBeHidden()` und trägt im Fehlertext die abgelaufene Begründung („Marke steht im Header und in der Headline"). Die beiden Zusicherungen für 390px und 768px bleiben richtig und müssen erhalten bleiben; nur die dritte kehrt sich um.
+
+**Der BUG-7-Wächter bleibt unangetastet** (derselbe Datei-Block darüber, fünf Desktop-Auflösungen). Er ist der Grund, warum dieser Eingriff risikoarm ist.
+
+**Nicht mitnehmen:** `pt-6 sm:pt-10 xl:pt-16` (Eingriff 2 der BUG-7-Behebung) bleibt, wie es ist. Es kostet nichts und hält die Reserve.
+
+### Beobachtung ohne Bug-Status: die Platte des Lockups
+
+`public/assets/logo-lockup.png` ist **8-bit RGB ohne Alpha-Kanal** (per `file` und Pixel-Analyse bestätigt). Es bringt eine opake Platte mit: gemessen rgb(5–6, 7–8, 9–10) im äußeren 4px-Rahmen, gegen einen Seitenhintergrund von rgb(11,15,18) — eine Differenz von 6–8 pro Kanal. Die Platte ist *dunkler* als die Seite und zeichnet sich als dezentes Rechteck ab.
+
+**Vorbestehend und nicht von diesem Refinement verursacht:** Dieselbe Datei steht unverändert auf dem Startscreen `/` und auf `/about` mobil. Dieses Refinement macht den Effekt auf einem weiteren Breakpoint sichtbar, erzeugt ihn aber nicht.
+
+Gleiche Fehlerklasse wie `mark-pin.jpg` (PROJ-3, 2026-09-19), wo ein eingechecktes Freistell-Skript die Lösung war — dort hatte sich der Grund zusätzlich als Verlauf herausgestellt, sodass keine feste Ersatzfarbe getroffen hätte. Als Open Question vermerkt, bewusst **nicht** in diesen Scope gezogen: Der gemeldete Befund ist die Abwesenheit der Marke, nicht ihre Kante, und ein Freistellen träfe drei Einbauorte auf zwei Features.
+
+### Nicht abgedeckt
+- Das Erscheinungsbild auf einem echten hochauflösenden Desktop-Display (die Platte ist auf gutem Monitor eher sichtbar als im Screenshot)
+- Firefox (Binary fehlt weiterhin; Risiko gering — es geht um eine einzelne Tailwind-Utility-Klasse)
