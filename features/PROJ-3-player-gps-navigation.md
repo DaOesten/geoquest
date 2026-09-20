@@ -1,6 +1,6 @@
 # PROJ-3: Player — GPS-Navigation
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-08-23
 **Last Updated:** 2026-09-19
 
@@ -8,7 +8,7 @@
 
 > **Refinement (2026-09-07) — BUG-6 geklärt, umgesetzt und QA-geprüft:** Die iOS-Erkennung hinter dem "Kompass aktivieren"-Button ist zu grob. Sie schließt allein daraus auf iOS, dass `DeviceOrientationEvent.requestPermission` eine Funktion ist — das trifft auf Desktop-Chrome ebenfalls zu. Folge: Chrome-Nutzer bekommen einen Button angeboten, der garantiert fehlschlägt, statt des Hinweises, der ihnen hilft. BUG-6 war als vermutliches Testumgebungs-Artefakt notiert und ist als **echter Produktfehler bestätigt**. Siehe Acceptance Criteria "Richtungsanzeige ohne Heading", Edge Cases 13–14, Technical Requirements und Decision Log.
 
-> **Refinement (2026-09-19) — Gratulationsscreen (`ArrivalOverlay`), umgesetzt und QA-geprüft:** Drei Befunde aus dem Gebrauch, alle am Ankunfts-Screen. (1) Die Karte „Nächstes Ziel" nimmt vorweg, was der Spieler gerade erst verdient hat — sie entfällt ersatzlos. (2) Das Pin-Logo zeichnet sich als Rechteck vom Hintergrund ab, weil `mark-pin.jpg` ein JPEG ohne Transparenz ist — es bekommt ein freigestelltes PNG. (3) Das Konfetti rieselt von oben und läuft endlos; es soll einmalig wie aus einer Konfetti-Kanone von unten mittig nach oben schießen — das gilt für beide Screens, die `ConfettiEffect` nutzen (Ankunft und Outro/PROJ-5). Siehe Acceptance Criteria „Ankunft — Gratulationsscreen", Edge Cases 15–17, Technical Requirements und Decision Log.
+> **Refinement (2026-09-19) — Gratulationsscreen (`ArrivalOverlay`), umgesetzt, QA-geprüft und am 2026-09-20 deployt (`v1.31.0-PROJ-3`):** Drei Befunde aus dem Gebrauch, alle am Ankunfts-Screen. (1) Die Karte „Nächstes Ziel" nimmt vorweg, was der Spieler gerade erst verdient hat — sie entfällt ersatzlos. (2) Das Pin-Logo zeichnet sich als Rechteck vom Hintergrund ab, weil `mark-pin.jpg` ein JPEG ohne Transparenz ist — es bekommt ein freigestelltes PNG. (3) Das Konfetti rieselt von oben und läuft endlos; es soll einmalig wie aus einer Konfetti-Kanone von unten mittig nach oben schießen — das gilt für beide Screens, die `ConfettiEffect` nutzen (Ankunft und Outro/PROJ-5). Siehe Acceptance Criteria „Ankunft — Gratulationsscreen", Edge Cases 15–17, Technical Requirements und Decision Log.
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — für Routing und UI-Rahmen
@@ -1174,3 +1174,70 @@ Zusätzlich sind die lokalen Konsolenfehler geprüft: Sie stammen ausschließlic
 **READY.** Keine Critical-, High-, Medium- oder Low-Bugs. Alle 8 Acceptance Criteria erfüllt, alle 3 Edge Cases bestätigt, drei zusätzliche Grenzfälle geprüft, Security-Audit ohne Befund, PROJ-5 regressionsfrei, beide Engines gleichwertig.
 
 Der vom Betreiber gemeldete Befund zum Pin ist nicht nur behoben, sondern mit einer Messung belegt, die die Frontend-Phase noch nicht geführt hatte: **Randabweichung 0 gegen 43 beim alten JPEG.**
+
+---
+
+## Deployment: Gratulationsscreen (2026-09-20)
+
+**Live auf https://geoquesty.vercel.app** — Tag `v1.31.0-PROJ-3`, Commits `c0016c0` (Frontend) und `eddf9f6` (QA).
+Vercel deployte automatisch von `main`, **live nach ~56 Sekunden**.
+
+### Pre-Deployment
+
+| Prüfung | Ergebnis |
+|---------|----------|
+| `npm run build` | erfolgreich |
+| `npm run lint` | 0 Errors (7 vorbestehende Warnungen) |
+| QA-Freigabe | Approved, 8/8 AC, keine Bugs |
+| Secrets im Diff | **keine** — die drei Grep-Treffer waren die Wörter „Secrets"/„Token" in der QA-Dokumentation selbst |
+| `.env`/Key-Dateien im Diff | keine |
+| Asset-Integrität | `mark-pin.png` als `PNG image data, 546x558, 8-bit/color RGBA` verifiziert |
+| Ausgangslage Production | `/assets/mark-pin.png` → **HTTP 404** (sauberes Vorher-Signal) |
+
+### Der Kern ist in Production bestätigt
+
+Die entscheidende Messung der QA — der Pin ist auf dem echten App-Hintergrund kantenfrei — wurde **gegen das live ausgelieferte Asset wiederholt**, nicht gegen die lokale Datei:
+
+| Messung am Live-Asset | Ergebnis |
+|------------------------|----------|
+| Live-PNG vs. Repo-Datei | **byte-identisch** (`cmp`, 197.276 Bytes) |
+| Live-PNG auf `#0B0F12`, äußerer 12px-Rahmen | **max. Farbabweichung 0**, abweichende Pixel **0** |
+| Gegenprobe altes JPEG | **max. Farbabweichung 43** |
+
+Damit ist der vom Betreiber gemeldete Befund nicht nur behoben, sondern **in Production messbar belegt**.
+
+### Verifikation im Live-Browser (beide Engines)
+
+Vollständiger Durchlauf gegen https://geoquesty.vercel.app auf 390×844:
+
+| Prüfpunkt | Chrome 152 | Mobile Safari |
+|-----------|-----------|---------------|
+| Screen-Inhalt | `ZIEL ERREICHT! \| LIVE ERSTE STATION \| STATION ENTDECKEN` | identisch |
+| Hinweis auf nächste Station (bei vorhandener 2. Station) | **keiner** | **keiner** |
+| Pin | `/assets/mark-pin.png`, `radius 0px`, geladen 546×558 | identisch |
+| Kanone | `gq-cannon`, `iteration-count: 1`, `bottom: 0`, `left: 195px` (exakt mittig), 70 Partikel | identisch |
+| Ruhe nach 3,5 s | **0 bewegt, 0 sichtbar** | **0 bewegt, 0 sichtbar** |
+| Layer | `pointer-events: none`, `aria-hidden="true"` | identisch |
+| CTA | 56px, endet bei 605/844 → führt in den Modul-Screen | 601/844 |
+| Konsolenfehler / fehlgeschlagene Requests | 0 fehlgeschlagen | **0 / 0** |
+
+**Am Bildschirm abgenommen:** Screenshot bei 260 ms zeigt den Fächer über die volle Breite, der Pin steht ohne Rechteck auf dem Hintergrund, die „Nächstes Ziel"-Karte ist weg. Screenshot nach 3,5 s zeigt den vollständig ruhigen Screen.
+
+### Regression PROJ-5 (Outro) in Production
+
+Eigener Durchlauf bis zum Quest-Ende: Pin `/assets/mark-pin.png` mit `radius 0px` und geladen, Animation `gq-cannon` mit `iteration-count: 1`, Quest-Name, „1 von 1 Station abgeschlossen" und Outro-Text vollständig. Der Outro erbt beide Änderungen, ohne dass seine Datei dafür angefasst wurde.
+
+### Routen, Header, Nachbarseiten
+
+Alle sieben Routen **HTTP 200** mit 0,30–0,47 s. Security-Header aktiv inkl. **HSTS** (`max-age=63072000; includeSubDomains; preload`), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`. Das PNG wird mit `content-type: image/png` und `nosniff` ausgeliefert.
+
+Nachbarseiten unbeschädigt: `/about` trägt weiterhin `FAQPage`-JSON-LD und 1× Ko-fi, `/anleitung` liefert weiterhin **0 Treffer** für den zurückgehaltenen Prompt (PROJ-14 intakt).
+
+### Eine geprüfte Auffälligkeit
+
+Der Live-Durchlauf meldete 2 Konsolen-404s. **Nachgemessen statt weggewunken:** Ein normaler Besuch von `/` und `/play` erzeugt **0 Requests mit Status 404**. Die beiden stammen aus dem Aufruf von `/play/<id>` — das serverseitig 404 liefert, weil Quests ausschließlich im localStorage liegen. Für den Nutzer unsichtbar (der Client rendert korrekt, was dieser Test selbst belegt), **vorbestehend** und bereits im Deploy vom 2026-09-07 dokumentiert. Kein Regress dieses Features.
+
+### Rollback
+
+Vercel Dashboard → Deployments → vorheriges Deployment „Promote to Production".
+Betroffen sind nur `confetti-effect.tsx`, `navigation-screen.tsx`, `outro-screen.tsx`, `quest-player.tsx` und das neue Asset. Ein Rollback bringt die „Nächstes Ziel"-Karte, das rieselnde Endlos-Konfetti und das sichtbare Rechteck um den Pin zurück — mehr nicht. Keine Datenmigration, kein Schema, keine Umgebungsvariable betroffen.

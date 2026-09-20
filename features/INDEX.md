@@ -18,7 +18,7 @@
 |----|---------|----------|--------------|--------|------|---------|
 | PROJ-1 | App Shell & Mode Switch | P0 | None | Deployed | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
-| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Approved | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
+| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
 | PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
@@ -186,6 +186,20 @@ Suiten gegen den Production-Build: **Unit 219/219. Chrome 152: 460 passed / 23 s
 **Drei Messfehler offen benannt** (alle meine, nicht das Produkt): eine Regex gegen `innerText` bei `uppercase`-Transform; ein Locator-Timeout, weil der Stationsname im `aria-label` steckt und der Payload den Textfilter unbrauchbar machte; und ein hängender Hintergrundlauf durch parallele Sonden gegen denselben Server — genau das in INDEX.md dokumentierte Muster.
 
 **Nicht abgedeckt:** das Erscheinungsbild auf einem echten Gerätedisplay, 70 Partikel auf schwacher Android-Hardware, Firefox (Binary fehlt; Risiko gering, da nur CSS-Animationen und PNG-Alpha genutzt werden), und der unveränderte Vibrations-Pfad.
+
+**Am 2026-09-20 nach Production deployt** (Tag `v1.31.0-PROJ-3`, Commits `c0016c0`/`eddf9f6`) — live auf https://geoquesty.vercel.app und dort verifiziert. Vercel deployte automatisch von `main`, live nach ~56 Sekunden.
+
+**Der Kern ist in Production bestätigt — am live ausgelieferten Asset, nicht an der lokalen Datei:** Das Live-PNG ist byte-identisch zum Repo (197.276 Bytes), und auf `#0B0F12` kompositiert ergibt es über den gesamten äußeren 12px-Rahmen eine **Farbabweichung von 0**; das alte JPEG ergibt an derselben Stelle **43**. Der gemeldete Befund ist damit in Production messbar behoben.
+
+Im Live-Browser auf **beiden Engines** geprüft: Der Screen liest `ZIEL ERREICHT! | LIVE ERSTE STATION | STATION ENTDECKEN` — **kein Hinweis auf die nächste Station**, obwohl die Testquest eine zweite hat. Pin als PNG mit `radius 0px` geladen, Kanone `gq-cannon` mit `iteration-count: 1` und Ursprung `bottom: 0` / `left: 195px` (exakt mittig), nach 3,5 s **0 von 70 bewegt und 0 sichtbar**. **WebKit mit 0 Konsolenfehlern und 0 fehlgeschlagenen Requests.** Am Bildschirm abgenommen: Fächer über die volle Breite bei 260 ms, vollständig ruhiger Screen nach 3,5 s.
+
+**PROJ-5 (Outro) in Production regressionsfrei** — eigener Durchlauf bis zum Quest-Ende: erbt PNG und Kanone, Inhalt vollständig.
+
+Alle sieben Routen HTTP 200 mit 0,30–0,47 s, Security-Header aktiv inkl. HSTS, PNG mit `image/png` und `nosniff`. Nachbarseiten unbeschädigt: `/about` mit `FAQPage` und 1× Ko-fi, `/anleitung` weiterhin **0 Treffer** für den zurückgehaltenen Prompt.
+
+**Eine Auffälligkeit geprüft statt weggewunken:** Der Durchlauf meldete 2 Konsolen-404s. Ein normaler Besuch von `/` und `/play` erzeugt **0 Requests mit Status 404** — die beiden stammen aus `/play/<id>`, das serverseitig 404 liefert, weil Quests nur im localStorage liegen. Für den Nutzer unsichtbar, vorbestehend, bereits im Deploy vom 2026-09-07 dokumentiert.
+
+**PROJ-3 ist abgeschlossen.**
 
 ## Next Available ID: PROJ-15
 
