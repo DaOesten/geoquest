@@ -1,6 +1,6 @@
 # PROJ-12: PWA-Installation (Add to Homescreen)
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-09-18
 **Last Updated:** 2026-09-20 (Refinement: Safe Area — Statusleiste verdeckt die Kopfzeile in der installierten App)
 
@@ -705,7 +705,7 @@ Die bestehenden Assertions sind **gezogen, nicht gelöscht**: Der iOS-Test prüf
 
 ## Refinement 3 (2026-09-20) — Safe Area: die Statusleiste verdeckt die Kopfzeile
 
-**Status:** Frontend umgesetzt am 2026-09-20, QA offen
+**Status:** Frontend umgesetzt und QA abgeschlossen am 2026-09-20 — Production-Ready
 
 ### Der Befund
 
@@ -859,6 +859,89 @@ Auf fünf Viewports (320×568 bis 1440×900): `padding-top: 0px` überall, Kopfz
 #### Nicht abgedeckt und benannt
 
 Das Erscheinungsbild auf einem echten iPhone (Playwright emuliert `env()` nicht — die Mechanik ist belegt, der Augenschein nicht), Edge Case 25 (Sheet-Höhe gegen Dynamic Island), Edge Case 26 (Player-Button gegen Home-Indikator) und Firefox.
+
+### QA Test Results (2026-09-20)
+
+**Getestet gegen:** Production-Build (`next build` + `next start`, Port 3100)
+**Engines:** Google Chrome (via `channel: 'chrome'`) und WebKit
+**Ergebnis: 9/9 Acceptance Criteria erfüllt, keine Bugs in diesem Refinement, Production-Ready.**
+
+> **Zur Unabhängigkeit:** In derselben Sitzung gebaut. Die zentralen Behauptungen wurden **nicht übernommen, sondern neu gemessen** — auf 6 Viewports × 2 Engines × 5 Screens statt 5 Viewports, und mit 216 einzeln geprüften Bedienelementen statt nur dem jeweils ersten.
+
+#### Der wichtigste Einzelbefund betrifft die Testqualität, nicht das Produkt
+
+Mit der **echten Vorgängerfassung** (`git stash`, also mit dem vom Betreiber gemeldeten Fehler) bestehen die bestehenden Suiten **189 von 189**. Sie hätten den Befund **nie gefangen** — keine einzige Assertion prüfte die Position der Kopfzeile gegen einen Systemleisten-Bereich. Genau diese Lücke schließen die 34 neuen Tests.
+
+#### Acceptance Criteria
+
+| # | Kriterium | Ergebnis |
+|---|---|---|
+| 1 | Zurück-Pfeil und Burger vollständig unterhalb der Statusleiste | ✅ 216 Bedienelemente geprüft, **kein einziges** unter dem Inset |
+| 2 | Schwebender Burger auf `/` unterhalb der Statusleiste | ✅ 24 Fälle, alle korrekt, durchgehend 44×44 |
+| 3 | Info-Sticky-Kopfzeile in jedem Scroll-Zustand darunter | ✅ beide Engines, 6 Viewports |
+| 4 | Browser-Zustand unverändert | ✅ `padding-top: 0px` in **allen** Fällen |
+| 5 | Kopfzeilen-Fläche bis zur obersten Kante, kein Spalt | ✅ `top: 0` in allen 96 Kopfzeilen-Fällen mit Inset |
+| 6 | Kopfzeile bleibt 56px, Inset kommt hinzu | ✅ 56→103 (47px) →115 (59px), exakt additiv |
+| 7 | Creator-FABs oberhalb des Home-Indikators | ✅ **alle drei** gemessen: 24px → 58px |
+| 8 | Kein Player-Bedienelement unter dem Home-Indikator | ✅ voller Quest-Durchlauf, knappste Stelle **249px** |
+| 9 | Kein Leerraum auf Geräten ohne Notch | ✅ `0px` überall |
+
+#### Die Kernmessung
+
+| | Browser | Notch 47px | Dynamic Island 59px |
+|---|---|---|---|
+| Kopfzeile `top` | 0 | **0** | **0** |
+| Kopfzeilen-Höhe | 56 | 103 | 115 |
+| **Bedienelement `top`** | 6 | **53** | **65** |
+| Tap-Höhe | 44 | **44** | **44** |
+| Burger auf `/` | 12 | **59** | 71 |
+| FAB `bottom` | 24px | **58px** | 58px |
+
+#### Zwei offene Edge Cases geschlossen
+
+**Edge Case 25 (Sheet gegen Dynamic Island) — hält, aber knapp.** Das Stations-Sheet lässt oben **67,5px** frei; bei 59px Dynamic Island bleiben **8,5px Luft**. Die Rechnung der Spec (67px) war richtig. Das Modul-Sheet startet bei 419px, unkritisch. Beide Engines identisch.
+
+**Edge Case 26 (Player unten) — die Ableitung der Spec ist bestätigt.** Vollständiger Quest-Durchlauf auf beiden Engines bis zum Outro. Knappste Stelle ist „Station entdecken" mit **249px** über der Unterkante; bei 34px Home-Indikator über 200px Reserve. Kein Player-Screen braucht unteren Inset — `justify-center` trägt, wie vermutet.
+
+#### Ein Befund meiner Prüfung, der sich als zu strenges Kriterium erwies
+
+Meine Sonde meldete zunächst 24 Verstöße: `border-box` auf der Info-Kopfzeile. **Entkräftet durch Nachmessen** — `InfoPageShell` braucht `box-content` konstruktiv nicht, weil ein inneres `div` die Höhe trägt. Beide Kopfzeilen wachsen identisch (56→103→115), beide Bedienelemente rücken auf 53/65. Kein Bug; `box-content` wäre dort wirkungslose Dekoration.
+
+#### Security-Audit ohne Befund
+
+Die heikelste Frage bei einer CSS-Änderung ist, ob ein Wert von außen steuerbar ist. **Ist er nicht:** Die drei Utilities enthalten ausschließlich `env()`-Werte, kein Custom Property, keine Nutzereingabe — im CSSOM verifiziert. Ein feindlich gesetztes `--safe-area-inset-top: 9999px` bleibt wirkungslos (`padding-top: 0px`, `top: 0`), die Kopfzeile lässt sich nicht aus dem Bild schieben. Markup in der Route erzeugt **0** injizierte Elemente und **0** Dialoge. Kontrast der Kopfzeilen-Elemente **11.6:1** bei 4.5:1 Vorgabe.
+
+#### Gegenproben
+
+| Eingriff | Erwartung | Gemessen |
+|---|---|---|
+| Oberen Inset ganz entfernen | neue Tests fallen | **16 von 34** |
+| Nur `box-content` entfernen | der subtile Fall wird gefangen | **8 von 34**, darunter der Statusleisten-Test |
+| Vorgängerfassung gegen **bestehende** Suiten | Lücke sichtbar | **189/189 bestanden** — sie fangen den Fehler nicht |
+
+Produktcode nach allen Gegenproben per `git diff` als byte-identisch zu `HEAD` bestätigt.
+
+#### Gefundene Bugs
+
+**BUG-12 (Medium, vorbestehend, nicht aus diesem Refinement):** `tests/proj-12-pwa-installation.spec.ts:865` („der Import-Button faellt nach dem Wegklicken zurueck") schlägt fehl — der FAB auf `/play` bleibt nach dem Wegklicken des Installations-Hinweises auf y=648 stehen, statt an seine gewohnte Position zurückzufallen.
+
+**Unabhängig verifiziert:** Ich habe `src/` auf den Commit `7ee010b` (Overlay-Refinement) zurückgesetzt — also auf den Stand **vor** der Safe-Area-Änderung — und der Test schlägt dort ebenso fehl. Die Zuordnung der Frontend-Phase ist damit bestätigt: Der Befund stammt aus dem Overlay-Refinement vom selben Tag, das laut INDEX.md mit der Frontend-Phase endet und **nie eine QA durchlaufen hat**. Er blockiert dieses Refinement nicht, sollte aber als eigener Zyklus nachgezogen werden.
+
+#### Suiten
+
+**Unit 266/266.** E2E gegen den Production-Build über beide Engines: **1036 passed / 55 skipped / 1 unexpected**. Der eine Fehlschlag ist ein Kompassnadel-Test aus PROJ-3 (nicht angefasst), der **einzeln 9/9 grün** läuft — Last-Flakiness im parallelen Lauf, das in INDEX.md dokumentierte Muster. Build sauber, Lint 0 Fehler / 7 vorbestehende Warnungen.
+
+#### Beobachtungen ohne Bug-Status
+
+- **Das Sheet hat gegen Dynamic Island nur 8,5px Reserve.** Kein Fehler, aber die Stelle, die zuerst kippt, falls `h-[92dvh]` je verkleinert wird.
+- **Die lokalen Konsolenfehler stammen von Vercel Analytics**, das nur in Production existiert. Gegengeprüft auf `/impressum` und `/datenschutz` — also auf Routen, die dieses Refinement nicht anfasst: dort ebenso. Vorbestehend.
+- **Firefox bleibt ungetestet** (Binary fehlt trotz gegenteiliger `--dry-run`-Meldung). Risiko gering: `env()` ist seit Jahren Standard, und zwei unabhängige Engines messen identisch.
+
+#### Drei Messfehler offen benannt (das Produkt war jeweils richtig)
+
+1. **Ein `env()`-Fallback als Prüfmittel ist wirkungslos.** Mein erster Ansatz versorgte `env(safe-area-inset-top, 59px)` mit einem Fallback — der greift nur, wenn die Variable *nicht unterstützt* wird. Mit `viewportFit: "cover"` löst sie zu einem echten `0px` auf, der Fallback bleibt außen vor (gemessen: `padMitFallback99` ergab `0px`, nicht `99px`). **Damit kann keine Testumgebung einen echten oberen Inset erzeugen** — das Überschreiben der Utilities ist der einzig gangbare Weg, nicht bloß der bequemere.
+2. **Falsches Sheet gemessen.** Mein Selektor `button[aria-label*="Menü"]` traf das Burger-Menu („Menü öffnen") statt der Stations-Aktionen; gemessen wurde das Navigationspanel (`top: 0, h: 844`), was wie ein fehlender Freiraum aussah. Über `aria-label="Stations-Aktionen"` korrekt: 67,5px.
+3. **Zwei abgestürzte Server-Läufe** durch parallele Sonden gegen denselben Port — das in INDEX.md dokumentierte Muster. Nur eine Sonde gleichzeitig.
 
 ### Was dieses Refinement über das vorige sagt
 

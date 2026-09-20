@@ -1,9 +1,11 @@
 # PROJ-1: App Shell & Mode Switch
 
-## Status: Deployed
+## Status: In Progress
 _Deployed; das Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist am 2026-09-10 QA-geprüft (14/15 Acceptance Criteria, keine Critical/High-Bugs). **BUG-10 ist am 2026-09-10 entschieden, gebaut, QA-geprüft und nach Production deployt** (Tag `v1.28.0-PROJ-1`): 7/7 Acceptance Criteria, 0px Layout-Kosten in Production auf vier Viewports bestätigt, alle sieben Ziele von `/` aus in einem Tap erreichbar. Das Refinement vom 2026-09-09 („Support me" / Ko-fi) ist **am 2026-09-10 nach Production deployt und dort verifiziert** (Tag `v1.27.0-PROJ-13`, 8/8 Acceptance Criteria, keine Bugs) — der Menu-Eintrag ist auf https://geoquesty.vercel.app live._
 **Created:** 2026-08-23
-**Last Updated:** 2026-09-10 (BUG-10 deployt)
+
+_**Refinement (2026-09-20): Das Logo-Lockup bekommt einen Alpha-Kanal.** `logo-lockup.png` ist 8-bit RGB ohne Transparenz und bringt eine opake Platte mit, die sich auf dem App-Hintergrund als Rechteck abzeichnet — auf `/` (PROJ-1) und auf `/about` (PROJ-13). Gemeldet vom Betreiber; Spec ist aktualisiert, Umsetzung steht aus._
+**Last Updated:** 2026-09-20 (Alpha-Refinement spezifiziert)
 
 ## Dependencies
 - None (PROJ-1 ist das Fundament)
@@ -109,6 +111,15 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 - [ ] Angenommen der Nutzer ruft eine ungültige URL auf, wenn die Seite lädt, dann wird eine gebrandete 404-Seite im Dark Theme mit der Nachricht "Ziel nicht gefunden." und einem "Zurück zum Start"-Button angezeigt
 - [ ] Angenommen die 404-Seite ist sichtbar, wenn der Nutzer auf "Zurück zum Start" tippt, dann wird er zu `/` navigiert
 
+**Logo-Lockup mit Alpha-Kanal (Refinement 2026-09-20):**
+- [ ] Angenommen ein Nutzer öffnet den Startscreen `/`, wenn das Logo-Lockup sichtbar ist, dann zeichnet sich **keine rechteckige Platte** um das Motiv ab — der Bildgrund ist vom App-Hintergrund nicht unterscheidbar
+- [ ] Angenommen dasselbe Lockup steht im Hero von `/about` (PROJ-13), wenn die Seite lädt, dann gilt dort dasselbe
+- [ ] Angenommen das freigestellte PNG wird auf den App-Hintergrund `#0B0F12` kompositiert, wenn der äußere 12px-Rahmen gemessen wird, dann beträgt die **maximale Farbabweichung 0** — dieselbe Messlatte wie bei `mark-pin.png` (PROJ-3, 2026-09-19)
+- [ ] Angenommen das Motiv wird betrachtet, wenn Pin, Route, X und beide Wortmarken geprüft werden, dann sind sie vollständig erhalten — keine Löcher in der dunklen Kreisfläche des Pins, keine abgeschnittenen Pinselkanten
+- [ ] Angenommen der Neon-Glow der Lime- und Teal-Elemente wird betrachtet, wenn er in den Hintergrund ausläuft, dann tut er das weich über Teil-Alpha statt als gezackter Halo
+- [ ] Angenommen das freigestellte PNG wird erzeugt, wenn der Vorgang nachvollzogen werden soll, dann geschieht das über ein **eingechecktes Skript** und nicht von Hand — nach dem Muster von `scripts/make-mark-pin-cutout.swift`
+- [ ] Angenommen die Quelldatei trägt Korn-Artefakte im Bildgrund, wenn das Motiv freigestellt ist, dann sind diese **nicht sichtbar** — weder als Streusel noch als graue Schlieren
+
 ## Edge Cases
 1. **Theme-Flicker bei Seitenwechsel:** Beim Navigieren von `/play` (Dark) zu `/create` (Light) darf kein weißer Blitz / Flackern auftreten
 2. **Direkteinstieg per URL:** Nutzer ruft direkt `/play/abc` auf → App muss das korrekte Theme setzen ohne erst den Startscreen zu zeigen
@@ -145,6 +156,8 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 - [x] ~~Braucht der Startscreen `/` selbst das Burger-Menu?~~ → **Ja, entschieden am 2026-09-10** (löst BUG-10). Aber **ohne Kopfzeilen-Zeile**: nur das Burger-Icon, absolut positioniert oben rechts, 0px Layout-Höhe. Gemessen war der Anlass: Von `/` waren nur 3 der 7 Ziele direkt erreichbar, Impressum und Datenschutz gar nicht. Eine volle 56px-Kopfzeile hätte den Startscreen aber auf 360×640 zum Scrollen gebracht (gemessen: Inhalt endet dann bei 615/640, Seite überläuft) und damit ein bestehendes Acceptance Criterion gebrochen. Die schwebende Variante liefert alle sieben Ziele in 1 Tap, ohne einen einzigen Pixel Layout zu kosten
 - [ ] Soll das Menu perspektivisch einen Eintrag „App installieren" (PROJ-12, PWA) bekommen? Das wäre ein Anhang unter „App" — erst entscheiden, wenn PROJ-12 gebaut wird. _(Formulierung aktualisiert 2026-09-09: „vierte Gruppe" ist überholt, „Unterstützen" ist jetzt die vierte.)_
 - [ ] Soll „Support me" perspektivisch auch auf `/impressum` und `/datenschutz` als Kopfzeilen-Icon erscheinen? Zunächst bewusst nur `/about` und `/anleitung` — die beiden Seiten, die das Produkt erklären. Rechtstexte liest niemand aus Sympathie (2026-09-09)
+- [ ] Behält das Lockup nach dem Freistellen die Ecken-Abrundung `rounded-[12px]` auf `/`? Sie stammt aus der Zeit der opaken Platte und rundete deren Kante ab; ohne Platte rundet sie nichts mehr (2026-09-20)
+- [ ] Soll `mark-pin-whitebg.png` (1,0 MB, unbenutzt) bei dieser Gelegenheit entfernt werden? Keine Referenz im Code gefunden (2026-09-20)
 - [x] ~~Braucht das Kopfzeilen-Icon auf dem Desktop einen sichtbaren Tooltip?~~ → Ja, umgesetzt am 2026-09-10 (Details in PROJ-13): Tooltip „Unterstütze mich" bei Hover und Tastatur-Fokus. Betrifft nur die Kopfzeile der Info-Seiten; der Menu-Eintrag ist ausgeschrieben und braucht keinen
 
 ## Decision Log
@@ -181,6 +194,9 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 | Der Startscreen `/` bekommt das Burger-Menu doch — die frühere Ausnahme entfällt | Die QA vom 2026-09-10 hat gemessen, was die Ausnahme kostet: Von `/` waren nur 3 der 7 Ziele direkt erreichbar, Impressum und Datenschutz überhaupt nicht (erst in 2 Taps über Logo → `/about` → Footer). „Eine Navigation für die ganze App" war damit auf dem einen Screen nicht eingelöst, den jeder Nutzer zuerst sieht | 2026-09-10 |
 | Auf `/` schwebt nur das Icon, statt eine volle Kopfzeile zu tragen | Gemessen: Eine 56px-Zeile lässt den Startscreen auf 360×640 überlaufen (Inhalt endet bei 615/640) und schneidet auf 320×568 45px ab — das hätte das AC „Logo, Headline und beide Mode-Cards ohne Scrollen sichtbar" gebrochen. Ein Kriterium gegen ein anderes zu tauschen wäre kein Fortschritt. `/` braucht ohnehin weder Zurück-Pfeil noch Titel, also auch keine Zeile für beides | 2026-09-10 |
 | Kein Menu-Eintrag für `/` selbst, auch jetzt nicht | Der Startscreen bietet nichts als die Wahl zwischen Play und Create, und beide stehen im Menu direkt darüber. Ein Eintrag „Start" wäre ein Ziel, das nichts kann, was das Menu nicht schon kann — entsprechend ist auf `/` auch kein Eintrag aktiv markiert | 2026-09-10 |
+| Das Logo-Lockup wird freigestellt (Alpha-Kanal), statt eine Ersatzfarbe zu suchen | `logo-lockup.png` ist 8-bit RGB und kann Transparenz gar nicht ausdrücken — jeder Pixel trägt Farbe, auch dort, wo gestalterisch nichts sein soll. Gemessen liegt die Platte bei rgb(5–6,7–8,9–10) gegen einen App-Hintergrund von rgb(11,15,18); auf Dunkel fällt dieser Versatz auf, weil Helligkeitswahrnehmung nahe Schwarz feiner auflöst | 2026-09-20 |
+| Der Scope umfasst beide Einbauorte (`/` und `/about`), nicht nur den gemeldeten | Es ist **dieselbe Datei**. Ein Austausch wirkt an beiden Stellen zugleich; eine Beschränkung auf einen Ort wäre gar nicht umsetzbar, ohne eine zweite Bilddatei einzuführen | 2026-09-20 |
+| Das Refinement hängt an PROJ-1, nicht an PROJ-13 | Das Lockup gehört zum Startscreen und damit zur App-Shell; `/about` (PROJ-13) benutzt es mit. PROJ-13 trägt einen Verweis, wird aber nicht zurückgesetzt | 2026-09-20 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -213,6 +229,10 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 
 ---
 <!-- Sections below are added by subsequent skills -->
+| Eigenes Skript `scripts/make-logo-lockup-cutout.swift` statt Wiederverwendung des Pin-Skripts | Der Algorithmus ist derselbe, die Schwellen sind es nicht: `make-mark-pin-cutout.swift` nutzt LO=74/HI=124, passend zum Histogramm-Tal **jenes** Bildes. Auf das Lockup angewandt würden sie das gesamte Motiv verwerfen. Gemessen liegt das Tal hier bei Luminanz ~25–48 (0,63% aller Pixel); LO=13/HI=30 trifft es | 2026-09-20 |
+| Zusätzlich ein Flecken-Filter über zusammenhängende Bereiche (Mindestgröße 16 Pixel) | Das Pin-Skript hat so etwas nicht und braucht es nicht. Das Lockup dagegen trägt **3884 isolierte Flecken ≤ 30 Pixel** im Bildgrund — Korn der Quelldatei, das erst sichtbar wird, wenn die Platte verschwindet. Ohne Filter beträgt die Rahmen-Abweichung **144**; mit Mindestgröße 16 exakt **0** | 2026-09-20 |
+| Zusätzlich eine Mindest-Spitzenhelligkeit je Bereich | Der Größenfilter allein lässt **71 Bereiche mit 5054 Pixeln** stehen, die als graue Schlieren sichtbar bleiben (gemessen über der Wortmarke bei x 430..473 und x 606..677, mittlere Helligkeit ~20). Eine Schwelle auf die Spitzenhelligkeit des Bereichs entfernt sie, ohne echte Motivteile zu treffen | 2026-09-20 |
+| Die Quelldatei `logo-lockup.png` bleibt liegen; das Ergebnis wird eine neue Datei | Gleiches Muster wie beim Pin, wo `mark-pin.jpg` als Quelle blieb und die PWA-Icons weiter speist. Eine überschriebene Quelle wäre nicht reproduzierbar — das Skript bräuchte sein eigenes Ergebnis als Eingabe | 2026-09-20 |
 
 ## Tech Design (Solution Architect)
 
@@ -1388,3 +1408,99 @@ Die Änderung ist rein clientseitig — kein Backend, keine neuen Env-Vars, kein
 | BUG-3 | Medium | Kontrast auf den Creator-Screens: Eyebrow 1.55:1, Empty-State 2.26:1 (vorbestehend seit PROJ-6/7/8) |
 
 Beide sind dokumentiert und für einen eigenen Durchgang vorgesehen.
+
+---
+
+## Refinement (2026-09-20) — Logo-Lockup bekommt einen Alpha-Kanal
+
+### Der Befund
+Aufgefallen bei der Browser-Abnahme von PROJ-13 Refinement 7: Das Logo-Lockup zeichnet sich als Rechteck vom Hintergrund ab. Gemeldet und bestätigt.
+
+**Ursache im Bild, nicht im Code.** `public/assets/logo-lockup.png` ist **8-bit RGB ohne Alpha-Kanal** (per `file` und per Pixel-Analyse bestätigt: `channels 3`). PNG *kann* Transparenz, diese Datei nutzt sie nicht. Damit muss jeder ihrer 564.177 Pixel eine Farbe tragen — auch dort, wo gestalterisch nichts sein soll. Der Bildgrund ist eine ausgemalte Fläche: eine Platte.
+
+| | R | G | B | Luminanz |
+|---|---|---|---|---|
+| Platte des Lockups (äußerer 4px-Rahmen) | 5–6 | 7–8 | 9–10 | ~8,4 |
+| App-Hintergrund `#0B0F12` | 11 | 15 | 18 | ~14,2 |
+| **Differenz** | ~6 | ~8 | ~8 | ~5,8 |
+
+Die Platte ist **dunkler** als die Seite — ein dezent abgesetztes dunkles Feld, kein heller Kasten. Dass ~7 Stufen überhaupt auffallen, liegt am Arbeitspunkt: Helligkeitswahrnehmung ist nicht linear, nahe Schwarz löst das Auge feiner auf als nahe Weiß. Die App ist durchgehend dunkel.
+
+### Betroffen sind zwei Einbauorte — dieselbe Datei
+
+| Ort | Datei | Feature |
+|---|---|---|
+| Startscreen `/` | `src/app/page.tsx:47` | PROJ-1 |
+| Hero von `/about` | `src/components/info-page-shell.tsx:159` | PROJ-13 |
+
+Ein Austausch wirkt an beiden Stellen zugleich. Deshalb hängt dieses Refinement an **PROJ-1** (dem Eigentümer des Startscreens) und nicht an PROJ-13, das es mitbenutzt.
+
+### Der Vergleich mit dem Pin — und wo er nicht trägt
+
+Dieselbe Fehlerklasse wurde am 2026-09-19 für `mark-pin.jpg` gelöst (PROJ-3), mit `scripts/make-mark-pin-cutout.swift`. Der Algorithmus dort passt: Luminanz-Rampe über das Histogramm-Tal, Flood-Fill vom Rand gegen Löcher im Motiv, Premultiplizieren gegen dunkle Säume. **Die Schwellen passen nicht**, und ein Detail fehlt ganz.
+
+**Unterschied 1 — der Grund ist hier flach, nicht verlaufend.** Beim Pin war der Grund ein Verlauf (mittlere Luminanz 42,8 oben links gegen 24,9 unten rechts, Spanne **17,9**), weshalb keine feste Ersatzfarbe ihn je getroffen hätte. Beim Lockup gemessen:
+
+| Eckregion (60×60) | mittlere Luminanz |
+|---|---|
+| oben links | 7,31 |
+| oben rechts | 7,11 |
+| unten links | 7,67 |
+| unten rechts | 7,32 |
+| **Spanne** | **0,57** |
+
+Praktisch flach. Das macht die Trennung einfacher, ändert aber nichts daran, dass Freistellen der richtige Weg ist — eine feste Ersatzfarbe müsste bei jeder künftigen Hintergrundänderung nachgezogen werden.
+
+**Unterschied 2 — das Histogramm-Tal liegt woanders.** Das Pin-Skript nutzt `LO = 74.0, HI = 124.0`. Auf das Lockup angewandt verwürfe das **das gesamte Motiv**. Gemessenes Histogramm des Lockups:
+
+| Luminanz | Anteil | Bedeutung |
+|---|---|---|
+| 0–12 | 71,60% | Platte |
+| 13–24 | 2,48% | Übergang |
+| **25–48** | **0,63%** | **das Tal — hier trennen** |
+| 49–95 | 1,21% | |
+| 96–127 | 1,55% | |
+| 128–180 | 11,69% | Motiv |
+| 181–255 | 10,83% | Motiv |
+
+Erprobt: `LO = 13.0, HI = 30.0`. Vier Schwellenpaare (12/26, 13/30, 14/34, 13/24) liefern alle ~70,7% freigestellt — das Tal ist so sauber, dass die genaue Wahl kaum wiegt.
+
+**Unterschied 3 — die Quelldatei hat Korn, der Pin hatte keins.** Das ist der Fund, den ein reines Übertragen des Pin-Skripts übersehen hätte. Nach dem Freistellen mit LO=13/HI=30 zerfällt das Bild in **3942 zusammenhängende Bereiche**, davon **3884 mit ≤30 Pixeln** — Korn im Bildgrund, das die opake Platte bisher verdeckt hat. Gemessene Folge am äußeren 12px-Rahmen, auf `#0B0F12` kompositiert:
+
+| Filter | Rahmen-Abweichung | Randpixel mit Alpha>0 | verworfen |
+|---|---|---|---|
+| ohne | **144,0** | 188 | 0 |
+| Mindestgröße 8 Px | 57,0 | 18 | 7.211 Px |
+| **Mindestgröße 16 Px** | **0,0** | **0** | 8.574 Px |
+| Mindestgröße 32 Px | 0,0 | 0 | 9.490 Px |
+| _Referenz `mark-pin.png`_ | _0,0_ | _0_ | — |
+
+Mit Mindestgröße 16 ist die Kante **mathematisch nicht mehr vom Hintergrund unterscheidbar** — dieselbe Messlatte, die PROJ-3 für den Pin erreicht hat. Kein einziger Randpixel des Hauptmotivs wird dabei angetastet (gemessen: **0** der 188 Randtreffer gehören zum größten Bereich).
+
+**Unterschied 4 — ein Größenfilter allein reicht nicht.** Am Bildschirm geprüft, nicht nur gemessen: Nach dem Größenfilter bleiben **71 Bereiche mit 5054 Pixeln** stehen, die als graue Schlieren sichtbar sind — am deutlichsten über der Wortmarke bei `x 430..473, y 41..81` und `x 606..677, y 52..87`, mittlere Helligkeit ~20. Sie sind größer als 16 Pixel und überleben den Größenfilter. Eine zusätzliche Schwelle auf die **Spitzenhelligkeit je Bereich** entfernt sie:
+
+| Schwelle | verworfene Bereiche | verworfene Pixel | kleinster bleibender Peak |
+|---|---|---|---|
+| 40 | 40 | 1.501 | 40 |
+| 60 | 46 | 1.675 | 62 |
+| 80 | 51 | 1.908 | 84 |
+| 100 | 56 | 2.825 | 105 |
+
+Der genaue Wert ist in `/frontend` am Bildschirm zu wählen — die Zahlen zeigen nur, dass der Hebel existiert und über einen weiten Bereich gutmütig ist.
+
+### Am Bildschirm abgenommen
+Die erprobte Fassung (LO=13, HI=30, Mindestgröße 16) wurde auf `#0B0F12` kompositiert und angesehen: **Pin, Route, X und beide Wortmarken vollständig erhalten**, keine Löcher in der dunklen Kreisfläche des Pins, Pinselkanten sauber, kein Rechteck. Die verbleibenden Schlieren stammen aus Unterschied 4 und sind der Grund für den zweiten Filter.
+
+### Für `/frontend` zu beachten
+- **Neues Skript** `scripts/make-logo-lockup-cutout.swift`, Aufbau nach `make-mark-pin-cutout.swift`, ergänzt um die beiden Filter. Die Quelldatei bleibt liegen; das Ergebnis ist eine **neue** Datei — eine überschriebene Quelle wäre nicht reproduzierbar, weil das Skript sein eigenes Ergebnis als Eingabe bekäme.
+- **Beide Einbauorte** umstellen: `src/app/page.tsx:47` und `src/components/info-page-shell.tsx:159`.
+- **`rounded-[12px]` auf `/` prüfen** (`page.tsx`, am `Link`): Die Abrundung stammt aus der Zeit der opaken Platte und rundete deren sichtbare Kante ab. Ohne Platte rundet sie nichts mehr — der Fokusring nutzt allerdings denselben Radius. Als Open Question vermerkt.
+- **Keine Layout-Änderung.** Bildmaße (1039×543) und alle Größenklassen bleiben; es wechselt nur die Bilddatei.
+
+### Nicht in diesem Scope
+- **Die übrigen Marken-Assets.** `geoquest_pwaIcon.jpeg` speist die PWA-Icons, die PROJ-12 bereits mit eigenem Grund erzeugt; `urbanquest.png` ist ein randloses Hero-Bild in einer Karte mit Rahmen und soll seinen Grund behalten.
+- **`mark-pin-whitebg.png`** (1,0 MB, keine Referenz im Code gefunden) — als Open Question vermerkt, nicht mitentfernt.
+
+### Nicht abgedeckt
+- Das Erscheinungsbild auf einem echten hochauflösenden Display (die Kante ist dort deutlicher als in einer komprimierten Screenshot-Datei)
+- Ob die Schlieren auch **vor** dem Freistellen schon sichtbar waren — sie liegen im Bildgrund und wurden bisher von der Platte überdeckt; am Gerät zu beurteilen

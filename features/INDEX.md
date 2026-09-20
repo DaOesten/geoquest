@@ -27,7 +27,7 @@
 | PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Deployed | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
-| PROJ-12 | PWA-Installation | P0 | PROJ-1 | In Review | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
+| PROJ-12 | PWA-Installation | P0 | PROJ-1 | Approved | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
@@ -298,7 +298,25 @@ Spec ist aktualisiert (1 User Story, 9 Acceptance Criteria in einem eigenen Bloc
 
 **Suiten:** Unit **266/266**. E2E gegen den Production-Build über beide Engines **1033 passed / 55 skipped / 4 unexpected** — einer der oben beschriebene vorbestehende, drei Kompassnadel-Tests aus PROJ-3, die **einzeln grün** laufen (Last-Flakiness im parallelen Lauf, das bereits dokumentierte Muster). Build sauber, Lint 0 Fehler.
 
-**Nicht abgedeckt:** das Erscheinungsbild am echten iPhone, Edge Case 25 (Sheet gegen Dynamic Island), Edge Case 26 (Player-Button gegen Home-Indikator) und Firefox.
+**QA am 2026-09-20 abgeschlossen: 9/9 Acceptance Criteria erfüllt, keine Bugs in diesem Refinement, Production-Ready.**
+
+Weil in derselben Sitzung gebaut, habe ich die zentralen Behauptungen **neu gemessen** — auf 6 Viewports × 2 Engines × 5 Screens, mit **216 einzeln geprüften Bedienelementen** statt nur dem jeweils ersten. Keines liegt unter der Statusleiste, keines unter 44px, kein Spalt über einer Kopfzeile, Browser-Padding überall `0px`.
+
+**Der wichtigste Einzelbefund betrifft die Testqualität, nicht das Produkt:** Mit der echten Vorgängerfassung — also mit dem gemeldeten Fehler — bestehen die **bestehenden Suiten 189 von 189**. Sie hätten den Befund nie gefangen; keine Assertion prüfte die Kopfzeile gegen einen Systemleisten-Bereich. Genau das schließen die 34 neuen Tests.
+
+**Zwei offene Edge Cases geschlossen.** Das Stations-Sheet lässt oben **67,5px** frei — bei 59px Dynamic Island bleiben **8,5px Luft**; die Rechnung der Spec stimmte, aber ohne Reserve. Und der Player ist im vollen Quest-Durchlauf gemessen: knappste Stelle „Station entdecken" mit **249px** über der Unterkante, die `justify-center`-Ableitung ist bestätigt.
+
+**Security ohne Befund:** Die Utilities enthalten ausschließlich `env()`-Werte, kein Custom Property, keine Nutzereingabe — ein feindliches `--safe-area-inset-top: 9999px` bleibt wirkungslos. Kontrast 11.6:1.
+
+**Gegenproben:** Oberen Inset entfernen → **16 von 34** fallen. Nur `box-content` entfernen → **8**, darunter der Statusleisten-Test; die Suite fängt also auch den subtilen Fall, in dem der Inset gesetzt ist, aber die Zeile staucht statt schiebt. Produktcode danach per `diff` byte-identisch.
+
+**BUG-12 (Medium, vorbestehend):** `proj-12-pwa-installation.spec.ts:865` schlägt fehl — der Import-FAB auf `/play` fällt nach dem Wegklicken des Hinweises nicht zurück. **Unabhängig verifiziert** durch Rücksetzen von `src/` auf `7ee010b`: schlägt dort ebenso fehl. Stammt aus dem Overlay-Refinement vom selben Tag, das nie eine QA hatte. Blockiert dieses Refinement nicht, braucht aber einen eigenen Zyklus.
+
+**Suiten:** Unit **266/266**, E2E über beide Engines **1036 passed / 55 skipped / 1 unexpected** (ein Kompassnadel-Test aus PROJ-3, einzeln 9/9 grün — die dokumentierte Last-Flakiness). Build sauber, Lint 0 Fehler.
+
+**Drei Messfehler offen benannt, alle meine:** Ein `env()`-Fallback taugt nicht als Prüfmittel — mit `viewportFit: "cover"` löst die Variable zu einem echten `0px` auf, der Fallback greift nie (gemessen: `0px` statt `99px`). **Damit kann keine Testumgebung einen echten oberen Inset erzeugen**; das Überschreiben der Utilities ist der einzig gangbare Weg. Dazu ein falsch adressiertes Sheet (Burger-Menu statt Stations-Aktionen) und zwei abgestürzte Server durch parallele Sonden.
+
+**Nicht abgedeckt:** das Erscheinungsbild am echten iPhone (keine Umgebung kann `env()` oben emulieren) und Firefox.
 
 **Eine Vorhersage des vorigen Refinements hat sich bestätigt — und war zu eng.** Der Overlay-Eintrag vom selben Tag schloss mit „Nicht abgedeckt: die Safe Area auf einem echten iPhone … am Gerät zu bestätigen". Richtig vorhergesagt, aber nur für unten, wo sie behandelt war — nicht für oben, wo sie es nie war. Der Befund kam aus genau dem Gerätetest, den der Satz angekündigt hatte.
 
