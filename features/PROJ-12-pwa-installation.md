@@ -1,6 +1,6 @@
 # PROJ-12: PWA-Installation (Add to Homescreen)
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-09-18
 **Last Updated:** 2026-09-20 (Refinement: Service Worker nur in Production)
 
@@ -789,6 +789,28 @@ Weil das Refinement in derselben Sitzung gebaut wurde, habe ich die zentralen Be
 **Nicht abgedeckt:** Das Verhalten **auf Vercel** — geprüft wurde gegen `next start`. Der Deploy muss bestätigen, dass sich der Worker in Production weiterhin registriert; das ist die einzige offene Zusicherung. Dazu unverändert: Firefox (Binary fehlt) und ein echtes Android-Gerät.
 
 ## Deployment
+
+### Deploy Refinement 2026-09-20 — Service Worker nur in Production
+
+**Am 2026-09-20 nach Production deployt** (Commit `5f758b4`) — live auf https://geoquesty.vercel.app und dort verifiziert. Vercel deployte automatisch von `main`.
+
+**Der Kern ist am live ausgelieferten Bundle bestätigt, nicht an der lokalen Datei — und das Ergebnis ist besser als erwartet:** Alle 12 ausgelieferten JS-Chunks einzeln abgerufen. `register("/sw.js")` steht in `1e73f5b24345fad4.js`; **`getRegistrations` kommt in keinem einzigen Chunk vor**. Der gesamte Dev-Aufräum-Zweig wurde vom Build als toter Code entfernt — die `NODE_ENV`-Lösung wirkt zur Bauzeit und kostet in Production **null Bytes**. Eine Hostname-Prüfung hätte diesen Zweig dauerhaft mit ausgeliefert.
+
+**Die zentrale Zusicherung des Refinements ist in Production eingelöst:** Der Worker registriert sich auf **beiden Engines** weiterhin — gemessen `worker=1`, `state=activated`, `controller=true` nach rund 2 Sekunden, Cache exakt `["geoquest-offline-v1" → "/offline.html"]`. Der Android-Installationsweg und die Offline-Fallback-Seite bleiben damit erhalten.
+
+**Die Offline-Fallback-Seite funktioniert live:** Nach gefülltem Cache und getrennter Verbindung zeigt eine Navigation `Titel: "Geo Quest — keine Verbindung"` mit dem Text „Geo Quest braucht eine Internetverbindung, um zu starten" — die eigene Seite, nicht Chromes Dinosaurier.
+
+Alle **10 Endpunkte HTTP 200** mit korrektem Content-Type und 0,06–0,31 s (sieben Routen plus `offline.html`, `manifest.webmanifest`, `sw.js`). Alle vier PWA-Icons werden als `image/png` ausgeliefert. Security-Header aktiv inkl. HSTS; `sw.js` weiterhin mit `max-age=0`, eine neue Version kann also nicht von einem HTTP-Cache festgehalten werden.
+
+**Smoke-Test auf beiden Engines bestanden:** `/`, `/play` und `/create` rendern vollständig. **WebKit mit 0 Konsolenfehlern und 0 fehlgeschlagenen Requests.**
+
+**Nachbarfeatures unbeschädigt:** `/about` mit `FAQPage`-JSON-LD und genau 1× Ko-fi, `/anleitung` weiterhin mit **0 Treffern** für den zurückgehaltenen Prompt (PROJ-14), Offline-Seite inhaltlich unverändert.
+
+**Eine Auffälligkeit geprüft statt weggewunken:** Chrome meldete einen Konsolen-404, WebKit nicht. Ursache gefunden: `/favicon.ico` liefert 404, weil nie ein Favicon referenziert wurde — Chrome fragt es von sich aus an, WebKit nicht. **Vorbestehend und unabhängig von diesem Deploy** (gegen den Vorgänger-Commit geprüft: dort ebenfalls kein Favicon referenziert). Die vier echten PWA-Icons unter `/icons/` liefern alle 200. Kein Regressionsbefund; ein Favicon wäre ein eigenes, kleines Thema.
+
+**Drei Messfehler offen benannt, alle meine — das Produkt war jedes Mal richtig:** Zwei Sonden meldeten einen leeren Cache und damit eine ausbleibende Offline-Seite. Ursache: Ein `waitForFunction`, das `caches` im Sekundentakt abfragt, kommt dem `install`-Schritt des Workers in die Quere; der Poll meldete „fertig", während der Readback noch leer war. Mit einem schlichten festen Warten von 4 s war das Ergebnis eindeutig und reproduzierbar korrekt. Dritter Fall: Eine frühe Sonde las den Cache 0 ms nach `load` und schloss daraus auf einen Fehler — der Worker braucht rund 2 s bis `activated`.
+
+**Nicht abgedeckt:** Firefox (Binary weiterhin nicht lauffähig) und ein echtes Android-Gerät. Beides unverändert gegenüber dem vorherigen Stand und für dieses Refinement ohne Risiko, da nur die Registrierungsbedingung geändert wurde.
 
 **Deployt am:** 2026-09-19
 **Production-URL:** https://geoquesty.vercel.app

@@ -27,7 +27,7 @@
 | PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Deployed | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
-| PROJ-12 | PWA-Installation | P0 | PROJ-1 | Approved | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
+| PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
@@ -534,3 +534,17 @@ Die zentralen Behauptungen neu gemessen statt übernommen — und auf **beiden E
 **Ein eigener Test wurde entfernt statt stillgelegt:** Die Cache-Inhalts-Prüfung blieb auf WebKit unzuverlässig (1 von 5 Läufen rot) bei nachweislich korrektem Produkt, und `proj-12-pwa-installation.spec.ts:183` deckt dieselbe Zusicherung stabil ab. Ein Test, der ohne Produktfehler rot wird, kostet mehr Vertrauen als er Deckung bringt. Verbleibende neue Suite: 6 Tests, **6 von 6 Läufen grün**.
 
 **Offen bis zum Deploy:** Dass sich der Worker **auf Vercel** weiterhin registriert — geprüft wurde nur gegen `next start`.
+
+**Am 2026-09-20 nach Production deployt** (Tag `v1.32.0-PROJ-12`, Commit `5f758b4`) — live auf https://geoquesty.vercel.app und dort verifiziert.
+
+**Am live ausgelieferten Bundle bestätigt, und besser als erwartet:** Alle 12 JS-Chunks einzeln abgerufen — `register("/sw.js")` ist da, **`getRegistrations` in keinem einzigen**. Der Dev-Aufräum-Zweig wurde als toter Code entfernt; die `NODE_ENV`-Lösung wirkt zur Bauzeit und kostet in Production **null Bytes**. Eine Hostname-Prüfung hätte diesen Zweig dauerhaft mitgeliefert.
+
+**Die zentrale Zusicherung ist eingelöst:** Der Worker registriert sich auf beiden Engines weiterhin (`worker=1`, `state=activated`, `controller=true` nach ~2 s, Cache exakt `["/offline.html"]`) — Android-Installationsweg und Offline-Seite bleiben erhalten. Die Fallback-Seite ist live geprüft: offline zeigt eine Navigation „Geo Quest — keine Verbindung", nicht Chromes Dinosaurier.
+
+Alle 10 Endpunkte HTTP 200 (0,06–0,31 s), vier PWA-Icons als `image/png`, Security-Header inkl. HSTS, `sw.js` mit `max-age=0`. Smoke-Test auf beiden Engines bestanden, **WebKit mit 0 Konsolenfehlern und 0 fehlgeschlagenen Requests**. Nachbarfeatures unbeschädigt (`/about` mit FAQPage + 1× Ko-fi, `/anleitung` weiterhin 0 Treffer für den Prompt).
+
+**Eine Auffälligkeit geprüft statt weggewunken:** Chrome meldete einen Konsolen-404, WebKit nicht — `/favicon.ico` liefert 404, weil nie eines referenziert wurde; Chrome fragt es von sich aus an. **Vorbestehend**, gegen den Vorgänger-Commit gegengeprüft, kein Regressionsbefund. Die vier echten Icons unter `/icons/` liefern 200.
+
+**Drei Messfehler offen benannt, alle meine:** Zwei Sonden meldeten einen leeren Cache und damit eine ausbleibende Offline-Seite — ein `waitForFunction`, das `caches` im Sekundentakt abfragt, kommt dem `install`-Schritt in die Quere. Mit festem Warten reproduzierbar korrekt. Für künftige Läufe: Den Worker-Cache **nicht** pollen, sondern schlicht ~4 s warten.
+
+**PROJ-12 ist abgeschlossen.**
