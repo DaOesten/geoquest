@@ -37,6 +37,38 @@ async function seedQuest(page: Page, quest: unknown) {
   await page.goto(`/create/${(quest as { id: string }).id}`);
 }
 
+/**
+ * Klickt in die Mitte der SICHTBAREN Kartenflaeche statt in die Mitte ihrer Layout-Box.
+ *
+ * Seit dem Refinement vom 2026-09-20 ist die Karte das letzte Element des Scroll-
+ * Containers und darf unten angeschnitten sein. Ihre Layout-Box reicht dann ueber die
+ * Unterkante des Scrollers hinaus, wo sie geklippt wird — gemessen auf Mobile Safari
+ * (390x664): Karte 469..687, Scroller endet bei 566, also 121px Ueberhang. Die Mitte der
+ * Layout-Box (y578) liegt damit hinter dem fixierten Footer, und ein Klick dorthin trifft
+ * die Buttons statt die Karte.
+ *
+ * Fuer den Nutzer ist die sichtbare Flaeche vollstaendig bedienbar (gemessen: ein Klick
+ * auf y518 setzt den Pin). Der Test muss deshalb dorthin zielen, wo auch ein Finger
+ * landen wuerde.
+ */
+async function clickMapCenter(page: Page) {
+  // Die frueheren Aufrufstellen riefen `boundingBox()` auf und warteten damit implizit
+  // auf die Karte; dieser Helfer muss explizit warten, sonst laeuft er vor Leaflet los.
+  await page.locator(".leaflet-container").waitFor();
+  const ziel = await page.evaluate(() => {
+    const sheet = document.querySelector('[role="dialog"]') as HTMLElement;
+    const karte = sheet.querySelector(".leaflet-container") as HTMLElement;
+    const scroller = (Array.from(sheet.querySelectorAll("*")) as HTMLElement[]).find(
+      (el) => getComputedStyle(el).overflowY === "auto"
+    )!;
+    const kb = karte.getBoundingClientRect();
+    const sc = scroller.getBoundingClientRect();
+    const sichtbarBis = Math.min(kb.bottom, sc.bottom);
+    return { x: kb.left + kb.width / 2, y: kb.top + (sichtbarBis - kb.top) / 2 };
+  });
+  await page.mouse.click(ziel.x, ziel.y);
+}
+
 test.describe("PROJ-7: Creator — Stationen-Editor", () => {
   test.describe("Stationsliste", () => {
     test("shows an empty state with a hint and an add-station button when the quest has no stations", async ({ page }) => {
@@ -93,9 +125,7 @@ test.describe("PROJ-7: Creator — Stationen-Editor", () => {
     test("tapping the map sets a pin at that location", async ({ page }) => {
       await seedQuest(page, draftQuest(QUEST_ID, "Leere Quest"));
       await page.getByRole("button", { name: "Station hinzufügen" }).click();
-      const map = page.locator(".leaflet-container");
-      const box = await map.boundingBox();
-      await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
+      await clickMapCenter(page);
       await expect(page.locator(".leaflet-marker-icon")).toHaveCount(1);
     });
 
@@ -105,9 +135,7 @@ test.describe("PROJ-7: Creator — Stationen-Editor", () => {
       await page.getByRole("button", { name: "Station hinzufügen" }).click();
       await page.getByRole("button", { name: /Aktuelle Position verwenden/ }).click();
       await expect(page.getByText("Standort nicht verfügbar.")).toBeVisible();
-      const map = page.locator(".leaflet-container");
-      const box = await map.boundingBox();
-      await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
+      await clickMapCenter(page);
       await expect(page.locator(".leaflet-marker-icon")).toHaveCount(1);
     });
   });
@@ -169,9 +197,7 @@ test.describe("PROJ-7: Creator — Stationen-Editor", () => {
       await search.fill("xyzxyzxyz123");
 
       await expect(page.getByText("Keine Ergebnisse gefunden.")).toBeVisible();
-      const map = page.locator(".leaflet-container");
-      const box = await map.boundingBox();
-      await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
+      await clickMapCenter(page);
       await expect(page.locator(".leaflet-marker-icon")).toHaveCount(1);
     });
 
@@ -191,9 +217,7 @@ test.describe("PROJ-7: Creator — Stationen-Editor", () => {
       await seedQuest(page, draftQuest(QUEST_ID, "Leere Quest"));
       await page.getByRole("button", { name: "Station hinzufügen" }).click();
 
-      const map = page.locator(".leaflet-container");
-      const box = await map.boundingBox();
-      await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
+      await clickMapCenter(page);
       await expect(page.locator(".leaflet-marker-icon")).toHaveCount(1);
 
       await expect(page.getByRole("button", { name: /Aktuelle Position verwenden/ })).toBeEnabled();
@@ -557,9 +581,7 @@ test.describe("PROJ-7: Creator — Stationen-Editor", () => {
       await seedQuest(page, draftQuest(QUEST_ID, "Frisch angelegt"));
       await page.getByRole("button", { name: "Station hinzufügen" }).click();
       await page.getByLabel("Stationsname").fill("Erste Station");
-      const map = page.locator(".leaflet-container");
-      const box = await map.boundingBox();
-      await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
+      await clickMapCenter(page);
       await page.getByRole("button", { name: "Speichern" }).click();
       await expect(page.getByText("Erste Station")).toBeVisible();
 

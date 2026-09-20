@@ -123,7 +123,15 @@ export function StationEditorSheet({ open, onOpenChange, station, contextPins, o
 
         {/* Only this middle band scrolls; header and footer stay put, so "Speichern" is reachable
             on every viewport height instead of being pushed out by the map's min-height
-            (PROJ-7 refine 2026-09-06). The map keeps a usable size — the content scrolls instead. */}
+            (PROJ-7 refine 2026-09-06). The map keeps a usable size — the content scrolls instead.
+
+            Field order matters here (PROJ-7 refine 2026-09-20): every control sits ABOVE the map,
+            and the map is the last element. Previously the radius slider came after the map, and
+            the map's wrapper — `flex-1 min-h-[220px]` — outgrew this scroll container on short
+            viewports (measured at 320x568: scroller ends at y470, map wrapper at y524). That drew
+            the map over the slider, and scrolling could not reach it because the scroller had less
+            overflow than the map had overhang. A partly visible map still does its job; a partly
+            visible control does not. */}
         <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor="station-name" className="text-tech text-[10px] tracking-[0.1em]">
@@ -139,22 +147,34 @@ export function StationEditorSheet({ open, onOpenChange, station, contextPins, o
             />
           </div>
 
-          <div className="flex flex-col gap-2 flex-1 min-h-0">
-            <div className="flex items-center justify-between">
-              <Label className="text-tech text-[10px] tracking-[0.1em]">Position</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleUseCurrentPosition}
-                disabled={isLocating}
-                className="rounded-pill h-11 text-tech text-[10px] tracking-[0.08em]"
-              >
-                <Crosshair className="w-4 h-4" />
-                {isLocating ? "Suche…" : "Aktuelle Position verwenden"}
-              </Button>
-            </div>
-            <AddressSearchField onSelect={handleAddressSelect} />
+          {/* Wraps below the label on narrow screens. "Aktuelle Position verwenden" is the longest
+              label in the sheet and ran off the right edge at 320px and 360px when this row was a
+              single `justify-between` line (PROJ-7 refine 2026-09-20). */}
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+            <Label className="text-tech text-[10px] tracking-[0.1em]">Position</Label>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleUseCurrentPosition}
+              disabled={isLocating}
+              className="rounded-pill h-11 min-w-0 text-tech text-[10px] tracking-[0.08em]"
+            >
+              <Crosshair className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">{isLocating ? "Suche…" : "Aktuelle Position verwenden"}</span>
+            </Button>
+          </div>
+
+          <AddressSearchField onSelect={handleAddressSelect} />
+
+          <StationRadiusSlider value={radiusMeters} onChange={setRadiusMeters} />
+
+          {/* Last element, and the only one allowed to be cut off when the content does not fit.
+              `min-h-[220px]` keeps the floor from 2026-09-06; `flex-1` lets it take the leftover
+              room on tall screens, where it grew to ~395px before this refinement. The difference
+              to the old markup is the wrapper it sits in: this one is a plain block, so the map can
+              no longer push past the scroll container and cover the controls above it. */}
+          <div className="flex flex-col gap-2 flex-1 min-h-[220px]">
             <div className="relative flex-1 min-h-[220px] rounded-card overflow-hidden border border-border">
               <StationMap
                 position={position}
@@ -171,8 +191,6 @@ export function StationEditorSheet({ open, onOpenChange, station, contextPins, o
               </p>
             )}
           </div>
-
-          <StationRadiusSlider value={radiusMeters} onChange={setRadiusMeters} />
         </div>
 
         {/* SheetFooter defaults to flex-col-reverse on mobile — two stacked 44px buttons cost

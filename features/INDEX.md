@@ -219,6 +219,20 @@ Spec ist aktualisiert (User Story 12, zwei neue Acceptance-Criteria-Blöcke mit 
 
 **Für `/frontend` zu beachten:** Die Reihenfolge-Änderung passiert im Markup, nicht per CSS `order` — sonst laufen visuelle und DOM-Reihenfolge auseinander (Tab-Reihenfolge und Screenreader folgen dem DOM). Bestehende PROJ-7-E2E-Tests, die Positionen im Sheet prüfen, werden durch die neue Reihenfolge möglicherweise falsch und sind zu ziehen, nicht zu löschen. Zwei Detailfragen sind bewusst offen gelassen und am Bildschirm zu entscheiden: ob der GPS-Button umbricht oder eine kürzere Beschriftung bekommt.
 
+**Frontend umgesetzt am 2026-09-20.** Eine Datei (`station-editor-sheet.tsx`), kein neues Paket, keine neue Komponente, keine neue Route. Drei Eingriffe: Feldreihenfolge im Markup umgestellt (nicht per CSS `order` — sonst laufen Tab-Reihenfolge und Screenreader gegen die sichtbare Ordnung), der Zwischen-Container um die Karte aufgelöst, und die Positions-Zeile bricht auf schmalen Breiten um.
+
+**Eine Annahme der Spec war falsch — und die Korrektur ist aufschlussreicher als der Plan.** Die Spec forderte, der Karten-Container dürfe den Scroll-Container nicht mehr überragen. Er überragt ihn weiterhin (320×568: 169px), nur ist das folgenlos: `overflow-y-auto` schneidet ihn dort ab, und dahinter liegt kein Bedienelement mehr. **Wirksam war allein die Reihenfolge.** Ein erster Versuch, den Überhang tatsächlich zu unterbinden (`h-[220px] shrink-0`), nagelte die Karte auf allen Bildschirmen auf 220px fest und brach das bestehende Kriterium, dass sie auf großen Bildschirmen wächst — zurückgenommen.
+
+Gemessen im Production-Build: Der Radius ist auf **allen fünf Viewports ohne jede Scroll-Bewegung vollständig sichtbar** (320/360/390/430/1440), die Karte behält 220px auf kleinen und wächst auf großen (304/408/379px), der GPS-Button hat 0px Textüberlauf, und es entsteht auf keiner Breite ein horizontaler Scrollbalken. Am Bildschirm abgenommen auf beiden Engines.
+
+**Zwei Fehler in den neuen Tests gefunden, das Produkt war richtig.** Der wichtigere: Der Sichtbarkeitstest hätte den gemeldeten Fehler **durchgelassen** — er prüfte den Slider-Thumb, der zufällig über die Kartenkante ragte, während Label und Meter-Anzeige vollständig verdeckt waren. Aufgefallen ist das erst durch die Gegenprobe, nicht durch den grünen Lauf. Nach der Korrektur auf das Label fallen bei der Gegenprobe **8 statt 4** Tests.
+
+**Ein bestehender Test war zu Recht falsch geworden:** Fünf Tests klickten in die Mitte der *Layout*-Box der Karte, die seit dem Umbau auf WebKit hinter dem fixierten Footer liegt. Neuer Helfer `clickMapCenter` zielt auf die Mitte der *sichtbaren* Fläche. Gegengeprüft, dass es kein Produktfehler ist — ein Klick dorthin setzt den Pin zuverlässig. Eine zwischenzeitliche Fehldiagnose meinerseits ("der Nutzer trifft den Footer") ist in der Spec offen benannt und widerlegt.
+
+17 neue Tests, PROJ-7 jetzt **56 statt 39**. Suiten gegen den Production-Build: **Chrome 152: 480 passed / 23 skipped / 0 failed. Mobile Safari: 474 passed / 29 skipped / 0 failed. Unit 226/226.** Build und Lint sauber.
+
+**Nicht abgedeckt:** Edge Case 16 (Bildschirmtastatur, seit 2026-09-06 offen) und die Frage, ob die auf 320×568 stark angeschnittene Karte (~50px von 220px beim Öffnen) am echten Gerät zum Platzieren ausreicht.
+
 ## Next Available ID: PROJ-15
 
 ## Offenes Refinement: BUG-6 — falsche iOS-Erkennung beim Kompass (2026-09-07)

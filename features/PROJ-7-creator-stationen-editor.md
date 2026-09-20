@@ -185,13 +185,16 @@ Der Stationen-Editor ist das Herzstück des Creator-Modus: Auf `/create/[id]` (a
 - [ ] `AppHeader`-Aufruf in `src/app/create/[id]/page.tsx` verliert die `rightAction`-Prop; der Stift-Button zieht in den Titel-Block darunter (neben `{quest.name}`), Sichtbarkeit weiterhin an `!locked` gekoppelt
 - [ ] Prüfen, ob das gleiche Muster auf `/play/[id]` (Stationsliste, PROJ-3) einen Gegenpart braucht — dort gibt es heute keine `rightAction`, die Frage ist nur, ob der Titel-Block optisch auseinanderläuft, wenn der Creator einen Stift trägt und der Player nicht
 
-**Neu seit Refine 2026-09-20 (Radius-Sichtbarkeit) — noch nicht implementiert:**
-- [ ] Felder in `station-editor-sheet.tsx` umsortieren: der `StationRadiusSlider` wandert aus der letzten Position vor den Karten-Block; die Karte wird das letzte Element des Scroll-Containers
-- [ ] Der Container um die Karte darf den Scroll-Container nicht mehr überragen — die heutige Kombination `flex-1 min-h-0` am Positions-Block plus `flex-1 min-h-[220px]` am Karten-Wrapper ist die Ursache und muss beim Umbau aufgelöst werden
-- [ ] Positions-Zeile auf 320px umbruchfähig machen (`flex items-center justify-between` reicht dort nicht), Tap-Ziel bleibt 44px
-- [ ] Auf 320×568 und 360×640 verifizieren: Label "Ankunftsradius", Wertanzeige und Slider vollständig sichtbar ohne Scrollen; kein horizontaler Überlauf
-- [ ] Offen: Soll die kürzere Button-Beschriftung („Aktuelle Position" oder nur das Crosshair-Icon) gewählt werden, oder bricht der Button in eine eigene Zeile um? Beide erfüllen die Acceptance Criteria — Entscheidung in `/frontend` am Bildschirm, wo sich das Ergebnis beurteilen lässt
-- [ ] Offen: Ob die bestehenden PROJ-7-E2E-Tests, die Positionen im Sheet prüfen, durch die neue Reihenfolge falsch werden — beim Umbau zu prüfen und zu ziehen, nicht zu löschen
+**Neu seit Refine 2026-09-20 (Radius-Sichtbarkeit) — implementiert (siehe Implementation Notes unten):**
+- [x] Felder umsortiert: `StationRadiusSlider` steht jetzt vor dem Karten-Block, die Karte ist das letzte Element des Scroll-Containers (2026-09-20)
+- [x] Der Karten-Wrapper überragt den Scroll-Container weiterhin, aber das ist jetzt folgenlos → Die eigentliche Lösung war die Reihenfolge, nicht das Unterbinden des Überhangs: Der Scroller klippt die Karte, und dahinter liegt kein Bedienelement mehr. Gemessen: 0 überlappte Bedienelemente innerhalb des Scrollers (2026-09-20)
+- [x] Positions-Zeile auf 320px umbruchfähig gemacht (`flex-wrap` statt einzeiliges `justify-between`), Tap-Ziel bleibt 44px, Textüberlauf im Button 0px (2026-09-20)
+- [x] Auf 320×568 und 360×640 verifiziert → Label, Wertanzeige und Slider vollständig sichtbar ohne Scrollen (`scrollTop: 0`), kein horizontaler Überlauf auf 320/360/390/430/1440px (2026-09-20)
+- [x] Button-Beschriftung oder Umbruch? → **Umbruch gewählt, Beschriftung unverändert.** Der Button rutscht auf schmalen Breiten unter das "Position"-Label und steht dort vollständig. Eine Kürzung hätte Information gekostet, die auf allen anderen Breiten problemlos Platz hat (2026-09-20)
+- [x] Werden bestehende E2E-Tests durch die neue Reihenfolge falsch? → **Nein, alle 39 bestehenden PROJ-7-Tests bestehen unverändert.** Ein Test musste dennoch angefasst werden, aber aus einem anderen Grund: `clickMapCenter` zielte auf die Mitte der Layout-Box der Karte, die seit dem Umbau hinter dem fixierten Footer liegen kann (2026-09-20)
+
+**Neu seit 2026-09-20 — offen:**
+- [ ] Die Karte ist auf 320×568 beim Öffnen stark angeschnitten (sichtbar bleiben ~50px von 220px). Konstruktiv gewollt und per Scroll vollständig erreichbar, aber am echten Gerät noch nicht beurteilt — ob das beim Platzieren eines Pins als zu wenig empfunden wird, zeigt erst die Handnutzung
 
 ## Decision Log
 
@@ -1178,3 +1181,48 @@ Erwogen und verworfen:
 - Der Modul-Editor (PROJ-8) bleibt außen vor, konsistent mit der Scope-Entscheidung vom 2026-09-06
 - Die Radius-Stufen (10/25/50/100m) und ihre Logik bleiben unverändert — es geht ausschließlich um Sichtbarkeit
 - Der `SheetContent`-Rahmen (`h-[92dvh]`, fixierter Header/Footer) bleibt wie 2026-09-06 gebaut
+
+### Implementation Notes — Refinement 3 (2026-09-20)
+
+**Eine Datei geändert:** `src/components/station-editor-sheet.tsx`. Kein neues Paket, keine neue Komponente, keine neue Route, kein Eingriff in `StationRadiusSlider` oder `StationMap`.
+
+**Die Umsetzung besteht aus drei Teilen:**
+
+1. **Feldreihenfolge im Markup umgestellt** — Name → Position/GPS → Adresssuche → Radius → Karte. Bewusst im JSX, nicht per CSS `order`: Sonst laufen visuelle und DOM-Reihenfolge auseinander, und Tastaturbedienung wie Screenreader folgen dem DOM. Ein Test hält das per `compareDocumentPosition` fest.
+
+2. **Der Zwischen-Container um die Karte ist aufgelöst.** Vorher steckten Positions-Zeile, Adresssuche und Karte gemeinsam in einem `flex flex-col gap-2 flex-1 min-h-0`-Block; die Karte darin trug `flex-1 min-h-[220px]`. Jetzt sind die drei eigenständige Kinder des Scroll-Containers, und nur die Karte behält `flex-1 min-h-[220px]`.
+
+3. **Die Positions-Zeile bricht um** (`flex-wrap` statt einzeiliges `justify-between`, plus `min-w-0` und `truncate` am Button als zweite Sicherung).
+
+**Eine Annahme der Spec hat sich als falsch erwiesen — und die Korrektur ist aufschlussreicher als der ursprüngliche Plan.** Die Spec forderte, der Karten-Container dürfe den Scroll-Container "nicht mehr überragen". Gemessen überragt er ihn weiterhin (320×568: 169px). Das ist folgenlos, weil `overflow-y-auto` ihn dort abschneidet und im Scroll-Fluss nichts mehr hinter ihm liegt. **Die wirksame Änderung war allein die Reihenfolge, nicht das Unterbinden des Überhangs.** Ein erster Versuch, den Überhang per `h-[220px] shrink-0` tatsächlich zu verhindern, nagelte die Karte auf allen Bildschirmen auf 220px fest und brach damit das bestehende Kriterium, dass sie auf großen Bildschirmen wächst (1440×900: 220px statt vorher 395px). Zurückgenommen.
+
+**Gemessen statt behauptet** (Production-Build, Pfad "Station bearbeiten", Radius 25m):
+
+| Viewport | Radius ohne Scrollen sichtbar | Karte | GPS-Button-Überlauf | Horizontaler Überlauf |
+|----------|-------------------------------|-------|---------------------|----------------------|
+| 320×568 | ✅ (`scrollTop: 0`) | 220px | 0px | nein |
+| 360×640 | ✅ | 220px | 0px | nein |
+| 390×844 | ✅ | 304px | 0px | nein |
+| 430×932 | ✅ | 408px | 0px | nein |
+| 1440×900 | ✅ | 379px | 0px | nein |
+
+Die Karte ist per Scroll vollständig erreichbar: Nach `scrollTop = scrollHeight` trifft ihre Unterkante exakt die Scroller-Unterkante (320×568: beide bei y470), Höhe unverändert 220px, "Speichern" bleibt sichtbar.
+
+**Am Bildschirm abgenommen, nicht nur gemessen** — bei einer Layout-Änderung reichen Zahlen nicht: Screenshots auf 320×568 und 360×640 (Chrome) sowie 390×664 (WebKit) zeigen "ANKUNFTSRADIUS — 25 m" mit Slider und allen vier Stufenbeschriftungen vollständig, den GPS-Button ungekürzt in eigener Zeile, und die Karte als angeschnittenes letztes Element.
+
+**Zwei Fehler in den neuen Tests gefunden und behoben — das Produkt war richtig:**
+
+1. **Der Sichtbarkeitstest hätte den gemeldeten Fehler durchgelassen.** Er prüfte per `elementFromPoint` den Slider-*Thumb*. Die Gegenprobe zeigte: Mit der alten Fassung bestand er trotzdem. Grund — der Thumb ragte zufällig über die Kartenkante hinaus, während "Ankunftsradius" und die Meter-Anzeige vollständig verdeckt waren (`elementFromPoint` auf der Label-Mitte lieferte `leaflet-container`, das Label stand im Stapel erst an dritter Stelle). Der Test misst jetzt das Label. Damit fallen bei der Gegenprobe **8 statt 4** Tests.
+2. **`clickMapCenter` ohne Wartebedingung.** Die ersetzten Aufrufstellen riefen `boundingBox()` und warteten damit implizit auf Leaflet; der Helfer tat das nicht und lief in `null is not an object`.
+
+**Ein bestehender Test war durch die Änderung zu Recht falsch geworden.** Fünf Tests klickten in die Mitte der **Layout**-Box der Karte. Seit die Karte angeschnitten sein darf, liegt diese Mitte auf Mobile Safari (390×664) bei y578 — hinter dem fixierten Footer; der Klick traf die Buttons. Ein neuer Helfer `clickMapCenter` zielt auf die Mitte der **sichtbaren** Fläche, dorthin also, wo auch ein Finger landet. Gegengeprüft, dass es kein Produktfehler ist: Ein Klick auf die sichtbare Mitte (y518) setzt den Pin zuverlässig — die Karte ist für den Nutzer auf ihrer ganzen sichtbaren Fläche bedienbar.
+
+**Eine eigene Fehldiagnose, offen benannt:** Ich hatte diesen WebKit-Fehlschlag zwischenzeitlich als Produktfehler eingestuft ("der Nutzer trifft den Footer statt die Karte"). Die Messung des Scroller-Klipps hat das widerlegt — der sichtbare Bereich ist vollständig bedienbar, nur die Testannahme war überholt.
+
+**Testabdeckung:** 17 neue Tests in `tests/proj-7-radius-sichtbarkeit.spec.ts` (Sichtbarkeit ohne Scrollen auf zwei Viewports × zwei Einstiegspfaden, Bedienbarkeit inkl. gespeichertem Wert, Feldreihenfolge geometrisch und im DOM, Überlagerungsfreiheit, Karte per Scroll erreichbar, Wachstum auf großen Bildschirmen, Button-Breite, horizontaler Überlauf auf fünf Breiten). PROJ-7 jetzt **56 statt 39 Tests**.
+
+**Per Gegenprobe geschärft:** Mit der alten Fassung fallen **8 der 17** neuen Tests. Produktcode danach per `diff` als byte-identisch bestätigt.
+
+**Suiten gegen den Production-Build:** Chrome 152: **480 passed / 23 skipped / 0 failed**. Mobile Safari: **474 passed / 29 skipped / 0 failed**. Unit: **226/226**. Build und Lint sauber (7 Warnungen, alle vorbestehend aus PROJ-12, 0 Errors).
+
+**Nicht abgedeckt und benannt:** Edge Case 16 (Bildschirmtastatur) bleibt wie seit 2026-09-06 nur konstruktiv abgedeckt — Playwright emuliert keine mobile Tastatur. Und die Karte ist auf 320×568 beim Öffnen stark angeschnitten (~50px von 220px sichtbar); konstruktiv gewollt und per Scroll erreichbar, aber ob das zum Platzieren eines Pins als zu wenig empfunden wird, zeigt erst die Nutzung am echten Gerät.
