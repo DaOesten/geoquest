@@ -16,7 +16,7 @@
 
 | ID | Feature | Priority | Dependencies | Status | Spec | Created |
 |----|---------|----------|--------------|--------|------|---------|
-| PROJ-1 | App Shell & Mode Switch | P0 | None | Deployed | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
+| PROJ-1 | App Shell & Mode Switch | P0 | None | In Progress | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
 | PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
@@ -904,3 +904,25 @@ Erwogen und verworfen: eine verkleinerte Desktop-Fassung (löst ein Problem, das
 **Für `/frontend` zu beachten:** `tests/proj-13-landing-qa.spec.ts:224` prüft heute ausdrücklich `toBeHidden()` auf 1366×768 und trägt im Fehlertext die abgelaufene Begründung („Marke steht im Header"). Der Test ist zu **ziehen, nicht zu löschen** — seine beiden Zusicherungen für 390px und 768px bleiben richtig. Der BUG-7-Wächter darüber bleibt unangetastet.
 
 **Beobachtung ohne Bug-Status, vorbestehend:** `logo-lockup.png` ist 8-bit RGB **ohne Alpha-Kanal** und bringt eine opake Platte mit — gemessen rgb(5–6,7–8,9–10) im äußeren Rahmen gegen einen Seitenhintergrund von rgb(11,15,18). Sie zeichnet sich als dezentes dunkles Rechteck ab. Dieselbe Datei steht unverändert auf `/` und auf `/about` mobil; dieses Refinement macht den Effekt auf einem weiteren Breakpoint sichtbar, erzeugt ihn aber nicht. Gleiche Fehlerklasse wie `mark-pin.jpg` (PROJ-3, 2026-09-19). Als Open Question vermerkt, bewusst nicht in den Scope gezogen — der gemeldete Befund ist die Abwesenheit der Marke, nicht ihre Kante.
+
+## Offenes Refinement: Logo-Lockup ohne Alpha-Kanal (2026-09-20)
+**PROJ-1** geht von Deployed zurück auf In Progress. **PROJ-13** ist mitbetroffen, wird aber nicht zurückgesetzt — es benutzt dieselbe Datei nur mit.
+
+Aufgefallen bei der Browser-Abnahme von PROJ-13 Refinement 7, vom Betreiber bestätigt: Das Logo-Lockup zeichnet sich als Rechteck vom Hintergrund ab.
+
+**Ursache im Bild, nicht im Code.** `public/assets/logo-lockup.png` ist **8-bit RGB ohne Alpha-Kanal** (per `file` und Pixel-Analyse bestätigt). PNG kann Transparenz, diese Datei nutzt sie nicht — also trägt jeder Pixel Farbe, auch dort, wo nichts sein soll. Der Bildgrund ist eine Platte: gemessen rgb(5–6,7–8,9–10) gegen einen App-Hintergrund von rgb(11,15,18). Sie ist *dunkler* als die Seite und fällt auf, weil Helligkeitswahrnehmung nahe Schwarz feiner auflöst.
+
+**Zwei Einbauorte, dieselbe Datei:** Startscreen `/` (`page.tsx:47`, PROJ-1) und Hero von `/about` (`info-page-shell.tsx:159`, PROJ-13). Ein Austausch wirkt an beiden Stellen zugleich — deshalb hängt das Refinement an PROJ-1, dem Eigentümer des Startscreens.
+
+**Gleiche Fehlerklasse wie `mark-pin.jpg`** (PROJ-3, 2026-09-19), aber das dortige Skript ist nicht einfach übertragbar — vier gemessene Unterschiede:
+
+1. **Der Grund ist flach statt verlaufend.** Eckspanne der mittleren Luminanz **0,57** (Pin: 17,9). Freistellen bleibt trotzdem richtig, weil eine feste Ersatzfarbe bei jeder Hintergrundänderung nachgezogen werden müsste.
+2. **Das Histogramm-Tal liegt woanders.** Das Pin-Skript nutzt LO=74/HI=124; auf das Lockup angewandt verwürfe das **das gesamte Motiv**. Gemessenes Tal hier: Luminanz 25–48 (0,63% aller Pixel). Erprobt LO=13/HI=30.
+3. **Die Quelldatei hat Korn.** Nach dem Freistellen zerfällt das Bild in 3942 Bereiche, davon **3884 mit ≤30 Pixeln** — Korn, das die Platte bisher verdeckt hat. Ohne Filter beträgt die Rahmen-Abweichung auf `#0B0F12` **144**; mit einer Mindestgröße von 16 Pixeln exakt **0**, dieselbe Messlatte wie `mark-pin.png`. Kein Randpixel des Hauptmotivs wird angetastet (0 von 188 Treffern).
+4. **Ein Größenfilter allein reicht nicht.** Am Bildschirm geprüft: **71 Bereiche mit 5054 Pixeln** bleiben als graue Schlieren über der Wortmarke sichtbar. Eine zweite Schwelle auf die Spitzenhelligkeit je Bereich entfernt sie; der genaue Wert ist in `/frontend` am Bildschirm zu wählen.
+
+**Am Bildschirm abgenommen:** Die erprobte Fassung hält Pin, Route, X und beide Wortmarken vollständig — keine Löcher in der dunklen Kreisfläche, saubere Pinselkanten, kein Rechteck.
+
+**Für `/frontend`:** neues Skript `scripts/make-logo-lockup-cutout.swift` nach dem Muster des Pin-Skripts, ergänzt um beide Filter; Quelldatei bleibt liegen, Ergebnis ist eine neue Datei (sonst bräuchte das Skript sein eigenes Ergebnis als Eingabe). Beide Einbauorte umstellen. Keine Layout-Änderung — es wechselt nur die Bilddatei.
+
+**Zwei Open Questions:** ob `rounded-[12px]` auf `/` bleibt (sie rundete die Plattenkante ab, ohne Platte rundet sie nichts — teilt sich aber den Radius mit dem Fokusring), und ob `mark-pin-whitebg.png` (1,0 MB, keine Referenz im Code) bei der Gelegenheit entfernt wird.
