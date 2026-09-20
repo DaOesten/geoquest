@@ -1,8 +1,8 @@
 # PROJ-12: PWA-Installation (Add to Homescreen)
 
-## Status: Deployed
+## Status: In Progress
 **Created:** 2026-09-18
-**Last Updated:** 2026-09-20 (Refinement: Installations-Hinweis wird schwebendes Overlay)
+**Last Updated:** 2026-09-20 (Refinement: Safe Area — Statusleiste verdeckt die Kopfzeile in der installierten App)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — der Startscreen `/` trägt einen der beiden Hinweis-Orte, und das Wurzel-Layout (`src/app/layout.tsx`) hält heute schon `themeColor` und `viewportFit: "cover"`
@@ -23,6 +23,8 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 
 **Warum die Fallback-Seite trotzdem sein muss:** Eine installierte App sieht aus wie eine echte App. Tippt ein Spieler draußen ohne Empfang auf das Icon und bekommt Chromes Dinosaurier-Fehlerseite, wirkt das Produkt kaputt — nicht das Netz. Eine eigene Seite im Geo-Quest-Look, die ehrlich sagt „Geo Quest braucht Internet zum Starten" und einen „Erneut versuchen"-Button anbietet, kostet wenig und rettet genau diesen Moment.
 
+**Der Befund vom 2026-09-20 (Refinement 3):** Der Betreiber hat die App auf iOS installiert — und dort verdecken Uhrzeit, Batterie und WLAN-Anzeige das Burger-Menu und den Zurück-Pfeil. Im Browser tritt das nicht auf. Das ist kein Zufall, sondern die direkte Folge zweier Zeilen, die dieses Feature gesetzt hat: `statusBarStyle: "black-translucent"` und `viewportFit: "cover"`. Zusammen sagen sie iOS, dass die Seite den gesamten Bildschirm bekommt und die Statusleiste **über** ihr schweben soll. Im Browser hält Safari mit seiner Adressleiste den Platz von selbst frei; installiert fällt sie weg, und der Inhalt beginnt bei y=0 — genau dort, wo die Systemanzeigen stehen. Was fehlt, ist die Gegenleistung für diese Freiheit: **kein einziger Screen liest `env(safe-area-inset-top)`.** Gemessen sind alle vier Safe-Area-Vorkommen im Projekt `inset-bottom`. Siehe Refinement 3.
+
 **Ausgangsmaterial für die Icons:** Der Betreiber hat `public/assets/geoquest_pwaIcon.jpeg` geliefert — 1024×1024, markengetreu. Es ist als Quelle brauchbar, aber **nicht direkt einsetzbar** (siehe Product Decisions): Es trägt einen weißen Rand um eine bereits abgerundete Kachel, und der volle Schriftzug ist bei 48px unleserlich.
 
 ## User Stories
@@ -33,6 +35,7 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 - Als **Spieler**, der ohne Empfang auf das App-Icon tippt, möchte ich eine verständliche Meldung statt einer Browser-Fehlerseite sehen, damit ich weiß, dass mein Netz das Problem ist und nicht die App.
 - Als **Nutzer**, der die App nicht installieren will, möchte ich den Hinweis wegklicken können und in Ruhe gelassen werden, damit er mich nicht bei jedem Besuch stört.
 - Als **Betreiber** möchte ich, dass eine neue Version sofort bei allen installierten Nutzern ankommt, damit niemand mit einer veralteten App unterwegs ist, die er nicht per Adressleiste neu laden kann.
+- Als **Nutzer der installierten App** möchte ich Burger-Menu und Zurück-Pfeil vollständig sehen und treffen können, obwohl die Statusleiste des Systems über der App schwebt, damit ich in der installierten App genauso navigieren kann wie im Browser. *(Refinement 3, 2026-09-20)*
 
 ## Out of Scope
 
@@ -50,6 +53,9 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 - **Querformat-Unterstützung** — das Manifest legt Portrait fest (siehe Product Decisions); Player-Screens sind nie für Querformat gestaltet worden.
 - **Ein Deinstallations- oder „Auf Update prüfen"-Weg in der App** — Sache des Betriebssystems.
 - **BUG-2 (16px-Schließen-X in Sheets) und BUG-9 (kein `:focus-visible` app-weit)** — vorbestehend, app-weit und unabhängig von diesem Feature.
+- **Ein Wechsel von `statusBarStyle: "black-translucent"` auf `default`/`black`** *(Refinement 3)* — erwogen und verworfen, siehe Product Decisions. Das wäre ein Einzeiler, nähme aber den randlosen Look zurück, den dieses Feature ausdrücklich gewählt hat.
+- **Ein Abfragen des Standalone-Modus im JavaScript, um das Padding nur installiert zu setzen** *(Refinement 3)* — unnötig: `env(safe-area-inset-top)` ist im Browser von selbst `0px`, weil Safari den Platz dort schon freihält. Die Lösung ist damit ohne jede Abfrage modus-abhängig.
+- **Querformat-Safe-Areas (linker/rechter Inset)** *(Refinement 3)* — das Manifest erzwingt Portrait; ein Notch am seitlichen Rand kann in diesem Feature nicht auftreten.
 
 ## Acceptance Criteria
 
@@ -106,6 +112,18 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 - [x] Angenommen der Hinweis erscheint auf einem Gerät mit unterer Systemleiste (iPhone mit Home-Indikator), wenn er gemessen wird, dann liegt sein Inhalt **oberhalb der Safe Area** und wird nicht vom Systembereich überlagert
 - [x] Angenommen der Hinweis ist sichtbar, wenn ein Sheet, Dialog oder das Burger-Menu geöffnet wird, dann **liegt der Hinweis darunter** und blockiert keine Bedienelemente dieser Ebenen
 - [x] Angenommen der Nutzer scrollt auf `/play` ans Listenende, wenn der Hinweis sichtbar ist, dann **bleibt die letzte Quest-Karte erreichbar** und wird nicht dauerhaft vom Hinweis verdeckt
+
+### Safe Area — die Systemleisten verdecken nichts (Refinement 2026-09-20)
+
+- [ ] Angenommen die App ist auf einem iPhone mit Notch/Dynamic Island installiert, wenn ein Screen mit Kopfzeile geöffnet wird (`/play`, `/create`, Quest-Detail, Station-Detail, Station-Liste, Module, Navigation), dann liegen Zurück-Pfeil und Burger-Menu **vollständig unterhalb** der Statusleiste und sind in ganzer Fläche antippbar
+- [ ] Angenommen die App ist installiert, wenn der Startscreen `/` geöffnet wird, dann liegt das schwebende Burger-Icon vollständig unterhalb der Statusleiste
+- [ ] Angenommen die App ist installiert, wenn eine Info-Seite (`/about`, `/anleitung`, `/impressum`, `/datenschutz`) geöffnet und gescrollt wird, dann liegt die Sticky-Kopfzeile in jedem Scroll-Zustand unterhalb der Statusleiste
+- [ ] Angenommen dieselben Screens werden **im Browser** geöffnet, wenn sie mit dem Zustand vor dieser Änderung verglichen werden, dann ist die Darstellung **unverändert** — kein zusätzlicher Abstand oben, keine verschobenen Elemente
+- [ ] Angenommen die App ist installiert, wenn ein Screen mit Kopfzeile geöffnet wird, dann reicht die Hintergrundfläche der Kopfzeile (Blur bzw. Backdrop) **bis zur obersten Bildschirmkante** — die Statusleiste steht nicht auf blankem Inhalt und es entsteht kein durchsichtiger Spalt über der Kopfzeile
+- [ ] Angenommen die App ist installiert, wenn ein Screen mit Kopfzeile geöffnet wird, dann bleibt die Kopfzeile selbst 56px hoch — der Inset kommt **zusätzlich** hinzu und staucht keinen Inhalt
+- [ ] Angenommen die App ist auf einem iPhone mit Home-Indikator installiert, wenn ein Creator-Screen mit schwebendem Aktions-Button geöffnet wird (`/create`, Quest-Detail, Station-Detail), dann liegt der Button vollständig oberhalb des Home-Indikators
+- [ ] Angenommen die App ist installiert, wenn ein Player-Screen geöffnet wird (Navigation, Ankunft, Module, Outro), dann liegt kein Bedienelement unter dem Home-Indikator
+- [ ] Angenommen ein Gerät ohne Notch und ohne Home-Indikator (älteres iPhone, Android mit Tastenleiste), wenn die installierte App geöffnet wird, dann entsteht **kein** zusätzlicher Leerraum oben oder unten — der Inset ist dort `0px`
 
 ### Verhalten ohne Netz
 
@@ -171,6 +189,16 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 
 21. **Gerät mit unterer Systemleiste** (iPhone mit Home-Indikator, Android-Gestenleiste) → Das Overlay respektiert die Safe Area; sein Inhalt endet oberhalb des Systembereichs. Ohne das läge das Schließen-X teilweise unter der Gestenleiste und wäre schwer zu treffen. Das Wurzel-Layout setzt `viewportFit: "cover"` bereits, die nötige Information liegt also vor.
 
+22. **Gerät ohne Notch, ohne Home-Indikator** (iPhone SE, Android mit Tastenleiste, jeder Desktop) *(Refinement 3)* → `env(safe-area-inset-top)` meldet `0px`, die Kopfzeile sitzt exakt wie heute. Das ist keine Sonderbehandlung, sondern das definierte Verhalten der Funktion — es braucht **keine** Fallunterscheidung im Code. Der naheliegende Fehler wäre eine feste Ersatzhöhe („44px auf iOS"), die auf genau diesen Geräten einen leeren Streifen erzeugt.
+
+23. **Dieselben Screens im Browser statt installiert** *(Refinement 3)* → Unverändert. Safari hält den Platz unter seiner Adressleiste schon frei und meldet deshalb keinen oberen Inset; `statusBarStyle` liest es außerhalb des Standalone-Modus gar nicht erst. Beide Mechanismen sind von sich aus modus-abhängig — es darf **keine** Standalone-Abfrage im JavaScript geben, die dasselbe noch einmal nachbaut und dabei auseinanderlaufen kann.
+
+24. **Der Nutzer dreht das Gerät** *(Refinement 3)* → Das Manifest erzwingt Portrait, der Fall tritt in der installierten App nicht auf. Im Browser ist Querformat möglich; dort ist der obere Inset ohnehin `0px`. Seitliche Insets werden bewusst nicht behandelt (siehe Out of Scope).
+
+25. **Ein Sheet oder Dialog öffnet sich** (Stations-Editor, Modul-Editor, Erststart-Dialog, Burger-Menu) *(Refinement 3)* → Diese Ebenen beginnen nicht an der obersten Kante: Sheets fahren von unten ein, das Menu-Panel ist eine eigene Fläche. Sie brauchen den oberen Inset nicht. Die eine Ausnahme wäre ein Sheet, das über die volle Höhe geht — `SheetContent` ist `h-[92dvh]` und lässt oben 8% frei, auf 844px rund 67px. Das deckt den größten iOS-Inset (59px) ab; zu prüfen, nicht anzunehmen.
+
+26. **Der Player-Navigations-Screen unten** *(Refinement 3)* → `min-h-[100dvh]` mit `justify-center` zentriert den Inhalt, statt ihn an den unteren Rand zu hängen — der „Station entdecken"-Button dürfte den Home-Indikator gar nicht erreichen. Das ist eine Ableitung aus dem Markup, **keine Messung**; am Gerät zu bestätigen. Bestätigt betroffen sind dagegen die drei Creator-FABs (siehe Technical Requirements).
+
 ## Technical Requirements
 
 - **Kein Backend, keine neuen Netzabhängigkeiten** — alle neuen Dateien werden von der eigenen Domain ausgeliefert
@@ -192,14 +220,29 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 - **Der Import-FAB auf `/play` weicht dem Hinweis aus**, solange dieser sichtbar ist, und kehrt beim Wegklicken an seine Position zurück
 - **Die Quest-Liste auf `/play` bekommt unteren Freiraum in Höhe des Hinweises**, solange er sichtbar ist, damit die letzte Karte erreichbar bleibt
 
+**Safe Area (Refinement 2026-09-20):**
+
+- **Jedes Element, das die oberste Bildschirmkante erreicht, respektiert `env(safe-area-inset-top)`.** Gemessen sind das drei Stellen, die neun Screens abdecken:
+  - `src/components/app-header.tsx` — trägt **sieben** Screens auf einmal (`/play`, `/create`, Quest-Detail, Station-Detail, Station-Liste, Module, Navigation)
+  - `src/app/page.tsx` — der schwebende Burger auf `/` (eigene Stelle, weil `absolute top-3` statt Kopfzeile)
+  - `src/components/info-page-shell.tsx` — die Sticky-Kopfzeile der vier Info-Seiten
+- **Der Inset wird als Polsterung *innerhalb* des Kopfzeilen-Elements gesetzt, nicht als Abstand davor.** `AppHeader` hat `bg-background/80 backdrop-blur-sm`, `InfoPageShell` hat `bg-background/70 backdrop-blur-sm` — liegt der Inset außerhalb, entsteht über der Blur-Fläche ein durchsichtiger Spalt und die Statusleiste steht auf blankem Inhalt. Die 56px-Zeilenhöhe bleibt davon unberührt; der Inset kommt **zusätzlich** hinzu
+- **Es darf keine feste Ersatzhöhe und keine Plattform-Abfrage geben** — `env()` liefert auf Geräten ohne Notch von selbst `0px`. Eine Konstante wie `44px` würde dort einen leeren Streifen erzeugen und ist zugleich falsch für Dynamic Island (59px). Dieselbe Lehre wie bei BUG-6: nicht aus einem Merkmal auf eine Plattform schließen, wenn der Browser die Antwort direkt liefert
+- **Die Backdrops bleiben unangetastet** — `creator-backdrop.tsx` und `quest-list-backdrop.tsx` sind `fixed inset-0` und reichen von selbst bis zur obersten Kante. Genau das soll so bleiben: Die durchscheinende Statusleiste braucht eine Fläche unter sich
+- **Die drei Creator-FABs respektieren `env(safe-area-inset-bottom)`** — `src/app/create/page.tsx:263`, `src/app/create/[id]/page.tsx:236` und `src/app/create/[id]/station/[stationId]/page.tsx:184` stehen heute auf `fixed bottom-6` ohne Inset. Der FAB auf `/play` (`quest-import-button.tsx`) macht es bereits richtig und ist die Vorlage
+- **Der Browser-Zustand bleibt messbar unverändert** — die Kriterien sind gegen den Zustand vor der Änderung zu prüfen, nicht nur gegen „sieht gut aus"
+
 ## Open Questions
 
 - [x] ~~Lässt sich der Pin sauber aus `geoquest_pwaIcon.jpeg` freistellen, oder braucht es eine Zulieferung des Betreibers?~~ **Geschlossen in `/architecture` (2026-09-18): ja, keine Zulieferung nötig.** Das Quellbild wurde vermessen — weißer Rand 55/54/61px, und zwischen Pin-Gruppe und Schriftzug liegt eine motivfreie Spalte bei x 392..401. Ein Probeschnitt (330×420 ab x=62, y=250) zeigt Pin, gestrichelte Route und X vollständig, ohne Buchstabenrest und ohne weißen Rand. Werkzeug: `sips` (Teil von macOS).
 - [ ] Soll die Abmeldung des lokalen Workers dauerhaft im Code bleiben oder nach einer Übergangszeit entfernt werden? Sie nützt nur Rechnern, die die App vor dem 2026-09-20 lokal geöffnet haben. Vorschlag: vorerst belassen — sie kostet wenige Zeilen, und ein wiederkehrender Worker wäre schwer zu diagnostizieren.
-- [ ] Soll die Themenfarbe (Statusleiste der installierten App) bei `#0B0F12` bleiben oder das Teal aufnehmen? Vorschlag: Deep Black beibehalten, damit die Statusleiste nahtlos in den App-Hintergrund übergeht. Am echten Gerät zu beurteilen.
+- [x] ~~Soll die Themenfarbe (Statusleiste der installierten App) bei `#0B0F12` bleiben oder das Teal aufnehmen?~~ → **Bleibt Deep Black (2026-09-20).** Am echten Gerät beurteilt: Der Betreiber hat die App installiert; die Farbe war nicht der Befund. Was auffiel, war die fehlende Safe-Area-Behandlung — siehe Refinement 3. Mit `black-translucent` ist `themeColor` ohnehin nur für den Splash und für Android maßgeblich.
 - [ ] Verhält sich die Standortfreigabe in der installierten iOS-PWA wie im Safari-Tab, oder muss sie neu erteilt werden? (Edge Case 7) — nur auf einem echten iPhone abschließend zu klären; für die Korrektheit des Features unkritisch, weil der Permission-Screen aus PROJ-3 greift.
 - [ ] Bleibt es dauerhaft bei „keine Screenshots im Manifest"? Sie würden die Android-Installations-Ansicht aufwerten, erfordern aber gepflegtes Bildmaterial.
 - [ ] Soll die Bottom-Nav-Ausnahme für temporäre Hinweise in `docs/design-system.md` festgeschrieben werden? (Refinement 2026-09-20) Die Entscheidung ist hier begründet, aber das Design System kennt sie noch nicht — der nächste, der einen schwebenden Hinweis baut, liest dort weiterhin ein pauschales Verbot. Vorschlag: einen Satz bei der Regel in Zeile 62 ergänzen, der die Ausnahme eng fasst (temporär **und** wegklickbar **und** nicht navigierend).
+- [ ] Reicht der 8%-Freiraum von `SheetContent` (`h-[92dvh]`, auf 844px rund 67px) verlässlich über den größten iOS-Inset (59px bei Dynamic Island)? *(Refinement 3, Edge Case 25)* Rechnerisch ja, aber nur am Gerät zu bestätigen. Wenn nein, braucht auch `sheet.tsx` den oberen Inset — das wäre eine geteilte shadcn-Komponente und beträfe alle Sheets der App.
+- [ ] Erreicht der „Station entdecken"-Button des Player-Navigations-Screens den Home-Indikator? *(Refinement 3, Edge Case 26)* Aus dem Markup abgeleitet: nein, weil `justify-center` zentriert statt unten anzuhängen. Nicht gemessen — am Gerät zu bestätigen, bevor dort vorsorglich Polsterung eingebaut wird.
+- [ ] Gehört die Safe-Area-Behandlung als Regel nach `docs/design-system.md`? *(Refinement 3)* Es ist jetzt die zweite Fehlerklasse dieser Art in diesem Feature (unten beim Overlay, oben bei den Kopfzeilen) und betrifft jedes künftige Element am Bildschirmrand. Vorschlag: ein Satz bei den Layout-Regeln, zusammen mit der bereits offenen Bottom-Nav-Ausnahme in einem Zug.
 - [ ] Wie weit soll der Pin die `any`-Icons ausfüllen? Randlos wirkt kräftig, kann auf iOS aber gedrungen aussehen, weil dort kein Sicherheitsrand abgezogen wird. Beim Erzeugen der PNGs im Augenschein zu entscheiden — betrifft nur die Optik, nicht die Installierbarkeit.
 
 ## Decision Log
@@ -226,6 +269,10 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 | Start-URL ist `/`, nicht `/play` | Die installierte App verhält sich wie die Website. `/` trägt seit BUG-10 das vollständige Burger-Menu und beide Mode-Cards; von dort sind Play und Create je einen Tap entfernt. Ein Start auf `/play` würde den Creator in der installierten App verstecken, obwohl die Installation laut PRD auch ihm offensteht. | 2026-09-18 |
 | Kein Menu-Eintrag „App installieren" | Das Burger-Menu trägt bereits sieben Ziele in vier Gruppen. Ein achter Eintrag, der auf den meisten Geräten nichts tun kann (iOS bietet keinen programmatischen Weg), wäre mehr Last als Nutzen. | 2026-09-18 |
 | Offline-Seite verspricht ausdrücklich **keine** Offline-Fähigkeit | Sie sagt, dass Internet zum Starten nötig ist. Eine Formulierung wie „du bist offline" könnte als „sonst ginge es auch offline" gelesen werden — und würde ein Versprechen erzeugen, das das Produkt nicht hält. | 2026-09-18 |
+| **Der randlose Look bleibt — die Safe Area wird respektiert, statt `statusBarStyle` zu ändern** | Betreiber-Entscheidung 2026-09-20. Der Einzeiler `statusBarStyle: "default"` hätte den Befund ebenfalls behoben, aber um den Preis eines massiven schwarzen Balkens über der App — genau das, was `black-translucent` am 2026-09-18 ausdrücklich vermeiden sollte („damit Statusleiste und Splash nahtlos in den App-Hintergrund übergehen"). Die Safe-Area-Lösung kostet mehr Stellen, hält aber die getroffene Gestaltungsentscheidung. Geprüft und entkräftet: das Risiko heller Flächen unter der Statusleiste — es gibt keine. Die Karte lebt ausschließlich im Stations-Sheet des Creators und erreicht die oberste Kante nie; alle Screens, die y=0 berühren, sind dunkel. | 2026-09-20 |
+| **Der Browser-Zustand ist nicht gefährdet — und braucht dafür keinen Code** | Die Sorge des Betreibers („im Browser sieht alles gut aus, das will ich nicht verlieren") ist berechtigt, aber durch die Wahl der Mechanismen bereits beantwortet: `env(safe-area-inset-top)` ist im Browser `0px`, weil Safari den Platz unter seiner Adressleiste selbst freihält, und `statusBarStyle` wird außerhalb des Standalone-Modus gar nicht gelesen. Beide sind von sich aus modus-abhängig. Eine zusätzliche Standalone-Abfrage im JavaScript wäre eine zweite Wahrheit über denselben Sachverhalt — die Fehlerklasse, die BUG-6 erzeugt hat. | 2026-09-20 |
+| **Die Info-Seiten kommen mit in den Scope** | Betreiber-Entscheidung 2026-09-20. Sie sind installiert übers Burger-Menu erreichbar und hätten sonst denselben Fehler — nur seltener gesehen, weil `start_url` auf `/` zeigt. Eine Datei mehr (`info-page-shell.tsx`), derselbe Prüf-Durchlauf, dasselbe Gerät. Ein eigener Zyklus dafür hätte mehr gekostet als die Scope-Erweiterung. | 2026-09-20 |
+| **Der untere Rand kommt mit in den Scope** | Betreiber-Entscheidung 2026-09-20. Gleiche Ursache (`viewportFit: "cover"`), gleiches Gerät zum Prüfen. Beim Nachsehen zeigte sich mehr als vermutet: **drei** Creator-FABs stehen auf `fixed bottom-6` ohne Inset und säßen auf einem iPhone mit Home-Indikator teilweise unter dem Strich. Die ursprüngliche Vermutung, der Player-Navigations-Screen sei betroffen, hielt der Prüfung dagegen **nicht** stand — er zentriert seinen Inhalt. Sie steht als zu prüfende Annahme in Edge Case 26, nicht als bestätigter Fehler. | 2026-09-20 |
 | Der Service Worker läuft **nur in Production**, nicht auf `localhost` | Ein Betreiber-Befund vom 2026-09-20: Desktop-Safari zeigte beim Öffnen von `localhost` nur noch „Keine Verbindung". Reproduziert — der Dev-Server lief nicht, der Worker fing die Navigation ab und antwortete aus dem Cache. Technisch korrekt, aber am falschen Ort: Lokal ist ein gestoppter Server der **Normalfall**, und die Offline-Seite verdeckt dann die wahre Ursache. Der Nutzen des Workers (Installierbarkeit auf Android, würdige Fehlerseite draußen) entsteht ausschließlich in Production; lokal hat er nur Kosten. | 2026-09-20 |
 
 ### Technical Decisions
@@ -250,6 +297,10 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 | ~~Auf `/` steht der Hinweis **hinter** den Mode-Cards~~ **gegenstandslos am 2026-09-20** | Die Reihenfolge im Seitenfluss entscheidet nichts mehr, sobald der Hinweis gar nicht mehr im Fluss steht. Mit ihr entfällt auch die daraus entstandene `compact`-Prop: Es gibt nur noch **eine** Fassung, und die ist die kompakte. | 2026-09-18, gegenstandslos 2026-09-20 |
 | Speicherschlüssel `gq_install_hint_dismissed` mit Zeitstempel | Gleiches Präfix und gleicher Mechanismus wie `gq_first_visit_done` (PROJ-1). Ein Zeitstempel statt eines Wahrheitswerts, weil die 30-Tage-Frist sonst nicht berechenbar wäre. | 2026-09-18 |
 | Konstanten (Frist, Speicherschlüssel) in `src/lib/app-nav.ts` | Dort liegen bereits die app-weiten Navigations- und Schalterkonstanten (`KOFI_URL`, `ANLEITUNG_VERFUEGBAR`). Das Modul ist bewusst kein Client-Modul und aus Server- wie Client-Komponenten importierbar. | 2026-09-18 |
+| **Der Inset als Polsterung *innerhalb* der Kopfzeile, nicht als Abstand davor** | Beide Kopfzeilen haben einen halbtransparenten Blur-Hintergrund (`bg-background/80` bzw. `/70` mit `backdrop-blur-sm`). Läge der Inset außerhalb — als Margin, als Wrapper-Padding, als Spacer-Element —, begänne die Blur-Fläche erst unterhalb der Statusleiste, und darüber stünde ein durchsichtiger Spalt mit blankem Seiteninhalt. Der Effekt wäre schlechter lesbar als der Fehler, den wir beheben. Innerhalb gesetzt wächst die Fläche nach oben mit und die 56px-Zeile bleibt unangetastet. | 2026-09-20 |
+| **`env()` direkt, ohne Plattform-Abfrage und ohne feste Ersatzhöhe** | Der Browser kennt den Wert; er ist `0px` ohne Notch, 47px mit Notch, 59px bei Dynamic Island. Jede Konstante wäre auf mindestens einer dieser drei Klassen falsch — und eine Plattform-Abfrage („ist das iOS?") ist exakt das Muster, das in BUG-6 (PROJ-3) live ging: aus einem Merkmal auf eine Plattform schließen, während die richtige Antwort direkt verfügbar war. | 2026-09-20 |
+| **Drei Stellen für neun Screens, statt Screen für Screen** | `AppHeader` allein deckt sieben Screens ab; dazu der schwebende Burger auf `/` (eigene Stelle, weil er bewusst keine Kopfzeile ist — BUG-10) und `InfoPageShell` für die vier Info-Seiten. Die Alternative wäre ein Wrapper im Wurzel-Layout gewesen: verworfen, weil er auch die Backdrops nach unten schöbe, die ausdrücklich bis zur obersten Kante reichen sollen — die durchscheinende Statusleiste braucht eine Fläche unter sich. | 2026-09-20 |
+| **Die Backdrops bekommen ausdrücklich *keinen* Inset** | `creator-backdrop.tsx` und `quest-list-backdrop.tsx` sind `fixed inset-0` und damit bereits randlos. Das ist die Hälfte der Lösung, nicht ein übersehener Fall: Ohne eine Fläche unter der Statusleiste stünden Uhrzeit und Batterie auf blankem Hintergrund — der Look, den `black-translucent` gerade vermeiden soll. | 2026-09-20 |
 | Unterscheidung über `process.env.NODE_ENV`, **nicht** über den Hostnamen | Die E2E-Suite testet den echten Production-Build auf `localhost:3100` (`playwright.prod.config.ts`). Eine Hostname-Prüfung auf `localhost` würde dort den Worker abschalten und die 37 PROJ-12-Tests entwerten, ohne dass eine einzige Zeile Produktcode kaputt aussieht — ein stiller Testverlust. `NODE_ENV` trennt Dev-Server von Production-Build sauber, unabhängig vom Port. | 2026-09-20 |
 | Bestehende lokale Worker aktiv abmelden statt nur neue verhindern | Der Scope eines Service Workers ist die **Origin**, nicht der Port — ein einmal auf `localhost` registrierter Worker überlebt den Dev-Server und gilt für **jedes** Projekt auf dieser Maschine. Würde man nur neue Registrierungen unterlassen, bliebe der bereits ausgelieferte Worker auf allen Entwicklerrechnern liegen und müsste von Hand gelöscht werden. Die Abmeldung ist wenige Zeilen und räumt den Fehler dort auf, wo er entstanden ist. | 2026-09-20 |
 | Kein Opt-in-Schalter für lokales Testen | Erwogen und verworfen: Die Offline-Seite und die Installierbarkeit lassen sich gegen den Production-Build prüfen (`playwright.prod.config.ts`, Port 3100) — genau dort, wo die Suite ohnehin läuft. Ein zusätzlicher Schalter wäre ein dritter Zustand, den niemand regelmäßig testet. | 2026-09-20 |
@@ -649,6 +700,100 @@ Die bestehenden Assertions sind **gezogen, nicht gelöscht**: Der iOS-Test prüf
 **Suiten gegen den Production-Build:** Unit **226/226**. E2E über beide Engines: **978 passed / 52 skipped / 0 failed**. Build und Lint sauber (7 Warnungen, alle vorbestehend), `/` und `/play` bleiben statisch (`○`).
 
 **Nicht abgedeckt und benannt:** die Safe Area auf einem echten iPhone mit Home-Indikator (Playwright emuliert `env(safe-area-inset-bottom)` nicht — konstruktiv abgedeckt, am Gerät zu bestätigen), das Verhalten bei eingeblendeter Bildschirmtastatur, und Firefox (Binary fehlt; Risiko gering, da Firefox `beforeinstallprompt` nicht bereitstellt und die iOS-Erkennung dort `false` liefert).
+
+---
+
+## Refinement 3 (2026-09-20) — Safe Area: die Statusleiste verdeckt die Kopfzeile
+
+**Status:** Spec aktualisiert, Umsetzung offen (`/frontend`)
+
+### Der Befund
+
+Der Betreiber hat die App auf iOS installiert. Im Vollbild verdecken Uhrzeit, Batterie und WLAN-Anzeige das Burger-Menu und den Zurück-Pfeil. **Im Browser tritt das nicht auf** — und genau diese Beobachtung ist der Schlüssel zur Ursache.
+
+### Warum nur installiert
+
+Im Browser rendert Safari seine Adressleiste über der Seite. Die Seite beginnt unterhalb davon; die Statusleiste ist kein Thema, weil Safari den Platz freihält.
+
+Installiert (`display: standalone`) fällt die Adressleiste weg und die Seite bekommt den ganzen Bildschirm. Erst jetzt greift, was dieses Feature am 2026-09-18 gesetzt hat:
+
+| Zeile | Datei | Wirkung installiert |
+|---|---|---|
+| `statusBarStyle: "black-translucent"` | `src/app/layout.tsx:81` | iOS zeichnet die Statusleiste **durchsichtig über** den Inhalt |
+| `viewportFit: "cover"` | `src/app/layout.tsx:88` | Der Viewport reicht in die Safe Areas hinein |
+
+Zusammen sagen sie: *Die Seite beginnt bei y=0.* Das ist gewollt — es ist der randlose Look, den die Entscheidung von 2026-09-18 ausdrücklich wollte. **Was fehlt, ist die Gegenleistung:** Wer bei y=0 anfängt, muss die Systemleisten selbst freihalten.
+
+### Gemessen, nicht vermutet
+
+`grep -rn "safe-area" src/` findet **vier** Vorkommen — und alle vier sind `inset-bottom`:
+
+| Datei | Zeile | Inset |
+|---|---|---|
+| `src/app/play/page.tsx` | 127 | bottom |
+| `src/components/quest-import-button.tsx` | 92 | bottom |
+| `src/components/station-editor-sheet.tsx` | 198 | bottom (als 14px-Konstante) |
+| `src/components/install-hint.tsx` | 56 | bottom |
+
+**`env(safe-area-inset-top)` kommt im gesamten Projekt nicht vor.** Der obere Rand ist nie behandelt worden — deshalb der Befund.
+
+Die fehlende Höhe: 47px auf iPhones mit Notch, 59px mit Dynamic Island, 0px ohne beides.
+
+### Der gewählte Weg
+
+**Safe Area respektieren, `statusBarStyle` unangetastet lassen.** Der Alternativweg wäre ein Einzeiler gewesen (`statusBarStyle: "default"`), hätte aber die Gestaltungsentscheidung von 2026-09-18 zurückgenommen — siehe Product Decisions.
+
+Die Sorge des Betreibers, den Browser-Zustand zu verlieren, ist durch die Wahl der Mechanismen bereits beantwortet: `env(safe-area-inset-top)` ist im Browser `0px`, `statusBarStyle` wird dort nicht gelesen. **Beide sind von sich aus modus-abhängig** — es braucht keine Standalone-Abfrage im Code, und es darf auch keine geben (siehe Edge Case 23).
+
+### Geprüftes Risiko: helle Flächen unter der Statusleiste
+
+Die naheliegende Sorge bei `black-translucent` ist weiße Statusleisten-Schrift auf hellem Grund. **Im Code nachgesehen statt angenommen:** Die Karte (`station-map.tsx`) existiert ausschließlich im Stations-Sheet des Creators und erreicht die oberste Kante nie. Jeder Screen, der y=0 berührt, ist dunkel — `bg-gq-black`, die Ambient-Backdrops, das `data-theme="dark"` des Play-Layouts. Kein Konflikt.
+
+### Die betroffenen Stellen
+
+**Oben — drei Stellen, neun Screens:**
+
+| Stelle | Deckt ab | Besonderheit |
+|---|---|---|
+| `src/components/app-header.tsx` | `/play`, `/create`, Quest-Detail, Station-Detail, Station-Liste, Module, Navigation | **7 Screens auf einmal**; `bg-background/80 backdrop-blur-sm` |
+| `src/app/page.tsx` | `/` | Schwebender Burger (`absolute top-3 right-3`), bewusst keine Kopfzeile — BUG-10 |
+| `src/components/info-page-shell.tsx` | `/about`, `/anleitung`, `/impressum`, `/datenschutz` | `sticky top-0`, `bg-background/70 backdrop-blur-sm` |
+
+**Unten — drei Stellen, beim Nachsehen gefunden:**
+
+| Stelle | Zeile | Heute |
+|---|---|---|
+| `src/app/create/page.tsx` | 263 | `fixed bottom-6 right-5` ohne Inset |
+| `src/app/create/[id]/page.tsx` | 236 | `fixed bottom-6 right-5` ohne Inset |
+| `src/app/create/[id]/station/[stationId]/page.tsx` | 184 | `fixed bottom-6 right-5` ohne Inset |
+
+Der FAB auf `/play` (`quest-import-button.tsx:92`) macht es bereits richtig und ist die Vorlage.
+
+**Nicht betroffen:** `creator-backdrop.tsx` und `quest-list-backdrop.tsx` sind `fixed inset-0` und sollen genau so bleiben — sie liefern die Fläche, auf der die durchscheinende Statusleiste steht.
+
+### Eine korrigierte Annahme
+
+Meine erste Vermutung war, der Player-Navigations-Screen sei unten betroffen. Das Markup widerlegt sie: `min-h-[100dvh]` mit `justify-center` zentriert den Inhalt, statt ihn an den Rand zu hängen. Die Vermutung steht als **zu prüfende Annahme in Edge Case 26**, nicht als bestätigter Fehler. Dafür hat dasselbe Nachsehen drei Creator-FABs zutage gefördert, die vorher niemand auf der Liste hatte.
+
+### Der Fallstrick für `/frontend`
+
+**Der Inset gehört *innerhalb* das Kopfzeilen-Element, nicht davor.** Beide Kopfzeilen haben einen halbtransparenten Blur-Hintergrund. Ein Margin, ein Wrapper-Padding oder ein Spacer davor lässt die Blur-Fläche erst unterhalb der Statusleiste beginnen — darüber stünde ein durchsichtiger Spalt mit blankem Seiteninhalt. Das Ergebnis wäre schlechter lesbar als der Fehler, den wir beheben.
+
+**Keine feste Ersatzhöhe, keine Plattform-Abfrage.** `env()` liefert den richtigen Wert für alle drei Geräteklassen. Eine Konstante wie `44px` ist auf mindestens einer davon falsch; eine `isIOS()`-Abfrage ist exakt das Muster, das in BUG-6 live ging.
+
+### Abnahme
+
+Playwright emuliert `env(safe-area-inset-*)` **nicht** — dieselbe Grenze, die schon beim unteren Overlay benannt wurde. Prüfbar per Test ist deshalb:
+
+- dass der Browser-Zustand **unverändert** ist (oberer Inset dort `0px` — jede Verschiebung wäre ein Fehler)
+- dass die 56px-Zeilenhöhe der Kopfzeilen erhalten bleibt
+- dass die Kopfzeilen-Hintergrundfläche und ihr Inhalt dasselbe Element sind (kein Spalt-Konstrukt)
+
+Das tatsächliche Erscheinungsbild auf einem iPhone mit Notch prüft der Betreiber am Gerät. Mitzunehmen ist dabei Edge Case 25 (Sheet-Höhe gegen Dynamic Island) und Edge Case 26 (Player-Button gegen Home-Indikator).
+
+### Was dieses Refinement über das vorige sagt
+
+Das Overlay-Refinement vom selben Tag schloss mit: *„Nicht abgedeckt und benannt: die Safe Area auf einem echten iPhone … konstruktiv abgedeckt, am Gerät zu bestätigen."* Die Vorhersage war richtig — und zugleich zu eng: Sie sah die Lücke unten, wo sie behandelt war, und nicht oben, wo sie nie behandelt worden war. Der Befund kam aus genau dem Gerätetest, den der Satz angekündigt hatte.
 
 ## QA Test Results
 

@@ -27,7 +27,7 @@
 | PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Deployed | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
-| PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
+| PROJ-12 | PWA-Installation | P0 | PROJ-1 | In Progress | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
@@ -256,6 +256,33 @@ Zusätzlich geprüft und in der Spec nicht gefordert: Tastatur-Reihenfolge (Slid
 **Ein eigener Messfehler, offen benannt:** Mein erster Live-Check wartete 304 Sekunden darauf, dass Sheet-Markup im HTML von `/create` erscheint. Der Check konnte nie anschlagen — das Stations-Sheet rendert clientseitig, das Markup steht auch lokal nicht im HTML (gegengeprüft: 0 Treffer). Er hat den 403 nur verzögert sichtbar gemacht.
 
 **Drei Punkte bleiben zur Prüfung durch den Betreiber** (Handy, `/create` → Quest → ⋮ → „Station bearbeiten"): dass der Ankunftsradius ohne Scrollen sichtbar ist, dass „Aktuelle Position verwenden" vollständig im Bild steht, und ob die unten angeschnittene Karte (lokal 51px von 220px auf 320×568) zum Platzieren eines Pins ausreicht. Der dritte Punkt ist zugleich die offene Frage aus der QA.
+
+## Offenes Refinement: Safe Area — Statusleiste verdeckt die Kopfzeile (2026-09-20)
+**PROJ-12** geht von Deployed zurück auf In Progress. Betreiber-Befund vom echten Gerät: *„ich habe die app mobile installiert auf ios. Bei full screen verdeckt meine Uhrzeit, Batterie, WLAN Anzeige auf dem Handy das burger menu, den zurück button"* — im Browser tritt das nicht auf.
+
+**Ursache im Code bestätigt, und sie stammt aus diesem Feature selbst.** `statusBarStyle: "black-translucent"` (`layout.tsx:81`) und `viewportFit: "cover"` (`layout.tsx:88`) sagen iOS zusammen: *Die Seite beginnt bei y=0, zeichne die Statusleiste durchsichtig darüber.* Das ist der randlose Look, den die Entscheidung vom 2026-09-18 ausdrücklich wollte. Was fehlt, ist die Gegenleistung — **wer bei y=0 anfängt, muss die Systemleisten selbst freihalten.** Gemessen: `grep -rn "safe-area" src/` findet vier Vorkommen, **alle vier `inset-bottom`**. `env(safe-area-inset-top)` kommt im gesamten Projekt nicht vor. Fehlende Höhe: 47px mit Notch, 59px bei Dynamic Island.
+
+Warum nur installiert: Im Browser hält Safari mit seiner Adressleiste den Platz von selbst frei. Installiert fällt sie weg.
+
+**Entschieden: Safe Area respektieren, `statusBarStyle` unangetastet lassen.** Der Alternativweg wäre ein Einzeiler gewesen (`statusBarStyle: "default"` — iOS reserviert den Streifen selbst), hätte aber einen massiven schwarzen Balken über die App gelegt und damit die Gestaltungsentscheidung zurückgenommen, die dieses Feature getroffen hat.
+
+**Die Sorge des Betreibers („im Browser sieht alles gut aus, das will ich nicht verlieren") ist durch die Wahl der Mechanismen bereits beantwortet:** `env(safe-area-inset-top)` ist im Browser `0px`, weil Safari den Platz dort freihält, und `statusBarStyle` wird außerhalb des Standalone-Modus gar nicht gelesen. Beide sind von sich aus modus-abhängig — es braucht keine Standalone-Abfrage im Code, und es darf auch keine geben (das wäre eine zweite Wahrheit über denselben Sachverhalt, die Fehlerklasse von BUG-6).
+
+**Geprüftes Risiko:** Die naheliegende Sorge bei `black-translucent` ist weiße Statusleisten-Schrift auf hellem Grund. Im Code nachgesehen statt angenommen — die Karte lebt ausschließlich im Stations-Sheet des Creators und erreicht die oberste Kante nie; jeder Screen, der y=0 berührt, ist dunkel. Kein Konflikt.
+
+**Scope, auf Betreiber-Entscheidung zweimal erweitert:** Die Info-Seiten kommen mit (`info-page-shell.tsx`, sticky Kopfzeile — installiert übers Burger-Menu erreichbar, gleiche Fehlerklasse, gleicher Prüf-Durchlauf). Und der untere Rand kommt mit (gleiche Ursache `viewportFit: "cover"`, gleiches Gerät zum Prüfen).
+
+**Das Nachsehen am unteren Rand hat mehr gefunden als vermutet — und eine meiner Annahmen widerlegt.** Bestätigt betroffen sind **drei Creator-FABs** (`create/page.tsx:263`, `create/[id]/page.tsx:236`, `create/[id]/station/[stationId]/page.tsx:184`), alle auf `fixed bottom-6` ohne Inset. Der Player-Navigations-Screen dagegen, den ich zuerst verdächtigt hatte, zentriert seinen Inhalt per `justify-center` und dürfte den Home-Indikator gar nicht erreichen — das steht als zu prüfende Annahme in Edge Case 26, nicht als Fehler.
+
+**Drei Stellen decken oben neun Screens ab:** `app-header.tsx` allein sieben, dazu der schwebende Burger auf `/` (eigene Stelle, weil bewusst keine Kopfzeile — BUG-10) und `info-page-shell.tsx` für die vier Info-Seiten. Die Backdrops bleiben ausdrücklich unangetastet: Sie sind `fixed inset-0` und liefern genau die Fläche, auf der die durchscheinende Statusleiste steht.
+
+**Der Fallstrick für `/frontend`, vorab benannt:** Der Inset gehört **innerhalb** das Kopfzeilen-Element, nicht davor. Beide Kopfzeilen haben einen halbtransparenten Blur-Hintergrund; ein Margin oder Spacer davor ließe die Blur-Fläche erst unterhalb der Statusleiste beginnen, und darüber stünde ein durchsichtiger Spalt mit blankem Inhalt — schlechter lesbar als der Fehler, den wir beheben. Und: keine feste Ersatzhöhe, keine Plattform-Abfrage. `env()` liefert 0/47/59px für die drei Geräteklassen; jede Konstante ist auf mindestens einer falsch.
+
+**Abnahme:** Playwright emuliert `env(safe-area-inset-*)` nicht — dieselbe Grenze wie beim unteren Overlay. Per Test prüfbar ist, dass der **Browser-Zustand unverändert** bleibt, die 56px-Zeilenhöhe erhalten bleibt und Kopfzeilen-Fläche und Inhalt dasselbe Element sind. Das Erscheinungsbild am iPhone prüft der Betreiber.
+
+Spec ist aktualisiert (1 User Story, 9 Acceptance Criteria in einem eigenen Block, Edge Cases 22–26, 6 Technical Requirements, 4 Produkt- und 4 technische Entscheidungen, 3 neue Open Questions, 1 geschlossene, 3 Ergänzungen in Out of Scope, dazu ein eigener Abschnitt „Refinement 3" mit beiden Messtabellen).
+
+**Eine Vorhersage des vorigen Refinements hat sich bestätigt — und war zu eng.** Der Overlay-Eintrag vom selben Tag schloss mit „Nicht abgedeckt: die Safe Area auf einem echten iPhone … am Gerät zu bestätigen". Richtig vorhergesagt, aber nur für unten, wo sie behandelt war — nicht für oben, wo sie es nie war. Der Befund kam aus genau dem Gerätetest, den der Satz angekündigt hatte.
 
 ## Next Available ID: PROJ-15
 
@@ -671,7 +698,9 @@ Warum die Entfernungsanzeige funktionierte: Sie ist ein gerundeter Skalar ohne W
 
 **Entschieden (alle vier Punkte vom Betreiber bestätigt):** Rotation als fortlaufender, unbeschränkter Winkel mit kürzester Delta-Formel statt normalisiert; Glättung plus Mindestschwelle im Hook, Zielverhalten "ruhig und gedämpft" (~0,2–0,3 s Nachlauf, Nadel steht still wenn der Spieler still steht); Kompass hat Vorrang mit Karenzzeit vor dem Quellenwechsel, echte Wechsel werden weich überblendet; und die Zielpeilung wird mitbehandelt statt vertagt — der Befund wäre sonst auf den letzten Metern bestehen geblieben und als "behoben" durchgegangen.
 
-**Mitgenommen auf Betreiber-Entscheidung:** Der Kalibrierungs-Hinweis "Bewege dein Handy in einer 8". Er steht seit 2026-08-23 als Acceptance Criterion in der Spec und der Hook setzt `needsCalibration` — gerendert wurde er nie, weil `navigation-screen.tsx` den Wert nirgends ausliest. Ein unkalibriertes Magnetometer ist zugleich eine der Ursachen für genau die unruhige Nadel. Gleiche Datei, gleiche Fehlerklasse, gleicher Prüf-Durchlauf.
+**Mitgenommen auf Betreiber-Entscheidung:** Der Kalibrierungs-Hinweis "Bewege dein Handy in einer 8". Er steht seit 2026-08-23 als Acceptance Criterion in der Spec und wird auch gerendert — aber mit **9px**, also weit unter der 16px-Mindestgröße des PRD und praktisch unlesbar. Ein unkalibriertes Magnetometer ist zugleich eine der Ursachen für genau die unruhige Nadel. Gleiche Datei, gleiche Fehlerklasse, gleicher Prüf-Durchlauf.
+
+*(Korrektur: In der ersten Fassung dieses Eintrags stand, der Hinweis werde „nie gerendert". Das war falsch — er ist da, nur zu klein. Der Befund bleibt, die Ursache ist eine andere.)*
 
 **Der Fallstrick für `/frontend`, vorab benannt:** Winkel-Glättung darf **nie** über einen arithmetischen Mittelwert laufen — das Mittel aus 359° und 1° ist 180°, also die exakte Gegenrichtung. Das wäre ein zweiter Fehler derselben Klasse, den nur ein Test mit einer Sequenz über die 0°-Grenze findet. Erforderlich sind Sinus/Kosinus oder dieselbe Delta-Formel wie bei der Rotation.
 
