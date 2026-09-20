@@ -247,6 +247,36 @@ test.describe("PROJ-3: Ruhige Kompassnadel (Refinement 2026-09-20)", () => {
     });
   });
 
+  test.describe("Ungültige Sensorwerte (BUG-12)", () => {
+    test("die Nadel erholt sich nach NaN und Infinity wieder", async ({ page, context }) => {
+      // Vor der Behebung fror der Pfeil hier dauerhaft ein: `NaN` ist in der
+      // Glättung absorbierend und vergiftete die Ref für den Rest der Session.
+      // Gemessen im QA vom 2026-09-20.
+      await startNavigation(page, context);
+
+      for (let i = 0; i < 40; i++) await fireHeading(page, 90);
+      const before = await readRotation(page);
+      expect(before).not.toBeNull();
+
+      for (const bad of [NaN, Infinity, -Infinity]) await fireHeading(page, bad);
+
+      // Das CSS-transform darf nie NaN enthalten — dann verschwände der Pfeil.
+      const transform = await page.evaluate(() => {
+        const svg = document.querySelector("svg[viewBox='0 0 100 100']") as SVGElement | null;
+        return svg?.style.transform ?? "";
+      });
+      expect(transform).not.toContain("NaN");
+      expect(transform).not.toContain("Infinity");
+
+      // Der eigentliche Nachweis: Ein gültiger Wert danach greift wieder.
+      for (let i = 0; i < 80; i++) await fireHeading(page, 200);
+      const after = await readRotation(page);
+      expect(after).not.toBeNull();
+      expect(Number.isFinite(after!)).toBe(true);
+      expect(Math.abs(after! - before!)).toBeGreaterThan(5);
+    });
+  });
+
   test.describe("Bestehende Zustände bleiben unberührt", () => {
     test("der richtungslose Pfeil bleibt ohne Heading-Quelle erhalten", async ({
       page,

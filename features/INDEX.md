@@ -18,7 +18,7 @@
 |----|---------|----------|--------------|--------|------|---------|
 | PROJ-1 | App Shell & Mode Switch | P0 | None | Deployed | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
-| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | In Review | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
+| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Approved | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | In Progress | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
 | PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
@@ -740,7 +740,29 @@ Die Chrome-Konsolenfehler sind **vorbestehend** — gegengeprüft auf `/about`, 
 
 **Regression:** Unit **258/258**, E2E über beide Engines **994 passed / 52 skipped / 0 failed / 0 flaky**, Build und Lint sauber. **0 Skips in den PROJ-3-Dateien** — alle 98 Tests laufen wirklich.
 
-**Status bleibt In Review**, bis BUG-12 entschieden ist. Die eigentliche Abnahme ist der Handy-Test des Betreibers — ob sich die Dämpfung richtig anfühlt, kann keine Testumgebung beantworten.
+**BUG-12 noch am 2026-09-20 behoben.** `applyHeading` verwirft nicht-endliche Werte als Erstes — **vor** `setRawHeading` und **vor** `setCompassFresh`. Die zweite Reihenfolge-Entscheidung ist die weniger offensichtliche: Ein unbrauchbarer Wert ist kein Lebenszeichen des Kompasses; liefe er in die Karenzzeit, hielte er den toten Zustand drei Sekunden am Leben und verdrängte die GPS-Bewegungsrichtung, die noch funktioniert.
+
+Im Browser auf **beiden Engines am Reproduktionspunkt** verifiziert: Wo vorher `rotate(-59.3213deg)` nach `NaN` unverändert stehen blieb, steht jetzt nach einem gültigen Heading von 200° `rotate(-168.715deg)`. Kein `NaN` und kein `Infinity` im CSS-`transform`.
+
+5 neue Unit-Tests, 1 neuer E2E-Test. Per Gegenprobe geschärft: Ohne den Guard fallen **alle 5** Unit-Tests und die 2 zuständigen E2E-Tests. **Ein erster Entwurf ließ nur 4 von 5 fallen** — der Test „hält das Heading unverändert" bestand auch ohne Guard, weil die kaputte Fassung den sichtbaren Wert ebenfalls stehen ließ und nur die interne Ref vergiftete; er prüft jetzt zusätzlich, dass der nächste gültige Wert wieder greift.
+
+**Nebenbefund:** `npx tsc --noEmit` meldete einen Typfehler in `use-arrow-rotation.test.ts` aus der Frontend-Phase. `npm run lint` typisiert Testdateien nicht und hatte ihn nicht gezeigt — behoben.
+
+**QA der Behebung am 2026-09-20 abgeschlossen: BUG-12 bestätigt behoben, keine Bugs jeglicher Schwere, Production-Ready. Status Approved.**
+
+Unabhängig nachgemessen statt übernommen — und dabei ein Pfad geprüft, den die Frontend-Phase nicht betrachtet hatte: `handleOrientation` hat **zwei** Eingänge, und nur der `webkitCompassHeading`-Pfad war verifiziert. Der `alpha`-Pfad reicht einen berechneten Wert `(360 - alpha) % 360` weiter, der mit NaN ebenfalls NaN ergibt, und `setNeedsCalibration` läuft dort außerhalb des Guards. Beides in Ordnung — **3 zusätzliche Unit-Tests**, die es ohne diese QA nicht gäbe.
+
+Im Browser auf beiden Engines und beiden Pfaden: Kompass-Pfad `-59.32 → -168.72` (Chrome) und `-59.32 → -168.71` (WebKit), alpha-Pfad `120.679 → 230.072`. Kein `NaN` im CSS-`transform`, Pfeil durchgehend sichtbar.
+
+**Wieder ein Test, der die falsche Eigenschaft prüfte:** Meine ersten drei alpha-Tests bestanden die Gegenprobe auch ohne Guard — sie prüften `Number.isFinite`, und der eingefrorene Wert ist ebenfalls endlich. Nachgemessen friert das Heading ohne Guard bei 270 ein statt 160 zu erreichen. Nach der Korrektur auf den Zielwert fällt der Test. **Das vierte Mal in dieser Sitzung, dass ein grüner Test nichts belegte.**
+
+Gegenprobe: ohne Guard fallen **6 von 8** Unit-Tests und **2 von 18** E2E-Tests. Die zwei verbleibenden sind absichtlich guard-unabhängig (`needsCalibration` bei unbrauchbarem alpha, und Heading **0** darf nicht verworfen werden — ein Falsy-Check hätte ausgerechnet Nord mitverworfen).
+
+**Regression:** Unit **266/266** (vorher 258), E2E **996 passed / 52 skipped / 0 failed / 0 flaky**, Build/Lint/`tsc` sauber.
+
+**Ein eigener Messfehler, offen benannt:** Meine erste Sonde meldete den alpha-Pfad als „nicht erholt" — Ursache war ein `p.reload()` in der Sonde, nach dem der Navigations-Screen nicht wieder erreicht wurde. Gemessen wurde ein leerer Screen. Das Produkt war richtig.
+
+**PROJ-3 ist ohne offene Bugs und deploybar.** Die eigentliche Abnahme bleibt der Handy-Test des Betreibers — ob sich die Dämpfung richtig anfühlt, kann keine Testumgebung beantworten.
 
 ## Offenes Refinement: Touch-Sortierung im Player (2026-09-20)
 **PROJ-4** geht von Deployed zurück auf In Progress. Betreiber-Befund: *"der Aufgabentyp sortieren auf dem handy fühlt sich mit touch merkwürdig an. Ich habe erwartet, dass das was ich anfasse sich ein wenig hebt und dann kann ich es per drag und drop verschieben."* Dazu die Frage, ob Pfeile auf kleinen Bildschirmen der bessere Weg wären.

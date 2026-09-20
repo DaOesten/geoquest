@@ -332,3 +332,146 @@ describe("Glättung des Kompass-Headings (Edge Case 19)", () => {
     expect(result.current.needsCalibration).toBe(false);
   });
 });
+
+/**
+ * BUG-12 (QA 2026-09-20): Ein `deviceorientation`-Event mit `NaN` oder
+ * `Infinity` als Heading vergiftete die Glättungs-Ref. `NaN` ist in der
+ * Glättung absorbierend — der Pfeil fror auf seiner letzten Rotation ein und
+ * erholte sich für den Rest der Session nicht mehr, auch wenn wieder gültige
+ * Werte kamen.
+ */
+describe("Ungültige Sensorwerte (BUG-12, Edge Case 23)", () => {
+  function fireHeading(heading: number) {
+    const event = new Event("deviceorientation") as DeviceOrientationEvent & {
+      webkitCompassHeading?: number;
+    };
+    Object.defineProperty(event, "webkitCompassHeading", {
+      value: heading,
+      configurable: true,
+    });
+    window.dispatchEvent(event);
+  }
+
+  /**
+   * Der `alpha`-Pfad reicht einen **berechneten** Wert `(360 - alpha) % 360`
+   * weiter — auch der wird mit NaN/Infinity zu NaN. Zusätzlich läuft
+   * `setNeedsCalibration` dort außerhalb des Guards.
+   */
+  function fireAlpha(alpha: number, absolute = true) {
+    const event = new Event("deviceorientation") as DeviceOrientationEvent;
+    Object.defineProperty(event, "alpha", { value: alpha, configurable: true });
+    Object.defineProperty(event, "absolute", { value: absolute, configurable: true });
+    window.dispatchEvent(event);
+  }
+
+  beforeEach(() => {
+    setUserAgent(CHROME_UA);
+    setRequestPermission(null);
+  });
+
+  it("erholt sich nach einem NaN-Heading wieder", () => {
+    // Das ist der gemeldete Fehler: nicht dass NaN ankommt, sondern dass der
+    // Kompass danach **dauerhaft** tot bleibt.
+    const { result } = renderHook(() => useDeviceOrientation());
+    for (let i = 0; i < 60; i++) act(() => fireHeading(90));
+    expect(result.current.heading).toBeCloseTo(90, 0);
+
+    act(() => fireHeading(NaN));
+    for (let i = 0; i < 120; i++) act(() => fireHeading(180));
+
+    expect(Number.isFinite(result.current.heading)).toBe(true);
+    expect(Math.abs(((result.current.heading! - 180 + 540) % 360) - 180)).toBeLessThan(1);
+  });
+
+  it("erholt sich nach Infinity und -Infinity wieder", () => {
+    const { result } = renderHook(() => useDeviceOrientation());
+    for (let i = 0; i < 60; i++) act(() => fireHeading(90));
+
+    act(() => fireHeading(Infinity));
+    act(() => fireHeading(-Infinity));
+    for (let i = 0; i < 120; i++) act(() => fireHeading(270));
+
+    expect(Number.isFinite(result.current.heading)).toBe(true);
+    expect(Math.abs(((result.current.heading! - 270 + 540) % 360) - 180)).toBeLessThan(1);
+  });
+
+  it("hält das Heading beim ungültigen Wert unverändert, statt es zu verwerfen", () => {
+    const { result } = renderHook(() => useDeviceOrientation());
+    for (let i = 0; i < 60; i++) act(() => fireHeading(120));
+    const before = result.current.heading;
+
+    act(() => fireHeading(NaN));
+    expect(result.current.heading).toBe(before);
+
+    // "Unverändert" allein genügt als Nachweis nicht: Auch die **kaputte**
+    // Fassung ließ den sichtbaren Wert stehen — sie hatte nur zusätzlich die
+    // interne Ref vergiftet. Entscheidend ist, dass der nächste gültige Wert
+    // wieder greift.
+    for (let i = 0; i < 60; i++) act(() => fireHeading(200));
+    expect(Number.isFinite(result.current.heading)).toBe(true);
+    expect(Math.abs(((result.current.heading! - 200 + 540) % 360) - 180)).toBeLessThan(1);
+  });
+
+  it("lässt einen ungültigen Wert nicht als Kompass-Lebenszeichen gelten", () => {
+    // Sonst hielte die Karenzzeit den unbrauchbaren Zustand am Leben und
+    // verdrängte die GPS-Bewegungsrichtung, die noch funktioniert.
+    const { result } = renderHook(() => useDeviceOrientation());
+    expect(result.current.compassFresh).toBe(false);
+
+    act(() => fireHeading(NaN));
+    expect(result.current.compassFresh).toBe(false);
+
+    act(() => fireHeading(90));
+    expect(result.current.compassFresh).toBe(true);
+  });
+
+  it("übergeht einen ungültigen Wert auch als allerersten Wert", () => {
+    // Der Sonderpfad "erster Wert" umgeht die Glättung — er darf NaN
+    // ebensowenig durchlassen.
+    const { result } = renderHook(() => useDeviceOrientation());
+    act(() => fireHeading(NaN));
+    expect(result.current.heading).toBeNull();
+
+    act(() => fireHeading(75));
+    expect(result.current.heading).toBeCloseTo(75, 6);
+  });
+
+  it("erholt sich auch im alpha-Pfad nach NaN und Infinity", () => {
+    // `Number.isFinite` allein genügt hier **nicht** als Zusicherung: Der
+    // eingefrorene Wert der kaputten Fassung ist ebenfalls endlich. Geprüft
+    // wird deshalb, dass das Heading dem neuen alpha tatsächlich **folgt**.
+    // Der alpha-Pfad rechnet `(360 - alpha) % 360`, also alpha 90 -> 270
+    // und alpha 200 -> 160.
+    const { result } = renderHook(() => useDeviceOrientation());
+    for (let i = 0; i < 60; i++) act(() => fireAlpha(90));
+    expect(result.current.heading).toBeCloseTo(270, 0);
+
+    act(() => fireAlpha(NaN));
+    act(() => fireAlpha(Infinity));
+    for (let i = 0; i < 120; i++) act(() => fireAlpha(200));
+
+    expect(Number.isFinite(result.current.heading)).toBe(true);
+    expect(Math.abs(((result.current.heading! - 160 + 540) % 360) - 180)).toBeLessThan(1);
+  });
+
+  it("meldet Kalibrierungsbedarf auch dann, wenn der alpha-Wert unbrauchbar ist", () => {
+    // `setNeedsCalibration` liegt hinter `applyHeading` und damit außerhalb
+    // des Guards. Der Hinweis muss sich weiter nach `absolute` richten —
+    // gerade ein Gerät mit unbrauchbaren Werten braucht ihn.
+    const { result } = renderHook(() => useDeviceOrientation());
+    act(() => fireAlpha(NaN, false));
+    expect(result.current.needsCalibration).toBe(true);
+
+    act(() => fireAlpha(90, true));
+    expect(result.current.needsCalibration).toBe(false);
+  });
+
+  it("verwirft ein Heading von 0 nicht (Nord ist gültig)", () => {
+    // Die klassische Falle: Ein Falsy-Check (`if (!next) return`) statt
+    // `Number.isFinite` hätte 0° mitverworfen — ausgerechnet Nord.
+    const { result } = renderHook(() => useDeviceOrientation());
+    act(() => fireHeading(0));
+    expect(result.current.heading).toBe(0);
+    expect(result.current.compassFresh).toBe(true);
+  });
+});

@@ -124,6 +124,24 @@ export function useDeviceOrientation(): UseDeviceOrientationReturn {
   const staleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const applyHeading = useCallback((next: number) => {
+    /**
+     * Ungültige Sensorwerte verwerfen (BUG-12, Edge Case 23).
+     *
+     * `NaN` ist in der Glättung **absorbierend**: `smoothAngle(NaN, x, f)`
+     * ergibt wieder `NaN`, und weil jeder neue Wert gegen `smoothedRef`
+     * geglättet wird, bliebe die Ref für den Rest der Session vergiftet — der
+     * Pfeil friert auf seiner letzten Rotation ein und erholt sich auch dann
+     * nicht, wenn wieder gültige Werte kommen. Gemessen im QA vom 2026-09-20.
+     *
+     * Die Prüfung steht **vor** `setCompassFresh`: Ein unbrauchbarer Wert ist
+     * kein Lebenszeichen des Kompasses. Sonst hielte die Karenzzeit den
+     * eingefrorenen Zustand zusätzlich am Leben und verdrängte die
+     * GPS-Bewegungsrichtung, die noch funktioniert.
+     *
+     * `Number.isFinite` deckt `NaN`, `Infinity` und `-Infinity` in einem ab.
+     */
+    if (!Number.isFinite(next)) return;
+
     setRawHeading(next);
     setCompassFresh(true);
     if (staleTimer.current) clearTimeout(staleTimer.current);

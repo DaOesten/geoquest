@@ -3,7 +3,7 @@
  */
 import { describe, it, expect } from "vitest";
 import { renderHook } from "@testing-library/react";
-import { useArrowRotation } from "./use-arrow-rotation";
+import { useArrowRotation, type UseArrowRotationInput } from "./use-arrow-rotation";
 
 describe("useArrowRotation — fortlaufende Rotation (Edge Case 18)", () => {
   it("startet bei 0, solange keine Peilung vorliegt", () => {
@@ -60,9 +60,18 @@ describe("useArrowRotation — fortlaufende Rotation (Edge Case 18)", () => {
 
   it("bleibt stehen, wenn das Heading verloren geht", () => {
     // Auf 0 zu springen wäre das alte Verhalten und sähe aus wie "geradeaus".
-    const { result, rerender } = renderHook((props) => useArrowRotation(props), {
-      initialProps: { targetBearing: 90, deviceHeading: 0, distance: 500 },
-    });
+    // Explizit typisiert: Ohne das leitet TypeScript `deviceHeading: number`
+    // aus den initialProps ab, und das spätere `null` wäre ein Typfehler.
+    const { result, rerender } = renderHook(
+      (props: UseArrowRotationInput) => useArrowRotation(props),
+      {
+        initialProps: {
+          targetBearing: 90,
+          deviceHeading: 0,
+          distance: 500,
+        } as UseArrowRotationInput,
+      }
+    );
     const before = result.current;
     expect(before).toBeCloseTo(90, 0);
 

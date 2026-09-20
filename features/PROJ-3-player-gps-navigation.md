@@ -1,6 +1,6 @@
 # PROJ-3: Player — GPS-Navigation
 
-## Status: In Review
+## Status: Approved
 **Created:** 2026-08-23
 **Last Updated:** 2026-09-20
 
@@ -138,6 +138,8 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 
     *Korrektur zur ersten Fassung dieses Refinements (2026-09-20):* Dort stand, der Hinweis werde "nie gerendert". Das war falsch — er wird seit jeher gerendert, nur zu klein. Der Befund bleibt derselbe, die Ursache ist eine andere.
 
+23. **Ungültiger Sensorwert (`NaN`, `Infinity`) — BUG-12, 2026-09-20:** Ein `deviceorientation`-Event mit einem nicht-endlichen Heading vergiftet jede Glättung, die gegen einen gespeicherten Vorwert rechnet: `NaN` ist absorbierend, also bleibt die Ref für den Rest der Session `NaN` und der Pfeil friert auf seiner letzten Rotation ein — ohne Fehlermeldung und ohne Erholung, auch wenn gültige Werte folgen. Ein solcher Wert ist kein Lebenszeichen des Kompasses und darf auch die Karenzzeit nicht verlängern, sonst verdrängt der tote Zustand zusätzlich die noch funktionierende GPS-Bewegungsrichtung. Die Erkennung ist eine reine Eingangsprüfung (`Number.isFinite`), die `NaN`, `Infinity` und `-Infinity` gemeinsam abdeckt.
+
 
 ## Technical Requirements
 - GPS-Position: `navigator.geolocation.watchPosition()` mit `enableHighAccuracy: true`
@@ -179,6 +181,7 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 - Die Zielpeilung wird gegen Positionsrauschen gedämpft — über eine geglättete Position, eine geglättete Peilung oder eine Gewichtung nach `accuracy`. Die konkrete Wahl trifft `/frontend` am Gerät; die Wirkung muss im Unit-Test nachweisbar sein
 - Die Dämpfung darf den richtungslosen Zustand (Edge Case 11) **nicht** verwässern: Liegt keine Heading-Quelle vor, bleibt der bestehende Suchzustand unverändert — nichts wird gegen einen alten Wert geglättet, der nicht mehr gilt
 - Der Kalibrierungs-Hinweis wird bereits gerendert, aber mit 9px. Er muss auf mindestens 16px (PRD-Vorgabe für Body-Text) und in eine Body-Schrift statt der Tech-Schrift
+- Nicht-endliche Sensorwerte (`NaN`, `±Infinity`) müssen **vor** der Glättung und **vor** dem Karenzzeit-Signal verworfen werden. Sie dürfen weder die Glättungs-Ref noch den `compassFresh`-Zustand erreichen (BUG-12, Edge Case 23)
 - Die Glättungs- und Wrap-around-Mathematik ist per **Unit-Test** abzusichern (synthetische Sensorfolgen, ausdrücklich inklusive 359°→1° und 1°→359°). Playwright kann den Magnetometer nicht emulieren — E2E kann diese Klasse nicht prüfen
 
 ## Open Questions
@@ -250,6 +253,7 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 | Winkel-Glättung über Delta/Trigonometrie, nie über arithmetische Mittel | Der Mittelwert aus 359° und 1° ist 180° — die exakte Gegenrichtung. Ein naiver gleitender Mittelwert würde die Nadel an der Nordgrenze umklappen lassen und damit einen zweiten Fehler derselben Klasse einbauen, den der Test nur mit einer Sequenz über 0° findet. | 2026-09-20 |
 | Zusätzliche Mindestschwelle neben der Glättung | Glättung allein lässt die Nadel weiter minimal kriechen und feuert bei ~60 Hz Sensorrate ein React-Re-Render des gesamten Navigations-Screens. Die Schwelle macht "steht still" zu einem echten Zustand statt zu einer sehr langsamen Bewegung. | 2026-09-20 |
 | Karenzzeit statt sofortigem Quellenwechsel | Ein einzelner ausbleibender Sensor-Event ist kein Kompassausfall. Ohne Karenzzeit schaltet die Logik zwischen zwei Bezugssystemen hin und her, die um bis zu 90° auseinanderliegen — der Wechsel selbst wird dann zur Hauptursache des Springens. | 2026-09-20 |
+| Ungültige Sensorwerte verwerfen statt zu ersetzen | Erwogen: `NaN` auf den letzten gültigen Wert oder auf 0 abbilden. Ein Ersatzwert wäre eine erfundene Richtung, die der Sensor nie gemeldet hat; schlicht zu ignorieren lässt den vorherigen Zustand stehen und den nächsten echten Wert greifen. Die Prüfung steht vor `setCompassFresh`, weil ein unbrauchbarer Wert kein Lebenszeichen des Kompasses ist — sonst hielte die Karenzzeit den toten Zustand am Leben und verdrängte die GPS-Bewegungsrichtung. | 2026-09-20 |
 | Unit-Tests als primäre Absicherung, Geräte-Test für das Gefühl | Die Fehlerklasse ist reine Winkelmathematik und im Unit-Test vollständig prüfbar (inkl. der 0°-Grenze). Ob sich die Dämpfung richtig anfühlt, kann kein Test beantworten — das entscheidet der Betreiber am Gerät, so wie er den Befund auch gefunden hat. | 2026-09-20 |
 | `nextStationName` wird über die ganze Kette entfernt, nicht nur ignoriert | Eine Prop, die durch drei Komponenten gereicht und nirgends gelesen wird, ist eine Falle für den Nächsten, der sie für noch benutzt hält. Mit der Karte geht der Wert, der sie gespeist hat. | 2026-09-19 |
 | Freistellung als eingechecktes Skript, nicht von Hand | Dasselbe Muster wie bei den PWA-Icons (PROJ-12): `sips` reichte dort nicht, ein eingechecktes Swift/CoreGraphics-Skript machte das Ergebnis reproduzierbar statt einmalig. Ein von Hand freigestelltes Asset lässt sich nach einer Quellbild-Änderung nicht nachvollziehbar erneuern. | 2026-09-19 |
@@ -428,9 +432,57 @@ Keine neuen Packages erforderlich. Alle genutzten APIs:
 - React: useState, useEffect, useCallback, useRef
 - Bestehend: Tailwind CSS, Lucide Icons, shadcn/ui Components
 
+## QA Test Results — BUG-12-Behebung (2026-09-20)
+
+**Ergebnis: BUG-12 bestätigt behoben. Keine Bugs jeglicher Schwere. Production-Ready.**
+
+Die Behebung stammt aus derselben Sitzung, deshalb habe ich sie **nicht übernommen, sondern unabhängig nachgemessen** — und dabei den Prüfumfang um einen Pfad erweitert, den die Frontend-Phase nicht betrachtet hatte.
+
+### Der `alpha`-Pfad war ungeprüft
+
+`handleOrientation` hat **zwei** Eingänge: `webkitCompassHeading` (iOS) und `alpha` (alle übrigen Browser). Der Frontend-Fix wurde nur über den ersten geprüft. Der zweite reicht einen **berechneten** Wert weiter — `(360 - alpha) % 360` —, der mit `NaN` oder `Infinity` ebenfalls `NaN` ergibt; nachgerechnet: `(360 - NaN) % 360 === NaN`. Zudem läuft `setNeedsCalibration` dort **außerhalb** des Guards.
+
+Beides geprüft, beides in Ordnung: Der Guard fängt auch den alpha-Pfad, und der Kalibrierungs-Hinweis richtet sich weiterhin nach `absolute` — gerade ein Gerät mit unbrauchbaren Werten braucht ihn. **3 zusätzliche Unit-Tests**, die es ohne diese QA nicht gäbe.
+
+### Im Browser gemessen, beide Engines, beide Pfade
+
+| Pfad | vor dem Angriff | nach `NaN`/`±Infinity` | Ergebnis |
+|------|-----------------|------------------------|----------|
+| `webkitCompassHeading` (Chrome) | `-59.32` | → `-168.72` | **erholt** |
+| `webkitCompassHeading` (WebKit) | `-59.32` | → `-168.71` | **erholt** |
+| `alpha` (Chrome) | `120.679` | → `230.072` | **erholt** |
+
+Das CSS-`transform` enthält zu keinem Zeitpunkt `NaN` oder `Infinity`, der Pfeil bleibt sichtbar. Beim ungültigen Wert selbst bleibt die Rotation unverändert stehen (`120.679` → `120.679`) — ein Aussetzer setzt den Pfeil also nicht zurück, er macht ihn nur nicht mehr kaputt.
+
+### Ein Test, der die falsche Eigenschaft prüfte
+
+Meine ersten drei alpha-Tests bestanden die Gegenprobe **auch ohne Guard**. Nachgemessen: Ohne Guard friert das Heading im alpha-Pfad bei `270` ein und erreicht die erwarteten `160` nie — der Fehler ist also da. Meine Assertion prüfte aber nur `Number.isFinite`, und **der eingefrorene Wert ist ebenfalls endlich**. Nach der Korrektur auf den tatsächlichen Zielwert fällt der Test bei der Gegenprobe.
+
+Damit ist das in dieser Sitzung das vierte Mal, dass ein grüner Test nichts belegte. Das Muster ist jedes Mal dasselbe: Die Assertion prüfte eine Eigenschaft, die der Fehlerzustand zufällig auch erfüllt.
+
+### Gegenproben
+
+Mit entferntem Guard fallen **6 von 8** BUG-12-Unit-Tests und **2 von 18** E2E-Tests (einer je Engine). Die zwei verbleibenden Unit-Tests sind **absichtlich guard-unabhängig** — sie sichern, dass der Guard nichts kaputt macht:
+- `needsCalibration` bei unbrauchbarem `alpha` (muss weiter nach `absolute` gehen)
+- Heading **0** wird nicht verworfen (ein Falsy-Check `if (!next) return` statt `Number.isFinite` hätte ausgerechnet Nord mitverworfen — die klassische Falle dieser Prüfung)
+
+Produktcode nach allen Gegenproben per `diff` als byte-identisch bestätigt.
+
+### Regression
+
+**Unit 266/266** (vorher 258 — 8 neue). **E2E 996 passed / 52 skipped / 0 failed / 0 flaky** über beide Engines. Die neue PROJ-3-Suite **18/18**. Build, Lint (0 Errors) und `npx tsc --noEmit` sauber.
+
+### Eigener Messfehler, offen benannt
+
+Meine erste Browser-Sonde meldete für den alpha-Pfad „nicht erholt" und „Pfeil nicht sichtbar" — beides falsch. Ursache war ein `p.reload()` in der Sonde, nach dem der Navigations-Screen nicht wieder erreicht wurde; gemessen wurde also ein leerer Screen. In einer frischen Session ohne Reload erholt sich der alpha-Pfad einwandfrei. **Das Produkt war richtig, die Messung falsch.**
+
+### Nicht abgedeckt
+
+Unverändert: das Rauschverhalten echter Hardware. Der Guard betrifft es nicht — er verwirft nur Werte, die kein realer Sensor liefern sollte. Die Abnahme der Dämpfung bleibt der Handy-Test des Betreibers.
+
 ## QA Test Results — Ruhige Kompassnadel (2026-09-20)
 
-**Ergebnis: 8 von 9 Acceptance Criteria erfüllt. 1 Medium-Bug (BUG-12), keine Critical- oder High-Bugs.**
+**Ergebnis: 8 von 9 Acceptance Criteria erfüllt. 1 Medium-Bug (BUG-12) — noch am selben Tag behoben, siehe unten. Keine Critical- oder High-Bugs.**
 
 Weil das Feature in derselben Sitzung gebaut wurde, habe ich die zentralen Behauptungen **nicht übernommen, sondern mit eigenen Sonden neu gemessen** — auf beiden Engines.
 
@@ -454,7 +506,7 @@ Genau diese Lücke schließt die neue Suite: Gegen denselben Vorgängerstand fal
 | 8 | Kalibrierungs-Hinweis sichtbar und zugeordnet | **erfüllt** — **16px**, Kontrast **16.22:1**, 260px breit, auf allen Breiten vollständig im Bild |
 | 9 | Hinweis verschwindet bei absolutem Heading | **erfüllt** — ohne Zutun des Spielers |
 
-### BUG-12 (Medium, offen): Nadel friert nach einem ungültigen Sensorwert dauerhaft ein
+### BUG-12 (Medium) — **behoben am 2026-09-20**
 
 **Reproduktion:** Ein `deviceorientation`-Event mit `NaN` oder `Infinity` als Heading. Danach bleibt der Pfeil auf seiner letzten Rotation stehen und **erholt sich nicht mehr**, auch wenn gültige Werte folgen. Gemessen: nach `NaN` bleibt `rotate(-59.3213deg)` bestehen, ein anschließendes gültiges Heading von 180° ändert nichts.
 
@@ -464,7 +516,13 @@ Genau diese Lücke schließt die neue Suite: Gegen denselben Vorgängerstand fal
 
 **Warum Medium und nicht High:** `NaN` ist kein von der DeviceOrientation-Spezifikation vorgesehener Wert; der Normalfall liefert Zahlen oder `null` (letzteres ist behandelt). Der Pfad ist über einen fehlerhaften Sensor oder Treiber erreichbar, nicht über normale Bedienung — und nicht über die importierte Quest-Datei, also nicht angreiferkontrolliert. Für den Spieler wäre die Auswirkung allerdings deutlich: Die Nadel ist bis zum Neuladen tot, ohne jede Erklärung. Das ist derselbe stille Ausfallmodus, den das Refinement vom 2026-09-06 beseitigen wollte.
 
-**Empfohlene Behebung (gehört nicht in QA):** In `applyHeading` einmal `Number.isFinite(next)` prüfen und nicht-endliche Werte verwerfen, bevor sie die Ref erreichen.
+**Behoben am 2026-09-20.** `applyHeading` verwirft nicht-endliche Werte als Erstes — **vor** `setRawHeading` und **vor** `setCompassFresh`. Die zweite Reihenfolge-Entscheidung ist die weniger offensichtliche: Ein unbrauchbarer Wert ist kein Lebenszeichen des Kompasses. Liefe er in die Karenzzeit, hielte er den toten Zustand drei Sekunden lang am Leben und verdrängte dabei die GPS-Bewegungsrichtung, die noch funktioniert.
+
+**Im Browser auf beiden Engines am Reproduktionspunkt verifiziert:** Vor der Behebung blieb `rotate(-59.3213deg)` nach `NaN` unverändert stehen; jetzt steht dort nach einem gültigen Heading von 200° `rotate(-168.715deg)` (Chrome) bzw. `rotate(-168.714853deg)` (WebKit). Kein `NaN` und kein `Infinity` im CSS-`transform`.
+
+**5 neue Unit-Tests und 1 neuer E2E-Test.** Per Gegenprobe geschärft: Ohne den Guard fallen **alle 5** Unit-Tests und die 2 zuständigen E2E-Tests (einer je Engine). Ein erster Entwurf der Unit-Tests ließ nur 4 von 5 fallen — der Test „hält das Heading unverändert" bestand auch ohne Guard, weil die **kaputte** Fassung den sichtbaren Wert ebenfalls stehen ließ und nur die interne Ref vergiftete. Er prüft jetzt zusätzlich, dass der nächste gültige Wert wieder greift.
+
+**Nebenbefund:** `npx tsc --noEmit` meldete einen Typfehler in `use-arrow-rotation.test.ts` aus der Frontend-Phase (`deviceHeading: null` gegen einen aus `initialProps` abgeleiteten `number`). `npm run lint` typisiert Testdateien nicht und hatte ihn deshalb nicht gezeigt. Behoben durch explizite Typisierung der `initialProps`.
 
 ### Security-Audit — ohne Befund
 
