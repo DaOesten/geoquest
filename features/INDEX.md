@@ -27,7 +27,7 @@
 | PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Deployed | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
-| PROJ-12 | PWA-Installation | P0 | PROJ-1 | Approved | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
+| PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
@@ -325,6 +325,20 @@ Dass die frühere Gegenprobe gegen `7ee010b` ebenfalls rot war, ist damit erklä
 **Drei Messfehler offen benannt, alle meine:** Ein `env()`-Fallback taugt nicht als Prüfmittel — mit `viewportFit: "cover"` löst die Variable zu einem echten `0px` auf, der Fallback greift nie (gemessen: `0px` statt `99px`). **Damit kann keine Testumgebung einen echten oberen Inset erzeugen**; das Überschreiben der Utilities ist der einzig gangbare Weg. Dazu ein falsch adressiertes Sheet (Burger-Menu statt Stations-Aktionen) und zwei abgestürzte Server durch parallele Sonden.
 
 **Nicht abgedeckt:** das Erscheinungsbild am echten iPhone (keine Umgebung kann `env()` oben emulieren) und Firefox.
+
+**Am 2026-09-21 nach Production deployt** (Tag `v1.37.0-PROJ-12`, Commits `7998b2a`/`e7ca31a`/`fc4e91b`) — live auf https://geoquesty.vercel.app, Vercel deployte automatisch von `main`, live nach ~45 Sekunden.
+
+**Dass die neue Fassung wirklich ausgeliefert wird, ist am Hash belegt:** Der CSS-Chunk wechselte von `9124ee02…` auf `100393cc…`, und nur der neue enthält `pt-safe-top`. Das Live-CSS ist **byte-identisch** zum lokalen Build.
+
+**Im Live-Browser auf beiden Engines gemessen, alle Werte deckungsgleich mit den lokalen:** Bedienelement bei **65px** unter einem 59px-Inset (also vollständig unter der Statusleiste), Kopfzeile weiterhin bei `top: 0` (kein durchsichtiger Spalt), Kopfzeilen-Höhe 56 → 115, Tap-Höhe unverändert **44px**, Burger auf `/` bei 71, FAB `bottom` 24px → 58px. Der Browser-Zustand ist auch in Production unverändert (`padding-top: 0px` überall) — die Zusicherung an den Betreiber ist eingelöst.
+
+Alle 10 Endpunkte HTTP 200 (0,06–0,32 s), Security-Header inkl. HSTS. **Nachbarfeatures unbeschädigt** — wichtig, weil das Deployment die geteilte `InfoPageShell` anfasst: `/about` mit FAQPage + 1× Ko-fi, `/anleitung` weiterhin 0 Treffer für den Prompt, alle Eyebrows vorhanden, drei PWA-Icons byte-identisch. **WebKit mit 0 Konsolenfehlern und 0 fehlgeschlagenen Requests.**
+
+**Zwei Auffälligkeiten geprüft statt weggewunken:** Die 2 fehlgeschlagenen `?_rsc=`-Requests auf Chrome stammen aus der schnellen Testnavigation — ein ruhiger Besuch ergibt **0**. Der verbleibende Konsolenfehler ist `/favicon.ico` (ein Besuch von `/` erzeugt 0 Antworten ≥400), vorbestehend seit dem Deploy vom 2026-09-20.
+
+**Weiterhin offen und nicht belegbar:** das Erscheinungsbild auf einem echten iPhone. Keine Testumgebung kann `env(safe-area-inset-top)` mit einem echten Wert belegen — die Mechanik ist belegt, der Augenschein bleibt dem Betreiber.
+
+**PROJ-12 ist abgeschlossen.**
 
 **Eine Vorhersage des vorigen Refinements hat sich bestätigt — und war zu eng.** Der Overlay-Eintrag vom selben Tag schloss mit „Nicht abgedeckt: die Safe Area auf einem echten iPhone … am Gerät zu bestätigen". Richtig vorhergesagt, aber nur für unten, wo sie behandelt war — nicht für oben, wo sie es nie war. Der Befund kam aus genau dem Gerätetest, den der Satz angekündigt hatte.
 

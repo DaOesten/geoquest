@@ -1,6 +1,6 @@
 # PROJ-12: PWA-Installation (Add to Homescreen)
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-09-18
 **Last Updated:** 2026-09-20 (Refinement: Safe Area — Statusleiste verdeckt die Kopfzeile in der installierten App)
 
@@ -705,7 +705,7 @@ Die bestehenden Assertions sind **gezogen, nicht gelöscht**: Der iOS-Test prüf
 
 ## Refinement 3 (2026-09-20) — Safe Area: die Statusleiste verdeckt die Kopfzeile
 
-**Status:** Frontend umgesetzt und QA abgeschlossen am 2026-09-20 — Production-Ready
+**Status:** Deployed am 2026-09-21 (Tag `v1.37.0-PROJ-12`)
 
 ### Der Befund
 
@@ -952,6 +952,37 @@ Produktcode nach der Gegenprobe per `git diff` als byte-identisch zu `HEAD` best
 1. **Ein `env()`-Fallback als Prüfmittel ist wirkungslos.** Mein erster Ansatz versorgte `env(safe-area-inset-top, 59px)` mit einem Fallback — der greift nur, wenn die Variable *nicht unterstützt* wird. Mit `viewportFit: "cover"` löst sie zu einem echten `0px` auf, der Fallback bleibt außen vor (gemessen: `padMitFallback99` ergab `0px`, nicht `99px`). **Damit kann keine Testumgebung einen echten oberen Inset erzeugen** — das Überschreiben der Utilities ist der einzig gangbare Weg, nicht bloß der bequemere.
 2. **Falsches Sheet gemessen.** Mein Selektor `button[aria-label*="Menü"]` traf das Burger-Menu („Menü öffnen") statt der Stations-Aktionen; gemessen wurde das Navigationspanel (`top: 0, h: 844`), was wie ein fehlender Freiraum aussah. Über `aria-label="Stations-Aktionen"` korrekt: 67,5px.
 3. **Zwei abgestürzte Server-Läufe** durch parallele Sonden gegen denselben Port — das in INDEX.md dokumentierte Muster. Nur eine Sonde gleichzeitig.
+
+### Deployment (2026-09-21)
+
+**Deployt nach Production** — Tag `v1.37.0-PROJ-12`, Commits `7998b2a` (Frontend), `e7ca31a` (QA), `fc4e91b` (BUG-12). Live auf https://geoquesty.vercel.app, Vercel deployte automatisch von `main`, live nach ~45 Sekunden.
+
+**Pre-Deployment-Checks:** Build sauber (`/`, `/play` und Info-Seiten weiterhin statisch), Lint 0 Fehler / 7 vorbestehende Warnungen, QA approved ohne Bugs, keine Secrets versioniert (nur `.env.local.example`). Die zwei mitgeschobenen Commits `ec90b96` und `140c903` sind reine Spec-Refinements ohne Produktcode — geprüft, nicht angenommen.
+
+**Dass die neue Fassung wirklich ausgeliefert wird, ist am Hash belegt:** Der CSS-Chunk wechselte von `9124ee0237bfd044.css` auf `100393cc4531aacb.css`, und nur der neue enthält `pt-safe-top`. Das Live-CSS ist **byte-identisch** zum lokalen Build (`cmp` ohne Abweichung). Alle drei Utilities stehen live mit den richtigen `env()`-Werten, `box-sizing:content-box` ist vorhanden.
+
+**Im Live-Browser auf beiden Engines gemessen, alle Werte deckungsgleich mit den lokalen:**
+
+| | Browser | Inset 59px |
+|---|---|---|
+| Kopfzeile `top` | 0 | **0** — kein durchsichtiger Spalt |
+| Kopfzeilen-Höhe | 56 | **115** (=56+59) |
+| **Bedienelement `top`** | 6 | **65** — vollständig unter der Statusleiste |
+| Tap-Höhe | 44 | **44** — nicht gestaucht |
+| Burger auf `/` | 12 | **71** |
+| FAB `bottom` | 24px | **58px** |
+
+Der Browser-Zustand ist damit auch in Production unverändert (`padding-top: 0px` überall) — die Zusicherung an den Betreiber ist eingelöst.
+
+**Alle 10 Endpunkte HTTP 200** mit 0,06–0,32 s. Security-Header aktiv inkl. HSTS (`max-age=63072000; includeSubDomains; preload`), `x-frame-options: DENY`, `nosniff`.
+
+**Nachbarfeatures unbeschädigt** — wichtig, weil dieses Deployment die geteilte `InfoPageShell` anfasst: `/about` mit `FAQPage` und 1× Ko-fi, `/anleitung` weiterhin **0 Treffer** für den zurückgehaltenen Prompt, die Eyebrows von `/anleitung`, `/impressum` und `/datenschutz` vorhanden, alle drei PWA-Icons byte-identisch zum Repository.
+
+**WebKit mit 0 Konsolenfehlern und 0 fehlgeschlagenen Requests.**
+
+**Zwei Auffälligkeiten geprüft statt weggewunken:** Chrome meldete 2 fehlgeschlagene `?_rsc=`-Requests — ein ruhiger Besuch von `/`, `/play` und `/about` ergibt **0 fehlgeschlagene Requests**; sie stammen aus der schnellen Testnavigation. Der verbleibende Konsolenfehler ist `/favicon.ico`: Ein Besuch von `/` erzeugt **0 Antworten ≥400**, Chrome fragt die Datei von sich aus an. Vorbestehend, seit dem Deploy vom 2026-09-20 dokumentiert.
+
+**Nicht belegbar und weiterhin offen:** das Erscheinungsbild auf einem echten iPhone. Keine Testumgebung kann `env(safe-area-inset-top)` mit einem echten Wert belegen (in dieser QA gemessen: ein `env()`-Fallback greift nicht, weil die Variable mit `viewportFit: "cover"` zu einem echten `0px` auflöst). Die Mechanik ist belegt, der Augenschein bleibt dem Betreiber.
 
 ### Was dieses Refinement über das vorige sagt
 
