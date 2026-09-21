@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | In Progress | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
 <!-- Add features above this line -->
@@ -1051,3 +1051,28 @@ Alle **10 Endpunkte HTTP 200** (0,08–0,43 s), Security-Header inkl. HSTS. Nach
 **Anmerkung zur Deploy-Prüfung:** Der „Ist es live?"-Check fragte den Statuscode des **neuen** Assets ab und lieferte fünfmal 404, bevor er auf 200 sprang — er konnte also wirklich fehlschlagen, anders als der wertlose Manifest-Check vom 2026-09-19.
 
 **Damit sind beide Features abgeschlossen.** Offen bleiben nur vorbestehende, nicht blockierende Befunde: BUG-2 (16px-Schließen-X in allen Sheets), BUG-9 (kein `:focus-visible` app-weit), BUG-8 (Sektions-Kicker als `h2`), 2 `tsc`-Fehler in `quest-storage.test.ts` aus PROJ-6, und `mark-pin-whitebg.png` (1,0 MB, keine Referenz im Code).
+
+## Offenes Refinement 9: Hero-Bild wird Hintergrund (2026-09-21)
+**PROJ-13** geht von Deployed zurück auf In Progress. Betreiber nach dem Deploy von Refinement 8: *„mir gefällt der Bildausschnitt nicht. Ist es möglich das Bild als Hintergrund zu setzen, also ist die Schrift dann noch sichtbar.“*
+
+**Die QA hatte genau das vorhergesagt:** Der Beschnitt war als einzige offene Geschmacksfrage benannt, die keine Messung entscheiden kann. **Als Hintergrund verschwindet die Frage vollständig** — das Bild muss keinen festen Ausschnitt mehr treffen, weil es die ganze Fläche trägt.
+
+**Die Frage „ist die Schrift dann noch sichtbar“ ist gemessen, nicht geschätzt.** Weißer Text auf dem unveränderten Bild: schlechtester Wert **6.26:1**, Mittel 15.34:1, **0 von 100 Rasterzellen** unter der 4.5:1-Vorgabe. Weiß hätte also ohne jede Abdunklung gereicht.
+
+**Teal nicht — und das ist der eigentliche Fund:** Der Akzent („ZUM SPIELFELD“ in der Headline und die Kostenlos-Zeile) fällt ohne Abdunklung auf **3.75:1** und verfehlt die PRD-Vorgabe. Gemessene Abhilfe:
+
+| Abdunklung | weiß | teal |
+|---|---|---|
+| keine | 6.26:1 ✓ | **3.75:1 ✗** |
+| **40%** | 10.83:1 ✓ | **6.49:1 ✓** |
+| 55% | 13.14:1 ✓ | 7.87:1 ✓ |
+
+**Entschieden: 40%** — stark genug für Teal mit Puffer, schwach genug, dass die Szene klar erkennbar bleibt. 55% und 70% wären sicherer, machen das Bild aber zur bloßen Textur und nehmen dem Gaming-Look des PRD seine Wirkung.
+
+**Der Mobile-Fall ist separat geprüft**, weil der Text dort über die **ganze** Bildbreite läuft statt über die linken 55%: schlechtester Wert teal **6.33:1**, weiß 10.57:1, **0 von 100 Zellen** unter der Vorgabe.
+
+**Zwei Betreiber-Entscheidungen zur Ausdehnung:** Das Bild bleibt im **1100px-Container** und beginnt **unter der Kopfzeile** (die behält damit ihren ruhigen dunklen Grund; ihr Blur über einem Bild hätte je nach Bildstelle anders ausgesehen). Preis, offen benannt: auf sehr breiten Bildschirmen dunkle Streifen links und rechts. Und **auch mobil liegt der Text auf dem Bild** — der Wunsch „nur mobile untereinander“ betrifft die Anordnung, nicht den Hintergrund.
+
+**Für `/frontend`:** Die Abdunklung gehört als **eigene Ebene** zwischen Bild und Text, nicht als `filter: brightness()` auf dem `Image` — ein Filter träfe im selben Stapelkontext auch den Text. Das Bild **verliert seinen Alternativtext** (als Hintergrund ist es Dekoration). `asideFillsHeight` aus Refinement 8 verliert auf `/about` seinen Zweck — prüfen und entfernen oder begründen. **Drei Tests aus Refinement 8 werden absichtlich falsch** (bündiger Abschluss, Bildausschnitt, unbeschnitten unter `lg`) und sind zu **ziehen, nicht zu löschen**; der Kontrast-Wächter tritt an ihre Stelle. Der BUG-7-Wächter bleibt unangetastet — der Hero bekommt eine Ebene, aber keine Höhe.
+
+Spec ist aktualisiert (9 Acceptance Criteria in einem eigenen Block, 4 Produkt- und 4 technische Entscheidungen, 1 geschlossene und 2 neue Open Questions, eigener Abschnitt „Refinement 9“ mit beiden Messtabellen).

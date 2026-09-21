@@ -5,7 +5,7 @@ _Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und d
 
 _**Refinement 7 (2026-09-20): Das Logo-Lockup kehrt auf den Desktop zurück.** Betreiber-Befund: „ich kann auf /about auf dem desktop das Logo nicht mehr sehen." **Frontend umgesetzt am 2026-09-21** — `lg:hidden` entfernt; CTA auf allen elf Viewports über dem Falz nachgemessen, knappster Fall 1366×768 mit 45px. Siehe Implementation Notes._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-21 (QA abgeschlossen, Production-Ready)
+**Last Updated:** 2026-09-21 (Refinement 9 spezifiziert)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -233,6 +233,17 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] Angenommen ein Besucher öffnet `/anleitung`, `/impressum` oder `/datenschutz`, wenn die Seiten laden, dann sind sie durch dieses Refinement **unverändert** — nur `/about` setzt `showLogo`
 - [x] Angenommen das Lockup ist auf dem Desktop zurück, wenn seine Größe gemessen wird, dann trägt es dieselbe Größe wie ab `sm` (280px) — es gibt keinen eigenen Desktop-Breakpoint für die Marke
 
+### Hero-Bild wird Hintergrund (Refinement 9, 2026-09-21)
+- [ ] Angenommen ein Besucher öffnet `/about` auf **irgendeiner** Breite, wenn der Hero lädt, dann liegt `urbanquest.png` als Hintergrund **hinter** Logo, Headline, Lead, Preiszeile und CTA — nicht mehr als eigenes Element daneben oder darunter
+- [ ] Angenommen der Besucher liest den Hero-Text, wenn der Kontrast gemessen wird, dann erfüllt **jedes** Textelement die PRD-Vorgabe von 4.5:1 — einschließlich der **Teal**-Elemente („ZUM SPIELFELD" und die Kostenlos-Zeile), die ohne Abdunklung auf 3.75:1 fielen
+- [ ] Angenommen das Bild liegt hinter dem Text, wenn es dargestellt wird, dann ist es um **40%** in Richtung des Token-Hintergrunds abgedunkelt — stark genug für Teal, schwach genug, dass die Szene klar erkennbar bleibt
+- [ ] Angenommen ein Besucher öffnet die Seite am Desktop, wenn er den Hero betrachtet, dann bleibt das Bild **innerhalb des 1100px-Containers** und beginnt **unterhalb** der Kopfzeile — die Kopfzeile behält ihren ruhigen dunklen Grund
+- [ ] Angenommen ein Besucher öffnet die Seite auf dem Handy, wenn der Hero lädt, dann stehen Logo, Headline, Lead und CTA weiterhin **untereinander** — nur eben auf dem Bild statt daneben
+- [ ] Angenommen der Hero trägt jetzt ein Hintergrundbild, wenn der primäre CTA gemessen wird, dann steht er auf **allen elf Referenz-Viewports** weiterhin vollständig über dem Falz (BUG-7 bleibt behoben)
+- [ ] Angenommen ein Besucher öffnet `/anleitung`, `/impressum` oder `/datenschutz`, wenn die Seiten laden, dann sind sie durch dieses Refinement **unverändert** — nur `/about` bekommt ein Hero-Hintergrundbild
+- [ ] Angenommen das Bild lässt sich nicht laden, wenn der Hero rendert, dann bleibt der Text auf dem Token-Hintergrund vollständig lesbar — kein Text auf hellem oder leerem Grund
+- [ ] Angenommen ein Screenreader liest den Hero, wenn er das Hintergrundbild erreicht, dann wird es **nicht** vorgelesen — ein dekorativer Hintergrund braucht keinen Alternativtext, und der bisherige beschrieb ein Motiv, das jetzt Dekoration ist
+
 ### Prompt-Vorlage
 - [x] Angenommen ein Nutzer ist bei der Anleitungs-Sektion, wenn er die Seite betrachtet, dann ist die vollständige Prompt-Vorlage als lesbarer Text sichtbar und manuell markierbar
 - [x] Angenommen ein Nutzer klickt den Kopieren-Button, wenn das Kopieren erfolgreich ist, dann erhält er eine sichtbare Bestätigung (z.B. „Kopiert!")
@@ -285,6 +296,9 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] ~~Welcher konkrete Routen-Pfad?~~ → Geklärt: zwei Seiten, `/about` (Produktvorstellung) und `/anleitung` (KI-Anleitung)
 - [x] ~~Wo genau sitzt der Einstieg aus der App heraus?~~ → Geklärt: im Creator-Empty-State, verlinkt direkt auf `/anleitung`
 - [x] ~~Welches Vorschaubild wird für Open Graph verwendet?~~ → Geklärt im Frontend: `public/assets/urbanquest.png` (1536×1024, markengetreu), zugleich Hero-Bild auf `/about`
+- [x] ~~Gefällt der Bildausschnitt aus Refinement 8?~~ → **Nein** (Betreiber, 2026-09-21). Die QA hatte ihn ausdrücklich als offene Geschmacksfrage benannt, die keine Messung entscheiden kann. Gelöst in Refinement 9: Als Hintergrund entfällt die Zuschnittfrage ganz
+- [ ] Stören die dunklen Streifen links und rechts des 1100px-Containers auf sehr breiten Bildschirmen? Erst am fertigen Bild zu beurteilen (2026-09-21)
+- [ ] Sieht 40% Abdunklung richtig aus? Die Messung sagt nur, dass sie für den Kontrast ausreicht (2026-09-21)
 - [ ] Soll die Prompt-Vorlage in mehreren Varianten angeboten werden (z.B. kürzere Version für schwächere Modelle)? Aktuell: nein, eine vollständige Vorlage.
 - [x] ~~Sollen die beiden Seiten zusätzlich einen Einstieg außerhalb des Creator-Empty-States bekommen (z.B. dauerhaft im Creator-Header), sobald ein Nutzer bereits Quests hat?~~ → Ja, gelöst am 2026-09-06: Das app-weite Burger-Menu (PROJ-1) enthält unter „Info" die Links Über und Anleitung und ist auf jedem Screen erreichbar — auch im Creator mit bestehenden Quests
 - [x] ~~Warum sind die Häufigen Fragen ausgeklappt statt als Accordion?~~ → Ursprünglich für bessere Auffindbarkeit durch KI-Systeme ausgeklappt. Annahme war falsch: Accordion-Inhalte stehen vollständig im HTML (Radix blendet sie nur per `hidden` aus) und das `FAQPage`-JSON-LD trägt die Antworten ohnehin. Zurück zum eingeklappten Accordion (2026-09-05)
@@ -364,6 +378,10 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 | Keine verkleinerte Desktop-Fassung und kein eigener `lg`-Breakpoint für die Marke | Löste ein Problem, das die Messung nicht bestätigt: Mit dem Lockup in voller `sm`-Größe bleiben auf dem knappsten Viewport (1366×768) 45px Luft unter dem CTA. Ein zusätzlicher Breakpoint für ~100px hätte die Marke am Desktop kleiner gemacht als am Tablet | 2026-09-20 |
 | Die Marke zieht **nicht** in die Kopfzeile von `InfoPageShell` | Träfe alle vier Info-Seiten. `/impressum` und `/datenschutz` tragen bewusst `theme="light"` als „nüchterne Fließtextseiten, die gelesen und nicht inszeniert werden" (2026-09-06) — eine Bildmarke dort widerspricht dieser Entscheidung. Auf `/about` entstünden zudem zwei Markenanker in einem Screen (Zeile + Headline), auf Mobile drei | 2026-09-20 |
 | 45px Rest-Luft auf 1366×768 werden akzeptiert | Vom Betreiber entschieden. Der CTA steht auf allen elf Referenz-Viewports vollständig über dem Falz; der bestehende BUG-7-Wächter hält genau das fest und würde bei künftigem Hero-Wachstum sofort rot — die Enge ist damit überwacht, nicht bloß in Kauf genommen | 2026-09-20 |
+| Das Hero-Bild wird Hintergrund statt Nachbar-Spalte | Betreiber-Befund: Der Zuschnitt aus Refinement 8 gefällt nicht. Als Hintergrund entfällt die Zuschnittfrage ganz — das Bild muss keinen festen Bildausschnitt mehr treffen, weil es die ganze Flaeche trägt statt eine Spalte zu füllen | 2026-09-21 |
+| Abdunklung **40%**, nicht mehr und nicht weniger | Gemessen: Ohne Abdunklung fällt **Teal** auf **3.75:1** und verfehlt die PRD-Vorgabe von 4.5:1 — weißer Text wäre mit 6.26:1 durchgekommen, die Akzentfarbe nicht. Bei 40% liegt Teal bei **6.49:1** (Desktop) bzw. **6.33:1** (volle Breite/Mobile). Stärkere Abdunklung (55/70%) wäre sicherer, macht das Bild aber zur bloßen Textur und nimmt dem Gaming-Look des PRD seine Wirkung | 2026-09-21 |
+| Bild bleibt im 1100px-Container und unter der Kopfzeile | Betreiber-Entscheidung gegen die randlose Variante. Die Kopfzeile behält damit ihren ruhigen dunklen Grund; ihr halbtransparenter Blur über einem Bild hätte je nach Bildstelle unterschiedlich ausgesehen. Preis: auf sehr breiten Bildschirmen dunkle Streifen links und rechts | 2026-09-21 |
+| Auch auf dem Handy liegt der Text auf dem Bild | Eine Gestaltung für alle Breiten statt zwei nebeneinander. Der Betreiber-Wunsch „nur mobile sind die Elemente untereinander" betrifft die **Anordnung**, nicht den Hintergrund — Logo, Headline, Lead und CTA stehen dort weiterhin gestapelt. Gemessen ist der Kontrast auf voller Bildbreite sogar unkritisch (Teal 6.33:1, 0 von 100 Zellen unter 4.5) | 2026-09-21 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -402,6 +420,10 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 | Rückbau über das Entfernen von `lg:hidden`, nicht über eine neue Prop | Die Sichtbarkeit der Marke ist keine Eigenschaft, die eine Seite einstellen muss — `showLogo` steuert bereits, *ob* eine Seite das Lockup führt. Ein zweiter Schalter für *wo* wäre der fünfte an `InfoPageShell` (nach `backHref`, `eyebrow`, `showSupport`, `theme`) und beim nächsten Seitenzuwachs still falsch | 2026-09-20 |
 | Der bestehende Test „das Logo-Lockup weicht ab lg" wird **gezogen, nicht gelöscht** | `proj-13-landing-qa.spec.ts:224` behauptet heute das Gegenteil des gewünschten Zustands und trägt im Fehlertext die abgelaufene Begründung („Marke steht im Header"). Gelöscht verlöre die Suite die Zusicherung, dass die Marke auf Handy und Tablet steht; invertiert deckt sie beides ab | 2026-09-20 |
 | Der BUG-7-Wächter über elf Viewports bleibt unangetastet | Er ist der Grund, warum dieses Refinement überhaupt risikoarm ist: Er misst den CTA gegen die Bildschirmkante und ist der einzige Test, der ein künftiges Hero-Wachstum an genau der Stelle stoppt, an der BUG-7 entstand | 2026-09-20 |
+| `asideFillsHeight` und der `aside`-Weg entfallen für `/about` | Das Bild ist kein Nachbar mehr, sondern Untergrund — damit verliert die Prop aus Refinement 8 auf dieser Seite ihren Zweck. Ob sie in `InfoPageShell` bleibt, hängt davon ab, ob eine andere Seite sie braucht; heute tut das keine. **Für `/frontend`: prüfen und dann entweder entfernen oder begründen, warum sie bleibt** | 2026-09-21 |
+| Abdunklung als eigene Ebene, nicht als CSS-Filter auf dem Bild | Ein `filter: brightness()` auf dem `Image` würde auch den darüberliegenden Text treffen, sobald beide im selben Stapelkontext liegen. Eine eigene Ebene zwischen Bild und Text ist der verlässliche Weg und erlaubt, die Stärke später an einer Stelle zu ändern | 2026-09-21 |
+| Das Bild verliert seinen Alternativtext | Es trägt keine Information mehr, die der Text nicht auch sagt — als Hintergrund ist es Dekoration. Ein Screenreader, der „Nächtliche Straße mit leuchtender Route…" zwischen Logo und Headline vorliest, stört den Lesefluss ohne Gegenwert | 2026-09-21 |
+| Der bestehende BUG-7-Wächter bleibt unangetastet | Der Hero bekommt eine neue Ebene, aber keine neue Höhe. Der Wächter misst den CTA auf elf Viewports gegen die Bildschirmkante und ist der Beleg dafür, dass das so bleibt | 2026-09-21 |
 
 ## Tech Design (Solution Architect)
 
@@ -2292,3 +2314,70 @@ Chrome meldete einen Konsolen-404, WebKit keinen. Ein ruhiger Besuch von `/about
 
 ### Anmerkung zur Deploy-Prüfung
 Der „Ist es live?"-Check fragte den Statuscode des **neuen** Assets ab und lieferte fünfmal 404, bevor er auf 200 sprang. Er konnte also wirklich fehlschlagen — anders als der wertlose Manifest-Check vom 2026-09-19, der einen Text suchte, den auch die 404-Seite trug.
+
+---
+
+## Refinement 9 (2026-09-21) — Hero-Bild wird Hintergrund
+
+### Der Anlass
+Betreiber, nach dem Deploy von Refinement 8: *„mir gefällt der Bildausschnitt nicht. Ist es möglich das Bild als Hintergrund zu setzen, also ist die Schrift dann noch sichtbar. Und nur mobile sind die Elemente dann untereinander, so wie jetzt auch."*
+
+Refinement 8 hatte das Bild auf die Spaltenhöhe gestreckt und dafür beschnitten (`object-cover`, `object-right`). Der Beschnitt war die einzige Stelle, die keine Messung entscheiden konnte — die QA hatte das ausdrücklich als offene Geschmacksfrage benannt. Sie ist jetzt beantwortet.
+
+**Als Hintergrund verschwindet die Frage vollständig:** Das Bild muss keinen festen Ausschnitt mehr treffen, weil es die ganze Fläche trägt statt eine Spalte zu füllen.
+
+### Die Frage „ist die Schrift dann noch sichtbar" — gemessen
+Weißer Text auf dem unveränderten Bild, 100 Rasterzellen der Textzone:
+
+| | Wert |
+|---|---|
+| schlechtester Kontrast | **6.26:1** |
+| Mittelwert | 15.34:1 |
+| Zellen unter 4.5:1 | **0 von 100** |
+
+**Weiß hätte also ohne jede Abdunklung gereicht.** Teal nicht:
+
+| Abdunklung | weiß | teal |
+|---|---|---|
+| keine | 6.26:1 ✓ | **3.75:1 ✗** |
+| **40%** | 10.83:1 ✓ | **6.49:1 ✓** |
+| 55% | 13.14:1 ✓ | 7.87:1 ✓ |
+| 70% | 15.56:1 ✓ | 9.32:1 ✓ |
+
+Der Akzent trägt „ZUM SPIELFELD" in der Headline und die Zeile „Kostenlos. Ohne Abo. Ohne Account." — das stärkste Einzelargument der Seite. Ohne Abdunklung verfehlt er die PRD-Vorgabe.
+
+**Entschieden: 40%.** Stark genug für Teal mit Puffer, schwach genug, dass die Szene klar erkennbar bleibt. 55% und 70% wären sicherer, machen das Bild aber zur bloßen Textur und nehmen dem Gaming-Look seine Wirkung.
+
+### Der Mobile-Fall ist separat geprüft
+Auf dem Handy läuft der Text über die **ganze** Bildbreite, nicht nur über die linken 55% — eine andere Situation als am Desktop. Über alle 100 Zellen der vollen Fläche bei 40% Abdunklung:
+
+| | Wert |
+|---|---|
+| schlechtester weiß | **10.57:1** |
+| schlechtester teal | **6.33:1** |
+| Zellen unter 4.5:1 | **0 von 100** |
+
+Unkritisch. Die dunkelste Stelle liegt bei `gx7 gy3`.
+
+### Ausdehnung: im Container, unter der Kopfzeile
+Betreiber-Entscheidung gegen die randlose Variante. Die Kopfzeile behält ihren ruhigen dunklen Grund — ihr halbtransparenter Blur über einem Bild hätte je nach Bildstelle unterschiedlich ausgesehen.
+
+**Preis, offen benannt:** Auf sehr breiten Bildschirmen (ab ~1400px) entstehen links und rechts dunkle Streifen neben dem 1100px-Container. Das ist die bewusste Gegenleistung für die ruhige Kopfzeile.
+
+### Mobile: Anordnung bleibt, Hintergrund kommt dazu
+Der Wunsch „nur mobile sind die Elemente untereinander" betrifft die **Anordnung**, nicht den Hintergrund. Logo, Headline, Lead, Preiszeile und CTA stehen auf dem Handy weiterhin gestapelt — nur eben auf dem Bild statt mit dem Bild darunter. Eine Gestaltung für alle Breiten statt zwei nebeneinander.
+
+### Für `/frontend` zu beachten
+- **Die Abdunklung gehört als eigene Ebene zwischen Bild und Text**, nicht als `filter: brightness()` auf dem `Image`. Ein Filter trifft, sobald beide im selben Stapelkontext liegen, auch den Text darüber.
+- **Das Bild verliert seinen Alternativtext.** Als Hintergrund ist es Dekoration; ein Screenreader, der „Nächtliche Straße mit leuchtender Route…" zwischen Logo und Headline vorliest, stört den Lesefluss ohne Gegenwert.
+- **`asideFillsHeight` verliert auf `/about` seinen Zweck** (Refinement 8). Prüfen, ob eine andere Seite sie braucht — heute tut das keine — und dann entweder entfernen oder begründen, warum sie bleibt.
+- **Drei Tests aus Refinement 8 werden absichtlich falsch** (bündiger Abschluss, Bildausschnitt rechts, unbeschnitten unter `lg`). Sie sind zu **ziehen, nicht zu löschen** — der Kontrast-Wächter tritt an ihre Stelle.
+- **Der BUG-7-Wächter bleibt unangetastet.** Der Hero bekommt eine Ebene, aber keine Höhe.
+- **Fallback prüfen:** Lädt das Bild nicht, muss der Text auf dem Token-Hintergrund lesbar bleiben.
+
+### Was dieses Refinement nicht anfasst
+`/anleitung`, `/impressum` und `/datenschutz` bleiben unverändert — nur `/about` bekommt ein Hero-Hintergrundbild. Die übrigen sechs Sektionen der Seite ebenso.
+
+### Offen geblieben
+- Ob die dunklen Streifen auf sehr breiten Bildschirmen stören — erst am fertigen Bild zu beurteilen
+- Ob 40% die richtige Stärke *aussieht*; die Zahlen sagen nur, dass sie ausreicht
