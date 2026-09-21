@@ -5,7 +5,7 @@ _Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und d
 
 _**Refinement 7 (2026-09-20): Das Logo-Lockup kehrt auf den Desktop zurück.** Betreiber-Befund: „ich kann auf /about auf dem desktop das Logo nicht mehr sehen." **Frontend umgesetzt am 2026-09-21** — `lg:hidden` entfernt; CTA auf allen elf Viewports über dem Falz nachgemessen, knappster Fall 1366×768 mit 45px. Siehe Implementation Notes._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-21 (Refinement 8 gebaut)
+**Last Updated:** 2026-09-21 (QA abgeschlossen, Production-Ready)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -2187,3 +2187,68 @@ Das verbleibende 1px ist der Rahmen der Bildkarte. **Der CTA-Abstand ist auf all
 Drei neue Tests: bündiger Abschluss auf drei Desktop-Breiten, der rechte Bildausschnitt, und der unbeschnittene Zustand auf Mobile. Per Gegenprobe geschärft — mit dem alten Layout fallen **genau die 2 zuständigen auf beiden Engines** (4 Fehlschläge); der Mobile-Test bleibt in beiden Fassungen grün, wie es sein muss. Produktcode danach per `cmp` als byte-identisch bestätigt.
 
 **Suiten:** Unit 271/271, E2E über beide Engines **1045 passed / 55 skipped / 0 failed / 0 flaky**. Build und Lint sauber.
+
+---
+
+## QA Test Results — Refinements 7 & 8 (2026-09-21)
+
+**6/6 Acceptance Criteria (Refinement 7) erfüllt, Refinement 8 vollständig bestätigt, keine Bugs jeglicher Schwere. Production-Ready.**
+
+### Acceptance Criteria — Refinement 7 (Logo auf dem Desktop)
+| # | Kriterium | Ergebnis |
+|---|---|---|
+| 1 | Lockup ab 1024px sichtbar | **erfüllt** — auf allen 6 Desktop-Viewports, beide Engines |
+| 2 | CTA auf 1366×768 über dem Falz | **erfüllt** — 45px Luft |
+| 3 | CTA auf allen elf Viewports | **erfüllt** — auf **13** geprüft, alle über dem Falz |
+| 4 | Keine Überlappung, kein H-Scroll | **erfüllt** — 0 Überlappungen, 0px Überlauf |
+| 5 | Nachbarseiten unverändert | **erfüllt** — siehe unten |
+| 6 | Gleiche Größe wie ab `sm` (280px) | **erfüllt** — 280px auf allen Desktop-Breiten |
+
+### Refinement 8 (Hero-Aufteilung) — nachgemessen
+| Viewport | Lücke vorher | jetzt | `object-fit` |
+|---|---|---|---|
+| 1024×768 | 269px | **1px** | cover |
+| 1280×800 | 269px | **1px** | cover |
+| 1366×768 | 269px | **1px** | cover |
+| 1440×900 | 269px | **1px** | cover |
+| 1680×1050 | 269px | **1px** | cover |
+| 1920×1080 | 269px | **1px** | cover |
+
+Das verbleibende 1px ist der Kartenrahmen. **Unterhalb von `lg` bleibt `object-fit: fill`** — das Bild ist dort unbeschnitten, wie gefordert. Der Umschaltpunkt liegt exakt bei 1024px (820×1180 noch `fill`, 1024×768 bereits `cover`).
+
+**Am Bildschirm abgenommen** auf beiden Engines: Der Schriftzug „Explore. Solve. Discover." steht vollständig im Bild — das war der Fehler, den die Frontend-Phase erst im Screenshot fand und den keine Kantenmessung gezeigt hätte.
+
+### Der wichtigste Einzelbefund betrifft die Testabdeckung, nicht das Produkt
+Mit dem **echten Vorgängerstand aus `HEAD~2`** und der **damaligen Testdatei** bestehen alle **56 Tests vollständig**. Sie hätten keinen der drei gemeldeten Befunde gefangen — einer behauptete sogar das Gegenteil (`toBeHidden()` auf 1366×768).
+
+Gegen denselben Produktstand fallen **8 der neuen Tests** (4 je Engine): Logo-Sichtbarkeit, bündiger Abschluss, Bildausschnitt und freigestelltes Asset. Der Mobile-Test bleibt in beiden Fassungen grün — richtig so, er ist der Wächter gegen Kollateralschaden.
+
+### Der kritische Regressionspunkt: die geteilte Shell
+`InfoPageShell` hat eine neue Prop bekommen. Geprüft, ob die Nachbarseiten das überleben:
+
+| Seite | `align-items` | Aside-Höhe | Überlauf |
+|---|---|---|---|
+| `/anleitung` | `flex-start` | **297px** (nicht auf 349px gestreckt) | 0 |
+| `/impressum` | `flex-start` | — | 0 |
+| `/datenschutz` | `flex-start` | — | 0 |
+
+Die Opt-in-Entscheidung hat gegriffen: Hätte das Refinement global auf `items-stretch` umgestellt, wäre die Info-Box auf `/anleitung` zu einer hohen, halbleeren Karte geworden. Am Bildschirm bestätigt — Eyebrow, Box, CTA und die prompt-freie Ankündigung sind unbeschädigt.
+
+### Security ohne Befund
+Markup in der Route erzeugt **0 injizierte Elemente** und kein `window.__pwned`. **0 externe Hosts** über alle sieben Routen. Die Änderung ist reines Layout ohne Nutzereingabe.
+
+### Zusätzlich geprüft, in der Spec nicht gefordert
+- **13 Viewports** von 320×568 bis 1920×1080 (die Spec nennt 11), zusätzlich 375×667 und 820×1180 als Umschaltpunkt-Prüfung
+- **Beide Engines liefern identische Werte** auf allen 13
+- **Kontrast:** Headline und Lead 19.40:1, CTA 11.53:1
+- **0 Bilder ohne `alt`**, **0 Tap-Ziele unter 44px**
+- Keine Überlappung zwischen Lockup und Hero-Bild auf irgendeiner Breite
+
+### Ein eigener Messfehler, offen benannt
+Meine erste Kontrastsonde meldete für den CTA **1.01:1**. Das Produkt war richtig — die Sonde maß die dunkle Schrift gegen den Seitenhintergrund statt gegen die Teal-Füllung des Buttons. Korrekt: **11.53:1**.
+
+### Regression
+Unit **271/271**, E2E beide Engines **1044 passed / 55 skipped / 1 unexpected**. Der Fehlschlag liegt in `proj-12-sw-nur-production.spec.ts`, das diese Refinements nicht anfassen, und läuft **3× seriell grün** — die dokumentierte Service-Worker-Flakiness. Build sauber, Lint 0 Fehler.
+
+### Nicht abgedeckt
+Das Erscheinungsbild auf einem echten hochauflösenden Display, Firefox, und ob der gewählte Bildausschnitt dem Betreiber gefällt — das ist eine Geschmacksfrage, keine Messfrage.

@@ -16,7 +16,7 @@
 
 | ID | Feature | Priority | Dependencies | Status | Spec | Created |
 |----|---------|----------|--------------|--------|------|---------|
-| PROJ-1 | App Shell & Mode Switch | P0 | None | In Progress | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
+| PROJ-1 | App Shell & Mode Switch | P0 | None | Approved | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
 | PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | Approved | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
 <!-- Add features above this line -->
@@ -988,3 +988,22 @@ Mit `--workers=2` sinken die 16 auf **3**, alle auf Mobile Safari und alle in Da
 **Ergebnis: Lücke von 269px auf 1px** (der Kartenrahmen) auf allen fünf Desktop-Breiten. CTA-Abstand unverändert, BUG-7 unberührt, kein Überlauf. Unterhalb `lg` ändert sich nichts — Bild gestapelt und unbeschnitten im 3:2.
 
 3 neue Tests, per Gegenprobe geschärft: mit dem alten Layout fallen **genau die 2 zuständigen auf beiden Engines**; der Mobile-Test bleibt in beiden Fassungen grün, wie es sein muss. **Unit 271/271, E2E beide Engines 1045 passed / 55 skipped / 0 failed / 0 flaky.**
+
+## QA abgeschlossen: Logo-Refinements (2026-09-21)
+**PROJ-1** (Alpha-Kanal) und **PROJ-13** (Refinements 7 & 8) sind QA-geprüft: **13/13 Acceptance Criteria erfüllt, keine Bugs jeglicher Schwere, beide Production-Ready.** Status auf Approved.
+
+Weil in derselben Sitzung gebaut, habe ich die zentralen Behauptungen **neu gemessen statt übernommen** — auf **13 Viewports statt 11**, auf **beiden Engines**, und am **ausgelieferten** Asset statt an der lokalen Datei.
+
+**Der wichtigste Einzelbefund betrifft die Testabdeckung, nicht das Produkt:** Mit dem echten Vorgaengerstand aus `HEAD~2` und der damaligen Testdatei bestehen alle **56 vorhandenen Tests vollstaendig**. Sie haetten keinen der drei gemeldeten Befunde gefangen — einer behauptete sogar das Gegenteil (`toBeHidden()` auf 1366×768). Gegen denselben Stand fallen **8 E2E-Tests** (4 je Engine) und **3 von 5 Unit-Tests**; die 2, die gruen bleiben muessen, bleiben gruen.
+
+**Gemessen:** Live-PNG byte-identisch zur Repo-Datei, RGBA, Abweichung auf `#0B0F12` **0.0 in vier Rahmenbreiten** (1/4/12/**24**px) — das alte Bild misst dort **144**. Logo auf allen 13 Viewports sichtbar, CTA auf allen ueber dem Falz, Luecke von 269px auf **1px** (Kartenrahmen), 0px Ueberlauf, 0 Ueberlappungen. Beide Engines identisch.
+
+**Der kritische Regressionspunkt ist geprueft:** `InfoPageShell` bekam eine neue Prop. `/anleitung` behaelt `flex-start` und **297px statt 349px** — die Opt-in-Entscheidung hat gegriffen; eine globale Umstellung haette dort eine hohe, halbleere Karte erzeugt. `/impressum` und `/datenschutz` unveraendert, am Bildschirm bestaetigt.
+
+**Security ohne Befund:** Markup in der Route erzeugt 0 injizierte Elemente, 0 externe Hosts ueber alle sieben Routen. Kontrast 19.40:1 (Headline/Lead) und 11.53:1 (CTA), 0 Bilder ohne `alt`, 0 Tap-Ziele unter 44px.
+
+**Ein eigener Messfehler, offen benannt:** Meine erste Kontrastsonde meldete fuer den CTA 1.01:1 und sah nach einem kritischen Befund aus — sie mass die dunkle Schrift gegen den Seitenhintergrund statt gegen die Teal-Fuellung des Buttons. Das Produkt war richtig.
+
+**Regression:** Unit **271/271**, E2E beide Engines **1044 passed / 55 skipped / 1 unexpected**. Der Fehlschlag liegt in `proj-12-sw-nur-production.spec.ts`, das diese Refinements nicht anfassen, und laeuft **3× seriell gruen** — die dokumentierte Service-Worker-Flakiness. Build sauber, Lint 0 Fehler.
+
+**Beobachtung ohne Bug-Status (vorbestehend):** `npx tsc --noEmit` meldet 2 Fehler in `src/lib/quest-storage.test.ts` (ungenutzte `@ts-expect-error`-Direktiven). Gegen `HEAD~2` gegengeprueft: dieselben 2 — die Datei stammt aus PROJ-6 und wurde hier nicht angefasst. `npm run lint` typisiert Testdateien nicht und zeigt sie deshalb nicht. Ein eigenes Aufraeumen wert.

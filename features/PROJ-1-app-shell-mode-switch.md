@@ -5,7 +5,7 @@ _Deployed; das Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist am 2026-09
 **Created:** 2026-08-23
 
 _**Refinement (2026-09-20): Das Logo-Lockup bekommt einen Alpha-Kanal.** Frontend umgesetzt am 2026-09-21 — freigestelltes PNG über ein eingechecktes Skript, beide Einbauorte umgestellt, Rahmen-Abweichung auf `#0B0F12` gemessen **0**. Siehe Implementation Notes._
-**Last Updated:** 2026-09-21 (Alpha-Refinement gebaut)
+**Last Updated:** 2026-09-21 (QA abgeschlossen, Production-Ready)
 
 ## Dependencies
 - None (PROJ-1 ist das Fundament)
@@ -1568,3 +1568,55 @@ Per Gegenprobe geschärft: Legt man die alte Datei als Cutout ein, fallen **gena
 ### Nicht abgedeckt
 - Das Erscheinungsbild auf einem echten hochauflösenden Display
 - Firefox (Binary fehlt weiterhin)
+
+---
+
+## QA Test Results — Logo-Lockup mit Alpha-Kanal (2026-09-21)
+
+**7/7 Acceptance Criteria erfüllt, keine Bugs jeglicher Schwere. Production-Ready.**
+
+Weil das Feature in derselben Sitzung gebaut wurde, habe ich die zentralen Behauptungen **nicht übernommen, sondern neu gemessen** — und an zwei Stellen schärfer als die Frontend-Phase.
+
+### Acceptance Criteria
+| # | Kriterium | Ergebnis |
+|---|---|---|
+| 1 | `/` ohne rechteckige Platte | **erfüllt** — am Bildschirm auf beiden Engines |
+| 2 | `/about` ebenso | **erfüllt** |
+| 3 | Abweichung 0 auf `#0B0F12` | **erfüllt** — 0.0, gemessen in vier Rahmenbreiten |
+| 4 | Motiv vollständig | **erfüllt** — Pin, Route, X, beide Wortmarken |
+| 5 | Glow läuft weich aus | **erfüllt** — Teil-Alpha vorhanden |
+| 6 | Eingechecktes Skript | **erfüllt** — `make-logo-lockup-cutout.swift` |
+| 7 | Korn nicht sichtbar | **erfüllt** — am Bildschirm geprüft |
+
+### Schärfer geprüft als die Frontend-Phase
+**Erstens am ausgelieferten Asset statt an der lokalen Datei.** Das Live-PNG ist byte-identisch zur Repo-Datei (`cmp`), trägt 4 Kanäle (RGBA), und auf `#0B0F12` kompositiert ergibt es **0.0 Abweichung** — nicht nur im geforderten 12px-Rahmen, sondern auch bei 1px, 4px und **24px**. In keiner dieser Breiten hat ein Pixel Alpha > 0.
+
+**Gegenprobe:** Das alte `logo-lockup.png` (3 Kanäle, kein Alpha) misst an derselben Stelle **144.0**. Das war die sichtbare Kante.
+
+**Zweitens auf 13 Viewports statt 11**, zusätzlich auf WebKit. Beide Engines liefern **identische Werte** auf allen 13.
+
+### Der wichtigste Einzelbefund betrifft die Testabdeckung
+Mit dem **echten Vorgängerstand aus `HEAD~2`** bestehen die **56 vorhandenen PROJ-13-Tests vollständig**. Sie hätten keinen der gemeldeten Fehler gefangen. Gegen denselben Stand fallen **3 der 5 neuen Unit-Tests** und **8 E2E-Tests** (4 je Engine).
+
+Die 2 Unit-Tests, die grün bleiben müssen (Quelldatei unangetastet, `mark-pin.png` als Referenz), bleiben grün.
+
+### Security ohne Befund
+Markup in der Route (`/about/<img src=x onerror=alert(1)>`) erzeugt **0 injizierte Elemente**, kein `window.__pwned`, keinen Dialog. **0 externe Hosts** über alle sieben Routen. Der Austausch betrifft eine statische Bilddatei ohne Nutzereingabe — keine neue Angriffsfläche.
+
+### Zusätzlich geprüft, in der Spec nicht gefordert
+- **Layout-Kosten:** Startscreen-Werte decken sich exakt mit der BUG-10-QA vom 2026-09-10 (Logo-Y 24, Card-Ende 557/559/574/588)
+- **Kontrast:** Headline und Lead 19.40:1, CTA 11.53:1
+- **0 Bilder ohne `alt`**, **0 Tap-Ziele unter 44px**
+- Dateigröße **sinkt** von 746 KB auf 356 KB
+
+### Ein eigener Messfehler, offen benannt
+Meine erste Kontrastsonde meldete für den CTA **1.01:1** und sah nach einem kritischen Befund aus. Ursache war die Messung, nicht das Produkt: Sie verglich die dunkle Schrift gegen den *Seitenhintergrund* statt gegen die *Teal-Füllung des Buttons*. Korrekt gemessen: **11.53:1**.
+
+### Regression
+Unit **271/271**, E2E beide Engines **1044 passed / 55 skipped / 1 unexpected**. Der eine Fehlschlag liegt in `proj-12-sw-nur-production.spec.ts` — einer Datei, die dieses Feature nicht anfasst — und läuft **3× seriell grün**; die dokumentierte Service-Worker-Flakiness unter paralleler Last. Build sauber, Lint 0 Fehler.
+
+### Beobachtung ohne Bug-Status (vorbestehend)
+`npx tsc --noEmit` meldet 2 Fehler in `src/lib/quest-storage.test.ts` (ungenutzte `@ts-expect-error`-Direktiven). **Gegen `HEAD~2` gegengeprüft: dieselben 2 Fehler** — die Datei stammt aus PROJ-6 und wurde hier nicht angefasst. Kein Regressionsbefund, aber ein eigenes Aufräumen wert.
+
+### Nicht abgedeckt
+Das Erscheinungsbild auf einem echten hochauflösenden Display und Firefox (Binary fehlt).
