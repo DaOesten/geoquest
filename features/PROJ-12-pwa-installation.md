@@ -923,9 +923,19 @@ Produktcode nach allen Gegenproben per `git diff` als byte-identisch zu `HEAD` b
 
 #### Gefundene Bugs
 
-**BUG-12 (Medium, vorbestehend, nicht aus diesem Refinement):** `tests/proj-12-pwa-installation.spec.ts:865` („der Import-Button faellt nach dem Wegklicken zurueck") schlägt fehl — der FAB auf `/play` bleibt nach dem Wegklicken des Installations-Hinweises auf y=648 stehen, statt an seine gewohnte Position zurückzufallen.
+**BUG-12 (Medium) — am 2026-09-21 geprüft und korrigiert: kein Produktfehler, sondern ein Fehler im Test. Behoben.**
 
-**Unabhängig verifiziert:** Ich habe `src/` auf den Commit `7ee010b` (Overlay-Refinement) zurückgesetzt — also auf den Stand **vor** der Safe-Area-Änderung — und der Test schlägt dort ebenso fehl. Die Zuordnung der Frontend-Phase ist damit bestätigt: Der Befund stammt aus dem Overlay-Refinement vom selben Tag, das laut INDEX.md mit der Frontend-Phase endet und **nie eine QA durchlaufen hat**. Er blockiert dieses Refinement nicht, sollte aber als eigener Zyklus nachgezogen werden.
+Die QA vom 2026-09-20 meldete: „der FAB auf `/play` bleibt nach dem Wegklicken des Installations-Hinweises auf y=648 stehen, statt an seine gewohnte Position zurückzufallen." **Diese Zuordnung war falsch** — nachgemessen verhält sich das Produkt korrekt: Der FAB wandert von `bottom: 88px` (y=584) zurück auf `bottom: 24px` (y=648), die Klasse wechselt von `bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]` auf `bottom-6`, das Ereignis `gq:install-hint-changed` feuert genau einmal, der Speicher-Schlüssel wird geschrieben.
+
+**Die Ursache war ein Wettlauf im Test.** Er las den Ausgangswert `oben` unmittelbar nach `fireInstallPrompt()`, während der Button noch animiert (`transition-all`). Gemessen direkt nach dem Ereignis: `bottom: 47.8228px` — ein Zwischenwert; der Endwert `88px` steht erst ~800 ms später. Trifft die Messung stattdessen den **Ruhewert** 648, verlangt die anschließende Assertion `toBeGreaterThan(648)`, dass der Button *unterhalb* seiner Ruheposition landet — unerfüllbar, denn genau dort gehört er hin.
+
+**Über 10 identische Läufe gemessen: 9 rot, 1 grün.** Der grüne bestand nur, weil er die Animation zufällig bei 47.8px erwischte. Das Produkt war in allen 10 Läufen richtig. Der Test war also nicht nur falsch, sondern in beide Richtungen unzuverlässig — er hätte einen echten Regress ebenso zufällig durchgelassen.
+
+**Behoben** durch Warten auf den angehobenen Zustand vor der Messung, und durch Prüfen des berechneten `bottom`-Werts statt der Fensterposition: Er ist der Vertrag der Komponente und hängt nicht an Viewport-Höhe oder Scrollstand. **Stabilität: 5 von 5 Läufen grün** (vorher 1 von 10). **Gegenprobe:** Nagelt man den FAB dauerhaft auf die angehobene Position — also genau der Fehler, den BUG-12 behauptete —, fällt der Test auf **beiden Engines**. Er fängt den Regress jetzt wirklich, statt ihn zu würfeln.
+
+Produktcode nach der Gegenprobe per `git diff` als byte-identisch zu `HEAD` bestätigt. **Keine Produktdatei wurde angefasst.**
+
+*Lehre für künftige Läufe: Ein Element mit `transition-*` darf nicht unmittelbar nach dem auslösenden Ereignis vermessen werden. Das war in dieser Sitzung der zweite Fall dieser Art — der erste war der FAB, der mitten in der Animation `44.2548px` statt `58px` lieferte.*
 
 #### Suiten
 

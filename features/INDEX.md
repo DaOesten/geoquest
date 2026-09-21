@@ -310,7 +310,15 @@ Weil in derselben Sitzung gebaut, habe ich die zentralen Behauptungen **neu geme
 
 **Gegenproben:** Oberen Inset entfernen → **16 von 34** fallen. Nur `box-content` entfernen → **8**, darunter der Statusleisten-Test; die Suite fängt also auch den subtilen Fall, in dem der Inset gesetzt ist, aber die Zeile staucht statt schiebt. Produktcode danach per `diff` byte-identisch.
 
-**BUG-12 (Medium, vorbestehend):** `proj-12-pwa-installation.spec.ts:865` schlägt fehl — der Import-FAB auf `/play` fällt nach dem Wegklicken des Hinweises nicht zurück. **Unabhängig verifiziert** durch Rücksetzen von `src/` auf `7ee010b`: schlägt dort ebenso fehl. Stammt aus dem Overlay-Refinement vom selben Tag, das nie eine QA hatte. Blockiert dieses Refinement nicht, braucht aber einen eigenen Zyklus.
+**BUG-12 (Medium) — am 2026-09-21 geprüft, korrigiert und behoben.** Die QA hatte gemeldet, der Import-FAB auf `/play` falle nach dem Wegklicken des Hinweises nicht zurück. **Die Zuordnung war falsch: kein Produktfehler, sondern ein Wettlauf im Test.** Nachgemessen verhält sich das Produkt korrekt (`bottom` 88px → 24px, Klasse zurück auf `bottom-6`, Ereignis feuert einmal, Speicher geschrieben).
+
+Der Test las seinen Ausgangswert direkt nach `fireInstallPrompt()`, während der Button noch animiert (`transition-all`, gemessen: `47.8228px` statt der finalen `88px`). Traf die Messung stattdessen den Ruhewert 648, verlangte die Assertion `toBeGreaterThan(648)`, dass der Button *unterhalb* seiner Ruheposition landet — unerfüllbar. **Über 10 identische Läufe: 9 rot, 1 grün**; der grüne erwischte die Animation zufällig mittendrin. Der Test hätte einen echten Regress ebenso zufällig durchgelassen.
+
+Behoben durch Warten auf den angehobenen Zustand und Prüfen des berechneten `bottom`-Werts statt der Fensterposition. **Stabilität 5/5** (vorher 1/10), **Gegenprobe:** FAB dauerhaft oben festgenagelt → Test fällt auf beiden Engines. **Keine Produktdatei angefasst**, `git diff` gegen `HEAD` leer.
+
+Dass die frühere Gegenprobe gegen `7ee010b` ebenfalls rot war, ist damit erklärt — der Wettlauf steckt seit dem Overlay-Refinement im Test, nicht im Produkt.
+
+**Damit läuft die Gesamtsuite erstmals vollständig grün: 1037 passed / 55 skipped / 0 failed** über beide Engines, Unit 266/266.
 
 **Suiten:** Unit **266/266**, E2E über beide Engines **1036 passed / 55 skipped / 1 unexpected** (ein Kompassnadel-Test aus PROJ-3, einzeln 9/9 grün — die dokumentierte Last-Flakiness). Build sauber, Lint 0 Fehler.
 

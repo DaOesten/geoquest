@@ -867,14 +867,37 @@ test.describe("PROJ-12: PWA-Installation", () => {
       await fireInstallPrompt(page);
 
       const fab = page.getByRole("button", { name: "Quest importieren" });
-      const oben = (await fab.boundingBox())!.y;
+
+      /**
+       * Erst abwarten, bis der Button seine angehobene Position wirklich
+       * erreicht hat — er traegt `transition-all`, und direkt nach dem Ereignis
+       * steht er noch auf seinem Ruhewert oder mitten in der Animation.
+       *
+       * Ohne dieses Warten misst der Test einen Zwischenwert als Ausgangspunkt
+       * und verlangt anschliessend, der Button muesse *darueber* hinaus
+       * zurueckfallen. Trifft die Messung den Ruhewert (24px), ist das
+       * unerfuellbar: Genau dort gehoert er hin. Gemessen ueber 10 identische
+       * Laeufe: 9 rot, 1 gruen — und der gruene bestand nur, weil er die
+       * Animation zufaellig bei 47.8px erwischte. Das Produkt war in allen 10
+       * Laeufen richtig.
+       *
+       * Geprueft wird der berechnete `bottom`-Wert statt der Fensterposition:
+       * Er ist der Vertrag der Komponente und haengt nicht an Viewport-Hoehe
+       * oder Scrollstand.
+       */
+      await expect.poll(() => fab.evaluate((e) => getComputedStyle(e).bottom))
+        .not.toBe("24px");
+      const angehoben = (await fab.boundingBox())!.y;
 
       await page.getByRole("button", { name: "Hinweis ausblenden" }).click();
       await expect(page.getByRole("complementary", { name: HINT })).toHaveCount(0);
 
+      // Zurueck auf den Ruhewert — und damit tiefer als im angehobenen Zustand.
+      await expect.poll(() => fab.evaluate((e) => getComputedStyle(e).bottom))
+        .toBe("24px");
       await expect
         .poll(async () => (await fab.boundingBox())!.y)
-        .toBeGreaterThan(oben);
+        .toBeGreaterThan(angehoben);
     });
 
     /**
