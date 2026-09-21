@@ -237,7 +237,7 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] Angenommen ein Besucher öffnet `/about` auf **irgendeiner** Breite, wenn der Hero lädt, dann liegt `urbanquest.png` als Hintergrund **hinter** Logo, Headline, Lead, Preiszeile und CTA — nicht mehr als eigenes Element daneben oder darunter
 - [x] Angenommen der Besucher liest den Hero-Text, wenn der Kontrast gemessen wird, dann erfüllt **jedes** Textelement die PRD-Vorgabe von 4.5:1 — einschließlich der **Teal**-Elemente („ZUM SPIELFELD" und die Kostenlos-Zeile), die ohne Abdunklung auf 3.75:1 fielen
 - [x] Angenommen das Bild liegt hinter dem Text, wenn es dargestellt wird, dann ist es um **40%** in Richtung des Token-Hintergrunds abgedunkelt — stark genug für Teal, schwach genug, dass die Szene klar erkennbar bleibt
-- [x] Angenommen ein Besucher öffnet die Seite am Desktop, wenn er den Hero betrachtet, dann bleibt das Bild **innerhalb des 1100px-Containers** und beginnt **unterhalb** der Kopfzeile — die Kopfzeile behält ihren ruhigen dunklen Grund
+- [x] ~~Angenommen ein Besucher öffnet die Seite am Desktop, wenn er den Hero betrachtet, dann bleibt das Bild **innerhalb des 1100px-Containers**~~ → **Am 2026-09-21 umgekehrt:** Das Bild läuft **randlos über die volle Fensterbreite**, der Inhalt bleibt im Container. Im 1100px-Rahmen wurde der Schriftzug auf der Hauswand rechts angeschnitten — der Grund, aus dem der Betreiber die Fassung ablehnte
 - [x] Angenommen ein Besucher öffnet die Seite auf dem Handy, wenn der Hero lädt, dann stehen Logo, Headline, Lead und CTA weiterhin **untereinander** — nur eben auf dem Bild statt daneben
 - [x] Angenommen der Hero trägt jetzt ein Hintergrundbild, wenn der primäre CTA gemessen wird, dann steht er auf **allen elf Referenz-Viewports** weiterhin vollständig über dem Falz (BUG-7 bleibt behoben)
 - [x] Angenommen ein Besucher öffnet `/anleitung`, `/impressum` oder `/datenschutz`, wenn die Seiten laden, dann sind sie durch dieses Refinement **unverändert** — nur `/about` bekommt ein Hero-Hintergrundbild
@@ -424,6 +424,7 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 | Abdunklung als eigene Ebene, nicht als CSS-Filter auf dem Bild | Ein `filter: brightness()` auf dem `Image` würde auch den darüberliegenden Text treffen, sobald beide im selben Stapelkontext liegen. Eine eigene Ebene zwischen Bild und Text ist der verlässliche Weg und erlaubt, die Stärke später an einer Stelle zu ändern | 2026-09-21 |
 | Das Bild verliert seinen Alternativtext | Es trägt keine Information mehr, die der Text nicht auch sagt — als Hintergrund ist es Dekoration. Ein Screenreader, der „Nächtliche Straße mit leuchtender Route…" zwischen Logo und Headline vorliest, stört den Lesefluss ohne Gegenwert | 2026-09-21 |
 | Der bestehende BUG-7-Wächter bleibt unangetastet | Der Hero bekommt eine neue Ebene, aber keine neue Höhe. Der Wächter misst den CTA auf elf Viewports gegen die Bildschirmkante und ist der Beleg dafür, dass das so bleibt | 2026-09-21 |
+| Der Hero läuft randlos, der Inhalt bleibt im Container | Am Bildschirm entschieden, nachdem die Container-Fassung den Schriftzug „EXPLORE" am rechten Rand anschnitt. Der Wrapper zieht sich per negativem Außenabstand unter die sticky Kopfzeile, weil die halbtransparent ist — das Bild schimmert durch sie hindurch, statt an ihrer Unterkante zu beginnen. Gemessen ist der Kontrast dadurch sogar **besser** (schlechtester Einzelpixel 7.44:1 statt 7.29:1): Der Verlauf hat auf der vollen Breite mehr Strecke | 2026-09-21 |
 
 ## Tech Design (Solution Architect)
 
@@ -2447,3 +2448,25 @@ Alle über der 4.5:1-Vorgabe, der knappste Wert mehr als doppelt so hoch.
 ### Nicht abgedeckt
 - Ob der Bildausschnitt am rechten Containerrand („EXPLORE" wird angeschnitten) gewollt aussieht
 - Firefox
+
+### Nachtrag (2026-09-21): Der Hero läuft randlos
+
+Die Container-Fassung war eine Fehlentscheidung, und zwar eine sichtbare: Im 1100px-Rahmen wurde **„EXPLORE" am rechten Rand angeschnitten** — ausgerechnet der Schriftzug, der die Aussage des Bildes trägt. Aufgefallen am Screenshot, nicht in den Zahlen.
+
+**Jetzt:** Das Bild läuft über die volle Fensterbreite und unter die Kopfzeile hindurch (die ist halbtransparent, also schimmert es durch sie hindurch statt an ihrer Unterkante zu beginnen). Der **Inhalt bleibt im 1100px-Container** — sonst liefe der Text auf breiten Bildschirmen auseinander.
+
+**Gemessen, beide Engines, elf Viewports:** Bild beginnt bei x=0 und misst exakt die Fensterbreite, CTA auf allen elf über dem Falz, 0px Überlauf. Nachbarseiten unverändert (Inhalt weiterhin bei x=202).
+
+**Der Kontrast ist dadurch sogar besser geworden**, weil der Verlauf auf der vollen Breite mehr Strecke hat:
+
+| | lokal (21×21px) | pro Einzelpixel |
+|---|---|---|
+| 1440×900, schlechtester Wert | 10.56:1 | **10.11:1** |
+| 1920×1080, schlechtester Wert | 10.82:1 | **10.24:1** |
+| 390×844, schlechtester Wert | 9.40:1 | **7.44:1** |
+
+Alle über der 4.5:1-Vorgabe, auch nach dem strengsten Maßstab.
+
+**Ein Test musste dabei korrigiert werden, nicht das Produkt:** Der Wächter auf die Textschutz-Ebene suchte den Verlauf über die DOM-Verschachtelung von der Headline aus. Die hat sich durch den zusätzlichen Container geändert. Er sucht jetzt vom **Bild** aus — der Verlauf bleibt dessen Geschwister, egal wie tief verschachtelt wird.
+
+**Gegenprobe:** Hero zurück in den Container → der Randlos-Test fällt auf beiden Engines. **Suiten: Unit 271/271, E2E beide Engines 1053 passed / 55 skipped / 0 failed / 0 flaky.**

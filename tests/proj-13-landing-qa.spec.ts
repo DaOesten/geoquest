@@ -297,6 +297,13 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
     await expect(bg).toHaveAttribute("aria-hidden", "true");
     await expect(bg).toHaveAttribute("src", /hero_new/);
 
+    // Randlos ueber die volle Fensterbreite (2026-09-21): Im 1100px-Container
+    // wurde der Schriftzug auf der Hauswand rechts angeschnitten.
+    const box = (await bg.boundingBox())!;
+    const vw = page.viewportSize()!.width;
+    expect(Math.round(box.x), "Bild beginnt nicht am linken Rand").toBe(0);
+    expect(Math.round(box.width), "Bild nutzt nicht die volle Breite").toBe(vw);
+
     // Es liegt HINTER dem Text, nicht daneben: Die Headline überlappt es.
     const b = (await bg.boundingBox())!;
     const h1 = (await page.locator("h1").boundingBox())!;
@@ -328,13 +335,14 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/about");
 
+    // Vom Bild aus suchen statt von der Headline: Die Verschachtelung darf
+    // sich aendern, der Verlauf bleibt ein Geschwister des Bildes.
     const found = await page.evaluate(() => {
-      const h1 = document.querySelector("h1")!;
-      const hero = h1.closest("div")!.parentElement!.parentElement!;
-      return [...hero.children].some((el) => {
-        const bg = getComputedStyle(el).backgroundImage;
-        return /gradient/.test(bg);
-      });
+      const img = document.querySelector<HTMLImageElement>('main img[alt=""]')!;
+      const wrapper = img.parentElement!;
+      return [...wrapper.children].some((el) =>
+        /gradient/.test(getComputedStyle(el).backgroundImage)
+      );
     });
     expect(found, "kein Verlauf über dem Hintergrundbild gefunden").toBe(true);
   });

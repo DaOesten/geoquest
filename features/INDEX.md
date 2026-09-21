@@ -1147,3 +1147,14 @@ CTA auf allen elf Viewports über dem Falz (unverändert), 0px Überlauf, Nachba
 **Unit 271/271, E2E beide Engines 1052 passed / 55 skipped / 1 unexpected** (die dokumentierte PROJ-12-Service-Worker-Flakiness, seriell grün). Build und Lint sauber.
 
 **Offen:** ob der Anschnitt von „EXPLORE" am rechten Containerrand gewollt aussieht.
+
+### Nachtrag: Hero läuft randlos (2026-09-21)
+Die Container-Fassung von Refinement 9 war eine sichtbare Fehlentscheidung: Im 1100px-Rahmen wurde **„EXPLORE" am rechten Rand angeschnitten** — der Schriftzug, der die Aussage des Bildes trägt. Aufgefallen am Screenshot, nicht in den Zahlen.
+
+Das Bild läuft jetzt über die **volle Fensterbreite** und unter die halbtransparente Kopfzeile hindurch; der **Inhalt bleibt im 1100px-Container**, sonst liefe der Text auf breiten Bildschirmen auseinander.
+
+**Der Kontrast ist dadurch besser geworden**, weil der Verlauf mehr Strecke hat: schlechtester Einzelpixel **7.44:1** statt 7.29:1, auf 1440px sogar 10.11:1. Beide Engines, elf Viewports: Bild bei x=0 in voller Fensterbreite, CTA überall über dem Falz, 0px Überlauf, Nachbarseiten unverändert.
+
+**Ein Test musste korrigiert werden, nicht das Produkt:** Der Wächter auf die Textschutz-Ebene suchte den Verlauf über die DOM-Verschachtelung von der Headline aus, die sich durch den zusätzlichen Container geändert hat. Er sucht jetzt vom Bild aus — der Verlauf bleibt dessen Geschwister.
+
+Gegenprobe: Hero zurück in den Container → der Randlos-Test fällt auf beiden Engines. **Unit 271/271, E2E beide Engines 1053 passed / 55 skipped / 0 failed / 0 flaky.**

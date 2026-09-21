@@ -168,13 +168,20 @@ export function InfoPageShell({
             ist die Bildschirmhöhe der knappe Faktor, nicht die Breite
             (BUG-7). Erst ab `xl` — wo auch flache Laptops genug Höhe
             haben — darf er wieder großzügiger werden. */}
+        {/* Traegt das Hintergrundbild randlos ueber die volle Fensterbreite
+            (Refinement 9, 2026-09-21). Der Inhalt bleibt im 1100px-Container
+            darin — sonst liefe der Text auf breiten Bildschirmen auseinander.
+
+            `-mt-14 sm:-mt-16 pt-14 sm:pt-16` zieht das Bild unter die
+            Kopfzeile: Die ist `sticky` und halbtransparent, also schimmert
+            das Bild durch sie hindurch statt an ihrer Unterkante zu beginnen.
+            Die Zeilenhoehe selbst bleibt unberuehrt. */}
         <div
-          className={`${CONTAINER} pt-6 sm:pt-10 xl:pt-16 ${
-            // `relative` traegt die beiden Hintergrund-Ebenen; `isolate` haelt
-            // sie in einem eigenen Stapelkontext, damit der Scrim nicht mit
-            // der sticky Kopfzeile darueber konkurriert.
-            heroBackground ? "relative isolate overflow-hidden rounded-card" : ""
-          }`}
+          className={
+            heroBackground
+              ? "relative isolate overflow-hidden -mt-14 sm:-mt-16"
+              : ""
+          }
         >
           {heroBackground && (
             <>
@@ -190,7 +197,7 @@ export function InfoPageShell({
                 aria-hidden
                 fill
                 priority
-                sizes="(min-width: 1100px) 1100px, 100vw"
+                sizes="100vw"
                 className="-z-10 object-cover"
               />
               {/* ZWEI Ebenen statt einer gleichmaessigen Abdunklung.
@@ -210,9 +217,26 @@ export function InfoPageShell({
                   greift der Verlauf dort von unten statt von links: Der Text
                   sitzt im unteren Bereich, das Bild bleibt oben frei. */}
               <div className="absolute inset-0 -z-10 bg-background/30" />
-              <div className="absolute inset-0 -z-10 bg-gradient-to-t from-background via-background/80 to-background/20 lg:bg-gradient-to-r lg:from-background lg:via-background/75 lg:to-transparent" />
+              {/* `via-*` sitzt bei 50% der VOLLEN Fensterbreite, nicht der
+                  Container-Breite — auf 1920px liegt der Text sonst schon im
+                  ausgelaufenen Teil des Verlaufs und verliert seinen Schutz. */}
+              <div className="absolute inset-0 -z-10 bg-gradient-to-t from-background via-background/80 to-background/20 lg:bg-gradient-to-r lg:from-background lg:via-background/85 lg:to-transparent" />
             </>
           )}
+          {/* Der Inhalt bleibt im Container, auch wenn das Bild randlos
+              laeuft. Der Kopfabstand sitzt hier statt am Aussen-Wrapper, damit
+              das Bild oben buendig unter der Kopfzeile beginnt.
+
+              `pt-14 sm:pt-16` gleicht den negativen Aussenabstand aus, mit
+              dem der Wrapper unter die Kopfzeile faehrt — sonst laege der
+              Inhalt dahinter. */}
+          <div
+            className={`${CONTAINER} ${
+              heroBackground
+                ? "pt-20 sm:pt-26 xl:pt-32 pb-10 sm:pb-14"
+                : "pt-6 sm:pt-10 xl:pt-16"
+            }`}
+          >
           {/* `items-start` statt `items-center` (2026-09-09): Seit der Hero
               von /about kürzer ist als das Bild daneben, ließ die Zentrierung
               den Text in der Spalte schweben. Oben bündig lesen sich beide
@@ -276,8 +300,9 @@ export function InfoPageShell({
           {/* Die Trennlinie entfaellt, wenn ein Hintergrundbild den Hero
               traegt — die Bildkante setzt die Grenze bereits. */}
           {!heroBackground && <div className="h-px bg-border mt-10 sm:mt-14" />}
-          {heroBackground && <div className="h-10 sm:h-14" />}
+          </div>
         </div>
+        {heroBackground && <div className="h-10 sm:h-14" />}
 
         {/* Sections set scroll-margin so anchored headings clear the sticky header. */}
         <div className={`${CONTAINER} pb-16 sm:pb-24 [&_section]:scroll-mt-20`}>
