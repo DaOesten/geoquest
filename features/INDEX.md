@@ -971,3 +971,20 @@ Der erste volle Lauf meldete **16 Fehlschläge**, die alle nach echten Produktfe
 - Eine einzelne WebKit-Testdatei brauchte im Verbund **7,7 Minuten**, allein 5,7 Sekunden
 
 Mit `--workers=2` sinken die 16 auf **3**, alle auf Mobile Safari und alle in Dateien, die dieses Feature nicht anfasst; seriell laufen genau diese 3 in 6,8 s grün durch. **Empfehlung: Stabilitätsaussagen nur mit reduzierter Worker-Zahl treffen** — der Standardlauf erzeugt Fehlschläge, die wie Produktfehler aussehen und keine sind. Das ergänzt die bereits dokumentierte Regel, immer nur eine Suite gleichzeitig zu starten.
+
+## Refinement 8: Hero-Aufteilung auf dem Desktop (2026-09-21)
+**PROJ-13**, unmittelbar nach Refinement 7. Betreiber-Befund: *„Das Hero-Bild hängt rechts und darunter ist so viel leerer Raum."*
+
+**Gemessen, auf jeder Desktop-Breite gleich:** Textspalte 595px, Bildspalte 328px — **269px Loch** unter dem Bild. Drei UI/UX-Prinzipien sprechen dagegen: optische Balance (Gewicht kippt nach links), Gesetz der Nähe (Abstand Bild→Divider war größer als Bild→Headline, das Bild las sich als zugehörig zu nichts) und Blickführung (der Blick fiel rechts ins Leere statt zum CTA).
+
+**Die Ursache hat sich überlebt:** `lg:items-start` kam am 2026-09-09, als der Hero *kürzer* war als das Bild. Seit das Lockup am 2026-09-20 auf den Desktop zurückkehrte, ist er länger — dieselbe Regel löst jetzt das umgekehrte Problem.
+
+**Entschieden:** Das Bild füllt die Spaltenhöhe, beide Spalten enden bündig. Verworfen wurden Zentrieren (verteilt den Leerraum auf 2× 134px, statt ihn zu beseitigen) und ein 45/55-Grid (Lücke nur auf ~235px, und der Headline-Umbruch aus Refinement 4 ändert sich).
+
+**Der Eingriff bleibt bei `/about`, per Opt-in-Prop `asideFillsHeight`.** Eine globale Umstellung auf `items-stretch` hätte `/anleitung` beschädigt: Dort steht eine **Info-Box mit Rahmen** daneben, die gestreckt eine hohe, halbleere Karte ergäbe. Gemessen nach dem Eingriff: `/anleitung` behält `flex-start` und 297px statt 349px.
+
+**Am Bildschirm gefunden, nicht in den Zahlen:** Der erste Wurf maß bündig — und schnitt **„Explore. Solve. Discover." weg**, die Aussage des Bildes; `object-cover` zentriert standardmäßig, der Schriftzug steht rechts. Mit `object-right` ist er jetzt sogar prominenter als vorher. Keine Messung hätte das gezeigt, die Kantenprüfung war in beiden Fassungen gleich gut.
+
+**Ergebnis: Lücke von 269px auf 1px** (der Kartenrahmen) auf allen fünf Desktop-Breiten. CTA-Abstand unverändert, BUG-7 unberührt, kein Überlauf. Unterhalb `lg` ändert sich nichts — Bild gestapelt und unbeschnitten im 3:2.
+
+3 neue Tests, per Gegenprobe geschärft: mit dem alten Layout fallen **genau die 2 zuständigen auf beiden Engines**; der Mobile-Test bleibt in beiden Fassungen grün, wie es sein muss. **Unit 271/271, E2E beide Engines 1045 passed / 55 skipped / 0 failed / 0 flaky.**

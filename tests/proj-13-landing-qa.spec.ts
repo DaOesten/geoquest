@@ -250,6 +250,68 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
     await expect(logo, "auch auf großen Bildschirmen").toBeVisible();
   });
 
+  test("Hero-Bild und Textspalte enden am Desktop bündig", async ({ page }) => {
+    // Vor dem 2026-09-21 endete das Bild 269px über der Textspalte — der
+    // Abstand zum Divider war größer als der zur Headline daneben, und nach
+    // dem Gesetz der Nähe las sich das Bild als zugehörig zu nichts.
+    for (const [w, h] of [
+      [1024, 768],
+      [1366, 768],
+      [1920, 1080],
+    ] as const) {
+      await page.setViewportSize({ width: w, height: h });
+      await page.goto("/about");
+
+      const gap = await page.evaluate(() => {
+        const h1 = document.querySelector("h1")!;
+        const img = document.querySelector<HTMLImageElement>(
+          'main img[alt^="Nächtliche"]'
+        )!;
+        const text = h1.closest("div")!.getBoundingClientRect();
+        return Math.round(text.bottom - img.getBoundingClientRect().bottom);
+      });
+
+      // 1px Toleranz für den Rahmen der Bildkarte.
+      expect(Math.abs(gap), `${w}px: ${gap}px Versatz zwischen den Spalten`)
+        .toBeLessThanOrEqual(2);
+    }
+  });
+
+  test("der Bildausschnitt hält den Schriftzug im Bild", async ({ page }) => {
+    // `object-cover` zentriert standardmäßig und schnitt damit „Explore.
+    // Solve. Discover." ab — die Aussage des Bildes. Der Ausschnitt sitzt
+    // deshalb rechts, wo der Schriftzug auf der Hauswand steht.
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/about");
+
+    const fit = await page.evaluate(() => {
+      const img = document.querySelector<HTMLImageElement>(
+        'main img[alt^="Nächtliche"]'
+      )!;
+      const cs = getComputedStyle(img);
+      return { objectFit: cs.objectFit, objectPosition: cs.objectPosition };
+    });
+    expect(fit.objectFit).toBe("cover");
+    expect(fit.objectPosition).toMatch(/100%|right/);
+  });
+
+  test("unterhalb von lg bleibt das Bild unbeschnitten", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/about");
+
+    const r = await page.evaluate(() => {
+      const img = document.querySelector<HTMLImageElement>(
+        'main img[alt^="Nächtliche"]'
+      )!;
+      const b = img.getBoundingClientRect();
+      return { fit: getComputedStyle(img).objectFit, ratio: b.width / b.height };
+    });
+    expect(r.fit).not.toBe("cover");
+    // Quellbild ist 1536×1024 = 1.5
+    expect(r.ratio).toBeGreaterThan(1.4);
+    expect(r.ratio).toBeLessThan(1.6);
+  });
+
   test("das Lockup ist freigestellt und überlappt das Hero-Bild nicht", async ({
     page,
   }) => {

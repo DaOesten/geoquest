@@ -5,7 +5,7 @@ _Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und d
 
 _**Refinement 7 (2026-09-20): Das Logo-Lockup kehrt auf den Desktop zurück.** Betreiber-Befund: „ich kann auf /about auf dem desktop das Logo nicht mehr sehen." **Frontend umgesetzt am 2026-09-21** — `lg:hidden` entfernt; CTA auf allen elf Viewports über dem Falz nachgemessen, knappster Fall 1366×768 mit 45px. Siehe Implementation Notes._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-21 (Refinement 7 gebaut)
+**Last Updated:** 2026-09-21 (Refinement 8 gebaut)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -2128,3 +2128,62 @@ Per Gegenprobe geschärft: Spielt man `lg:hidden` **und** das alte Bild zurück,
 
 ### Der BUG-7-Wächter bleibt unangetastet
 Die fünf Desktop-Auflösungen darüber sind nicht angefasst worden — sie sind der Grund, warum dieser Eingriff risikoarm ist, und würden rot, sobald der Hero wieder wächst.
+
+---
+
+## Refinement 8 (2026-09-21) — Hero-Aufteilung auf dem Desktop
+
+### Der Befund
+Betreiber: *„Die Aufteilung der Elemente auf /about gefällt mir auf Desktop nicht so. Das Hero-Bild hängt rechts und darunter ist so viel leerer Raum."*
+
+Gemessen im Production-Build, auf **jeder** Desktop-Breite identisch:
+
+| | Höhe | endet bei |
+|---|---|---|
+| Textspalte (Logo → CTA) | 595px | y 723 |
+| Bildspalte | 328px | y 455 |
+| **Leerraum darunter** | | **269px** |
+
+### Warum das nach UI/UX-Standards ein Fehler ist
+Drei Prinzipien sprechen dagegen, und alle drei zeigen auf dieselbe Stelle:
+
+1. **Optische Balance** — 595px gegen 328px kippt das Gewicht nach links und reißt rechts unten ein Loch.
+2. **Gesetz der Nähe** — der Abstand vom Bild zum Divider (324px) war *größer* als der zur Headline daneben. Das Auge gruppiert nach Nähe; das Bild las sich als zugehörig zu nichts.
+3. **Blickführung** — der Blick fiel rechts ins Leere, statt zum CTA zurückgeführt zu werden, der 268px unter der Bildkante stand.
+
+**Die Ursache ist eine Entscheidung, die sich überlebt hat.** `lg:items-start` kam am 2026-09-09, als der Hero nach der Kürzung *kürzer* war als das Bild — damals ließ `items-center` den Text schweben. Seit das Lockup am 2026-09-20 auf den Desktop zurückkehrte, ist der Hero wieder länger. Dieselbe Regel löst jetzt das umgekehrte Problem.
+
+### Entschieden: Das Bild füllt die Spaltenhöhe
+Beide Spalten enden bündig, der Leerraum verschwindet. `object-cover` beschneidet dafür — vertretbar, weil das Motiv eine Straßenszene ohne Rand-Detail ist.
+
+Erwogen und verworfen (alle drei dem Betreiber vorgelegt):
+- **Bild vertikal zentrieren** — verteilt den Leerraum auf 2× 134px, statt ihn zu beseitigen; nimmt zudem die Entscheidung von 2026-09-09 zurück und träfe `/anleitung` mit.
+- **Grid auf 45/55 zugunsten des Bildes** — Lücke schrumpft nur auf ~235px, und der Headline-Umbruch ändert sich, der in Refinement 4 eigens justiert wurde.
+
+### Der Eingriff bleibt bei `/about` — per Opt-in-Prop
+`InfoPageShell` bekommt `asideFillsHeight` (Default `false`). Grund: Die Seiten stellen Verschiedenes daneben. `/about` ein Bild, das Höhe füllen kann; `/anleitung` eine **Info-Box mit Rahmen**, die gestreckt eine hohe, halbleere Karte ergäbe. Eine globale Umstellung auf `items-stretch` hätte `/anleitung` beschädigt.
+
+Gemessen nach dem Eingriff: `/anleitung` behält `flex-start`, seine Box bleibt bei 297px statt auf 349px gestreckt zu werden. `/impressum` und `/datenschutz` unverändert.
+
+### Am Bildschirm gefunden, nicht in den Zahlen
+Der erste Wurf mit `object-cover` maß bündig — **und schnitt „Explore. Solve. Discover." weg**, den Schriftzug auf der rechten Hauswand und damit die Aussage des Bildes. `object-cover` zentriert standardmäßig. Mit `object-right` sitzt der Ausschnitt dort, wo der Schriftzug steht; er ist jetzt sogar **prominenter als vorher**, weil der Zuschnitt aus einem kleinen Detail den Bildmittelpunkt gemacht hat.
+
+Keine Messung hätte das gezeigt — die Kantenprüfung war in beiden Fassungen gleich gut.
+
+### Ergebnis
+| Viewport | Lücke vorher | Lücke nachher | CTA-Luft |
+|---|---|---|---|
+| 1024×768 | 269px | **1px** | 69px |
+| 1280×800 | 269px | **1px** | 77px |
+| 1366×768 | 269px | **1px** | 45px |
+| 1440×900 | 269px | **1px** | 177px |
+| 1920×1080 | 269px | **1px** | 357px |
+
+Das verbleibende 1px ist der Rahmen der Bildkarte. **Der CTA-Abstand ist auf allen Breiten unverändert** — die Textspalte bestimmt weiterhin die Höhe, BUG-7 bleibt unberührt. Kein horizontaler Überlauf.
+
+**Unterhalb von `lg` ändert sich nichts:** Das Bild steht gestapelt unter dem CTA, unbeschnitten im 3:2-Verhältnis (gemessen: `object-fit` nicht `cover`, Seitenverhältnis 1.5).
+
+### Tests
+Drei neue Tests: bündiger Abschluss auf drei Desktop-Breiten, der rechte Bildausschnitt, und der unbeschnittene Zustand auf Mobile. Per Gegenprobe geschärft — mit dem alten Layout fallen **genau die 2 zuständigen auf beiden Engines** (4 Fehlschläge); der Mobile-Test bleibt in beiden Fassungen grün, wie es sein muss. Produktcode danach per `cmp` als byte-identisch bestätigt.
+
+**Suiten:** Unit 271/271, E2E über beide Engines **1045 passed / 55 skipped / 0 failed / 0 flaky**. Build und Lint sauber.

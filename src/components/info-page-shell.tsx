@@ -22,6 +22,21 @@ interface InfoPageShellProps {
   lead?: React.ReactNode;
   /** Rendered beside the title block from `lg` up; stacked underneath on smaller screens. */
   aside?: React.ReactNode;
+  /**
+   * Lässt das `aside` ab `lg` auf die Höhe der Textspalte wachsen, statt bei
+   * seiner Eigenhöhe zu enden (PROJ-13, 2026-09-21).
+   *
+   * Opt-in und nicht Standard, weil die Seiten verschiedene Dinge daneben
+   * stellen: `/about` ein Bild, das Höhe füllen kann und soll, `/anleitung`
+   * eine Info-Box mit Rahmen — die gestreckt eine hohe, halbleere Karte
+   * ergäbe. Der Default bleibt deshalb „so hoch wie der Inhalt".
+   *
+   * Gemessen war der Anlass: Auf `/about` endete das Hero-Bild 269px über der
+   * Textspalte. Der Abstand vom Bild zum Divider war damit größer als der zur
+   * Headline daneben — nach dem Gesetz der Nähe las sich das Bild als
+   * zugehörig zu nichts.
+   */
+  asideFillsHeight?: boolean;
   backHref?: string;
   /**
    * "dark" (Default) trägt den Gaming-Look der öffentlichen Eingangsseiten.
@@ -72,6 +87,7 @@ export function InfoPageShell({
   meta,
   lead,
   aside,
+  asideFillsHeight = false,
   backHref,
   theme = "dark",
   showSupport = false,
@@ -151,8 +167,17 @@ export function InfoPageShell({
           {/* `items-start` statt `items-center` (2026-09-09): Seit der Hero
               von /about kürzer ist als das Bild daneben, ließ die Zentrierung
               den Text in der Spalte schweben. Oben bündig lesen sich beide
-              Spalten als ein Block. */}
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-14">
+              Spalten als ein Block.
+
+              Mit `asideFillsHeight` weicht die Ausrichtung auf `stretch`
+              (2026-09-21) — dann trägt die Textspalte ihr `items-start`
+              selbst, und nur das `aside` wächst mit. Ohne die Prop bleibt
+              alles wie zuvor. */}
+          <div
+            className={`grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-14 ${
+              asideFillsHeight ? "lg:items-stretch" : "lg:items-start"
+            }`}
+          >
             <div>
               {showLogo && (
                 <Image
@@ -205,7 +230,11 @@ export function InfoPageShell({
               )}
             </div>
 
-            {aside && <div className="min-w-0">{aside}</div>}
+            {aside && (
+              <div className={`min-w-0 ${asideFillsHeight ? "lg:flex" : ""}`}>
+                {aside}
+              </div>
+            )}
           </div>
 
           <div className="h-px bg-border mt-10 sm:mt-14" />

@@ -276,8 +276,20 @@ export default function AboutPage() {
           </div>
         </>
       }
+      asideFillsHeight
       aside={
-        <div className="overflow-hidden rounded-card border border-border shadow-card">
+        /* Ab `lg` füllt das Bild die Höhe der Textspalte (2026-09-21).
+           Vorher endete es 269px darüber: Der Abstand zum Divider war größer
+           als der zur Headline daneben, und nach dem Gesetz der Nähe las sich
+           das Bild als zugehörig zu nichts. Beide Spalten enden jetzt bündig.
+
+           `object-cover` beschneidet dafür. Der Ausschnitt sitzt rechts
+           (`object-right`) statt mittig: Der Schriftzug „Explore. Solve.
+           Discover." steht auf der rechten Hauswand und ist die Aussage des
+           Bildes — ein zentrierter Zuschnitt hat ihn abgeschnitten (am
+           Bildschirm gesehen, nicht vermutet). Darunter (gestapelt) bleibt
+           das Bild unbeschnitten im 3:2-Verhältnis. */
+        <div className="overflow-hidden rounded-card border border-border shadow-card lg:flex-1">
           <Image
             src="/assets/urbanquest.png"
             alt="Nächtliche Straße mit leuchtender Route und dem Schriftzug Explore. Solve. Discover."
@@ -285,7 +297,7 @@ export default function AboutPage() {
             height={1024}
             priority
             sizes="(min-width: 1024px) 520px, 100vw"
-            className="w-full h-auto"
+            className="w-full h-auto lg:h-full lg:object-cover lg:object-right"
           />
         </div>
       }
