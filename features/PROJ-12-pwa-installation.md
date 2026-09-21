@@ -1,6 +1,6 @@
 # PROJ-12: PWA-Installation (Add to Homescreen)
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-09-18
 **Last Updated:** 2026-09-21 (Refinement 4: Safe Area — der Startscreen-Inhalt rückt nicht mit)
 
@@ -1009,7 +1009,7 @@ Der Browser-Zustand ist damit auch in Production unverändert (`padding-top: 0px
 
 ## Refinement 4 (2026-09-21) — Auf `/` rückt nur das Icon, nicht der Inhalt
 
-**Status:** Frontend umgesetzt am 2026-09-21, QA offen
+**Status:** Frontend umgesetzt und QA abgeschlossen am 2026-09-21 — Production-Ready
 
 ### Der Befund
 
@@ -1104,6 +1104,65 @@ Bei einer Darstellungsänderung reichen Zahlen nicht. Screenshot mit eingeblende
 #### Nicht abgedeckt
 
 Das Erscheinungsbild auf dem echten iPhone — keine Testumgebung kann `env(safe-area-inset-top)` mit einem echten Wert belegen. Die Mechanik ist belegt und am simulierten Bildschirm abgenommen; die Bestätigung am Gerät bleibt beim Betreiber.
+
+### QA Test Results (2026-09-21)
+
+**Getestet gegen:** Production-Build (Port 3100). **Engines:** Chrome und WebKit.
+**Ergebnis: 5/5 Acceptance Criteria erfüllt, keine Bugs jeglicher Schwere, Production-Ready.**
+
+> **Zur Unabhängigkeit:** In derselben Sitzung gebaut. Neu gemessen statt übernommen — auf **6 Viewports statt 4**, und statt Logo und Headline die **vier obersten Elemente je Kombination** (48 insgesamt).
+
+#### Der zentrale Beleg: die bestehende Suite hätte den Fehler nicht gefangen
+
+Mit `src/` auf dem Stand **vor** dem Fix (Commit `489c82f`) und den aktuellen Tests fallen **genau 4 Tests** — die zwei Logo-Wächter je Engine. Die übrigen **1047 bestehen**. Damit ist belegt, was die Spec behauptet hat: Von der gesamten vorbestehenden Suite hätte **kein einziger Test** diesen Befund gefunden. Die Kriterien von Refinement 3 deckten nur Bedienelemente ab.
+
+#### Acceptance Criteria
+
+| # | Kriterium | Ergebnis |
+|---|---|---|
+| 1 | Logo unterhalb der Statusleiste | ✅ 12 Kombinationen, Logo bei 44 (20px-Inset) bzw. 83 (59px) |
+| 2 | Headline, Trennstrich, Untertitel, Mode-Cards ebenfalls | ✅ **48 oberste Elemente** geprüft, keines verdeckt |
+| 3 | Burger-Icon rückt weiterhin (Refinement 3 intakt) | ✅ 12 → 32/71, Tap-Ziel durchgehend 44×44 |
+| 4 | Browser-Zustand unverändert | ✅ `padding-top` **und** `padding-bottom` 24px, Logo 24, Burger 12 |
+| 5 | 360×640 ohne Scrollen | ✅ Überlauf 0px |
+
+#### Über die Spec hinaus geprüft
+
+**Die untere Hälfte**, die eine Verschiebung nach unten typischerweise beschädigt: Beide Mode-Cards sind unter Inset vollständig sichtbar, per Hit-Test als **oberstes Element** an ihrem Mittelpunkt erreichbar, und ein echter Klick navigiert in **8 von 8** Kombinationen korrekt nach `/play` bzw. `/create`.
+
+**Zwei zusätzliche Viewports** (375×667, 414×896), **kein horizontaler Scrollbalken** auf keiner Breite, und der untere Gutter ist mitgeprüft — die Aufteilung von `py-6` in `pt-safe-top-6` + `pb-6` hätte ihn stillschweigend verlieren können.
+
+#### Security ohne Befund
+
+Die heikelste Frage bei einer CSS-Änderung ist, ob ein Wert von außen steuerbar ist. **Ist er nicht:** `.pt-safe-top-6` enthält ausschließlich `env()` — im CSSOM verifiziert, kein Custom Property, keine Nutzereingabe. Ein feindlich gesetztes `--safe-area-inset-top: 9999px` bleibt wirkungslos (`padding-top: 24px`, Logo bei 24). 0 Dialoge.
+
+#### Keine Regression auf Nachbarscreens
+
+`globals.css` ist geteilt, eine unsauber benannte Utility hätte überall wirken können. Gemessen: `.pt-safe-top-6` hat auf `/play`, `/create`, `/about` und `/impressum` **0 Treffer**, alle vier Kopfzeilen unverändert 56px mit `padding-top: 0px`.
+
+**Kontrast** auf `/`: 11.53–19.24:1 bei 4.5:1 Vorgabe.
+
+#### Am Bildschirm abgenommen — auf WebKit
+
+Bei einer Darstellungsänderung reichen Zahlen nicht. Screenshot mit eingeblendeter Statusleisten-Fläche, bewusst auf **WebKit** (der Engine des iPhones): Das Band ist leer, das Logo steht vollständig darunter, der Burger ebenfalls, beide Mode-Cards passen ohne Scrollen.
+
+#### Regression
+
+**Unit 271/271. E2E über beide Engines: 1051 passed / 55 skipped / 0 failed.** Build sauber, Lint 0 Fehler / 7 vorbestehende Warnungen. Produktcode nach der Gegenprobe per `git diff` als byte-identisch zu `HEAD` bestätigt.
+
+#### Beobachtungen ohne Bug-Status
+
+- **320×568 scrollt um 33px.** Vorbestehend 13px (seit 2026-09-19 dokumentiert) plus 20px realistischer Inset. Das Kriterium nennt 360×640, dort 0px Überlauf.
+- **Die lokalen Konsolenfehler** stammen von Vercel Analytics. Gegengeprüft auf `/impressum` — einer von diesem Refinement unberührten Route: dort dieselben. Vorbestehend.
+
+#### Zwei Messfehler offen benannt (das Produkt war jeweils richtig)
+
+1. **Ein `git stash` ohne Änderungen im Arbeitsverzeichnis ist ein No-Op.** Meine erste Gegenprobe lief dadurch gegen den *gefixten* Code und meldete 1051 grün — sie konnte nichts belegen. Korrigiert über `git checkout 489c82f -- src/`.
+2. **Eine Eigenschaft an einem Array überlebt `JSON.stringify` nicht.** Meine Klick-Sonde hängte die Ziel-URL an ein Array und verlor sie in der Ausgabe; das sah nach einem fehlgeschlagenen Klick aus. Separat gemessen: alle 8 Navigationen korrekt.
+
+#### Nicht abgedeckt
+
+Das Erscheinungsbild auf dem echten iPhone — keine Testumgebung kann `env(safe-area-inset-top)` mit einem echten Wert belegen. Firefox (Binary fehlt; Risiko gering, zwei unabhängige Engines messen identisch).
 
 ### Was dieses Refinement über das vorige sagt
 

@@ -27,7 +27,7 @@
 | PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Deployed | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
-| PROJ-12 | PWA-Installation | P0 | PROJ-1 | In Progress | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
+| PROJ-12 | PWA-Installation | P0 | PROJ-1 | Approved | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
@@ -378,6 +378,24 @@ Spec ist aktualisiert (5 Acceptance Criteria in einem eigenen Block, Edge Cases 
 **Suiten:** Unit **271/271**, E2E über beide Engines **1051 passed / 55 skipped / 0 failed**. Build sauber, Lint 0 Fehler.
 
 **Nicht abgedeckt:** das Erscheinungsbild am echten iPhone — keine Testumgebung kann `env(safe-area-inset-top)` mit einem echten Wert belegen.
+
+**QA am 2026-09-21 abgeschlossen: 5/5 Acceptance Criteria erfüllt, keine Bugs jeglicher Schwere, Production-Ready.**
+
+Neu gemessen statt übernommen — auf **6 Viewports statt 4** und statt Logo und Headline die **vier obersten Elemente je Kombination** (48 insgesamt, keines verdeckt).
+
+**Der zentrale Beleg:** Mit `src/` auf dem Stand **vor** dem Fix fallen **genau 4 Tests** (die zwei Logo-Wächter je Engine) — die übrigen **1047 bestehen**. Damit ist belegt, was die Spec behauptet hat: Von der gesamten vorbestehenden Suite hätte **kein einziger Test** diesen Befund gefunden.
+
+**Über die Spec hinaus geprüft:** die untere Hälfte, die eine Verschiebung nach unten typischerweise beschädigt. Beide Mode-Cards sind unter Inset vollständig sichtbar, per Hit-Test als oberstes Element erreichbar, und ein echter Klick navigiert in **8 von 8** Kombinationen korrekt. Dazu der untere Gutter (die Aufteilung von `py-6` hätte ihn verlieren können — `padding-bottom` bleibt 24px) und zwei zusätzliche Viewports.
+
+**Security ohne Befund:** `.pt-safe-top-6` enthält ausschließlich `env()`, kein Custom Property, keine Nutzereingabe — ein feindliches `--safe-area-inset-top: 9999px` bleibt wirkungslos. **Keine Regression auf Nachbarscreens:** Die Utility hat auf `/play`, `/create`, `/about` und `/impressum` **0 Treffer**, alle vier Kopfzeilen unverändert 56px. Kontrast 11.53–19.24:1.
+
+**Am Bildschirm abgenommen — bewusst auf WebKit**, der Engine des iPhones: Statusleisten-Band leer, Logo und Burger vollständig darunter, beide Mode-Cards ohne Scrollen.
+
+**Unit 271/271, E2E beide Engines 1051 passed / 55 skipped / 0 failed**, Lint 0 Fehler, Produktcode nach der Gegenprobe byte-identisch.
+
+**Zwei Messfehler offen benannt, beide meine:** Ein `git stash` ohne Änderungen im Arbeitsverzeichnis ist ein No-Op — meine erste Gegenprobe lief dadurch gegen den *gefixten* Code und konnte nichts belegen. Und eine Eigenschaft an einem Array überlebt `JSON.stringify` nicht, wodurch eine Klick-Sonde ihr Ergebnis verlor und nach einem fehlgeschlagenen Klick aussah.
+
+**Beobachtung ohne Bug-Status:** 320×568 scrollt um 33px — vorbestehend 13px plus 20px realistischer Inset; das Kriterium nennt 360×640, dort 0px.
 
 ## Next Available ID: PROJ-15
 
