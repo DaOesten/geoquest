@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | In Review | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | Approved | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
 <!-- Add features above this line -->
@@ -1233,3 +1233,24 @@ Zwei Betreiber-Beobachtungen, beide bestätigt — die zweite war ein echter Feh
 **Eine Regression, die der Test gefangen hat:** Die Karte kostet Höhe; auf 320×568 fiel der CTA **57px unter den Falz** (BUG-7). Der Wächter aus Refinement 4 meldete es sofort. Drei gemessene Eingriffe (Innenabstand −24px, Logo-Abstand −12px, randlose Karte unter `sm` −60px) → **jetzt 39px Luft**.
 
 **Kontrast über fünf Viewports: schlechtester Wert 5.59:1**, keine Verstöße. Der Randlos-Wächter ist **gezogen, nicht gelöscht** — er prüft jetzt Symmetrie. **Unit 271/271, E2E beide Engines 1057 passed / 55 skipped / 0 flaky.**
+
+## QA abgeschlossen: Refinement 9 inkl. drei Nachträge (2026-09-21)
+**PROJ-13** ist QA-geprüft: **9/9 Acceptance Criteria erfüllt, 1 Low-Bug (BUG-15), keine Critical/High/Medium. Production-Ready.** Status auf Approved.
+
+Weil alles in derselben Sitzung entstand, habe ich **nichts übernommen, sondern neu gemessen** — auf **14 Viewports** statt 11, auf **beiden Engines**, und mit **zwei** Kontrastmethoden statt einer.
+
+**Der wichtigste Einzelbefund betrifft die Testabdeckung:** Mit dem echten Vorgängerstand (`07408de~1`) und der damaligen Testdatei bestehen alle **64 Tests vollständig** — sie hätten keinen der drei Betreiber-Befunde gefangen. Gegen denselben Produktstand fallen mit der neuen Testdatei **32 Tests** (16 je Engine).
+
+**Die drei Befunde sind gemessen behoben:** Schriftzug vollständig statt mitten im Wort angeschnitten; Symmetrie auf **14/14 Viewports** statt Streifen links und Fensterkante rechts; Bildanteil **82% konstant** von 1100–1920px statt Helligkeitsverlust um Faktor 3 beim Verkleinern.
+
+**BUG-15 (Low, offen):** Auf **320×568** liegen **23 von 9016 Pixeln (0,26%)** hinter „ZUM SPIELFELD" unter der Kontrastvorgabe — schlechtester Einzelpixel **3.82:1**. Es ist ein einziger Fleck von 11×10px (eine Straßenlaterne) in einem 184×49px großen Element, auf beiden Engines reproduziert. **Nach der mit dem Betreiber abgestimmten Methode** (lokaler Mittelwert über Buchstabengröße) misst dieselbe Stelle **5.59:1** und besteht; am Bildschirm ist die Headline klar lesbar. Als Bug geführt, weil die Spec 4.5:1 ohne Methoden-Zusatz fordert — ein Einzeiler (Verlauf auf `xs` etwas stärker) schließt es.
+
+**Kontrast sonst:** 8.21:1 (lokal) bzw. 7.25:1 (pro Pixel) auf Desktop, WebKit durchgehend innerhalb von 0.15 zu Chrome.
+
+**Security ohne Befund:** 0 injizierte Elemente, Bildquelle über Query-Parameter **nicht manipulierbar**, 0 externe Hosts. Nachbarseiten unbeschädigt (0 Hintergrundbilder, `/anleitung`-Box weiterhin 297px statt 349px gestreckt).
+
+**Zusätzlich geprüft:** Tastatur-Reihenfolge, Hintergrundbild **nicht fokussierbar** (`tabIndex -1`), Fallback bei blockiertem Bild (18.5:1), 0 Tap-Ziele unter 44px.
+
+**Regression:** Unit **271/271**, E2E beide Engines **1084 passed / 55 skipped / 1 unexpected**. Der Fehlschlag liegt in `proj-12-pwa-installation.spec.ts` — einer Datei, die dieses Refinement nicht anfasst — und läuft isoliert in 1,2 s grün; die dokumentierte Parallelitäts-Flakiness. Build und Lint sauber.
+
+**Zwei eigene Messfehler offen benannt:** Eine Warteschleife auf einen Hintergrundlauf hat den Dev-Server mitgerissen (`server: 000`), wodurch ein kompletter E2E-Lauf ins Leere lief und wiederholt werden musste. Und der erste Kontrast-Messversuch verglich weißen Text gegen Screenshots, die den Text selbst enthielten — er meldete 1.00:1 und war wertlos; korrigiert durch Ausblenden des Textes vor der Aufnahme.

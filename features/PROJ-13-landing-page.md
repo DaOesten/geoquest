@@ -2539,3 +2539,82 @@ Ein Verlust um Faktor 3, und der Schriftzug wurde mitten im Wort abgeschnitten.
 **Tests:** Der Randlos-Wächter aus dem vorigen Nachtrag ist **gezogen, nicht gelöscht** — er prüft jetzt Symmetrie statt voller Breite. Dazu ein neuer Wächter auf die rechte Verankerung des Zuschnitts. **Unit 271/271, E2E beide Engines 1057 passed / 55 skipped / 0 failed / 0 flaky.**
 
 **Offen:** Auf sehr schmalen Fenstern (unter ~900px) bleibt der Zuschnitt spürbar — bei 390px sind nur 48% des Bildes sichtbar. Das ist dem festen Seitenverhältnis geschuldet; die rechte Verankerung sorgt immerhin dafür, dass der Schriftzug am längsten überlebt.
+
+---
+
+## QA Test Results — Refinement 9 inkl. drei Nachträge (2026-09-21)
+
+**9/9 Acceptance Criteria erfüllt, 1 Low-Bug (BUG-15), keine Critical/High/Medium. Production-Ready.**
+
+Weil Refinement 9 und seine drei Nachträge in derselben Sitzung entstanden, habe ich **nichts übernommen, sondern neu gemessen** — auf **14 Viewports** statt der 11 der Frontend-Phase, auf **beiden Engines**, und mit **zwei** Kontrastmethoden statt einer.
+
+### Acceptance Criteria
+| # | Kriterium | Ergebnis |
+|---|---|---|
+| 1 | Bild liegt hinter dem Hero-Text | **erfüllt** — 14/14 Viewports, beide Engines |
+| 2 | Jedes Textelement ≥ 4.5:1 | **erfüllt** nach der abgestimmten Methode (lokaler Mittelwert); pro Einzelpixel eine Ausnahme → BUG-15 |
+| 3 | Abdunklung schützt den Text | **erfüllt** — Verlauf vorhanden, per Gegenprobe belegt |
+| 4 | ~~Bild im Container~~ → randlos → **Karte im Container** | **erfüllt** — zweimal revidiert, siehe Nachträge |
+| 5 | Mobile gestapelt, Text auf dem Bild | **erfüllt** — 14/14 |
+| 6 | CTA auf allen Viewports über dem Falz | **erfüllt** — 14/14, beide Engines |
+| 7 | Nachbarseiten unverändert | **erfüllt** — siehe unten |
+| 8 | Fallback bei fehlendem Bild | **erfüllt** — weiß auf `rgb(10,14,15)` = 18.5:1, CTA vorhanden |
+| 9 | Bild wird nicht vorgelesen | **erfüllt** — `alt=""`, `aria-hidden="true"`, `tabIndex -1`, 14/14 |
+
+### Der wichtigste Einzelbefund betrifft die Testabdeckung
+Mit dem **echten Vorgängerstand** (`07408de~1`) und der **damaligen Testdatei** bestehen alle **64 Tests vollständig**. Sie hätten keinen der drei Betreiber-Befunde gefangen — nicht den Zuschnitt, nicht die Asymmetrie, nicht das Dunklerwerden beim Verkleinern.
+
+Gegen denselben Produktstand fallen mit der **neuen** Testdatei **32 Tests** (16 je Engine), darunter alle sechs Hero-spezifischen Wächter.
+
+### BUG-15 (Low, offen): 23 Pixel unter der Kontrastvorgabe auf 320×568
+**Nur auf 320×568, nur hinter „ZUM SPIELFELD", nur nach dem strengsten Maßstab.**
+
+| Element | schlechtester Einzelpixel | Pixel unter 4.5:1 |
+|---|---|---|
+| **„ZUM SPIELFELD" (teal)** | **3.82:1** | **23 von 9016 (0.26%)** |
+| Headline (weiß) | 5.47:1 | 0 |
+| Lead 1 / Lead 2 (weiß) | 11.64 / 13.54:1 | 0 |
+| Kostenlos-Zeile (teal) | 10.36:1 | 0 |
+
+Es ist **ein einziger Fleck von 11×10px** (eine Straßenlaterne) in der oberen linken Ecke eines 184×49px großen Elements, in zwei zusammenhängenden Teilen. Auf **beiden Engines reproduziert** (Chrome 3.82:1, WebKit 3.84:1).
+
+**Nach der mit dem Betreiber abgestimmten Methode** — lokaler Mittelwert über 21×21px, also die Fläche, die das Auge bei einem Buchstaben wahrnimmt — misst dieselbe Stelle **5.59:1** und besteht. Am Bildschirm geprüft: Die Headline ist auf 320×568 klar lesbar.
+
+**Warum trotzdem als Bug geführt:** Die Spec fordert 4.5:1 ohne Methoden-Zusatz. Ein Prüfer, der pro Pixel misst, findet dieselbe Stelle. Ein Einzeiler (Verlauf auf `xs` etwas stärker) würde es schließen.
+
+**Severity Low:** Kein Lesbarkeitsproblem, 0.26% der Fläche, nur auf dem kleinsten Referenz-Viewport, und nach dem vereinbarten Maßstab konform.
+
+### Kontrast im Überblick (beide Engines, fünf Viewports)
+| Viewport | lokal (21×21px) | pro Einzelpixel |
+|---|---|---|
+| 1440×900 | 8.21:1 | 7.25:1 |
+| 1366×768 | 8.21:1 | 7.22:1 |
+| 640×900 | 7.09:1 | 6.10:1 |
+| 390×844 | 6.85:1 | 4.76:1 |
+| **320×568** | **5.59:1** | **3.82:1 ← BUG-15** |
+
+WebKit liegt durchgehend innerhalb von 0.15 von Chrome.
+
+### Die drei Betreiber-Befunde sind gemessen behoben
+| Befund | vorher | jetzt |
+|---|---|---|
+| Schriftzug angeschnitten | mitten im Wort | **vollständig** (Zuschnitt kommt von links) |
+| Asymmetrie | Streifen links, Fensterkante rechts | **symmetrisch, 14/14 Viewports** |
+| Dunkler beim Verkleinern | Helligkeit rechts 3.19 → 0.93 | **82% Bildanteil konstant von 1100–1920px** |
+
+### Nachbarseiten unbeschädigt (beide Engines)
+`/anleitung`, `/impressum`, `/datenschutz`: **0 Hintergrundbilder**, `align-items: flex-start` erhalten, die Info-Box auf `/anleitung` weiterhin **297px** (nicht auf 349px gestreckt), alle drei mit Eyebrow, Inhalt bei x=202, kein Überlauf.
+
+### Security ohne Befund
+Markup in der Route erzeugt **0 injizierte Elemente** und kein `window.__pwned`. Die Bildquelle ist hart verdrahtet und **über Query-Parameter nicht manipulierbar** (geprüft mit `?img=javascript:alert(1)`). **0 externe Hosts** über alle sieben Routen.
+
+### Zusätzlich geprüft, in der Spec nicht gefordert
+- **Tastatur:** Tab-Reihenfolge logisch (Ko-fi → Zur App → Menü → CTA → FAQ), Hintergrundbild **nicht fokussierbar** (`tabIndex -1`)
+- **Fallback:** Bild blockiert → weiße Headline auf `rgb(10,14,15)`, CTA vorhanden
+- **14 Viewports** inkl. der Bruchstellen 375×667, 640×900 und 820×1180
+- **0 Bilder mit falscher `alt`-Auszeichnung**, **0 Tap-Ziele unter 44px**, genau **1 `h1`**
+
+### Nicht abgedeckt
+- Firefox (Binary fehlt weiterhin)
+- Das Erscheinungsbild auf einem echten hochauflösenden Display
+- Auf Fenstern unter ~900px bleibt der Zuschnitt spürbar (bei 390px nur 48% des Bildes sichtbar) — dem festen Seitenverhältnis geschuldet, keine Regression
