@@ -222,7 +222,13 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
     });
   }
 
-  test("das Logo-Lockup weicht ab lg, bleibt auf Handy und Tablet", async ({
+  // Gezogen am 2026-09-20 (PROJ-13, Refinement 7). Die Fassung davor prüfte
+  // auf 1366×768 `toBeHidden()` — das war die BUG-7-Behebung vom 2026-09-09,
+  // deren zweite Begründung („Marke steht im Header") seit PROJ-14 auch
+  // sichtbar falsch ist: Die Kopfzeile trägt nur Ko-fi-Icon, „Zur App" und
+  // Burger. Die beiden Zusicherungen für Handy und Tablet bleiben unverändert
+  // gültig und stehen weiterhin hier.
+  test("das Logo-Lockup steht auf jeder Breite — Handy, Tablet und Desktop", async ({
     page,
   }) => {
     const logo = page.locator("main img[alt='Geo Quest']");
@@ -237,8 +243,41 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
     await page.setViewportSize({ width: 1366, height: 768 });
     await expect(
       logo,
-      "am Laptop kostet es den CTA den Platz — Marke steht im Header und in der Headline"
-    ).toBeHidden();
+      "am Desktop trägt die Kopfzeile keine Bildmarke — das Lockup ist dort der einzige"
+    ).toBeVisible();
+
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await expect(logo, "auch auf großen Bildschirmen").toBeVisible();
+  });
+
+  test("das Lockup ist freigestellt und überlappt das Hero-Bild nicht", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1366, height: 768 });
+    await page.goto("/about");
+
+    const logo = page.locator("main img[alt='Geo Quest']");
+    // Freigestelltes PNG statt der Fassung mit opaker Platte (PROJ-1,
+    // Refinement 2026-09-20) — sonst zeichnet sich ein Rechteck ab.
+    await expect(logo).toHaveAttribute("src", /logo-lockup-cutout/);
+
+    const lb = await logo.boundingBox();
+    const aside = await page.locator("main img[alt^='Nächtliche']").boundingBox();
+    expect(lb, "Lockup nicht gefunden").not.toBeNull();
+    expect(aside, "Hero-Bild nicht gefunden").not.toBeNull();
+    const overlaps =
+      lb!.x < aside!.x + aside!.width &&
+      aside!.x < lb!.x + lb!.width &&
+      lb!.y < aside!.y + aside!.height &&
+      aside!.y < lb!.y + lb!.height;
+    expect(overlaps, "Lockup und Hero-Bild überlappen").toBe(false);
+
+    const overflow = await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth -
+        document.documentElement.clientWidth
+    );
+    expect(overflow, "horizontaler Scrollbalken").toBeLessThanOrEqual(0);
   });
 });
 

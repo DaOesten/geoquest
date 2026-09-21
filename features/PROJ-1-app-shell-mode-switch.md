@@ -4,8 +4,8 @@
 _Deployed; das Refinement vom 2026-09-06 (Navigation & Kopfzeile) ist am 2026-09-10 QA-geprüft (14/15 Acceptance Criteria, keine Critical/High-Bugs). **BUG-10 ist am 2026-09-10 entschieden, gebaut, QA-geprüft und nach Production deployt** (Tag `v1.28.0-PROJ-1`): 7/7 Acceptance Criteria, 0px Layout-Kosten in Production auf vier Viewports bestätigt, alle sieben Ziele von `/` aus in einem Tap erreichbar. Das Refinement vom 2026-09-09 („Support me" / Ko-fi) ist **am 2026-09-10 nach Production deployt und dort verifiziert** (Tag `v1.27.0-PROJ-13`, 8/8 Acceptance Criteria, keine Bugs) — der Menu-Eintrag ist auf https://geoquesty.vercel.app live._
 **Created:** 2026-08-23
 
-_**Refinement (2026-09-20): Das Logo-Lockup bekommt einen Alpha-Kanal.** `logo-lockup.png` ist 8-bit RGB ohne Transparenz und bringt eine opake Platte mit, die sich auf dem App-Hintergrund als Rechteck abzeichnet — auf `/` (PROJ-1) und auf `/about` (PROJ-13). Gemeldet vom Betreiber; Spec ist aktualisiert, Umsetzung steht aus._
-**Last Updated:** 2026-09-20 (Alpha-Refinement spezifiziert)
+_**Refinement (2026-09-20): Das Logo-Lockup bekommt einen Alpha-Kanal.** Frontend umgesetzt am 2026-09-21 — freigestelltes PNG über ein eingechecktes Skript, beide Einbauorte umgestellt, Rahmen-Abweichung auf `#0B0F12` gemessen **0**. Siehe Implementation Notes._
+**Last Updated:** 2026-09-21 (Alpha-Refinement gebaut)
 
 ## Dependencies
 - None (PROJ-1 ist das Fundament)
@@ -112,13 +112,13 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 - [ ] Angenommen die 404-Seite ist sichtbar, wenn der Nutzer auf "Zurück zum Start" tippt, dann wird er zu `/` navigiert
 
 **Logo-Lockup mit Alpha-Kanal (Refinement 2026-09-20):**
-- [ ] Angenommen ein Nutzer öffnet den Startscreen `/`, wenn das Logo-Lockup sichtbar ist, dann zeichnet sich **keine rechteckige Platte** um das Motiv ab — der Bildgrund ist vom App-Hintergrund nicht unterscheidbar
-- [ ] Angenommen dasselbe Lockup steht im Hero von `/about` (PROJ-13), wenn die Seite lädt, dann gilt dort dasselbe
-- [ ] Angenommen das freigestellte PNG wird auf den App-Hintergrund `#0B0F12` kompositiert, wenn der äußere 12px-Rahmen gemessen wird, dann beträgt die **maximale Farbabweichung 0** — dieselbe Messlatte wie bei `mark-pin.png` (PROJ-3, 2026-09-19)
-- [ ] Angenommen das Motiv wird betrachtet, wenn Pin, Route, X und beide Wortmarken geprüft werden, dann sind sie vollständig erhalten — keine Löcher in der dunklen Kreisfläche des Pins, keine abgeschnittenen Pinselkanten
-- [ ] Angenommen der Neon-Glow der Lime- und Teal-Elemente wird betrachtet, wenn er in den Hintergrund ausläuft, dann tut er das weich über Teil-Alpha statt als gezackter Halo
-- [ ] Angenommen das freigestellte PNG wird erzeugt, wenn der Vorgang nachvollzogen werden soll, dann geschieht das über ein **eingechecktes Skript** und nicht von Hand — nach dem Muster von `scripts/make-mark-pin-cutout.swift`
-- [ ] Angenommen die Quelldatei trägt Korn-Artefakte im Bildgrund, wenn das Motiv freigestellt ist, dann sind diese **nicht sichtbar** — weder als Streusel noch als graue Schlieren
+- [x] Angenommen ein Nutzer öffnet den Startscreen `/`, wenn das Logo-Lockup sichtbar ist, dann zeichnet sich **keine rechteckige Platte** um das Motiv ab — der Bildgrund ist vom App-Hintergrund nicht unterscheidbar
+- [x] Angenommen dasselbe Lockup steht im Hero von `/about` (PROJ-13), wenn die Seite lädt, dann gilt dort dasselbe
+- [x] Angenommen das freigestellte PNG wird auf den App-Hintergrund `#0B0F12` kompositiert, wenn der äußere 12px-Rahmen gemessen wird, dann beträgt die **maximale Farbabweichung 0** — dieselbe Messlatte wie bei `mark-pin.png` (PROJ-3, 2026-09-19)
+- [x] Angenommen das Motiv wird betrachtet, wenn Pin, Route, X und beide Wortmarken geprüft werden, dann sind sie vollständig erhalten — keine Löcher in der dunklen Kreisfläche des Pins, keine abgeschnittenen Pinselkanten
+- [x] Angenommen der Neon-Glow der Lime- und Teal-Elemente wird betrachtet, wenn er in den Hintergrund ausläuft, dann tut er das weich über Teil-Alpha statt als gezackter Halo
+- [x] Angenommen das freigestellte PNG wird erzeugt, wenn der Vorgang nachvollzogen werden soll, dann geschieht das über ein **eingechecktes Skript** und nicht von Hand — nach dem Muster von `scripts/make-mark-pin-cutout.swift`
+- [x] Angenommen die Quelldatei trägt Korn-Artefakte im Bildgrund, wenn das Motiv freigestellt ist, dann sind diese **nicht sichtbar** — weder als Streusel noch als graue Schlieren
 
 ## Edge Cases
 1. **Theme-Flicker bei Seitenwechsel:** Beim Navigieren von `/play` (Dark) zu `/create` (Light) darf kein weißer Blitz / Flackern auftreten
@@ -156,7 +156,7 @@ Das Burger-Menu ist ab dem Refinement vom 2026-09-06 die **eine** Navigation der
 - [x] ~~Braucht der Startscreen `/` selbst das Burger-Menu?~~ → **Ja, entschieden am 2026-09-10** (löst BUG-10). Aber **ohne Kopfzeilen-Zeile**: nur das Burger-Icon, absolut positioniert oben rechts, 0px Layout-Höhe. Gemessen war der Anlass: Von `/` waren nur 3 der 7 Ziele direkt erreichbar, Impressum und Datenschutz gar nicht. Eine volle 56px-Kopfzeile hätte den Startscreen aber auf 360×640 zum Scrollen gebracht (gemessen: Inhalt endet dann bei 615/640, Seite überläuft) und damit ein bestehendes Acceptance Criterion gebrochen. Die schwebende Variante liefert alle sieben Ziele in 1 Tap, ohne einen einzigen Pixel Layout zu kosten
 - [ ] Soll das Menu perspektivisch einen Eintrag „App installieren" (PROJ-12, PWA) bekommen? Das wäre ein Anhang unter „App" — erst entscheiden, wenn PROJ-12 gebaut wird. _(Formulierung aktualisiert 2026-09-09: „vierte Gruppe" ist überholt, „Unterstützen" ist jetzt die vierte.)_
 - [ ] Soll „Support me" perspektivisch auch auf `/impressum` und `/datenschutz` als Kopfzeilen-Icon erscheinen? Zunächst bewusst nur `/about` und `/anleitung` — die beiden Seiten, die das Produkt erklären. Rechtstexte liest niemand aus Sympathie (2026-09-09)
-- [ ] Behält das Lockup nach dem Freistellen die Ecken-Abrundung `rounded-[12px]` auf `/`? Sie stammt aus der Zeit der opaken Platte und rundete deren Kante ab; ohne Platte rundet sie nichts mehr (2026-09-20)
+- [x] ~~Behält das Lockup nach dem Freistellen die Ecken-Abrundung `rounded-[12px]` auf `/`?~~ → **Ja, sie bleibt** (2026-09-21). Sie sitzt am `Link`, nicht am Bild, und derselbe Radius trägt den `focus-visible`-Ring. Ohne sie bekäme der Fokusring scharfe Ecken — sie rundet jetzt den Ring statt einer Plattenkante
 - [ ] Soll `mark-pin-whitebg.png` (1,0 MB, unbenutzt) bei dieser Gelegenheit entfernt werden? Keine Referenz im Code gefunden (2026-09-20)
 - [x] ~~Braucht das Kopfzeilen-Icon auf dem Desktop einen sichtbaren Tooltip?~~ → Ja, umgesetzt am 2026-09-10 (Details in PROJ-13): Tooltip „Unterstütze mich" bei Hover und Tastatur-Fokus. Betrifft nur die Kopfzeile der Info-Seiten; der Menu-Eintrag ist ausgeschrieben und braucht keinen
 
@@ -1504,3 +1504,67 @@ Die erprobte Fassung (LO=13, HI=30, Mindestgröße 16) wurde auf `#0B0F12` kompo
 ### Nicht abgedeckt
 - Das Erscheinungsbild auf einem echten hochauflösenden Display (die Kante ist dort deutlicher als in einer komprimierten Screenshot-Datei)
 - Ob die Schlieren auch **vor** dem Freistellen schon sichtbar waren — sie liegen im Bildgrund und wurden bisher von der Platte überdeckt; am Gerät zu beurteilen
+
+---
+
+## Implementation Notes (Frontend — Alpha-Kanal, 2026-09-21)
+
+### Geänderte Dateien
+| Datei | Änderung |
+|---|---|
+| `scripts/make-logo-lockup-cutout.swift` | **neu** — erzeugt das freigestellte PNG, reproduzierbar statt von Hand |
+| `public/assets/logo-lockup-cutout.png` | **neu** — 1039×543 RGBA, 355 KB (die Quelle hat 746 KB) |
+| `src/app/page.tsx` | Startscreen zeigt das freigestellte PNG |
+| `src/components/info-page-shell.tsx` | `/about`-Hero ebenso; zugleich `lg:hidden` entfernt (PROJ-13, Refinement 7) |
+| `src/lib/brand-assets.test.ts` | **neu** — 5 Unit-Tests über den Alpha-Kanal |
+| `tests/proj-13-landing-qa.spec.ts` | Logo-Test gezogen, ein zweiter Test ergänzt |
+
+Kein neues Paket, keine neue Komponente, keine neue Route. Die Quelldatei `logo-lockup.png` bleibt unverändert liegen.
+
+### Der Kern ist gemessen, nicht behauptet
+Das freigestellte PNG auf `#0B0F12` kompositiert ergibt über den gesamten äußeren 12px-Rahmen eine **maximale Farbabweichung von 0** — mathematisch nicht vom Hintergrund unterscheidbar, dieselbe Messlatte, die `mark-pin.png` seit PROJ-3 erfüllt. **Jeder** Randpixel (nicht nur die vier Ecken) hat Alpha 0.
+
+### Eine Annahme der Spec war falsch — und die Korrektur ist der interessantere Teil
+Die Spec sah als zweiten Filter eine **Mindest-Spitzenhelligkeit** je Bereich vor. Umgesetzt und gemessen: `MIN_PEAK = 60` verwarf 49 Bereiche, **die beiden sichtbaren Schlieren blieben stehen**. Der Grund steht in den Zahlen: Die Schliere bei `x 430..473` hat einen Peak von **163** bei einer mittleren Helligkeit von **20.8** — ein einzelnes helles Korn genügt, und der Bereich rutscht durch.
+
+Die **mittlere** Helligkeit trennt dagegen sauber, mit einer Lücke ohne einen einzigen Bereich darin:
+
+| | mittlere Helligkeit |
+|---|---|
+| hellster Korn-/Schlieren-Bereich | **85.8** |
+| dunkelstes echtes Motivteil | **91.2** |
+
+`MIN_MEAN = 88.0` sitzt mittig in dieser Lücke. Aufgefallen ist das **nur am Bildschirm** — die Kanten-Messung meldete schon mit dem Peak-Filter eine Abweichung von 0, weil die Schlieren nicht am Rand liegen. Zahlen allein hätten die Fassung durchgewinkt.
+
+### Gemessene Wirkung der beiden Filter
+| Zustand | Rahmen-Abweichung | verworfen |
+|---|---|---|
+| nur Luminanz-Rampe (LO=13, HI=30) | **144** | — |
+| + Mindestgröße 16 Px | **0** | 3880 Korn-Flecken |
+| + Mindest-Mittelhelligkeit 88 | **0** | zusätzlich 81 Schlieren-Bereiche |
+
+Insgesamt 71,0% der Fläche freigestellt, 29,0% opakes Motiv. Die 31 verbleibenden Bereiche sind das Motiv plus einige gesättigte Teal-Punkte (`rgb(3,227,234)`) — Akzentdetails der Grafik, kein Korn.
+
+### Am Bildschirm abgenommen
+Auf `#0B0F12` kompositiert betrachtet: Pin, Route, X und beide Wortmarken vollständig, keine Löcher in der dunklen Kreisfläche, Pinselkanten sauber, **kein Rechteck**. Dazu beide Live-Seiten im Browser (`/about` auf 1366×768, `/` auf 390×844).
+
+### Layout-Kosten: null
+Der Startscreen misst nach dem Tausch exakt die Werte der BUG-10-QA vom 2026-09-10:
+
+| Viewport | Logo-Y | Unterkante Create-Card | scrollt |
+|---|---|---|---|
+| 320×568 | 24 | 557 | ja (vorbestehend) |
+| 360×640 | 24 | 559 | **nein** |
+| 390×844 | 24 | 574 | nein |
+| 430×932 | 24 | 588 | nein |
+
+Das PROJ-1-Kriterium „`/` scrollt auf 360×640 nicht" hält.
+
+### Tests
+**5 neue Unit-Tests** in `src/lib/brand-assets.test.ts`. Bewusst Unit und nicht E2E: Ein Browser zeigt nicht, ob ein PNG einen Alpha-Kanal hat — er komponiert es auf den Hintergrund, und genau dort war der Fehler ja nur ein dezentes Rechteck. Die Zusicherung lässt sich nur an der Datei prüfen. Der PNG-Dekoder ist eine 40-zeilige Eigenimplementierung, damit das Projekt für einen Test kein 42. Paket bekommt.
+
+Per Gegenprobe geschärft: Legt man die alte Datei als Cutout ein, fallen **genau 3 von 5** — die beiden, die grün bleiben müssen (Quelldatei unangetastet, `mark-pin.png` als Referenz), bleiben grün.
+
+### Nicht abgedeckt
+- Das Erscheinungsbild auf einem echten hochauflösenden Display
+- Firefox (Binary fehlt weiterhin)

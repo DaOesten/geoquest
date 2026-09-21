@@ -3,9 +3,9 @@
 ## Status: In Progress
 _Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und dort verifiziert (Tag `v1.26.0-PROJ-13`). Refinement 6 (Ko-fi-Icon in der Kopfzeile, Tooltip, JSON-LD-Altersnachzug) ist **am 2026-09-10 nach Production deployt und dort verifiziert** (Tag `v1.27.0-PROJ-13`)._
 
-_**Refinement 7 (2026-09-20): Das Logo-Lockup kehrt auf den Desktop zurück.** Betreiber-Befund: „ich kann auf /about auf dem desktop das Logo nicht mehr sehen." Bestätigt und gemessen — `lg:hidden` blendet es ab 1024px aus. Spec ist aktualisiert, Umsetzung steht aus._
+_**Refinement 7 (2026-09-20): Das Logo-Lockup kehrt auf den Desktop zurück.** Betreiber-Befund: „ich kann auf /about auf dem desktop das Logo nicht mehr sehen." **Frontend umgesetzt am 2026-09-21** — `lg:hidden` entfernt; CTA auf allen elf Viewports über dem Falz nachgemessen, knappster Fall 1366×768 mit 45px. Siehe Implementation Notes._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-20 (Refinement 7 spezifiziert)
+**Last Updated:** 2026-09-21 (Refinement 7 gebaut)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -226,12 +226,12 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] Angenommen ein Besucher nutzt ein Touch-Gerät, wenn er die Seite betrachtet, dann trägt das Icon seine Bedeutung weiterhin über das `aria-label` — der Tooltip ist eine Ergänzung, kein Ersatz
 
 ### Logo-Lockup kehrt auf den Desktop zurück (Refinement 7, 2026-09-20)
-- [ ] Angenommen ein Besucher öffnet `/about` auf einem Desktop-Bildschirm ab 1024px, wenn die Seite lädt, dann ist das Logo-Lockup über der Headline sichtbar — so wie auf Handy und Tablet
-- [ ] Angenommen ein Besucher öffnet `/about` auf 1366×768 (der flachste verbreitete Laptop), wenn die Seite lädt, dann ist der primäre CTA „Quest erstellen" **vollständig über dem Falz** sichtbar, ohne zu scrollen — BUG-7 bleibt behoben
-- [ ] Angenommen dieselbe Prüfung läuft auf allen elf Referenz-Viewports (320×568 bis 1920×1080), wenn der CTA gemessen wird, dann liegt seine Unterkante auf **jedem** über der Bildschirmkante
-- [ ] Angenommen ein Besucher betrachtet den Hero am Desktop, wenn Lockup und `aside`-Bild nebeneinander stehen, dann überlappen sie sich nicht und es entsteht kein horizontaler Scrollbalken
-- [ ] Angenommen ein Besucher öffnet `/anleitung`, `/impressum` oder `/datenschutz`, wenn die Seiten laden, dann sind sie durch dieses Refinement **unverändert** — nur `/about` setzt `showLogo`
-- [ ] Angenommen das Lockup ist auf dem Desktop zurück, wenn seine Größe gemessen wird, dann trägt es dieselbe Größe wie ab `sm` (280px) — es gibt keinen eigenen Desktop-Breakpoint für die Marke
+- [x] Angenommen ein Besucher öffnet `/about` auf einem Desktop-Bildschirm ab 1024px, wenn die Seite lädt, dann ist das Logo-Lockup über der Headline sichtbar — so wie auf Handy und Tablet
+- [x] Angenommen ein Besucher öffnet `/about` auf 1366×768 (der flachste verbreitete Laptop), wenn die Seite lädt, dann ist der primäre CTA „Quest erstellen" **vollständig über dem Falz** sichtbar, ohne zu scrollen — BUG-7 bleibt behoben
+- [x] Angenommen dieselbe Prüfung läuft auf allen elf Referenz-Viewports (320×568 bis 1920×1080), wenn der CTA gemessen wird, dann liegt seine Unterkante auf **jedem** über der Bildschirmkante
+- [x] Angenommen ein Besucher betrachtet den Hero am Desktop, wenn Lockup und `aside`-Bild nebeneinander stehen, dann überlappen sie sich nicht und es entsteht kein horizontaler Scrollbalken
+- [x] Angenommen ein Besucher öffnet `/anleitung`, `/impressum` oder `/datenschutz`, wenn die Seiten laden, dann sind sie durch dieses Refinement **unverändert** — nur `/about` setzt `showLogo`
+- [x] Angenommen das Lockup ist auf dem Desktop zurück, wenn seine Größe gemessen wird, dann trägt es dieselbe Größe wie ab `sm` (280px) — es gibt keinen eigenen Desktop-Breakpoint für die Marke
 
 ### Prompt-Vorlage
 - [x] Angenommen ein Nutzer ist bei der Anleitungs-Sektion, wenn er die Seite betrachtet, dann ist die vollständige Prompt-Vorlage als lesbarer Text sichtbar und manuell markierbar
@@ -2095,3 +2095,36 @@ Gleiche Fehlerklasse wie `mark-pin.jpg` (PROJ-3, 2026-09-19), wo ein eingecheckt
 ### Nicht abgedeckt
 - Das Erscheinungsbild auf einem echten hochauflösenden Desktop-Display (die Platte ist auf gutem Monitor eher sichtbar als im Screenshot)
 - Firefox (Binary fehlt weiterhin; Risiko gering — es geht um eine einzelne Tailwind-Utility-Klasse)
+
+---
+
+## Implementation Notes (Frontend — Refinement 7, 2026-09-21)
+
+Eine Zeile Produktcode: `lg:hidden` in `src/components/info-page-shell.tsx` entfällt. Kein neuer Breakpoint, keine neue Prop, keine neue Komponente. Der Kommentar an der Stelle hält fest, warum die Klasse 2026-09-09 kam und warum sie geht — damit niemand sie aus der Git-History zurückholt.
+
+Im selben Zug wechselt das Bild auf das freigestellte PNG (PROJ-1, Refinement 2026-09-20) — dieselbe `Image`-Komponente, deshalb ein Eingriff statt zwei.
+
+### Gemessen gegen den Production-Build, alle elf Referenz-Viewports
+| Viewport | Lockup | CTA-Unterkante | Luft | H-Überlauf |
+|---|---|---|---|---|
+| 320×568 | 220×115 | 541 | 27px | 0 |
+| 360×640 | 220×115 | 525 | 115px | 0 |
+| 390×844 | 220×115 | 503 | 341px | 0 |
+| 430×932 | 220×115 | 503 | 429px | 0 |
+| 768×1024 | 280×147 | 624 | 400px | 0 |
+| 1024×768 | 280×147 | 699 | 69px | 0 |
+| 1280×800 | 280×147 | 723 | 77px | 0 |
+| **1366×768** | 280×147 | 723 | **45px** | 0 |
+| 1440×900 | 280×147 | 723 | 177px | 0 |
+| 1680×1050 | 280×147 | 723 | 327px | 0 |
+| 1920×1080 | 280×147 | 723 | 357px | 0 |
+
+**Das Lockup ist auf allen elf sichtbar, der CTA auf allen elf über dem Falz.** Die Werte decken sich exakt mit der Vorhersage des Refinements. Keine Überlappung mit dem `aside`-Bild, auf keiner Breite ein horizontaler Scrollbalken.
+
+### Tests
+Der bestehende Test „das Logo-Lockup weicht ab lg" ist **gezogen, nicht gelöscht**: Seine beiden Zusicherungen für 390px und 768px bleiben wörtlich erhalten, die dritte kehrt sich um und ein vierter Viewport (1920px) kommt dazu. Dazu ein neuer Test auf das freigestellte Asset, die Nicht-Überlappung mit dem Hero-Bild und den fehlenden Überlauf.
+
+Per Gegenprobe geschärft: Spielt man `lg:hidden` **und** das alte Bild zurück, fallen **genau diese 2 Tests auf beiden Engines** (4 Fehlschläge), die übrigen 54 bleiben grün. Produktcode danach per `cmp` als byte-identisch bestätigt.
+
+### Der BUG-7-Wächter bleibt unangetastet
+Die fünf Desktop-Auflösungen darüber sind nicht angefasst worden — sie sind der Grund, warum dieser Eingriff risikoarm ist, und würden rot, sobald der Hero wieder wächst.

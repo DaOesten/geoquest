@@ -43,8 +43,17 @@ export default function StartScreen() {
           aria-label="Geo Quest — Was ist das?"
           className="inline-block w-3/5 max-w-[240px] rounded-[12px] outline-none transition-all duration-[120ms] [transition-timing-function:cubic-bezier(.16,.84,.44,1)] active:scale-[0.97] active:opacity-90 focus-visible:ring-[3px] focus-visible:ring-[rgba(0,224,209,0.45)] focus-visible:ring-offset-2 focus-visible:ring-offset-gq-black"
         >
+          {/* Freigestelltes PNG mit Alpha (PROJ-1, Refinement 2026-09-20).
+              logo-lockup.png ist 8-bit RGB ohne Alpha-Kanal und bringt eine
+              opake Platte von rgb(5-6,7-8,9-10) mit, die sich gegen den
+              App-Hintergrund rgb(11,15,18) als Rechteck abzeichnet. Erzeugt
+              von scripts/make-logo-lockup-cutout.swift; die Quelldatei bleibt
+              als Ausgangsmaterial liegen.
+
+              `rounded-[12px]` am Link bleibt: Es rundet jetzt nicht mehr die
+              Plattenkante, sondern den Fokusring, der denselben Radius nutzt. */}
           <Image
-            src="/assets/logo-lockup.png"
+            src="/assets/logo-lockup-cutout.png"
             alt="Geo Quest"
             width={390}
             height={260}

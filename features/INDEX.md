@@ -948,3 +948,26 @@ Aufgefallen bei der Browser-Abnahme von PROJ-13 Refinement 7, vom Betreiber best
 **Für `/frontend`:** neues Skript `scripts/make-logo-lockup-cutout.swift` nach dem Muster des Pin-Skripts, ergänzt um beide Filter; Quelldatei bleibt liegen, Ergebnis ist eine neue Datei (sonst bräuchte das Skript sein eigenes Ergebnis als Eingabe). Beide Einbauorte umstellen. Keine Layout-Änderung — es wechselt nur die Bilddatei.
 
 **Zwei Open Questions:** ob `rounded-[12px]` auf `/` bleibt (sie rundete die Plattenkante ab, ohne Platte rundet sie nichts — teilt sich aber den Radius mit dem Fokusring), und ob `mark-pin-whitebg.png` (1,0 MB, keine Referenz im Code) bei der Gelegenheit entfernt wird.
+
+## Frontend umgesetzt: Logo auf dem Desktop + Alpha-Kanal (2026-09-21)
+Beide Refinements vom 2026-09-20 sind gebaut — **PROJ-13** (`lg:hidden` entfällt) und **PROJ-1** (freigestelltes PNG). Sie teilen sich dieselbe `Image`-Komponente in `info-page-shell.tsx`, deshalb ein Eingriff statt zwei. Beide bleiben auf In Progress bis zur QA.
+
+**Sechs Dateien:** neues Skript `scripts/make-logo-lockup-cutout.swift`, neues Asset `logo-lockup-cutout.png` (355 KB gegen 746 KB der Quelle), beide Einbauorte (`page.tsx`, `info-page-shell.tsx`), neue Unit-Datei `src/lib/brand-assets.test.ts`, ein gezogener E2E-Test. Kein neues Paket, keine neue Komponente, keine neue Route.
+
+**Der Kern ist gemessen:** Das freigestellte PNG auf `#0B0F12` kompositiert ergibt über den äußeren 12px-Rahmen eine **Farbabweichung von 0** — dieselbe Messlatte wie `mark-pin.png`. Das Lockup steht auf **allen elf Referenz-Viewports**, der CTA auf allen elf über dem Falz (knappster Fall 1366×768 mit 45px, exakt wie vorhergesagt). Layout-Kosten auf dem Startscreen: **null** — Logo-Y und Card-Unterkante decken sich exakt mit den Werten der BUG-10-QA vom 2026-09-10.
+
+**Eine Annahme der Spec war falsch, und nur der Blick auf den Bildschirm hat es gezeigt.** Der zweite Filter sollte über die **Spitzenhelligkeit** je Bereich laufen. Gemessen verwarf `MIN_PEAK = 60` zwar 49 Bereiche, ließ aber **beide sichtbaren Schlieren stehen**: Die bei `x 430..473` hat einen Peak von 163 bei einer mittleren Helligkeit von 20.8 — ein einzelnes helles Korn genügt zum Durchrutschen. Die **mittlere** Helligkeit trennt dagegen mit einer echten Lücke (Korn ≤ 85.8, Motiv ≥ 91.2); `MIN_MEAN = 88` sitzt mittig darin. **Die Kanten-Messung hätte die falsche Fassung durchgewinkt** — sie meldete schon mit dem Peak-Filter 0, weil die Schlieren nicht am Rand liegen.
+
+**Gegenproben:** Alte Datei als Cutout → genau **3 von 5** Unit-Tests fallen (die zwei, die grün bleiben müssen, bleiben grün). `lg:hidden` plus altes Bild zurück → genau die **2 zuständigen E2E-Tests auf beiden Engines** (4 Fehlschläge), die übrigen 54 grün. Produktcode danach per `cmp` als byte-identisch bestätigt.
+
+**Suiten:** Unit **271/271** (vorher 266). E2E über beide Engines **1036 passed / 55 skipped / 3 unexpected**. Build und Lint sauber (0 Fehler, 7 vorbestehende Warnungen, keine in geänderten Dateien).
+
+### Wichtig für künftige Läufe: die Parallelitäts-Flakiness ist größer als gedacht
+Der erste volle Lauf meldete **16 Fehlschläge**, die alle nach echten Produktfehlern aussahen (CTA unter dem Falz, horizontaler Überlauf, fehlende Header-Links). **Ich habe sie zunächst als Last-Artefakte abgetan, das war voreilig — dann aber gemessen statt vermutet:**
+
+- Einzeln laufen dieselben Tests in **1,0 s** grün durch, im Verbund schlagen sie mit `page.goto`-Timeout nach 30 s fehl
+- Eine WebKit-Sonde lädt `/about` in **53 ms** mit 0 fehlgeschlagenen Requests — die Seite ist nachweislich in Ordnung
+- **Entscheidend:** Mit dem **unveränderten Vorgängerstand** (`git stash`, eigener Build) fallen auf Chrome **5 derselben Tests**. Sie sind damit als vorbestehend belegt, nicht als Folge dieser Änderung
+- Eine einzelne WebKit-Testdatei brauchte im Verbund **7,7 Minuten**, allein 5,7 Sekunden
+
+Mit `--workers=2` sinken die 16 auf **3**, alle auf Mobile Safari und alle in Dateien, die dieses Feature nicht anfasst; seriell laufen genau diese 3 in 6,8 s grün durch. **Empfehlung: Stabilitätsaussagen nur mit reduzierter Worker-Zahl treffen** — der Standardlauf erzeugt Fehlschläge, die wie Produktfehler aussehen und keine sind. Das ergänzt die bereits dokumentierte Regel, immer nur eine Suite gleichzeitig zu starten.

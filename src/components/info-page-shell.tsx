@@ -156,24 +156,33 @@ export function InfoPageShell({
             <div>
               {showLogo && (
                 <Image
-                  src="/assets/logo-lockup.png"
+                  src="/assets/logo-lockup-cutout.png"
                   alt="Geo Quest"
                   width={1039}
                   height={543}
                   priority
                   sizes="(min-width: 640px) 320px, 220px"
-                  // The lockup has no alpha channel — it ships on an opaque
-                  // near-black plate. Rendered plain, exactly as the start
-                  // screen does it, so both entry points look identical.
+                  // Freigestelltes PNG mit Alpha (PROJ-1, Refinement
+                  // 2026-09-20). Die Quelldatei logo-lockup.png ist 8-bit RGB
+                  // ohne Alpha-Kanal und bringt eine opake Platte mit, die
+                  // sich gegen den Seitenhintergrund als Rechteck abzeichnet.
+                  // Dieselbe Datei wie auf dem Startscreen, damit beide
+                  // Eingänge identisch aussehen.
                   //
-                  // Verschwindet ab `lg` (BUG-7, 2026-09-09): Laptops sind
-                  // breit, aber flach — auf 1366×768 und 1280×800 schob das
-                  // Lockup mit 147px den Hero-CTA unter den Falz. Genau dort
-                  // trägt es am wenigsten: Auf dem Desktop stehen Navigation
-                  // und „Zur App“ ohnehin im Header, und die Headline nennt
-                  // die Marke. Auf Handy und Tablet, wo die Höhe reicht und
-                  // der Header schmal ist, bleibt es der Markenanker.
-                  className="mb-6 w-[220px] sm:w-[280px] h-auto lg:hidden"
+                  // Steht seit dem 2026-09-20 wieder auf ALLEN Breiten
+                  // (PROJ-13, Refinement 7). Das frühere `lg:hidden` stammte
+                  // aus der BUG-7-Behebung vom 2026-09-09 und stand auf zwei
+                  // Gründen: der Höhe (gültig, inzwischen entfallen — der Hero
+                  // hat seitdem zwei Absätze und einen CTA verloren) und der
+                  // Annahme, die Marke stehe ohnehin im Header. Letztere war
+                  // nie richtig: „Zur App" ist ein Button in Tech-Schrift, die
+                  // Navigation waren Textlinks — keines zeigt das Logo. Seit
+                  // PROJ-14 ist HEADER_NAV_LINKS zusätzlich leer.
+                  //
+                  // Gemessen: Der Hero-CTA bleibt auf allen elf
+                  // Referenz-Viewports über dem Falz, knappster Fall
+                  // 1366×768 mit 45px. Der BUG-7-Wächter hält das fest.
+                  className="mb-6 w-[220px] sm:w-[280px] h-auto"
                 />
               )}
               {eyebrow && (
