@@ -1,6 +1,6 @@
 # PROJ-12: PWA-Installation (Add to Homescreen)
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-09-18
 **Last Updated:** 2026-09-21 (Refinement 4: Safe Area — der Startscreen-Inhalt rückt nicht mit)
 
@@ -1009,7 +1009,7 @@ Der Browser-Zustand ist damit auch in Production unverändert (`padding-top: 0px
 
 ## Refinement 4 (2026-09-21) — Auf `/` rückt nur das Icon, nicht der Inhalt
 
-**Status:** Frontend umgesetzt und QA abgeschlossen am 2026-09-21 — Production-Ready
+**Status:** Deployed am 2026-09-21 (Tag `v1.38.0-PROJ-12`)
 
 ### Der Befund
 
@@ -1163,6 +1163,36 @@ Bei einer Darstellungsänderung reichen Zahlen nicht. Screenshot mit eingeblende
 #### Nicht abgedeckt
 
 Das Erscheinungsbild auf dem echten iPhone — keine Testumgebung kann `env(safe-area-inset-top)` mit einem echten Wert belegen. Firefox (Binary fehlt; Risiko gering, zwei unabhängige Engines messen identisch).
+
+### Deployment (2026-09-21)
+
+**Deployt nach Production** — Tag `v1.38.0-PROJ-12`, Commits `489c82f` (Spec), `21a838e` (Frontend), `c982293` (QA). Live auf https://geoquesty.vercel.app, Vercel deployte automatisch von `main`, live nach ~60 Sekunden.
+
+**Pre-Deployment-Checks:** Build sauber, Lint 0 Fehler / 7 vorbestehende Warnungen, QA approved ohne Bugs, keine Secrets versioniert. Der mitgeschobene Commit `9ce16d4` ist ein reines Spec-Refinement von PROJ-13 ohne Produktcode — geprüft, nicht angenommen.
+
+**Die Auslieferung ist am Hash belegt:** Der CSS-Chunk wechselte von `296cfe4b7c4e632d.css` auf `9475d098b7954edb.css`, und nur der neue enthält `pt-safe-top-6`. Alle **vier** Utilities stehen live mit den richtigen `env()`-Werten — die drei aus Refinement 3 sind unverändert dabei.
+
+**Im Live-Browser auf beiden Engines, 4 Viewports, alle Werte deckungsgleich mit den lokalen:**
+
+| | Browser | mit Inset |
+|---|---|---|
+| `<main>` padding-top / -bottom | **24px / 24px** | 44 / 83px |
+| **Logo** | **24** | **44 / 83** — immer unter der Statusleiste |
+| Burger | **12** | 32 / 71 — Refinement 3 intakt |
+| Tap-Ziel | 44 | **44** |
+| Überlauf 360×640 | 0 | **0** |
+
+**Keine Verstöße auf keiner Kombination.** Der Browser-Zustand ist auch in Production unverändert — die Zusicherung an den Betreiber ist eingelöst.
+
+**Refinement 3 in Production gegengeprüft:** Alle sechs Kopfzeilen-Screens (`/play`, `/create`, `/about`, `/anleitung`, `/impressum`, `/datenschutz`) messen unter 59px-Inset identisch `hTop: 0`, `hH: 115`, Bedienelement bei 65, Tap-Höhe 44. Zusammen mit `/` gilt die Safe-Area-Behandlung damit auf **allen neun Screens**.
+
+**Alle 10 Endpunkte HTTP 200** (0,07–0,36 s), Security-Header inkl. HSTS. **Nachbarfeatures unbeschädigt:** `/about` mit `FAQPage` und 1× Ko-fi, `/anleitung` weiterhin **0 Treffer** für den zurückgehaltenen Prompt, alle drei PWA-Icons byte-identisch zum Repository.
+
+**WebKit — die Engine des iPhones — mit 0 Konsolenfehlern und 0 fehlgeschlagenen Requests.** Chrome meldet einen Konsolenfehler: `/favicon.ico`, vorbestehend und seit dem Deploy vom 2026-09-20 dokumentiert.
+
+**Ein Messfehler offen benannt:** Der Byte-Vergleich zwischen Live-CSS und lokalem Build war diesmal nicht durchführbar — das lokale `.next` trug nach dem QA-Lauf einen anderen Build, die Datei `9475d098…` lag dort nicht. Beim vorigen Deploy hatte der Vergleich nur deshalb funktioniert, weil der Production-Build noch stand. Die Auslieferung ist stattdessen über den Hash-Wechsel und die Präsenz der Utility belegt; ein „byte-identisch" wurde **nicht** behauptet.
+
+**Weiterhin offen:** das Erscheinungsbild auf dem echten iPhone. Keine Testumgebung kann `env(safe-area-inset-top)` mit einem echten Wert belegen — die Mechanik ist belegt, der Augenschein bleibt dem Betreiber.
 
 ### Was dieses Refinement über das vorige sagt
 

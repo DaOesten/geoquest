@@ -27,7 +27,7 @@
 | PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Deployed | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
-| PROJ-12 | PWA-Installation | P0 | PROJ-1 | Approved | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
+| PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
@@ -396,6 +396,20 @@ Neu gemessen statt übernommen — auf **6 Viewports statt 4** und statt Logo un
 **Zwei Messfehler offen benannt, beide meine:** Ein `git stash` ohne Änderungen im Arbeitsverzeichnis ist ein No-Op — meine erste Gegenprobe lief dadurch gegen den *gefixten* Code und konnte nichts belegen. Und eine Eigenschaft an einem Array überlebt `JSON.stringify` nicht, wodurch eine Klick-Sonde ihr Ergebnis verlor und nach einem fehlgeschlagenen Klick aussah.
 
 **Beobachtung ohne Bug-Status:** 320×568 scrollt um 33px — vorbestehend 13px plus 20px realistischer Inset; das Kriterium nennt 360×640, dort 0px.
+
+**Am 2026-09-21 nach Production deployt** (Tag `v1.38.0-PROJ-12`, Commits `489c82f`/`21a838e`/`c982293`) — live auf https://geoquesty.vercel.app, Vercel deployte automatisch von `main`, live nach ~60 Sekunden.
+
+**Die Auslieferung ist am Hash belegt:** Der CSS-Chunk wechselte von `296cfe4b…` auf `9475d098…`, und nur der neue enthält `pt-safe-top-6`. Alle **vier** Utilities stehen live — die drei aus Refinement 3 unverändert dabei.
+
+**Im Live-Browser auf beiden Engines, 4 Viewports, keine Verstöße:** Logo bei **44** (20px-Inset) bzw. **83** (59px) und damit immer unter der Statusleiste, Burger rückt weiterhin mit (12 → 32/71), Tap-Ziel 44px, Überlauf auf 360×640 gleich 0. **Browser-Zustand unverändert** (`padding-top` und `padding-bottom` je 24px, Logo 24, Burger 12).
+
+**Refinement 3 in Production gegengeprüft:** Alle sechs Kopfzeilen-Screens messen unter Inset identisch `hTop: 0`, `hH: 115`, Bedienelement bei 65. Zusammen mit `/` gilt die Safe-Area-Behandlung damit auf **allen neun Screens**.
+
+Alle 10 Endpunkte HTTP 200 (0,07–0,36 s), Security-Header inkl. HSTS. Nachbarfeatures unbeschädigt (`/about` mit FAQPage + 1× Ko-fi, `/anleitung` 0 Treffer für den Prompt, drei PWA-Icons byte-identisch). **WebKit mit 0 Konsolenfehlern und 0 fehlgeschlagenen Requests**; der eine Chrome-Konsolenfehler ist `/favicon.ico`, vorbestehend.
+
+**Ein Messfehler offen benannt:** Der Byte-Vergleich zwischen Live-CSS und lokalem Build war diesmal nicht durchführbar — das lokale `.next` trug nach dem QA-Lauf einen anderen Build. Beim vorigen Deploy hatte er nur funktioniert, weil der Production-Build noch stand. Die Auslieferung ist über Hash-Wechsel und Utility-Präsenz belegt; ein „byte-identisch" wurde **nicht** behauptet.
+
+**PROJ-12 ist abgeschlossen.** Offen bleibt allein die Bestätigung am echten iPhone — keine Testumgebung kann `env(safe-area-inset-top)` mit einem echten Wert belegen.
 
 ## Next Available ID: PROJ-15
 
