@@ -16,7 +16,7 @@
 
 | ID | Feature | Priority | Dependencies | Status | Spec | Created |
 |----|---------|----------|--------------|--------|------|---------|
-| PROJ-1 | App Shell & Mode Switch | P0 | None | Approved | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
+| PROJ-1 | App Shell & Mode Switch | P0 | None | Deployed | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
 | PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | Approved | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
 <!-- Add features above this line -->
@@ -1007,3 +1007,22 @@ Weil in derselben Sitzung gebaut, habe ich die zentralen Behauptungen **neu geme
 **Regression:** Unit **271/271**, E2E beide Engines **1044 passed / 55 skipped / 1 unexpected**. Der Fehlschlag liegt in `proj-12-sw-nur-production.spec.ts`, das diese Refinements nicht anfassen, und laeuft **3× seriell gruen** — die dokumentierte Service-Worker-Flakiness. Build sauber, Lint 0 Fehler.
 
 **Beobachtung ohne Bug-Status (vorbestehend):** `npx tsc --noEmit` meldet 2 Fehler in `src/lib/quest-storage.test.ts` (ungenutzte `@ts-expect-error`-Direktiven). Gegen `HEAD~2` gegengeprueft: dieselben 2 — die Datei stammt aus PROJ-6 und wurde hier nicht angefasst. `npm run lint` typisiert Testdateien nicht und zeigt sie deshalb nicht. Ein eigenes Aufraeumen wert.
+
+## Deployt: Logo-Refinements (2026-09-21)
+**PROJ-1** und **PROJ-13** sind **am 2026-09-21 nach Production deployt** (Tag `v1.37.0-PROJ-1`, Commits `dcdfe12`/`298da4c`/`2648db3`) — live auf https://geoquesty.vercel.app und dort verifiziert. Vercel deployte automatisch von `main`, live nach **~60 Sekunden**. Beide Status auf Deployed.
+
+**Der Kern ist am live ausgelieferten Asset bestätigt, nicht an der lokalen Datei:** Das Production-PNG ist **byte-identisch** zur Repo-Datei (355.638 Bytes), trägt **RGBA**, und auf `#0B0F12` kompositiert ergibt es **Abweichung 0.0** in drei Rahmenbreiten (1/12/**24**px). Das alte Bild misst dort 144 — das war die Kante, die der Betreiber sah.
+
+**Live im Browser auf beiden Engines, 8 Viewports:** Logo 8/8 sichtbar, freigestelltes PNG 8/8 geladen, Lücke **1px** auf allen fünf Desktop-Breiten, `object-fit: fill` unterhalb `lg` (unbeschnitten), CTA 8/8 über dem Falz, 0px Überlauf. **Alle Werte decken sich exakt mit den lokalen Messungen.** WebKit mit **0 Konsolenfehlern**. Am Bildschirm abgenommen.
+
+**Layout-Kosten in Production null:** Startscreen-Werte identisch zur BUG-10-QA vom 2026-09-10 (557/559/574/588), `/` scrollt auf 360×640 nicht.
+
+**Der kritische Regressionspunkt ist live bestätigt:** `/anleitung` behält `flex-start` und **297px statt 349px** — die Opt-in-Prop hält auch in Production.
+
+Alle **10 Endpunkte HTTP 200** (0,08–0,43 s), Security-Header inkl. HSTS. Nachbarfeatures unbeschädigt (`/about` mit FAQPage + 1× Ko-fi, `/anleitung` weiterhin 0 Treffer für den Prompt).
+
+**Eine Auffälligkeit geprüft statt weggewunken:** Chrome meldete einen Konsolen-404, WebKit keinen. Ein ruhiger Besuch von `/about` erzeugt **0 Antworten ≥400**; es ist `/favicon.ico`, das Chrome von sich aus anfragt. Vorbestehend, seit dem 2026-09-19 dokumentiert.
+
+**Anmerkung zur Deploy-Prüfung:** Der „Ist es live?"-Check fragte den Statuscode des **neuen** Assets ab und lieferte fünfmal 404, bevor er auf 200 sprang — er konnte also wirklich fehlschlagen, anders als der wertlose Manifest-Check vom 2026-09-19.
+
+**Damit sind beide Features abgeschlossen.** Offen bleiben nur vorbestehende, nicht blockierende Befunde: BUG-2 (16px-Schließen-X in allen Sheets), BUG-9 (kein `:focus-visible` app-weit), BUG-8 (Sektions-Kicker als `h2`), 2 `tsc`-Fehler in `quest-storage.test.ts` aus PROJ-6, und `mark-pin-whitebg.png` (1,0 MB, keine Referenz im Code).

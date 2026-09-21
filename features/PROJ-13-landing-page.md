@@ -2252,3 +2252,43 @@ Unit **271/271**, E2E beide Engines **1044 passed / 55 skipped / 1 unexpected**.
 
 ### Nicht abgedeckt
 Das Erscheinungsbild auf einem echten hochauflösenden Display, Firefox, und ob der gewählte Bildausschnitt dem Betreiber gefällt — das ist eine Geschmacksfrage, keine Messfrage.
+
+---
+
+## Deployment (2026-09-21)
+
+**Am 2026-09-21 nach Production deployt** (Tag `v1.37.0-PROJ-1`, Commits `dcdfe12`/`298da4c`/`2648db3`) — live auf https://geoquesty.vercel.app und dort verifiziert. Vercel deployte automatisch von `main`, live nach **~60 Sekunden**.
+
+### Pre-Deployment
+Build sauber (Exit 0), Lint **0 Fehler** (7 vorbestehende Warnungen, keine in geänderten Dateien), beide Features **Approved** ohne Bugs, keine Secrets versioniert (nur `.env.local.example`, echte Env-Dateien gitignored).
+
+### Der Kern ist am live ausgelieferten Asset bestätigt
+Das Production-PNG ist **byte-identisch** zur Repo-Datei (355.638 Bytes, per `cmp`), trägt **4 Kanäle (RGBA)**, und auf `#0B0F12` kompositiert ergibt es **Abweichung 0.0** in drei geprüften Rahmenbreiten (1px, 12px, **24px**) — in keiner ein Pixel mit Alpha > 0.
+
+### Live im Browser, beide Engines, 8 Viewports
+| | Chrome | WebKit |
+|---|---|---|
+| Logo sichtbar | **8/8** | **8/8** |
+| Freigestelltes PNG geladen | **8/8** | **8/8** |
+| Lücke auf Desktop | **1px** (5 Breiten) | **1px** |
+| `object-fit` unter `lg` | `fill` (unbeschnitten) | `fill` |
+| CTA über dem Falz | **8/8** | **8/8** |
+| Horizontaler Überlauf | **0** | **0** |
+| Konsolenfehler | 1 (s.u.) | **0** |
+
+**Alle Werte decken sich exakt mit den lokalen Messungen.** Am Bildschirm abgenommen: Logo ohne Plattenkante, Spalten bündig, „Explore. Solve. Discover." vollständig im Bild.
+
+### Layout-Kosten in Production: null
+Startscreen-Werte identisch zur BUG-10-QA vom 2026-09-10: Logo-Y 24, Card-Ende **557 / 559 / 574 / 588**, `/` scrollt auf 360×640 nicht.
+
+### Der kritische Regressionspunkt ist live bestätigt
+`/anleitung` behält `align-items: flex-start` und seine Aside-Höhe von **297px** statt auf die Textspaltenhöhe von 349px gestreckt zu werden. Die Opt-in-Prop hält auch in Production.
+
+### Infrastruktur
+Alle **10 Endpunkte HTTP 200** (0,08–0,43 s), Security-Header aktiv inkl. HSTS (`max-age=63072000; includeSubDomains; preload`), `x-frame-options: DENY`, `nosniff`. Nachbarfeatures unbeschädigt: `/about` mit `FAQPage` und 1× Ko-fi, `/anleitung` weiterhin **0 Treffer** für den zurückgehaltenen Prompt, `sw.js` und Manifest 200.
+
+### Eine Auffälligkeit geprüft statt weggewunken
+Chrome meldete einen Konsolen-404, WebKit keinen. Ein ruhiger Besuch von `/about` erzeugt **0 Antworten ≥400**; der Treffer ist `/favicon.ico`, das Chrome von sich aus anfragt und das nie referenziert wurde. **Vorbestehend**, bereits in den Deploys vom 2026-09-19 und 2026-09-20 dokumentiert.
+
+### Anmerkung zur Deploy-Prüfung
+Der „Ist es live?"-Check fragte den Statuscode des **neuen** Assets ab und lieferte fünfmal 404, bevor er auf 200 sprang. Er konnte also wirklich fehlschlagen — anders als der wertlose Manifest-Check vom 2026-09-19, der einen Text suchte, den auch die 404-Seite trug.
