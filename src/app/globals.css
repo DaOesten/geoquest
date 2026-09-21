@@ -91,6 +91,23 @@
     padding-top: env(safe-area-inset-top);
   }
 
+  /* Der Inhalt von `/` (Refinement 4, 2026-09-21).
+     
+     `/` ist der einzige Screen ohne Kopfzeile: Sein Burger-Icon ist `absolute`
+     und kostet 0px Layout-Hoehe (BUG-10), damit Logo, Headline und beide
+     Mode-Cards ohne Scrollen passen. Genau deshalb kann es aber auch nichts
+     nach unten schieben — ein Inset am Icon bewegt nur das Icon. Auf allen
+     anderen Screens ist die Kopfzeile ein echtes Element im Fluss und schiebt
+     den Inhalt von selbst mit (gemessen: /play 56 -> 115 bei 59px Inset,
+     / Logo blieb bei 24).
+
+     Additiv zum bestehenden `py-6`, nicht als Ersatz: Ohne den Summanden
+     verlaere der Screen im Browser seine 24px Kopfabstand, weil `env()` dort
+     0px ist. */
+  .pt-safe-top-6 {
+    padding-top: calc(env(safe-area-inset-top) + 1.5rem);
+  }
+
   /* Additiv zum bestehenden Abstand, damit Geraete ohne Home-Indikator exakt
      ihre heutigen 24px behalten (env() ist dort 0px). */
   .bottom-safe-6 {

@@ -367,6 +367,18 @@ Auf den acht funktionierenden Screens ist die Kopfzeile ein **echtes Element im 
 
 Spec ist aktualisiert (5 Acceptance Criteria in einem eigenen Block, Edge Cases 27–28, 3 Technical Requirements, 1 Produkt- und 1 technische Entscheidung, 1 neue Open Question zur Frage, ob Safe-Area-Kriterien künftig Inhalt statt nur Bedienelemente prüfen sollten, dazu ein Abschnitt „Refinement 4" mit der Messtabelle).
 
+**Frontend umgesetzt am 2026-09-21.** Zwei Dateien (`globals.css`, `page.tsx`), kein neues Paket. Eine vierte Utility `pt-safe-top-6` nach dem Muster von `bottom-safe-6`; auf `/` ersetzt sie `py-6`, der untere Abstand steht als `pb-6` daneben. **Eine eigene Utility war nötig**, weil `pt-safe-top` `padding-top` absolut setzt und die bestehenden 24px stillschweigend auf 0 gesetzt hätte.
+
+**Gemessen auf 4 Viewports × 2 Engines, keine Verstöße:** Das Logo rückt von 24 auf **44** (bei 20px Inset) bzw. **83** (bei 59px) und liegt damit immer unter der Statusleiste; der Burger rückt weiterhin korrekt mit (Refinement 3 bleibt erfüllt); Tap-Ziel 44px. Der Inset wurde je Geräteklasse realistisch gewählt — 20px unter 390px Breite (iPhone SE ohne Notch), 59px darüber. **Browser-Zustand unverändert** (`padding-top: 24px`, Logo 24, Burger 12), **360×640 scrollt weiterhin nicht**.
+
+**Am Bildschirm abgenommen**, nicht nur gemessen: Screenshot mit eingeblendeter Statusleisten-Fläche zeigt vorher Pin und Wortmarke im Band, nachher ein leeres Band und das Logo vollständig darunter.
+
+**6 neue Tests** (PROJ-12-Safe-Area 40 statt 34), darunter der Wächter auf das **Logo** — genau die Assertion, deren Fehlen den Befund durchgelassen hat. Per Gegenprobe geschärft: Mit zurückgenommenem Fix fallen **genau 4 Tests** (die zwei Logo-Wächter je Engine), sonst nichts.
+
+**Suiten:** Unit **271/271**, E2E über beide Engines **1051 passed / 55 skipped / 0 failed**. Build sauber, Lint 0 Fehler.
+
+**Nicht abgedeckt:** das Erscheinungsbild am echten iPhone — keine Testumgebung kann `env(safe-area-inset-top)` mit einem echten Wert belegen.
+
 ## Next Available ID: PROJ-15
 
 ## Offenes Refinement: BUG-6 — falsche iOS-Erkennung beim Kompass (2026-09-07)

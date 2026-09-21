@@ -10,8 +10,16 @@ export default function StartScreen() {
   return (
     /* `relative` traegt den Positionierungs-Kontext fuer das Menu unten: ohne
        ihn bezoege sich `absolute` auf den Viewport, und das Icon saesse bei
-       zentriertem Layout am Bildschirm- statt am Container-Rand. */
-    <main className="relative flex flex-col min-h-dvh bg-gq-black overflow-y-auto px-5 py-6 mx-auto w-full max-w-[430px]">
+       zentriertem Layout am Bildschirm- statt am Container-Rand.
+
+       `pt-safe-top-6` statt `py-6` (Refinement 4, 2026-09-21): Der Inhalt
+       braucht den Statusleisten-Inset selbst. Das Burger-Icon unten hat einen
+       eigenen, aber es ist `absolute` und kann deshalb nichts verschieben —
+       ohne diesen hier lag das Logo in der installierten App unter der
+       Uhrzeit (Betreiber-Befund am Geraet). `pb-6` erhaelt den unteren
+       Abstand, den `py-6` mitgebracht hat; der obere steckt additiv in der
+       Utility, damit er im Browser weiterhin genau 24px betraegt. */
+    <main className="relative flex flex-col min-h-dvh bg-gq-black overflow-y-auto px-5 pt-safe-top-6 pb-6 mx-auto w-full max-w-[430px]">
       {/* Burger-Menu (BUG-10, 2026-09-10). Bewusst KEIN `AppHeader`: dessen
           56px-Zeile haette den Startscreen auf 360x640 zum Ueberlaufen
           gebracht (gemessen: Inhalt endet dann bei 615/640) und das Kriterium

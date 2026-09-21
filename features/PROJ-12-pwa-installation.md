@@ -1009,7 +1009,7 @@ Der Browser-Zustand ist damit auch in Production unverändert (`padding-top: 0px
 
 ## Refinement 4 (2026-09-21) — Auf `/` rückt nur das Icon, nicht der Inhalt
 
-**Status:** Spec aktualisiert, Umsetzung offen (`/frontend`)
+**Status:** Frontend umgesetzt am 2026-09-21, QA offen
 
 ### Der Befund
 
@@ -1056,6 +1056,54 @@ Im Browser ist `env(safe-area-inset-top)` weiterhin `0px`; `/` verhält sich dor
 ### Abnahme
 
 Wie bei Refinement 3 kann keine Testumgebung einen echten oberen Inset erzeugen. Prüfbar ist die Mechanik unter simuliertem Inset, der unveränderte Browser-Zustand und das Nicht-Scrollen auf 360×640. Das Erscheinungsbild prüft der Betreiber am Gerät — dieses Mal mit dem Blick auf das Logo, nicht nur auf das Menu.
+
+### Implementation Notes (Frontend, 2026-09-21)
+
+**Umgesetzt.** Zwei Dateien (`globals.css`, `page.tsx`), kein neues Paket, keine neue Komponente, keine neue Route.
+
+#### Was gebaut wurde
+
+Eine vierte Utility nach dem Muster von `bottom-safe-6`:
+
+```css
+.pt-safe-top-6 { padding-top: calc(env(safe-area-inset-top) + 1.5rem); }
+```
+
+Auf `/` ersetzt sie `py-6`; der untere Abstand steht jetzt als `pb-6` daneben. **Der Grund für eine eigene Utility statt `pt-safe-top`:** Letztere setzt `padding-top` absolut und hätte die bestehenden 24px stillschweigend auf 0 gesetzt, sobald sie gewinnt. Zwei konkurrierende `padding-top`-Regeln auf demselben Element wären zudem von der Reihenfolge im Bundle abhängig gewesen.
+
+Das `pt-safe-top` am `absolute`-Wrapper des Burger-Icons bleibt unangetastet — beide Insets sind nötig und stapeln sich nicht, weil der Wrapper aus dem Fluss ist.
+
+#### Gemessen auf 4 Viewports × 2 Engines
+
+| | Browser | mit Inset |
+|---|---|---|
+| `<main>` padding-top | **24px** | 44px (bei 20) / 83px (bei 59) |
+| **Logo** | **24** | **44 / 83** — immer unter der Statusleiste |
+| Headline | 136–170 | rückt entsprechend mit |
+| Burger | **12** | 32 / 71 — Refinement 3 bleibt erfüllt |
+| Tap-Ziel | 44 | **44** |
+
+Der Inset wurde je Geräteklasse realistisch gewählt: 20px unter 390px Breite (iPhone SE, Home-Button, keine Notch), 59px darüber (Dynamic Island). **Keine Verstöße auf keiner Kombination.**
+
+**Der Browser-Zustand ist unverändert:** `padding-top: 24px`, Logo bei 24, Burger bei 12 — identisch zu vorher auf allen vier Viewports. **360×640 scrollt weiterhin nicht**, das PROJ-1-Kriterium hält.
+
+#### Am Bildschirm abgenommen
+
+Bei einer Darstellungsänderung reichen Zahlen nicht. Screenshot mit eingeblendeter Statusleisten-Fläche, vorher und nachher: Vorher liegen Pin und obere Kante der Wortmarke sichtbar im Band, nachher ist das Band leer, das Logo steht vollständig darunter, und beide Mode-Cards passen weiterhin ohne Scrollen.
+
+#### Testabdeckung
+
+**6 neue Tests** (PROJ-12-Safe-Area jetzt 40 statt 34), davon die zwei entscheidenden: ein Wächter auf das **Logo** unter simuliertem Inset — genau die Assertion, deren Fehlen den Befund durchgelassen hat — und sein Gegenstück, das den unveränderten 24px-Kopfabstand im Browser festhält.
+
+**Per Gegenprobe geschärft:** Mit zurückgenommenem Fix (`py-6` wiederhergestellt) fallen **genau 4 Tests** — die zwei Logo-Wächter auf beiden Engines, und sonst nichts. Die Browser-Zustands-Tests bleiben korrekterweise grün, weil sich im Browser tatsächlich nichts ändert. Produktcode danach wiederhergestellt und verifiziert.
+
+#### Suiten
+
+**Unit 271/271** (vorher 266). **E2E über beide Engines: 1051 passed / 55 skipped / 0 failed.** Build sauber, `/` bleibt statisch, Lint 0 Fehler / 7 vorbestehende Warnungen.
+
+#### Nicht abgedeckt
+
+Das Erscheinungsbild auf dem echten iPhone — keine Testumgebung kann `env(safe-area-inset-top)` mit einem echten Wert belegen. Die Mechanik ist belegt und am simulierten Bildschirm abgenommen; die Bestätigung am Gerät bleibt beim Betreiber.
 
 ### Was dieses Refinement über das vorige sagt
 

@@ -49,6 +49,7 @@ async function simulateInset(page: Page, top: number, bottom: number) {
   await page.addStyleTag({
     content: `
       .pt-safe-top { padding-top: ${top}px !important; }
+      .pt-safe-top-6 { padding-top: calc(${top}px + 1.5rem) !important; }
       .bottom-safe-6 { bottom: calc(${bottom}px + 1.5rem) !important; }
       .bottom-safe-fab-stack { bottom: calc(${bottom}px + 84px) !important; }`,
   });
@@ -84,6 +85,17 @@ test.describe("Der Browser-Zustand bleibt unveraendert", () => {
     expect(box?.y).toBe(12);
     expect(box?.width).toBe(44);
     expect(box?.height).toBe(44);
+  });
+
+  test("/: Logo und Kopfabstand stehen im Browser unveraendert", async ({ page }) => {
+    // Der Gegenpart zum Inset-Test unten. `pt-safe-top-6` ist additiv, damit
+    // der Screen im Browser exakt seine 24px behaelt — ein Ersatz statt eines
+    // Summanden haette sie stillschweigend auf 0 gesetzt.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    const main = page.locator("main").first();
+    expect(await main.evaluate((e) => getComputedStyle(e).paddingTop)).toBe("24px");
+    expect((await page.locator("main img").first().boundingBox())!.y).toBe(24);
   });
 
   test("/: der Startscreen scrollt auf 360x640 weiterhin nicht", async ({ page }) => {
@@ -139,6 +151,32 @@ test.describe("Die Mechanik — ein Inset schiebt nach unten, statt zu stauchen"
       const box = await btn.boundingBox();
       expect(box!.y).toBeGreaterThanOrEqual(inset);
       expect(box!.height).toBe(44);
+    });
+  }
+
+  for (const [label, inset] of [["Notch", 47], ["Dynamic Island", 59]] as const) {
+    /**
+     * Der Waechter, dessen Fehlen den Befund vom 2026-09-21 durchgelassen hat.
+     *
+     * Refinement 3 prueft ausschliesslich **Bedienelemente** — auf `/` also nur
+     * das Burger-Icon, und das war korrekt. Das Logo ist kein Bedienelement und
+     * stand in keinem Kriterium; es blieb bei y=24 unter der Statusleiste
+     * liegen, waehrend alle Tests gruen waren.
+     *
+     * Geprueft wird deshalb das **oberste sichtbare Element**, unabhaengig
+     * davon, ob es bedienbar ist.
+     */
+    test(`${label} (${inset}px): auf / liegt auch das Logo unter der Statusleiste`, async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto("/");
+      await simulateInset(page, inset, 34);
+
+      const logo = page.locator("main img").first();
+      expect((await logo.boundingBox())!.y).toBeGreaterThanOrEqual(inset);
+
+      // Und der Inhalt darunter zieht mit, statt dass nur das Bild rutscht.
+      const headline = page.locator("main h1").first();
+      expect((await headline.boundingBox())!.y).toBeGreaterThanOrEqual(inset);
     });
   }
 
