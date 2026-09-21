@@ -27,7 +27,7 @@
 | PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Deployed | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
-| PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
+| PROJ-12 | PWA-Installation | P0 | PROJ-1 | In Progress | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
@@ -341,6 +341,31 @@ Alle 10 Endpunkte HTTP 200 (0,06–0,32 s), Security-Header inkl. HSTS. **Nachba
 **PROJ-12 ist abgeschlossen.**
 
 **Eine Vorhersage des vorigen Refinements hat sich bestätigt — und war zu eng.** Der Overlay-Eintrag vom selben Tag schloss mit „Nicht abgedeckt: die Safe Area auf einem echten iPhone … am Gerät zu bestätigen". Richtig vorhergesagt, aber nur für unten, wo sie behandelt war — nicht für oben, wo sie es nie war. Der Befund kam aus genau dem Gerätetest, den der Satz angekündigt hatte.
+
+## Offenes Refinement 4: Auf `/` rückt nur das Icon, nicht der Inhalt (2026-09-21)
+**PROJ-12** geht von Deployed zurück auf In Progress. Gerätetest des Betreibers auf dem installierten iPhone: *„alle seiten gut aussehen im full screen … außer die Seite `/`."* Damit sind **acht von neun Screens am echten Gerät bestätigt** — die Safe-Area-Behebung vom Vortag wirkt, aber nicht überall.
+
+**Ursache gemessen, und sie liegt in der Bauweise von `/`:**
+
+| | ohne Inset | mit 59px |
+|---|---|---|
+| **`/` Logo** | 24 | **24** — unverändert |
+| `/` Burger-Icon | 12 | 71 — rückt korrekt |
+| `/play` Inhalt | 56 | **115** — rückt mit |
+
+Auf den acht funktionierenden Screens ist die Kopfzeile ein **echtes Element im Fluss**: Sie wächst um den Inset und schiebt alles darunter mit. Auf `/` gibt es keine Kopfzeile — das Burger-Icon ist `absolute` und kostet **0px Layout-Höhe**, genau wie BUG-10 es wollte. Refinement 3 hat den Inset an den Wrapper dieses Icons gehängt: die eine Stelle auf `/`, die per Konstruktion nichts verschieben kann. Das Icon rückt, das Logo bleibt bei 24px und liegt unter der Statusleiste.
+
+**Warum meine QA das nicht gefunden hat:** Die neun Acceptance Criteria von Refinement 3 prüfen **Bedienelemente** — Zurück-Pfeil, Burger, Kopfzeile, FABs. Auf `/` ist das Burger-Icon das einzige, und es war korrekt. Das Logo ist kein Bedienelement und stand in keinem Kriterium; die 216 gemessenen Elemente enthielten es nie. Eine Lücke im Kriterienkatalog, nicht in der Messung: „Bedienelemente liegen frei" ist enger als „der Screen sieht richtig aus".
+
+**Entschieden: Der Inset kommt zusätzlich auf `<main>`**, additiv zu den bestehenden 24px. Logo und alles darunter rücken mit; das Icon behält seinen eigenen Inset.
+
+**Erwogen und verworfen: `/` bekommt doch eine echte Kopfzeile.** Der Betreiber tendierte zunächst dorthin, aus Sorge um das Logo — die Sorge war gegenstandslos, das Logo ist ein eigenes Element in der Seitenmitte und von beiden Wegen unberührt. Gegen die Kopfzeile sprechen zwei gemessene Gründe: Sie kostet 56px, die der Startscreen nicht hat (2026-09-10: Inhalt endet dann bei 615 von 640, auf 320×568 fehlen 45px) — BUG-10 wäre zurückgenommen und das Nicht-Scrollen-Kriterium fiele. Dazu bräuchte sie weder Zurück-Pfeil (oberste Ebene) noch Titel (das Logo zeigt den Namen). **Der Inset am Inhalt kostet null zusätzliche Höhe:** Der Platz, der oben entsteht, ist genau der, den die Statusleiste ohnehin verdeckt.
+
+**Ein Grenzfall geprüft und eingeordnet statt als Fehler gemeldet:** Auf 320×568 scrollt `/` mit Inset. Sie scrollt aber **schon heute** um 13px (vorbestehend, seit 2026-09-19 dokumentiert). Meine erste Messung meldete +72px — **unrealistisch simuliert:** Ein Gerät mit 320×568 ist ein iPhone SE mit Home-Button und **ohne Notch**, sein oberer Inset ist 20px, nicht die 59px von Dynamic Island (die gibt es erst ab 390px Breite). Realistisch wächst der Überlauf von 13 auf 33px. Das Kriterium nennt 360×640, und dort ist es erfüllt.
+
+**Für `/frontend`:** Der Inset gehört **additiv** zum bestehenden `py-6`, nicht als Ersatz. Das `pt-safe-top` am Icon-Wrapper **bleibt** — beide Insets sind nötig und stapeln sich nicht, weil der Wrapper aus dem Fluss ist. Neu dazu gehört ein Wächter, dass das **Logo** unter simuliertem Inset frei liegt: genau die Assertion, deren Fehlen den Befund durchgelassen hat.
+
+Spec ist aktualisiert (5 Acceptance Criteria in einem eigenen Block, Edge Cases 27–28, 3 Technical Requirements, 1 Produkt- und 1 technische Entscheidung, 1 neue Open Question zur Frage, ob Safe-Area-Kriterien künftig Inhalt statt nur Bedienelemente prüfen sollten, dazu ein Abschnitt „Refinement 4" mit der Messtabelle).
 
 ## Next Available ID: PROJ-15
 

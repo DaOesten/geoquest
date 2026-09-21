@@ -1,8 +1,8 @@
 # PROJ-12: PWA-Installation (Add to Homescreen)
 
-## Status: Deployed
+## Status: In Progress
 **Created:** 2026-09-18
-**Last Updated:** 2026-09-20 (Refinement: Safe Area — Statusleiste verdeckt die Kopfzeile in der installierten App)
+**Last Updated:** 2026-09-21 (Refinement 4: Safe Area — der Startscreen-Inhalt rückt nicht mit)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — der Startscreen `/` trägt einen der beiden Hinweis-Orte, und das Wurzel-Layout (`src/app/layout.tsx`) hält heute schon `themeColor` und `viewportFit: "cover"`
@@ -125,6 +125,14 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 - [ ] Angenommen die App ist installiert, wenn ein Player-Screen geöffnet wird (Navigation, Ankunft, Module, Outro), dann liegt kein Bedienelement unter dem Home-Indikator
 - [ ] Angenommen ein Gerät ohne Notch und ohne Home-Indikator (älteres iPhone, Android mit Tastenleiste), wenn die installierte App geöffnet wird, dann entsteht **kein** zusätzlicher Leerraum oben oder unten — der Inset ist dort `0px`
 
+### Safe Area — auch der Inhalt rückt mit (Refinement 4, 2026-09-21)
+
+- [ ] Angenommen die App ist auf einem iPhone mit Notch/Dynamic Island installiert, wenn der Startscreen `/` geöffnet wird, dann liegt das **Logo** vollständig unterhalb der Statusleiste
+- [ ] Angenommen dieselbe Lage, wenn `/` geöffnet wird, dann liegen auch Headline, Trennstrich, Untertitel und beide Mode-Cards unterhalb der Statusleiste
+- [ ] Angenommen dieselbe Lage, wenn `/` geöffnet wird, dann rückt das Burger-Icon **weiterhin** korrekt nach (Refinement 3 bleibt erfüllt)
+- [ ] Angenommen `/` wird **im Browser** geöffnet, wenn mit dem Zustand vor dieser Änderung verglichen wird, dann ist die Darstellung unverändert — Logo weiterhin bei y=24, Burger bei y=12
+- [ ] Angenommen ein Gerät mit 360×640, wenn `/` installiert geöffnet wird, dann bleiben Logo, Headline und beide Mode-Cards ohne Scrollen sichtbar (bestehendes PROJ-1-Kriterium)
+
 ### Verhalten ohne Netz
 
 - [ ] Angenommen die App ist installiert und der Service Worker aktiv, wenn der Nutzer sie ohne Internetverbindung startet, dann sieht er eine Geo-Quest-eigene Seite mit der Aussage, dass die App eine Internetverbindung zum Starten braucht — nicht die Fehlerseite des Browsers
@@ -199,6 +207,10 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 
 26. **Der Player-Navigations-Screen unten** *(Refinement 3)* → `min-h-[100dvh]` mit `justify-center` zentriert den Inhalt, statt ihn an den unteren Rand zu hängen — der „Station entdecken"-Button dürfte den Home-Indikator gar nicht erreichen. Das ist eine Ableitung aus dem Markup, **keine Messung**; am Gerät zu bestätigen. Bestätigt betroffen sind dagegen die drei Creator-FABs (siehe Technical Requirements).
 
+27. **Ein Screen ohne Kopfzeile** *(Refinement 4)* → `/` ist der einzige. Sein Burger-Icon ist `absolute` und kostet 0px Layout-Höhe (BUG-10) — es kann deshalb per Konstruktion nichts nach unten schieben. Ein Inset am Icon-Wrapper bewegt nur das Icon; der Inhalt braucht seinen eigenen am `<main>`. Wird künftig ein weiterer Screen ohne Kopfzeile gebaut, gilt dasselbe.
+
+28. **320×568 mit Inset** *(Refinement 4)* → Die Seite scrollt. Sie tut das aber **schon heute ohne Inset** um 13px (vorbestehend, seit 2026-09-19 dokumentiert); ein realistischer Inset für dieses Gerät sind 20px (iPhone SE, Home-Button, keine Notch), nicht die 59px von Dynamic Island. Das Nicht-Scrollen-Kriterium nennt 360×640, und dort ist es erfüllt.
+
 ## Technical Requirements
 
 - **Kein Backend, keine neuen Netzabhängigkeiten** — alle neuen Dateien werden von der eigenen Domain ausgeliefert
@@ -220,6 +232,12 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 - **Der Import-FAB auf `/play` weicht dem Hinweis aus**, solange dieser sichtbar ist, und kehrt beim Wegklicken an seine Position zurück
 - **Die Quest-Liste auf `/play` bekommt unteren Freiraum in Höhe des Hinweises**, solange er sichtbar ist, damit die letzte Karte erreichbar bleibt
 
+**Safe Area — Inhalt auf `/` (Refinement 4, 2026-09-21):**
+
+- **`<main>` auf `/` trägt den oberen Inset zusätzlich zu `py-6`**, additiv statt als Ersatz — sonst verliert der Screen im Browser seine 24px Kopfabstand
+- **Das `pt-safe-top` am `absolute`-Wrapper des Burger-Icons bleibt bestehen** — beide Insets sind nötig und stapeln sich nicht, weil der Wrapper aus dem Fluss ist
+- **Ein Wächter prüft, dass das Logo unter simuliertem Inset frei liegt** — das Fehlen genau dieser Assertion hat den Befund durchgelassen
+
 **Safe Area (Refinement 2026-09-20):**
 
 - **Jedes Element, das die oberste Bildschirmkante erreicht, respektiert `env(safe-area-inset-top)`.** Gemessen sind das drei Stellen, die neun Screens abdecken:
@@ -240,6 +258,7 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 - [ ] Verhält sich die Standortfreigabe in der installierten iOS-PWA wie im Safari-Tab, oder muss sie neu erteilt werden? (Edge Case 7) — nur auf einem echten iPhone abschließend zu klären; für die Korrektheit des Features unkritisch, weil der Permission-Screen aus PROJ-3 greift.
 - [ ] Bleibt es dauerhaft bei „keine Screenshots im Manifest"? Sie würden die Android-Installations-Ansicht aufwerten, erfordern aber gepflegtes Bildmaterial.
 - [ ] Soll die Bottom-Nav-Ausnahme für temporäre Hinweise in `docs/design-system.md` festgeschrieben werden? (Refinement 2026-09-20) Die Entscheidung ist hier begründet, aber das Design System kennt sie noch nicht — der nächste, der einen schwebenden Hinweis baut, liest dort weiterhin ein pauschales Verbot. Vorschlag: einen Satz bei der Regel in Zeile 62 ergänzen, der die Ausnahme eng fasst (temporär **und** wegklickbar **und** nicht navigierend).
+- [ ] Sollten die Acceptance Criteria für Safe Area künftig **Inhalt** statt nur **Bedienelemente** prüfen? *(Refinement 4)* Die neun Kriterien von Refinement 3 nennen Zurück-Pfeil, Burger, Kopfzeile und FABs — das Logo auf `/` fiel durch, weil es kein Bedienelement ist. Vorschlag: Bei künftigen Safe-Area-Prüfungen das oberste sichtbare Element je Screen messen, unabhängig davon, ob es bedienbar ist.
 - [ ] Reicht der 8%-Freiraum von `SheetContent` (`h-[92dvh]`, auf 844px rund 67px) verlässlich über den größten iOS-Inset (59px bei Dynamic Island)? *(Refinement 3, Edge Case 25)* Rechnerisch ja, aber nur am Gerät zu bestätigen. Wenn nein, braucht auch `sheet.tsx` den oberen Inset — das wäre eine geteilte shadcn-Komponente und beträfe alle Sheets der App.
 - [ ] Erreicht der „Station entdecken"-Button des Player-Navigations-Screens den Home-Indikator? *(Refinement 3, Edge Case 26)* Aus dem Markup abgeleitet: nein, weil `justify-center` zentriert statt unten anzuhängen. Nicht gemessen — am Gerät zu bestätigen, bevor dort vorsorglich Polsterung eingebaut wird.
 - [ ] Gehört die Safe-Area-Behandlung als Regel nach `docs/design-system.md`? *(Refinement 3)* Es ist jetzt die zweite Fehlerklasse dieser Art in diesem Feature (unten beim Overlay, oben bei den Kopfzeilen) und betrifft jedes künftige Element am Bildschirmrand. Vorschlag: ein Satz bei den Layout-Regeln, zusammen mit der bereits offenen Bottom-Nav-Ausnahme in einem Zug.
@@ -269,6 +288,7 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 | Start-URL ist `/`, nicht `/play` | Die installierte App verhält sich wie die Website. `/` trägt seit BUG-10 das vollständige Burger-Menu und beide Mode-Cards; von dort sind Play und Create je einen Tap entfernt. Ein Start auf `/play` würde den Creator in der installierten App verstecken, obwohl die Installation laut PRD auch ihm offensteht. | 2026-09-18 |
 | Kein Menu-Eintrag „App installieren" | Das Burger-Menu trägt bereits sieben Ziele in vier Gruppen. Ein achter Eintrag, der auf den meisten Geräten nichts tun kann (iOS bietet keinen programmatischen Weg), wäre mehr Last als Nutzen. | 2026-09-18 |
 | Offline-Seite verspricht ausdrücklich **keine** Offline-Fähigkeit | Sie sagt, dass Internet zum Starten nötig ist. Eine Formulierung wie „du bist offline" könnte als „sonst ginge es auch offline" gelesen werden — und würde ein Versprechen erzeugen, das das Produkt nicht hält. | 2026-09-18 |
+| **`/` bekommt den Inset am Inhalt statt eine echte Kopfzeile** | Betreiber-Entscheidung 2026-09-21, nach Klärung eines Missverständnisses: Die Sorge galt dem Logo, das von beiden Wegen unberührt bleibt (es ist ein eigenes Element in der Seitenmitte, nicht Teil der Kopfzeile). Gegen die Kopfzeile sprechen zwei gemessene Gründe — sie kostet 56px, die der Startscreen nicht hat (2026-09-10: Inhalt endet dann bei 615 von 640), und sie bräuchte weder Zurück-Pfeil noch Titel, wäre also eine leere Leiste für ein Icon. Der Inset am Inhalt kostet **null zusätzliche Höhe**: Der Platz, der oben entsteht, ist genau der, den die Statusleiste ohnehin verdeckt. | 2026-09-21 |
 | **Der randlose Look bleibt — die Safe Area wird respektiert, statt `statusBarStyle` zu ändern** | Betreiber-Entscheidung 2026-09-20. Der Einzeiler `statusBarStyle: "default"` hätte den Befund ebenfalls behoben, aber um den Preis eines massiven schwarzen Balkens über der App — genau das, was `black-translucent` am 2026-09-18 ausdrücklich vermeiden sollte („damit Statusleiste und Splash nahtlos in den App-Hintergrund übergehen"). Die Safe-Area-Lösung kostet mehr Stellen, hält aber die getroffene Gestaltungsentscheidung. Geprüft und entkräftet: das Risiko heller Flächen unter der Statusleiste — es gibt keine. Die Karte lebt ausschließlich im Stations-Sheet des Creators und erreicht die oberste Kante nie; alle Screens, die y=0 berühren, sind dunkel. | 2026-09-20 |
 | **Der Browser-Zustand ist nicht gefährdet — und braucht dafür keinen Code** | Die Sorge des Betreibers („im Browser sieht alles gut aus, das will ich nicht verlieren") ist berechtigt, aber durch die Wahl der Mechanismen bereits beantwortet: `env(safe-area-inset-top)` ist im Browser `0px`, weil Safari den Platz unter seiner Adressleiste selbst freihält, und `statusBarStyle` wird außerhalb des Standalone-Modus gar nicht gelesen. Beide sind von sich aus modus-abhängig. Eine zusätzliche Standalone-Abfrage im JavaScript wäre eine zweite Wahrheit über denselben Sachverhalt — die Fehlerklasse, die BUG-6 erzeugt hat. | 2026-09-20 |
 | **Die Info-Seiten kommen mit in den Scope** | Betreiber-Entscheidung 2026-09-20. Sie sind installiert übers Burger-Menu erreichbar und hätten sonst denselben Fehler — nur seltener gesehen, weil `start_url` auf `/` zeigt. Eine Datei mehr (`info-page-shell.tsx`), derselbe Prüf-Durchlauf, dasselbe Gerät. Ein eigener Zyklus dafür hätte mehr gekostet als die Scope-Erweiterung. | 2026-09-20 |
@@ -297,6 +317,7 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 | ~~Auf `/` steht der Hinweis **hinter** den Mode-Cards~~ **gegenstandslos am 2026-09-20** | Die Reihenfolge im Seitenfluss entscheidet nichts mehr, sobald der Hinweis gar nicht mehr im Fluss steht. Mit ihr entfällt auch die daraus entstandene `compact`-Prop: Es gibt nur noch **eine** Fassung, und die ist die kompakte. | 2026-09-18, gegenstandslos 2026-09-20 |
 | Speicherschlüssel `gq_install_hint_dismissed` mit Zeitstempel | Gleiches Präfix und gleicher Mechanismus wie `gq_first_visit_done` (PROJ-1). Ein Zeitstempel statt eines Wahrheitswerts, weil die 30-Tage-Frist sonst nicht berechenbar wäre. | 2026-09-18 |
 | Konstanten (Frist, Speicherschlüssel) in `src/lib/app-nav.ts` | Dort liegen bereits die app-weiten Navigations- und Schalterkonstanten (`KOFI_URL`, `ANLEITUNG_VERFUEGBAR`). Das Modul ist bewusst kein Client-Modul und aus Server- wie Client-Komponenten importierbar. | 2026-09-18 |
+| **Auf `/` braucht es zwei Insets, nicht einen** | Das Burger-Icon ist `absolute` (BUG-10, damit es 0px Layout-Höhe kostet) und der Inhalt steht im normalen Fluss — zwei getrennte Positionierungswelten, die sich nicht gegenseitig verschieben. Refinement 3 hat nur die erste bedient. Die beiden Insets stapeln sich nicht: Der Wrapper ist aus dem Fluss, sein Padding wirkt nur auf ihn selbst. | 2026-09-21 |
 | **Der Inset als Polsterung *innerhalb* der Kopfzeile, nicht als Abstand davor** | Beide Kopfzeilen haben einen halbtransparenten Blur-Hintergrund (`bg-background/80` bzw. `/70` mit `backdrop-blur-sm`). Läge der Inset außerhalb — als Margin, als Wrapper-Padding, als Spacer-Element —, begänne die Blur-Fläche erst unterhalb der Statusleiste, und darüber stünde ein durchsichtiger Spalt mit blankem Seiteninhalt. Der Effekt wäre schlechter lesbar als der Fehler, den wir beheben. Innerhalb gesetzt wächst die Fläche nach oben mit und die 56px-Zeile bleibt unangetastet. | 2026-09-20 |
 | **`env()` direkt, ohne Plattform-Abfrage und ohne feste Ersatzhöhe** | Der Browser kennt den Wert; er ist `0px` ohne Notch, 47px mit Notch, 59px bei Dynamic Island. Jede Konstante wäre auf mindestens einer dieser drei Klassen falsch — und eine Plattform-Abfrage („ist das iOS?") ist exakt das Muster, das in BUG-6 (PROJ-3) live ging: aus einem Merkmal auf eine Plattform schließen, während die richtige Antwort direkt verfügbar war. | 2026-09-20 |
 | **Drei Stellen für neun Screens, statt Screen für Screen** | `AppHeader` allein deckt sieben Screens ab; dazu der schwebende Burger auf `/` (eigene Stelle, weil er bewusst keine Kopfzeile ist — BUG-10) und `InfoPageShell` für die vier Info-Seiten. Die Alternative wäre ein Wrapper im Wurzel-Layout gewesen: verworfen, weil er auch die Backdrops nach unten schöbe, die ausdrücklich bis zur obersten Kante reichen sollen — die durchscheinende Statusleiste braucht eine Fläche unter sich. | 2026-09-20 |
@@ -983,6 +1004,58 @@ Der Browser-Zustand ist damit auch in Production unverändert (`padding-top: 0px
 **Zwei Auffälligkeiten geprüft statt weggewunken:** Chrome meldete 2 fehlgeschlagene `?_rsc=`-Requests — ein ruhiger Besuch von `/`, `/play` und `/about` ergibt **0 fehlgeschlagene Requests**; sie stammen aus der schnellen Testnavigation. Der verbleibende Konsolenfehler ist `/favicon.ico`: Ein Besuch von `/` erzeugt **0 Antworten ≥400**, Chrome fragt die Datei von sich aus an. Vorbestehend, seit dem Deploy vom 2026-09-20 dokumentiert.
 
 **Nicht belegbar und weiterhin offen:** das Erscheinungsbild auf einem echten iPhone. Keine Testumgebung kann `env(safe-area-inset-top)` mit einem echten Wert belegen (in dieser QA gemessen: ein `env()`-Fallback greift nicht, weil die Variable mit `viewportFit: "cover"` zu einem echten `0px` auflöst). Die Mechanik ist belegt, der Augenschein bleibt dem Betreiber.
+
+---
+
+## Refinement 4 (2026-09-21) — Auf `/` rückt nur das Icon, nicht der Inhalt
+
+**Status:** Spec aktualisiert, Umsetzung offen (`/frontend`)
+
+### Der Befund
+
+Gerätetest des Betreibers auf dem installierten iPhone: *„alle seiten gut aussehen im full screen … außer die Seite `/`."* Damit sind acht von neun Screens am echten Gerät bestätigt — und die eine Ausnahme ist genau die Stelle, die baulich anders ist.
+
+### Die Ursache, gemessen
+
+| | ohne Inset | mit 59px |
+|---|---|---|
+| **`/` Logo** | 24 | **24** — unverändert |
+| `/` Burger-Icon | 12 | 71 — rückt korrekt |
+| `/play` Inhalt | 56 | **115** — rückt mit |
+
+Auf den acht funktionierenden Screens ist die Kopfzeile ein **echtes Element im Fluss**. Sie wächst um den Inset, und alles darunter verschiebt sich automatisch mit.
+
+Auf `/` gibt es keine Kopfzeile. Das Burger-Icon ist `absolute` positioniert und kostet **0px Layout-Höhe** — das war der ganze Zweck von BUG-10 (2026-09-10), damit Logo, Headline und beide Mode-Cards ohne Scrollen passen. Refinement 3 hat den Inset an den Wrapper dieses Icons gehängt: die eine Stelle auf `/`, die per Konstruktion nichts verschieben kann. Das Icon rückt, der Inhalt bleibt bei 24px und liegt unter der Statusleiste.
+
+### Warum die QA das nicht gefunden hat
+
+Die neun Acceptance Criteria von Refinement 3 prüfen **Bedienelemente** — Zurück-Pfeil, Burger, Kopfzeile, FABs. Auf `/` ist das Burger-Icon das einzige Bedienelement, und es war korrekt. Das Logo ist kein Bedienelement und stand in keinem Kriterium; die 216 gemessenen Elemente enthielten es nie.
+
+Das ist eine Lücke im Kriterienkatalog, nicht in der Messung: „Bedienelemente liegen frei" ist enger als „der Screen sieht richtig aus". Refinement 3 hat die Frage nie gestellt, ob auch *Inhalt* unter die Statusleiste geraten kann.
+
+### Der gewählte Weg
+
+**Der Inset kommt zusätzlich auf `<main>`**, additiv zu den bestehenden 24px (`py-6`). Logo und alles darunter rücken mit; das Icon behält seinen eigenen Inset an seinem `absolute`-Wrapper.
+
+Erwogen und **verworfen: `/` bekommt doch eine echte Kopfzeile.** Der Betreiber tendierte zunächst dorthin, aus Sorge um das Logo — die Sorge war gegenstandslos (das Logo ist ein eigenes Element in der Seitenmitte und von beiden Wegen unberührt). Gegen die Kopfzeile sprechen zwei gemessene Gründe: Sie kostet 56px, und der Startscreen hat sie nicht (gemessen 2026-09-10: Inhalt endet dann bei 615 von 640, auf 320×568 fehlen 45px) — das Kriterium „Logo, Headline und beide Mode-Cards ohne Scrollen sichtbar" fiele, und BUG-10 wäre zurückgenommen. Dazu bräuchte die Zeile weder Zurück-Pfeil (oberste Ebene) noch Titel (das Logo zeigt den Namen) und wäre eine leere Leiste für ein Icon.
+
+**Der entscheidende Unterschied:** Weg A kostet **null zusätzliche Höhe**. Der Platz, der oben entsteht, ist genau der, den die Statusleiste ohnehin verdeckt — er war nie nutzbar.
+
+### Was das nicht bricht
+
+Im Browser ist `env(safe-area-inset-top)` weiterhin `0px`; `/` verhält sich dort unverändert. Auf 360×640 — dem Viewport des Nicht-Scrollen-Kriteriums — bleibt es erfüllt.
+
+**Ein Grenzfall, geprüft und eingeordnet:** Auf 320×568 scrollt `/` **schon heute** um 13px (vorbestehend, seit 2026-09-19 in INDEX.md dokumentiert). Mit Inset wächst das. Meine erste Messung meldete +72px — **das war unrealistisch simuliert:** Ein Gerät mit 320×568 ist ein iPhone SE mit Home-Button und **ohne Notch**; sein oberer Inset ist 20px, nicht 59px (die 59px gehören zu Dynamic Island, erst ab 390px Breite). Mit realistischen 20px liegt der Überlauf bei 33px statt 13px. Kein neuer Fehler, sondern ein vorbestehender, der um 20px wächst.
+
+### Für `/frontend`
+
+- Der Inset gehört **additiv** zum bestehenden `py-6`, nicht als Ersatz — sonst verliert der Screen im Browser seine 24px Kopfabstand.
+- Das `pt-safe-top` am `absolute`-Wrapper des Icons **bleibt**. Beide Insets sind nötig: Der eine schiebt das Icon, der andere den Inhalt; sie stapeln sich nicht, weil der Wrapper aus dem Fluss ist.
+- Der bestehende Wächter auf die y-Position des Logos in `tests/proj-12-safe-area.spec.ts` prüft heute den **Browser**-Zustand (y=12 für den Burger). Er bleibt richtig. Neu dazu gehört ein Wächter, dass das **Logo** unter simuliertem Inset frei liegt — genau die Assertion, deren Fehlen diesen Befund durchgelassen hat.
+
+### Abnahme
+
+Wie bei Refinement 3 kann keine Testumgebung einen echten oberen Inset erzeugen. Prüfbar ist die Mechanik unter simuliertem Inset, der unveränderte Browser-Zustand und das Nicht-Scrollen auf 360×640. Das Erscheinungsbild prüft der Betreiber am Gerät — dieses Mal mit dem Blick auf das Logo, nicht nur auf das Menu.
 
 ### Was dieses Refinement über das vorige sagt
 
