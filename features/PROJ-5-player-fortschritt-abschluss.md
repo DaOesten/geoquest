@@ -513,3 +513,80 @@ Die gezogenen Selektoren zielen jetzt auf das `listitem` statt auf den Link — 
 ### Nicht abgedeckt
 - Ob sich das Extra-Tap für den Reset am echten Gerät schlechter anfühlt als der bisherige Direkt-Button — eine Geschmacksfrage, die nur der Betreiber am Handy beantworten kann
 - Der Creator bekommt weiterhin keinen „Zurücksetzen"-Eintrag (als Open Question vermerkt, bewusst nicht in den Scope gezogen)
+
+
+---
+
+## QA Test Results — Refinement „Quests im Play-Modus löschen"
+
+**Tested:** 2026-09-21
+**App:** Production-Build auf http://localhost:3100
+**Engines:** Desktop Chrome 152 + Mobile Safari (WebKit)
+
+Weil das Feature in derselben Sitzung gebaut wurde, habe ich die zentralen Behauptungen **nicht übernommen, sondern mit eigenen Sonden neu gemessen** — auf **6 Viewports statt einem** (320×568 bis 1440×900), auf beiden Engines, und um Prüfungen erweitert, die die Frontend-Phase nicht anstellte: einen **Hit-Test** (ist der Trigger wirklich das oberste Element an seiner Position?), Kontrastmessung, korrupte Storage-Daten und Doppelklick.
+
+**Genau dieser Hit-Test hat den Befund gebracht, den die Frontend-Phase nicht hatte.**
+
+### Acceptance Criteria
+
+**Aktionsmenü (4/4 erfüllt)** — Trigger auf allen drei Kartenzuständen vorhanden und überall **44×44px**; Kartentitel führt weiterhin in die Quest; alle Menü-Einträge beschriftet; „Zurücksetzen" erscheint nur bei abgeschlossenen Quests, bei „Neu"/„Live" **0 Treffer**.
+
+**Reset (5/5 erfüllt)** — Verhalten unverändert: sofort, ohne Bestätigung, mit Toast; nach dem Reset verschwindet der Eintrag aus dem Menü, weil die Karte „Neu" wird.
+
+**Quest löschen (7/7 erfüllt)**, auf beiden Engines identisch gemessen:
+
+| Kriterium | Ergebnis |
+|---|---|
+| Dialog nennt Quest-Name + Endgültigkeit | beides vorhanden |
+| Bestätigen entfernt Quest **und** Fortschritt | `gq_quests` 3→2, `gq_progress` der Quest `null` |
+| Nachbar-Quests unberührt | Fortschritt der anderen Quest erhalten |
+| Abbrechen | Dialog zu, Karte da, Speicher unverändert (3) |
+| Im Play gelöscht → im Creator weg | bestätigt, andere Quest dort noch sichtbar |
+| Letzte Quest → Gesamt-Empty-State | „Keine Quests geladen" + Import-Button sichtbar |
+| Aktiver Filter → Filter-Empty-State | „Keine aktiven Quests", Gesamt-Empty **nicht** gezeigt, Tab bleibt `aria-selected=true` |
+
+**Gesamt: 16 von 17 Acceptance Criteria erfüllt.** Das 17. (Trigger auf allen drei Zuständen) ist funktional erfüllt, aber durch BUG-15 in einer häufigen Konstellation nicht bedienbar.
+
+### BUG-15 (Medium, neu): Der Import-FAB verdeckt den Menü-Trigger der untersten Karte
+
+**Der FAB liegt fast deckungsgleich über dem neuen Trigger.** Gemessen auf 360×640 mit 4 Quests:
+
+| Element | x | y |
+|---|---|---|
+| Menü-Trigger „Quest 4" | 287–331 | 567–611 |
+| Import-FAB | 292–340 | 568–616 |
+
+Ein Hit-Test auf die Trigger-Mitte liefert **„Quest importieren"** statt „Quest-Aktionen"; ein Klickversuch scheitert mit Playwrights „subtree intercepts pointer events". **Am Bildschirm bestätigt:** Bei der untersten Karte steht der `+`-FAB genau dort, wo die anderen Karten ihren `⋮` zeigen.
+
+**Reichweite gemessen — 72 Kombinationen** (2 Engines × 6 Viewports × 1–6 Quests): Betroffen sind **320×568 und 360×640 ab 4 Quests**, auf **beiden Engines**. Ab 390px Breite tritt es nicht auf.
+
+**Es ist ein Regress dieses Refinements, nicht vorbestehend** — gegen `0b55b8f~1` gegengeprüft: Dort lag der Reset-Button bei 4 Quests auf **y 644**, also **außerhalb des 640px-Bildschirms**, und konnte gar nicht verdeckt werden. Erst 3 Quests brachten ihn ins Bild, und dort gab es keine Kollision. Die neue Karte ist höher (Badge-Zeile plus Titel), wodurch der Trigger der vierten Karte genau in die FAB-Zone rückt.
+
+**Nicht blockierend, aber echt:** Scrollen löst es — nach 42px ist der Trigger frei und der Klick geht durch (gemessen). Der Nutzer sieht jedoch keinen Hinweis darauf; für ihn ist die unterste Quest schlicht nicht löschbar. Betroffen sind die zwei kleinsten Referenz-Viewports, und 360×640 ist der Viewport, den das Projekt an mehreren Stellen als Maßstab nennt.
+
+**Naheliegende Lösungen** (nicht Teil der QA): der Liste unteren Freiraum geben, solange der FAB steht — dasselbe Muster, das `play/page.tsx` für den Installations-Hinweis bereits anwendet (`installHintVisible ? pb-... : pb-4`).
+
+### Security-Audit — ohne Befund
+
+- **XSS über den Quest-Namen:** `<img src=x onerror=...>` und `<script>` im Namen landen als **escapter Text** im Dialog — 0 injizierte `img`-Elemente, 0 `script`-Tags im Dialog, `window.__pwn` bleibt `null`, 0 Browser-Dialoge.
+- **Überlanger Name (300 Zeichen):** kein horizontaler Overflow (0px), Dialog bleibt 390px breit, **beide Buttons sichtbar und im Bild**.
+- **Korrupte `gq_quests`-Daten** in sechs Varianten (`null`, Objekt statt Array, Quest ohne Felder, kein JSON, `stations: null`): **0 `pageerror`**, Seite durchgehend bedienbar.
+- **Doppelklick auf „Löschen":** entfernt genau **eine** Quest, nicht zwei.
+
+### Kontrast (gemessen, nicht geschätzt)
+
+Dialog-Titel **19.40:1**, Dialog-Text **8.02:1** — beide weit über der 4.5:1-Vorgabe des PRD. Der Menü-Inhalt trägt `data-theme="dark"` explizit; ohne diesen Griff wäre er hell auf hell (die BUG-1-Falle des Projekts).
+
+### Über die Spec hinaus geprüft
+
+Tastaturbedienung (Menü per Enter, Pfeiltasten, Dialog per Escape) — funktioniert; **der Dialog startet mit Fokus auf „Abbrechen"**, ein versehentliches Enter löscht also nichts. Dazu Hit-Tests statt bloßer `toBeVisible()`-Prüfungen, sechs Viewports und der horizontale Overflow (0px auf allen).
+
+### Neue Tests
+
+4 zusätzliche Tests in `tests/proj-5-quest-loeschen-play.spec.ts` (PROJ-5-Löschen-Suite jetzt **18 je Engine**): der **BUG-15-Wächter** als `test.fail` (er wird grün, sobald der Fehler behoben ist, und schlägt an, falls er unbemerkt wiederkehrt), der Scroll-Umweg als Beleg, dass es ein Verdeckungs- und kein Funktionsproblem ist, sowie korrupte Storage-Daten und Doppelklick.
+
+**Regression:** Unit **271/271**. E2E über beide Engines **1092 passed / 55 skipped / 1 unexpected / 0 flaky**. Der Fehlschlag liegt in `proj-12-sw-nur-production.spec.ts`, das dieses Refinement nicht anfässt, und läuft **3× seriell grün** — die in diesem Projekt dokumentierte Service-Worker-Flakiness, kein Regress. Build und Lint sauber. Produktcode nach allen Gegenproben per `git diff` als **byte-identisch** zum Commit bestätigt.
+
+### Produktionsreife
+
+**Keine Critical- oder High-Bugs.** BUG-15 ist Medium: kein Datenverlust, kein Sicherheitsproblem, mit Scrollen umgehbar — aber auf dem Referenz-Viewport reproduzierbar und ein Regress dieses Refinements. Die Entscheidung, ob er vor dem Deploy behoben wird, liegt beim Betreiber.

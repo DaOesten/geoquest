@@ -20,7 +20,7 @@
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
 | PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
-| PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | In Progress | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
+| PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | In Review | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
 | PROJ-7 | Creator — Stationen-Editor | P0 | PROJ-6 | Deployed | [Spec](PROJ-7-creator-stationen-editor.md) | 2026-08-23 |
 | PROJ-8 | Creator — Modul-Editor | P0 | PROJ-7 | Deployed | [Spec](PROJ-8-creator-modul-editor.md) | 2026-08-23 |
@@ -455,6 +455,22 @@ Spec ist aktualisiert (1 User Story, 4 Acceptance-Criteria-Blöcke mit 17 Kriter
 **Suiten gegen den Production-Build:** Unit **271/271**, E2E über beide Engines **1083 passed / 55 skipped / 0 failed / 0 flaky**, die beiden PROJ-5-Dateien einzeln **60/60**. Build und Lint sauber. Gelaufen mit `--workers=2` nach der in diesem INDEX dokumentierten Regel.
 
 **Beobachtung ohne Bug-Status (vorbestehend):** Der Bestätigen-Button im Dialog ist **Teal** (`AlertDialogAction` nutzt die Default-Variante `bg-primary`), also dieselbe Farbe wie jeder harmlose CTA — obwohl er endgültig löscht. `/create` sieht identisch aus, beide teilen sich die Komponente seit PROJ-6. Bewusst nicht mitgeändert: eine Abweichung von einem live getesteten Bestandsmuster, die niemand angefordert hat, und der Menü-Eintrag trägt die Warnfarbe bereits. Ein eigenes Refinement über beide Screens wäre es wert.
+
+**QA am 2026-09-21 abgeschlossen: 16 von 17 Acceptance Criteria erfüllt, 1 Medium-Bug (BUG-15), keine Critical/High.**
+
+Weil in derselben Sitzung gebaut, habe ich die zentralen Behauptungen **neu gemessen statt übernommen** — auf **6 Viewports statt einem**, beiden Engines, und um Prüfungen erweitert, die die Frontend-Phase nicht anstellte: einen **Hit-Test** (ist der Trigger wirklich das oberste Element an seiner Position?), Kontrast, korrupte Storage-Daten, Doppelklick. **Genau dieser Hit-Test hat den Befund gebracht.**
+
+**BUG-15 (Medium, neu): Der Import-FAB verdeckt den Menü-Trigger der untersten Karte.** Gemessen auf 360×640 mit 4 Quests liegen Trigger (x287–331/y567–611) und FAB (x292–340/y568–616) fast deckungsgleich; ein Hit-Test auf die Trigger-Mitte liefert **„Quest importieren"**, ein Klick scheitert mit „subtree intercepts pointer events". **Am Bildschirm bestätigt** — bei der untersten Karte steht der `+` genau dort, wo die anderen ihren `⋮` zeigen.
+
+**Reichweite gemessen — 72 Kombinationen** (2 Engines × 6 Viewports × 1–6 Quests): betroffen sind **320×568 und 360×640 ab 4 Quests**, auf beiden Engines; ab 390px Breite nicht. **Es ist ein Regress dieses Refinements**, gegen `0b55b8f~1` gegengeprüft: Dort lag der Reset-Button bei 4 Quests auf **y 644**, also außerhalb des 640px-Bildschirms, und konnte gar nicht verdeckt werden. Die neue Karte ist höher, wodurch der Trigger genau in die FAB-Zone rückt. Scrollen löst es (42px genügen), aber der Nutzer sieht keinen Hinweis darauf — für ihn ist die unterste Quest schlicht nicht löschbar. Naheliegende Lösung: der Liste unteren Freiraum geben, solange der FAB steht — dasselbe Muster, das `play/page.tsx` für den Installations-Hinweis schon anwendet.
+
+**Security ohne Befund:** Markup im Quest-Namen wird als escapter Text gerendert (0 injizierte Elemente, `window.__pwn` bleibt `null`, 0 Dialoge); ein 300-Zeichen-Name erzeugt 0px Overflow und lässt beide Dialog-Buttons im Bild; sechs Varianten korrupter `gq_quests`-Daten ergeben **0 `pageerror`** bei durchgehend bedienbarer App; ein Doppelklick auf „Löschen" entfernt genau eine Quest.
+
+**Kontrast gemessen:** Dialog-Titel **19.40:1**, Dialog-Text **8.02:1**. Der Menü-Inhalt trägt `data-theme="dark"` explizit — ohne diesen Griff wäre er hell auf hell (die BUG-1-Falle).
+
+**4 neue Tests** (Löschen-Suite jetzt 18 je Engine): der **BUG-15-Wächter** als `test.fail` — er wird grün, sobald der Fehler behoben ist, und schlägt an, falls er unbemerkt wiederkehrt — dazu der Scroll-Umweg als Beleg, dass es ein Verdeckungs- und kein Funktionsproblem ist, sowie korrupte Daten und Doppelklick.
+
+**Regression:** Unit **271/271**. E2E über beide Engines **1092 passed / 55 skipped / 1 unexpected / 0 flaky**. Der Fehlschlag liegt in `proj-12-sw-nur-production.spec.ts`, das dieses Refinement nicht anfässt, und läuft **3× seriell grün** — die in diesem Projekt dokumentierte Service-Worker-Flakiness, kein Regress. Build und Lint sauber. Produktcode nach allen Gegenproben per `git diff` als **byte-identisch** zum Commit bestätigt.
 
 **Nicht abgedeckt:** ob sich der Extra-Tap für „Zurücksetzen" am echten Gerät schlechter anfühlt als der bisherige Direkt-Button (nur am Handy zu beantworten), und Firefox.
 

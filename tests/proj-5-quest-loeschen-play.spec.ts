@@ -147,6 +147,85 @@ test.describe("PROJ-5: Quests im Play-Modus loeschen", () => {
     });
   });
 
+  test.describe("QA-Ergaenzungen 2026-09-21", () => {
+    /**
+     * BUG-15: Der Import-FAB (`fixed bottom-6 right-5`) liegt exakt ueber dem
+     * Menue-Trigger der untersten Karte, sobald die Liste so lang ist, dass
+     * diese Karte am unteren Bildschirmrand steht. Gemessen auf 360x640 mit
+     * 4 Quests: Trigger x287..331/y567..611, FAB x292..340/y568..616.
+     *
+     * Dieser Test haelt den GEWUENSCHTEN Zustand fest und faellt, solange der
+     * Fehler besteht. Er ist bewusst kein Wunschdenken: Der Trigger ist das
+     * einzige Bedienelement der Karte, und ohne ihn ist Loeschen fuer genau
+     * diese Quest nicht erreichbar, ohne vorher zu scrollen.
+     */
+    test.fail("BUG-15: der FAB verdeckt den Menue-Trigger der untersten Karte nicht", async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 360, height: 640 });
+      const many = Array.from({ length: 4 }, (_, i) => listQuest(`bug15-${i}`, `Quest ${i + 1}`));
+      await seedQuests(page, many);
+      await page.reload();
+
+      const trigger = questCard(page, "Quest 4").getByRole("button", { name: "Quest-Aktionen" });
+      const box = await trigger.boundingBox();
+      expect(box).not.toBeNull();
+
+      const topmost = await page.evaluate(({ x, y }) => {
+        const el = document.elementFromPoint(x, y);
+        return el?.closest("button")?.getAttribute("aria-label") ?? el?.tagName ?? null;
+      }, { x: box!.x + box!.width / 2, y: box!.y + box!.height / 2 });
+
+      expect(topmost).toBe("Quest-Aktionen");
+    });
+
+    test("nach Scrollen ans Listenende ist der Trigger der untersten Karte erreichbar", async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 360, height: 640 });
+      const many = Array.from({ length: 4 }, (_, i) => listQuest(`scroll-${i}`, `Quest ${i + 1}`));
+      await seedQuests(page, many);
+      await page.reload();
+
+      // Der Umweg, der den Fehler heute umgeht — belegt zugleich, dass es ein
+      // Verdeckungs- und kein Funktionsproblem ist.
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+      await page.waitForTimeout(300);
+
+      await questCard(page, "Quest 4").getByRole("button", { name: "Quest-Aktionen" }).click();
+      await expect(page.getByRole("menu")).toBeVisible();
+      await expect(page.getByRole("menuitem", { name: "Löschen" })).toBeVisible();
+    });
+
+    test("korrupte gq_quests-Daten legen die Seite nicht lahm", async ({ page }) => {
+      await seedQuests(page, [Q_NEW]);
+      const errors: string[] = [];
+      page.on("pageerror", (e) => errors.push(String(e)));
+
+      for (const bad of ["null", '{"a":1}', '[{"id":"z"}]', "nicht-json"]) {
+        await page.evaluate((v) => localStorage.setItem("gq_quests", v), bad);
+        await page.reload();
+        await expect(page.getByRole("heading", { name: /Meine Quests/i })).toBeVisible();
+      }
+      expect(errors).toHaveLength(0);
+    });
+
+    test("ein Doppelklick auf Loeschen entfernt genau eine Quest", async ({ page }) => {
+      await seedQuests(page, [Q_NEW, Q_LIVE]);
+      await page.reload();
+
+      await openQuestMenu(page, Q_NEW.name);
+      await page.getByRole("menuitem", { name: "Löschen" }).click();
+      await page.getByRole("button", { name: "Löschen" }).dblclick({ delay: 20 });
+      await page.waitForTimeout(400);
+
+      const names = await page.evaluate(
+        () => (JSON.parse(localStorage.getItem("gq_quests") || "[]") as { name: string }[]).map((q) => q.name)
+      );
+      expect(names).toEqual([Q_LIVE.name]);
+    });
+  });
+
   test.describe("Loeschen", () => {
     test("'Loeschen' oeffnet einen Bestaetigungsdialog mit dem Quest-Namen", async ({ page }) => {
       await seedAllThreeStates(page);
