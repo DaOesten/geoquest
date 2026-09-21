@@ -1158,3 +1158,16 @@ Das Bild läuft jetzt über die **volle Fensterbreite** und unter die halbtransp
 **Ein Test musste korrigiert werden, nicht das Produkt:** Der Wächter auf die Textschutz-Ebene suchte den Verlauf über die DOM-Verschachtelung von der Headline aus, die sich durch den zusätzlichen Container geändert hat. Er sucht jetzt vom Bild aus — der Verlauf bleibt dessen Geschwister.
 
 Gegenprobe: Hero zurück in den Container → der Randlos-Test fällt auf beiden Engines. **Unit 271/271, E2E beide Engines 1053 passed / 55 skipped / 0 failed / 0 flaky.**
+
+### Nachtrag 2: Route und X werden sichtbar (2026-09-21)
+Betreiber: *„Nicht mehr so dunkel, so dass man die Route und das x besser wahrnehmen kann."*
+
+**Die Ursache war nicht die Bildhelligkeit, sondern der Verlauf.** Gemessen liegen Route und X bei 38–43% bzw. 62–72% der Bildbreite — der Textschutz war genau dort am stärksten: **X unter 88% Abdunklung**, Schriftzug unter 26%. Jetzt: X bei 72%, Route rechts und Schriftzug bei **0%**.
+
+Zwei Eingriffe: flächige Ebene von 30% auf 15%, Verlauf endet ab `lg` bei **68% statt am rechten Rand**.
+
+**Ein Wunsch war nicht erfüllbar, und das ist gemessen:** „Bild weiter nach links" hätte Route und X **aus dem Bild geschoben** (Schwerpunkt 69% der Breite). Die Wünsche liefen gegeneinander; nach Vorlage der Messung hat der Betreiber randlos + schwächeren Verlauf gewählt.
+
+**Ein Fehler in meiner Umsetzung, durch Messen gefunden:** `lg:via-background/[0.68] lg:via-52%` plus `lg:to-68%` — **zwei `via-*`-Utilities kollidieren**, Tailwind erzeugt daraus einen Stop ohne Position. Der berechnete Wert kam ohne jede Prozentangabe zurück, der Verlauf lief weiter bis zum Rand. Erst als arbitrary value greifen die Stops. Der zugehörige Test war zweimal falsch (suchte `transparent`, das als `rgba(0,0,0,0)` zurückkommt; dann eine feste Regex) und liest jetzt die letzte Prozentangabe.
+
+**Kontrast: schlechtester Wert 7.56:1** über vier Viewports, Vorgabe 4.5:1. **Unit 271/271, E2E beide Engines 1055 passed / 55 skipped / 0 flaky.**

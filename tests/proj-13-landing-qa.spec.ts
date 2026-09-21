@@ -347,6 +347,35 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
     expect(found, "kein Verlauf über dem Hintergrundbild gefunden").toBe(true);
   });
 
+  test("der Verlauf gibt die rechte Bildhälfte frei", async ({ page }) => {
+    // Der Betreiber wollte Route und X auf der Strasse erkennen koennen.
+    // Gemessen lagen sie vorher unter 76-88% Abdunklung. Der Verlauf endet
+    // deshalb bei 68% statt erst am rechten Rand — rechts davon traegt das
+    // Bild unveraendert.
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/about");
+
+    const endsEarly = await page.evaluate(() => {
+      const img = document.querySelector<HTMLImageElement>('main img[alt=""]')!;
+      const layer = [...img.parentElement!.children].find((el) =>
+        /gradient/.test(getComputedStyle(el).backgroundImage)
+      )!;
+      // Der letzte Stop muss VOR dem rechten Rand liegen, sonst verdeckt der
+      // Verlauf Route und X. Erst als arbitrary value greifen die Prozent-
+      // Angaben: Zwei `via-*`-Utilities kollidieren, Tailwind erzeugt daraus
+      // nur einen Stop ohne Position.
+      // `transparent` kommt als `rgba(0, 0, 0, 0)` zurueck — die letzte
+      // Prozentangabe im Wert ist der gesuchte Stop.
+      const bg = getComputedStyle(layer).backgroundImage;
+      const all = [...bg.matchAll(/(\d+)%/g)].map((m) => Number(m[1]));
+      return all.length > 0 && all[all.length - 1] <= 75;
+    });
+    expect(
+      endsEarly,
+      "der Verlauf läuft bis zum rechten Rand und verdeckt Route und X"
+    ).toBe(true);
+  });
+
   test("die Nachbarseiten bekommen kein Hintergrundbild", async ({ page }) => {
     for (const path of ["/anleitung", "/impressum", "/datenschutz"]) {
       await page.goto(path);

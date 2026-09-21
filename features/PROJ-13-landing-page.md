@@ -2470,3 +2470,35 @@ Alle über der 4.5:1-Vorgabe, auch nach dem strengsten Maßstab.
 **Ein Test musste dabei korrigiert werden, nicht das Produkt:** Der Wächter auf die Textschutz-Ebene suchte den Verlauf über die DOM-Verschachtelung von der Headline aus. Die hat sich durch den zusätzlichen Container geändert. Er sucht jetzt vom **Bild** aus — der Verlauf bleibt dessen Geschwister, egal wie tief verschachtelt wird.
 
 **Gegenprobe:** Hero zurück in den Container → der Randlos-Test fällt auf beiden Engines. **Suiten: Unit 271/271, E2E beide Engines 1053 passed / 55 skipped / 0 failed / 0 flaky.**
+
+### Nachtrag 2 (2026-09-21): Route und X werden sichtbar
+
+Betreiber: *„Nicht mehr so dunkel, so dass man die Route und das x auf dem Bild besser wahrnehmen kann."*
+
+**Die Ursache war nicht die Bildhelligkeit, sondern der Verlauf** — und das ließ sich messen. Route und X liegen bei **38–43%** bzw. **62–72%** der Bildbreite; der Textschutz-Verlauf war genau dort am stärksten:
+
+| Bildstelle | Abdunklung vorher | jetzt |
+|---|---|---|
+| **X auf der Straße (40%)** | **88%** | 72% |
+| Route Mitte (55%) | 76% | 55% |
+| Route rechts (70%) | 51% | **0%** |
+| Schriftzug (85%) | 26% | **0%** |
+
+**Zwei Eingriffe:** Die flächige Ebene sinkt von 30% auf 15%, und der Verlauf endet ab `lg` bei **68% statt am rechten Rand**. Rechts davon trägt das Bild unverändert.
+
+**Ein Wunsch war nicht erfüllbar, und das ist gemessen:** „Bild weiter nach links schieben" hätte Route und X **nach rechts aus dem Bild** geschoben — sie liegen im Schwerpunkt bei 69% der Breite. Die beiden Wünsche liefen gegeneinander; der Betreiber hat sich nach Vorlage der Messung für randlos + schwächeren Verlauf entschieden.
+
+**Ein Fehler in meiner Umsetzung, durch Messen gefunden:** Der erste Versuch nutzte `lg:via-background/[0.68] lg:via-52%` plus `lg:to-68%`. **Zwei `via-*`-Utilities kollidieren** — Tailwind erzeugt daraus einen Stop ohne Position, die Prozentangaben fielen weg. Der berechnete Wert lautete `linear-gradient(to right, …0.85), …0.68), rgba(0,0,0,0))` ohne jede Prozentangabe, der Verlauf lief also weiter bis zum Rand. Erst als arbitrary value (`bg-[linear-gradient(…)]`) greifen die Stops. Die sichtbare Verbesserung kam bis dahin allein aus den schwächeren Alpha-Werten.
+
+**Der Test dazu war zweimal falsch, bevor er griff:** Erst suchte er nach `transparent` im berechneten Wert (kommt als `rgba(0, 0, 0, 0)` zurück), dann nach einer festen Prozent-Regex. Er liest jetzt schlicht die **letzte** Prozentangabe und prüft, dass sie ≤ 75% liegt.
+
+**Kontrast nach der Aufhellung**, vier Viewports, lokaler Mittelwert:
+
+| Viewport | schlechtester Wert |
+|---|---|
+| 1440×900 | 8.07:1 |
+| 1920×1080 | 8.73:1 |
+| **1366×768** | **7.56:1** |
+| 390×844 | 8.11:1 |
+
+Alle deutlich über der 4.5:1-Vorgabe. **Suiten: Unit 271/271, E2E beide Engines 1055 passed / 55 skipped / 0 failed / 0 flaky.**

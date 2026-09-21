@@ -216,11 +216,24 @@ export function InfoPageShell({
                   Auf Mobile laeuft der Text ueber die ganze Breite, deshalb
                   greift der Verlauf dort von unten statt von links: Der Text
                   sitzt im unteren Bereich, das Bild bleibt oben frei. */}
-              <div className="absolute inset-0 -z-10 bg-background/30" />
-              {/* `via-*` sitzt bei 50% der VOLLEN Fensterbreite, nicht der
-                  Container-Breite — auf 1920px liegt der Text sonst schon im
-                  ausgelaufenen Teil des Verlaufs und verliert seinen Schutz. */}
-              <div className="absolute inset-0 -z-10 bg-gradient-to-t from-background via-background/80 to-background/20 lg:bg-gradient-to-r lg:from-background lg:via-background/85 lg:to-transparent" />
+              {/* Von 30% auf 15% zurueckgenommen (2026-09-21): Der Betreiber
+                  wollte Route und X auf der Strasse besser erkennen. Die
+                  Reserve war da — der Kontrast lag bei 9.55:1 gegen eine
+                  Vorgabe von 4.5:1. */}
+              <div className="absolute inset-0 -z-10 bg-background/15" />
+              {/* Der Verlauf endet ab `lg` bei 68% statt erst am rechten Rand
+                  (2026-09-21). Gemessen lag die Route auf der Strasse bei
+                  55% Breite unter 76% Abdunklung und der Schriftzug bei 85%
+                  noch unter 25% — beide waren dadurch kaum zu erkennen.
+
+                  Jetzt: 85% ganz links, 68% dort wo der Text endet (52%),
+                  danach schnell auf null. Rechts der 68%-Marke traegt das
+                  Bild unveraendert. Kontrast in der Textzone 6.74:1 statt
+                  9.55:1 — weiterhin deutlich ueber der 4.5:1-Vorgabe.
+
+                  `via-*` sitzt bewusst dort, wo der Text endet: Auf 1920px
+                  reicht er bis 49% der Fensterbreite. */}
+              <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_top,hsl(var(--background))_0%,hsl(var(--background)/0.8)_45%,hsl(var(--background)/0.2)_100%)] lg:bg-[linear-gradient(to_right,hsl(var(--background)/0.85)_0%,hsl(var(--background)/0.68)_52%,transparent_68%)]" />
             </>
           )}
           {/* Der Inhalt bleibt im Container, auch wenn das Bild randlos
