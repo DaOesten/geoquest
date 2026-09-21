@@ -1,6 +1,6 @@
 # PROJ-5: Player — Fortschritt & Abschluss
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-08-26
 **Last Updated:** 2026-09-21
 
@@ -592,3 +592,23 @@ Tastaturbedienung (Menü per Enter, Pfeiltasten, Dialog per Escape) — funktion
 ### Produktionsreife
 
 **Keine Critical- oder High-Bugs.** BUG-15 ist Medium: kein Datenverlust, kein Sicherheitsproblem, mit Scrollen umgehbar — aber auf dem Referenz-Viewport reproduzierbar und ein Regress dieses Refinements. Die Entscheidung, ob er vor dem Deploy behoben wird, liegt beim Betreiber.
+
+
+## Deployment — Refinement „Quests im Play-Modus löschen"
+
+**Deployed:** 2026-09-21
+**Production URL:** https://geoquesty.vercel.app/play
+**Commits:** `0b55b8f` (Frontend), `c0490f4` (QA), `eb0741d` (Freigabe)
+**Tag:** `v1.39.0-PROJ-5`
+
+**Bewusst mit bekanntem BUG-15 deployt** — ausdrückliche Entscheidung des Betreibers nach Vorlage der QA-Ergebnisse (Medium, kein Datenverlust, kein Sicherheitsproblem, mit Scrollen umgehbar).
+
+**Die Auslieferung ist am Bundle belegt, nicht am Statuscode.** Der neue Marker `Quest-Aktionen` steht in `2de754fa60764e97.js`, und der alte `Quest zurücksetzen` ist in **0 von 18** ausgelieferten Chunks — damit ist bewiesen, dass die neue und nicht die vorherige Fassung live ist. Alle sechs neuen Zeichenketten sind im Bundle nachgewiesen (`Quest-Aktionen`, `Zurücksetzen`, `Löschen`, `Quest wirklich löschen`, `Quest gelöscht`, `rückgängig`).
+
+**Im Live-Browser auf beiden Engines geprüft:** 3 Menü-Trigger, **0** alte Reset-Buttons, Menü der abgeschlossenen Quest `["Zurücksetzen","Löschen"]` gegen `["Löschen"]` bei „Neu", Dialog nennt den Quest-Namen, ein **echtes Löschen** reduziert `gq_quests` von 3 auf 2 und setzt den Fortschritt auf `null`, Toast erscheint. **WebKit mit 0 Konsolenfehlern und 0 fehlgeschlagenen Requests.**
+
+**BUG-15 ist in Production bestätigt — mit exakt den lokalen Werten:** Trigger y 567–611, FAB y 568; ein Hit-Test ohne Scrollen liefert „Quest importieren", nach dem Scrollen „Quest-Aktionen". Der Befund ist damit live verifiziert und nicht bloss lokal vermutet.
+
+Alle sieben Routen HTTP 200 mit 0,07–0,13 s, Security-Header inkl. HSTS aktiv. **Nachbarfeatures unbeschädigt:** `/about` mit `FAQPage` und 1× Ko-fi, `/anleitung` weiterhin **0 Treffer** für den zurückgehaltenen Prompt, `sw.js` und `manifest.webmanifest` je 200.
+
+**Ein eigener Messfehler, offen benannt:** Mein erster Marker-Scan meldete **0 Treffer in allen Chunks** — weder den neuen noch den alten — und sah nach einem fehlgeschlagenen Deployment aus. Ursache war meine Shell-Schleife: `[ "$n" -gt 0 ] && echo ...` als letzte Anweisung setzt bei 0 Treffern einen Fehler-Exitcode und brach die Schleife still ab. Das Produkt war korrekt ausgeliefert. Ein davor liegender Check hatte zu Recht die **alte** Fassung gemeldet — da lief der Vercel-Build noch; der Wartelauf auf den neuen Marker konnte also wirklich fehlschlagen und war kein Schein-Check.

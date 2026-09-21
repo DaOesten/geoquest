@@ -20,7 +20,7 @@
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
 | PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
-| PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Approved | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
+| PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
 | PROJ-7 | Creator — Stationen-Editor | P0 | PROJ-6 | Deployed | [Spec](PROJ-7-creator-stationen-editor.md) | 2026-08-23 |
 | PROJ-8 | Creator — Modul-Editor | P0 | PROJ-7 | Deployed | [Spec](PROJ-8-creator-modul-editor.md) | 2026-08-23 |
@@ -473,6 +473,18 @@ Weil in derselben Sitzung gebaut, habe ich die zentralen Behauptungen **neu geme
 **Regression:** Unit **271/271**. E2E über beide Engines **1092 passed / 55 skipped / 1 unexpected / 0 flaky**. Der Fehlschlag liegt in `proj-12-sw-nur-production.spec.ts`, das dieses Refinement nicht anfässt, und läuft **3× seriell grün** — die in diesem Projekt dokumentierte Service-Worker-Flakiness, kein Regress. Build und Lint sauber. Produktcode nach allen Gegenproben per `git diff` als **byte-identisch** zum Commit bestätigt.
 
 **Freigabe-Entscheidung des Betreibers (2026-09-21):** Dieses Refinement geht **mit dem bekannten BUG-15 in Production** — ausdrückliche Entscheidung nach Vorlage der QA-Ergebnisse. Der Status wurde deshalb auf Approved gesetzt, obwohl die QA einen offenen Medium-Bug ausweist. Begründung der Einstufung: kein Datenverlust, kein Sicherheitsproblem, kein Critical/High — und mit einer Scroll-Bewegung umgehbar. Der `test.fail`-Wächter in `tests/proj-5-quest-loeschen-play.spec.ts` hält den Fehler fest; er wird grün, sobald er behoben ist. Das Projekt hat bei PROJ-5 am 2026-08-27 schon einmal so verfahren (BUG-1/BUG-2 bewusst mitdeployt).
+
+**Am 2026-09-21 nach Production deployt** (Tag `v1.39.0-PROJ-5`, Commits `0b55b8f`/`c0490f4`/`eb0741d`) — live auf https://geoquesty.vercel.app/play. **Bewusst mit bekanntem BUG-15**, ausdrückliche Entscheidung des Betreibers nach Vorlage der QA-Ergebnisse.
+
+**Die Auslieferung ist am Bundle belegt, nicht am Statuscode:** Der neue Marker `Quest-Aktionen` steht in `2de754fa60764e97.js`, der alte `Quest zurücksetzen` in **0 von 18** ausgelieferten Chunks — damit ist bewiesen, dass die neue und nicht die vorherige Fassung live ist.
+
+**Im Live-Browser auf beiden Engines:** 3 Menü-Trigger, 0 alte Reset-Buttons, Menü korrekt nach Zustand unterschieden, ein **echtes Löschen** reduziert `gq_quests` von 3 auf 2 und setzt den Fortschritt auf `null`, Toast erscheint. **WebKit mit 0 Konsolenfehlern und 0 fehlgeschlagenen Requests.** Sieben Routen HTTP 200 (0,07–0,13 s), Security-Header inkl. HSTS. Nachbarfeatures unbeschädigt (`/about` mit FAQPage + 1× Ko-fi, `/anleitung` weiterhin 0 Treffer für den Prompt).
+
+**BUG-15 ist in Production bestätigt — mit exakt den lokalen Werten** (Trigger y 567–611, FAB y 568): Hit-Test ohne Scrollen liefert „Quest importieren", nach dem Scrollen „Quest-Aktionen". Der Befund ist live verifiziert, nicht bloss lokal vermutet. **Er bleibt offen** und ist der nächste sinnvolle Arbeitsschritt.
+
+**Ein eigener Messfehler, offen benannt:** Mein erster Marker-Scan meldete **0 Treffer in allen Chunks** — weder neu noch alt — und sah nach einem fehlgeschlagenen Deployment aus. Ursache war meine Shell-Schleife: `[ "$n" -gt 0 ] && echo ...` als letzte Anweisung setzt bei 0 Treffern einen Fehler-Exitcode und brach die Schleife still ab. Ein davor liegender Check hatte dagegen zu Recht die **alte** Fassung gemeldet — da lief der Vercel-Build noch.
+
+**Eine Auffälligkeit geprüft statt weggewunken:** Chrome meldete einen Konsolen-404. Ein ruhiger Besuch von `/`, `/play` und `/about` erzeugt **0 Antworten ≥400** — es ist `/favicon.ico`, vorbestehend seit dem 2026-09-19.
 
 **Nicht abgedeckt:** ob sich der Extra-Tap für „Zurücksetzen" am echten Gerät schlechter anfühlt als der bisherige Direkt-Button (nur am Handy zu beantworten), und Firefox.
 
