@@ -297,12 +297,20 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
     await expect(bg).toHaveAttribute("aria-hidden", "true");
     await expect(bg).toHaveAttribute("src", /hero_new/);
 
-    // Randlos ueber die volle Fensterbreite (2026-09-21): Im 1100px-Container
-    // wurde der Schriftzug auf der Hauswand rechts angeschnitten.
-    const box = (await bg.boundingBox())!;
+    // Gezogen am 2026-09-21: Der Hero lief kurzzeitig randlos, sah dadurch
+    // aber unsymmetrisch aus — links ein Streifen, der wie ein Rand wirkte,
+    // aber nur die dunkle Gasse war; rechts lief das Bild bis an die
+    // Fensterkante. Jetzt sitzt er als Karte im Container, mit gleichem
+    // Abstand links wie rechts.
+    const card = (await bg.locator("xpath=..").boundingBox())!;
     const vw = page.viewportSize()!.width;
-    expect(Math.round(box.x), "Bild beginnt nicht am linken Rand").toBe(0);
-    expect(Math.round(box.width), "Bild nutzt nicht die volle Breite").toBe(vw);
+    const links = Math.round(card.x);
+    const rechts = Math.round(vw - (card.x + card.width));
+    expect(
+      Math.abs(links - rechts),
+      `Karte sitzt nicht symmetrisch: links ${links}px, rechts ${rechts}px`
+    ).toBeLessThanOrEqual(1);
+    expect(links, "Karte klebt am Fensterrand").toBeGreaterThan(0);
 
     // Es liegt HINTER dem Text, nicht daneben: Die Headline überlappt es.
     const b = (await bg.boundingBox())!;
@@ -374,6 +382,20 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
       endsEarly,
       "der Verlauf läuft bis zum rechten Rand und verdeckt Route und X"
     ).toBe(true);
+  });
+
+  test("der Bildausschnitt ist rechts verankert", async ({ page }) => {
+    // Der Schriftzug belegt die letzten 512px des Bildes (69..100% der
+    // Breite). Im Container werden ~256px zugeschnitten — die muessen von
+    // LINKS kommen, wo nur die dunkle Gasse steht. Mittig zugeschnitten
+    // wurde der Schriftzug mitten im Wort abgeschnitten.
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/about");
+    const pos = await page.evaluate(() => {
+      const img = document.querySelector<HTMLImageElement>('main img[alt=""]')!;
+      return getComputedStyle(img).objectPosition;
+    });
+    expect(pos).toMatch(/100%|right/);
   });
 
   test("die Nachbarseiten bekommen kein Hintergrundbild", async ({ page }) => {

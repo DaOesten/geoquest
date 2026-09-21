@@ -68,6 +68,16 @@ interface InfoPageShellProps {
 
 /** Shared max width so header, hero and body columns line up on every breakpoint. */
 const CONTAINER = "mx-auto w-full max-w-[1100px] px-5 sm:px-8";
+/**
+ * Gleiche Aussenbegrenzung wie `CONTAINER`, aber ohne Innenabstand: Das
+ * Hero-Bild soll bis an die Kartenkante laufen, waehrend der Text darin den
+ * normalen Abstand behaelt (PROJ-13, Refinement 9, 2026-09-21).
+ *
+ * Unterhalb von `sm` ohne Seitenabstand: Dort ist der Bildschirm der Rahmen,
+ * eine zusaetzlich eingerueckte Karte kostet nur Hoehe. Gemessen fiel der CTA
+ * auf 320x568 sonst unter den Falz (BUG-7).
+ */
+const CONTAINER_OUTER = "mx-auto w-full max-w-[1100px] sm:px-8";
 
 /**
  * Shared frame for the static info pages (/about, /anleitung, /impressum,
@@ -174,15 +184,25 @@ export function InfoPageShell({
 
             `-mt-14 sm:-mt-16 pt-14 sm:pt-16` zieht das Bild unter die
             Kopfzeile: Die ist `sticky` und halbtransparent, also schimmert
-            das Bild durch sie hindurch statt an ihrer Unterkante zu beginnen.
-            Die Zeilenhoehe selbst bleibt unberuehrt. */}
+            Die Karte sitzt im 1100px-Container wie die uebrigen Sektionen,
+            damit links und rechts gleich viel Abstand bleibt. Randlos sah es
+            unsymmetrisch aus: Links entstand ein Streifen, der wie ein Rand
+            wirkte, aber nur die dunkle Gasse war — rechts lief der Schriftzug
+            bis an die Fensterkante. */}
         <div
           className={
             heroBackground
-              ? "relative isolate overflow-hidden -mt-14 sm:-mt-16"
+              ? `${CONTAINER_OUTER} sm:mt-6`
               : ""
           }
         >
+          <div
+            className={
+              heroBackground
+                ? "relative isolate overflow-hidden sm:rounded-card"
+                : ""
+            }
+          >
           {heroBackground && (
             <>
               {/* Bild und Abdunklung als ZWEI Ebenen, nicht als
@@ -197,8 +217,15 @@ export function InfoPageShell({
                 aria-hidden
                 fill
                 priority
-                sizes="100vw"
-                className="-z-10 object-cover"
+                sizes="(min-width: 1100px) 1100px, 100vw"
+                // Rechts verankert (2026-09-21): Der Schriftzug auf der
+                // Hauswand belegt die letzten 512px des Bildes (69..100% der
+                // Breite). Im Container werden 256px zugeschnitten — von
+                // links, wo nur die dunkle Gasse steht. Mittig zugeschnitten
+                // wuerde der Schriftzug mitten im Wort abgeschnitten, und auf
+                // schmalen Fenstern fiele die helle Bildhaelfte ganz weg
+                // (gemessen: Helligkeit rechts 3.19 -> 0.93 bei 900px).
+                className="-z-10 object-cover object-right"
               />
               {/* ZWEI Ebenen statt einer gleichmaessigen Abdunklung.
 
@@ -244,11 +271,19 @@ export function InfoPageShell({
               dem der Wrapper unter die Kopfzeile faehrt — sonst laege der
               Inhalt dahinter. */}
           <div
-            className={`${CONTAINER} ${
+            className={
               heroBackground
-                ? "pt-20 sm:pt-26 xl:pt-32 pb-10 sm:pb-14"
-                : "pt-6 sm:pt-10 xl:pt-16"
-            }`}
+                ? // Eigener Innenabstand statt `CONTAINER`: Der liegt schon
+                  // am Aussen-Wrapper, doppelt gesetzt ruecken Headline und
+                  // Sektionen darunter um 32px auseinander.
+                  //
+                  // Auf kleinen Bildschirmen knapper (pt-6/pb-6): Die Karte
+                  // kostet gegenueber der randlosen Fassung Hoehe, und auf
+                  // 320x568 fiel der CTA dadurch 57px unter den Falz —
+                  // BUG-7. Ab `sm` ist genug Platz fuer den vollen Abstand.
+                  "px-5 sm:px-8 pt-6 pb-6 sm:pt-14 sm:pb-14"
+                : `${CONTAINER} pt-6 sm:pt-10 xl:pt-16`
+            }
           >
           {/* `items-start` statt `items-center` (2026-09-09): Seit der Hero
               von /about kürzer ist als das Bild daneben, ließ die Zentrierung
@@ -284,7 +319,11 @@ export function InfoPageShell({
                   // Gemessen: Der Hero-CTA bleibt auf allen elf
                   // Referenz-Viewports über dem Falz, knappster Fall
                   // 1366×768 mit 45px. Der BUG-7-Wächter hält das fest.
-                  className="mb-6 w-[220px] sm:w-[280px] h-auto"
+                  // `mb-3` statt `mb-6` unterhalb von `sm`: Seit der Hero
+                  // eine Karte ist, kostet er Hoehe — auf 320x568 fiel der
+                  // CTA dadurch unter den Falz (BUG-7). Die 12px hier sind
+                  // die guenstigste Stelle: reiner Abstand, kein Inhalt.
+                  className="mb-3 sm:mb-6 w-[220px] sm:w-[280px] h-auto"
                 />
               )}
               {eyebrow && (
@@ -313,6 +352,7 @@ export function InfoPageShell({
           {/* Die Trennlinie entfaellt, wenn ein Hintergrundbild den Hero
               traegt — die Bildkante setzt die Grenze bereits. */}
           {!heroBackground && <div className="h-px bg-border mt-10 sm:mt-14" />}
+          </div>
           </div>
         </div>
         {heroBackground && <div className="h-10 sm:h-14" />}

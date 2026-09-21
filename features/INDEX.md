@@ -1196,3 +1196,18 @@ Zwei Eingriffe: flächige Ebene von 30% auf 15%, Verlauf endet ab `lg` bei **68%
 **Ein Fehler in meiner Umsetzung, durch Messen gefunden:** `lg:via-background/[0.68] lg:via-52%` plus `lg:to-68%` — **zwei `via-*`-Utilities kollidieren**, Tailwind erzeugt daraus einen Stop ohne Position. Der berechnete Wert kam ohne jede Prozentangabe zurück, der Verlauf lief weiter bis zum Rand. Erst als arbitrary value greifen die Stops. Der zugehörige Test war zweimal falsch (suchte `transparent`, das als `rgba(0,0,0,0)` zurückkommt; dann eine feste Regex) und liest jetzt die letzte Prozentangabe.
 
 **Kontrast: schlechtester Wert 7.56:1** über vier Viewports, Vorgabe 4.5:1. **Unit 271/271, E2E beide Engines 1055 passed / 55 skipped / 0 flaky.**
+
+### Nachtrag 3: Hero wird Karte im Container (2026-09-21)
+Zwei Betreiber-Beobachtungen, beide bestätigt — die zweite war ein echter Fehler.
+
+**Die Asymmetrie war strukturell:** Der Hero lief randlos, sein *Inhalt* saß im 1100px-Container. Links entstand ein Streifen, der wie ein Rand aussah, aber nur die dunkle Gasse war; rechts lief das Bild bis an die Fensterkante.
+
+**„Beim Verkleinern wird das Bild dunkler" — gemessen:** `object-fit: cover` schnitt unter ~1280px horizontal zu. Bei 900px blieben **66%** des Bildes, die helle rechte Hälfte fiel weg (Helligkeit rechts **3.19 → 0.93**, Faktor 3), der Schriftzug wurde mitten im Wort abgeschnitten.
+
+**Die Rückfrage des Betreibers war der entscheidende Hinweis** (*„kann ich nicht auch links was vom Bild abschneiden und den Schriftzug behalten?"*): Gemessen belegt das — der Schriftzug belegt die **letzten 512px** (69–100% der Breite), im Container werden nur **256px** zugeschnitten. Mit `object-position: right` kommt der Zuschnitt von links, wo nur dunkle Gasse steht.
+
+**Ergebnis:** Symmetrie auf **12 von 12 Viewports** (beide Engines), Bildanteil **82% konstant** von 1100–1920px statt schwankend, Helligkeit rechts **2.60 konstant**, Schriftzug vollständig. Unterhalb `sm` läuft die Karte randlos — dort ist der Bildschirm der Rahmen.
+
+**Eine Regression, die der Test gefangen hat:** Die Karte kostet Höhe; auf 320×568 fiel der CTA **57px unter den Falz** (BUG-7). Der Wächter aus Refinement 4 meldete es sofort. Drei gemessene Eingriffe (Innenabstand −24px, Logo-Abstand −12px, randlose Karte unter `sm` −60px) → **jetzt 39px Luft**.
+
+**Kontrast über fünf Viewports: schlechtester Wert 5.59:1**, keine Verstöße. Der Randlos-Wächter ist **gezogen, nicht gelöscht** — er prüft jetzt Symmetrie. **Unit 271/271, E2E beide Engines 1057 passed / 55 skipped / 0 flaky.**

@@ -2502,3 +2502,40 @@ Betreiber: *„Nicht mehr so dunkel, so dass man die Route und das x auf dem Bil
 | 390×844 | 8.11:1 |
 
 Alle deutlich über der 4.5:1-Vorgabe. **Suiten: Unit 271/271, E2E beide Engines 1055 passed / 55 skipped / 0 failed / 0 flaky.**
+
+### Nachtrag 3 (2026-09-21): Hero wird Karte im Container
+
+Zwei Betreiber-Beobachtungen, beide bestätigt — die zweite war ein echter Fehler.
+
+**1. Die Asymmetrie war strukturell.** Der Hero lief randlos, sein *Inhalt* saß aber im 1100px-Container. Links entstand dadurch ein Streifen, der wie ein Rand aussah, in Wahrheit aber nur die dunkle Gasse war; rechts lief der Schriftzug bis an die Fensterkante. Zwei Logiken in einem Bild.
+
+**2. „Beim Verkleinern wird das Bild dunkler" — gemessen und bestätigt.** `object-fit: cover` schnitt unter ~1280px **horizontal** zu; bei 900px blieben nur 66% des Bildes, mittig. Die helle rechte Hälfte mit dem Schriftzug fiel weg:
+
+| Fensterbreite | vom Bild sichtbar | Helligkeit rechte Hälfte |
+|---|---|---|
+| 1920px | 100% | 3.19 |
+| 1440px | 100% | 2.69 |
+| **900px** | **66%** | **0.93** |
+
+Ein Verlust um Faktor 3, und der Schriftzug wurde mitten im Wort abgeschnitten.
+
+**Die Rückfrage des Betreibers war der entscheidende Hinweis:** *„Wenn Bild in den Container, kann ich nicht auch links was vom Bild abschneiden und den Schriftzug behalten?"* — Gemessen belegt das: Der Schriftzug belegt die **letzten 512px** des Bildes (69–100% der Breite). Im 1100px-Container werden nur **256px** zugeschnitten. Mit `object-position: right` kommt der Zuschnitt **von links**, wo nur dunkle Gasse steht — der Schriftzug bleibt vollständig erhalten.
+
+**Ergebnis:** Hero als Karte im Container, rechts verankerter Zuschnitt.
+
+| | vorher | jetzt |
+|---|---|---|
+| Symmetrie | links Streifen, rechts Fensterkante | **gleich, 12 von 12 Viewports** |
+| Bildanteil 1100–1920px | 85–100% (schwankend) | **82% konstant** |
+| Helligkeit rechts 1100–1920px | 2.60–3.19 | **2.60 konstant** |
+| Schriftzug | mitten im Wort angeschnitten | **vollständig** |
+
+**Unterhalb von `sm` läuft die Karte randlos** (kein Seitenabstand, keine Rundung): Dort ist der Bildschirm der Rahmen, und eine eingerückte Karte kostet nur Höhe.
+
+**Eine Regression, die der Test gefangen hat — und das ist das Wichtigste daran:** Die Karte kostet gegenüber der randlosen Fassung Höhe. Auf 320×568 fiel der CTA dadurch **57px unter den Falz** — BUG-7, den der Wächter aus Refinement 4 sofort meldete. Drei Eingriffe, gemessen nachgezogen: knapperer Innenabstand unter `sm` (−24px), kleinerer Logo-Abstand unter `sm` (−12px) und die randlose Karte unter `sm` (−60px). **Jetzt 39px Luft statt −57.**
+
+**Kontrast über fünf Viewports:** schlechtester Wert **5.59:1** (320×568), keine Verstöße.
+
+**Tests:** Der Randlos-Wächter aus dem vorigen Nachtrag ist **gezogen, nicht gelöscht** — er prüft jetzt Symmetrie statt voller Breite. Dazu ein neuer Wächter auf die rechte Verankerung des Zuschnitts. **Unit 271/271, E2E beide Engines 1057 passed / 55 skipped / 0 failed / 0 flaky.**
+
+**Offen:** Auf sehr schmalen Fenstern (unter ~900px) bleibt der Zuschnitt spürbar — bei 390px sind nur 48% des Bildes sichtbar. Das ist dem festen Seitenverhältnis geschuldet; die rechte Verankerung sorgt immerhin dafür, dass der Schriftzug am längsten überlebt.
