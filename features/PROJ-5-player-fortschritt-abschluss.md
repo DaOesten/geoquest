@@ -1,8 +1,8 @@
 # PROJ-5: Player — Fortschritt & Abschluss
 
-## Status: Deployed
+## Status: In Progress
 **Created:** 2026-08-26
-**Last Updated:** 2026-09-19
+**Last Updated:** 2026-09-21
 
 > **Mitbetroffen vom Refinement in PROJ-3 (2026-09-19) — umgesetzt:** Der Outro-Screen teilt sich `ConfettiEffect` mit dem Ankunfts-Screen. Diese Komponente wird von „Rieseln von oben, endlos" auf eine **einmalig feuernde Konfetti-Kanone** (von unten mittig nach oben) umgebaut, dazu kommt eine Behandlung von `prefers-reduced-motion`. Bewusste Entscheidung: **beide** Screens bekommen die Kanone — der Outro ist der größere Anlass und würde mit dem schwächeren Effekt zurückbleiben. Der Outro-Screen selbst wird dabei nicht angefasst; er erbt das neue Verhalten. Sein Acceptance Criterion „Konfetti-Effekt läuft (analog zum Ankunfts-Overlay aus PROJ-3)" bleibt damit wörtlich gültig. Das freigestellte Pin-PNG aus demselben Refinement zieht der Outro ebenfalls, da er `mark-pin.jpg` mit demselben sichtbaren Rechteck rendert. Siehe PROJ-3, Abschnitt „Ankunft — Gratulationsscreen".
 >
@@ -21,6 +21,7 @@ Rundet das Spielerlebnis ab: Nach der letzten Station sieht der Spieler einen Ou
 3. Als Spieler möchte ich bei einer aktiven Quest auf einen Blick sehen, wie weit ich schon gekommen bin, damit ich meinen Fortschritt einschätzen kann.
 4. Als Spieler möchte ich eine abgeschlossene Quest per Tastendruck zurücksetzen können, damit ich sie erneut (z.B. mit Freunden) spielen kann.
 5. Als Spieler möchte ich die Quest-Liste nach Status filtern können, damit ich bei vielen importierten Quests schnell die richtige finde.
+6. Als Spieler möchte ich eine Quest direkt aus der Play-Liste löschen können, damit ich gespielte oder nicht mehr gebrauchte Quests loswerde, ohne dafür in den Creator wechseln zu müssen.
 
 ## Out of Scope
 - Bestätigungsdialog vor dem Reset — bewusst weggelassen (siehe Decision Log), Reset passiert sofort mit Toast-Feedback
@@ -30,8 +31,11 @@ Rundet das Spielerlebnis ab: Nach der letzten Station sieht der Spieler einen Ou
 - Punkte-/Zeit-Tracking oder Bestenliste nach Abschluss (PRD Non-Goal)
 - Teilen-Funktion / Screenshot des Abschluss-Screens
 - Distanz (km) und tatsächliche Spielzeit in der Meta-Zeile der Karten (nicht im Datenmodell vorhanden)
-- Löschen der Quest selbst aus der Liste (Quest-Verwaltung — PROJ-6)
-- Bereinigung verwaister Fortschritts-Einträge, wenn eine Quest gelöscht wird (PROJ-6)
+- ~~Löschen der Quest selbst aus der Liste (Quest-Verwaltung — PROJ-6)~~ → **aufgehoben am 2026-09-21** (Refinement „Quests im Play-Modus löschen"): Das Löschen ist jetzt Teil dieser Spec, siehe Acceptance-Criteria-Block „Quest löschen (Play-Modus)". Der Grund für den ursprünglichen Ausschluss — „Löschen gehört in die Quest-Verwaltung" — unterstellte, dass jeder Nutzer von `/play` auch den Creator benutzt. Das trifft auf den Spieler, der eine fertige Quest-Datei bekommen hat, nicht zu: Für ihn ist `/play` die ganze App.
+- ~~Bereinigung verwaister Fortschritts-Einträge, wenn eine Quest gelöscht wird (PROJ-6)~~ → **ebenfalls aufgehoben (2026-09-21):** Wer hier löscht, löscht auch den zugehörigen Fortschritt mit. Das ist keine Erweiterung, sondern dieselbe Regel, die `/create` schon anwendet (`deleteQuest` + `deleteProgress`)
+- Mehrfachauswahl / Löschen mehrerer Quests auf einmal (kein MVP-Bedarf bei 10–20 Quests)
+- Undo / Papierkorb nach dem Löschen — die Bestätigung ist die einzige Sicherung, konsistent mit `/create`
+- Unterscheidung zwischen importierten und selbst erstellten Quests beim Löschen (bewusst verworfen, siehe Decision Log)
 
 ## Acceptance Criteria
 
@@ -57,11 +61,28 @@ Rundet das Spielerlebnis ab: Nach der letzten Station sieht der Spieler einen Ou
 - [ ] Angenommen die Quest-Liste ist geöffnet, wenn der Spieler auf den Filter-Tab "Neu" tippt, dann werden nur nie gestartete Quests angezeigt
 - [ ] Angenommen ein Filter außer "Alle" ist aktiv und keine Quest passt, wenn die Liste gerendert wird, dann erscheint ein passender Empty-State-Hinweis (z.B. "Keine aktiven Quests")
 
-**Reset:**
-- [ ] Angenommen eine Quest ist vollständig abgeschlossen, wenn der Spieler auf das Reset-Icon tippt, dann wird der gesamte gespeicherte Fortschritt dieser Quest (besuchte/abgeschlossene Stationen, gelöste Aufgaben) sofort gelöscht — ohne Bestätigungsdialog
+**Reset (überarbeitet 2026-09-21 — der Einstieg wandert ins Aktionsmenü, das Verhalten bleibt):**
+- [x] ~~Reset-Icon-Button direkt am Kartenrand der abgeschlossenen Karte~~ → Ersetzt durch den Eintrag „Zurücksetzen" im `⋮`-Aktionsmenü. Grund: Das Menü muss für „Löschen" ohnehin auf alle drei Kartenzustände (siehe Decision Log 2026-09-21); ein zusätzlicher loser Icon-Button daneben hätte zwei unbeschriftete Bedienelemente auf einer Karte ergeben, eines davon destruktiv
+- [ ] Angenommen eine Quest ist vollständig abgeschlossen, wenn der Spieler im Aktionsmenü „Zurücksetzen" wählt, dann wird der gesamte gespeicherte Fortschritt dieser Quest (besuchte/abgeschlossene Stationen, gelöste Aufgaben) sofort gelöscht — ohne Bestätigungsdialog
+- [ ] Angenommen eine Quest ist NICHT abgeschlossen (Status „Neu" oder „Live"), wenn der Spieler ihr Aktionsmenü öffnet, dann enthält es keinen „Zurücksetzen"-Eintrag — es gibt dort nichts zurückzusetzen bzw. der Fortschritt ist die laufende Partie
 - [ ] Angenommen der Fortschritt wurde zurückgesetzt, wenn die Liste neu rendert, dann zeigt die Karte sofort das Badge "Neu" und ein Toast "Fortschritt zurückgesetzt" erscheint kurz
 - [ ] Angenommen der Fortschritt wurde zurückgesetzt, wenn der Spieler die Quest erneut öffnet, dann startet sie wie beim allerersten Mal (Permission- bzw. Intro-Screen, je nach Browser-Permission-Status)
-- [ ] Angenommen der Spieler tippt auf das Reset-Icon einer abgeschlossenen Quest-Karte, wenn dies geschieht, dann öffnet sich nicht gleichzeitig die Quest selbst (Tap auf das Icon löst nicht den Card-Link aus)
+- [ ] Angenommen der Spieler tippt auf das Aktionsmenü einer Quest-Karte, wenn dies geschieht, dann öffnet sich nicht gleichzeitig die Quest selbst (Tap auf den Menü-Trigger löst nicht den Card-Link aus)
+
+**Aktionsmenü auf der Quest-Karte (neu 2026-09-21):**
+- [ ] Angenommen die Quest-Liste ist geöffnet, wenn eine Quest-Karte gerendert wird, dann trägt sie in jedem der drei Zustände („Neu", „Live", „Abgeschlossen") einen `⋮`-Menü-Trigger oben rechts mit dem zugänglichen Namen „Quest-Aktionen"
+- [ ] Angenommen eine Quest-Karte wird gerendert, wenn der Spieler auf Titel oder Meta-Zeile tippt, dann öffnet sich weiterhin die Quest (`/play/[id]`) — der Menü-Trigger liegt außerhalb dieses Link-Bereichs
+- [ ] Angenommen der Spieler öffnet das Aktionsmenü, wenn es erscheint, dann sind alle Einträge beschriftet (Text, nicht nur Icon) und der Menü-Trigger misst mindestens 44×44px
+- [ ] Angenommen der Spieler öffnet das Aktionsmenü einer abgeschlossenen Quest, wenn es erscheint, dann enthält es „Zurücksetzen" und „Löschen"; bei „Neu"/„Live" nur „Löschen"
+
+**Quest löschen (Play-Modus) — neu 2026-09-21:**
+- [ ] Angenommen eine Quest-Karte ist sichtbar, wenn der Spieler im Aktionsmenü „Löschen" wählt, dann erscheint ein Bestätigungsdialog, der den Quest-Namen nennt und darauf hinweist, dass die Aktion endgültig ist
+- [ ] Angenommen der Bestätigungsdialog ist sichtbar, wenn der Spieler bestätigt, dann wird die Quest aus `gq_quests` entfernt, ihr Fortschritt (`gq_progress_{questId}`) ebenfalls gelöscht, die Liste aktualisiert sich sofort und ein Toast „Quest gelöscht" erscheint
+- [ ] Angenommen der Bestätigungsdialog ist sichtbar, wenn der Spieler abbricht oder ihn schließt, dann bleibt die Quest unverändert erhalten und es wird nichts gelöscht
+- [ ] Angenommen eine Quest wird im Play-Modus gelöscht, wenn der Nutzer anschließend `/create` öffnet, dann ist sie auch dort verschwunden — es ist dieselbe Quest, nicht eine Play-Kopie davon
+- [ ] Angenommen der Spieler löscht seine letzte verbliebene Quest, wenn die Liste neu rendert, dann erscheint der bestehende Empty State („Keine Quests geladen") inklusive Import-Button
+- [ ] Angenommen ein Filter außer „Alle" ist aktiv und der Spieler löscht die letzte Quest dieses Filters, wenn die Liste neu rendert, dann bleibt der Filter aktiv und es erscheint der passende Filter-Empty-State (nicht der Gesamt-Empty-State)
+- [ ] Der Bestätigungsdialog gilt unabhängig davon, ob die Quest importiert oder selbst erstellt wurde — es gibt keine Sonderbehandlung und keine zweite Warnstufe (siehe Decision Log)
 
 ## Edge Cases
 1. **Quest mit nur 1 Station:** Abschluss der einzigen Station führt direkt zum Outro-Screen, kein Zwischenschritt über die Stationsliste.
@@ -71,16 +92,28 @@ Rundet das Spielerlebnis ab: Nach der letzten Station sieht der Spieler einen Ou
 5. **Sehr langer Outro-Text:** Verhält sich wie der Intro-Text — scrollbar, keine Kürzung.
 6. **localStorage-Fortschritt korrupt oder gelöscht, während der Spieler auf dem Outro-Screen ist:** Gleiches Fallback-Verhalten wie in PROJ-3 (Fortschritt geht verloren, kein Crash).
 7. **Quest hat 0 Stationen (sollte durch PROJ-2-Validierung nicht vorkommen):** Wird nicht separat behandelt — Datenmodell erzwingt mindestens 1 Station.
+8. **Löschen einer selbst erstellten Quest aus dem Play-Modus (2026-09-21):** Die Quest ist danach auch im Creator weg — `/play` und `/create` lesen denselben `gq_quests`-Speicher, es gibt keine getrennte Play-Kopie. Bewusst so: siehe Decision Log. Der Bestätigungsdialog ist die Schutzmaßnahme, nicht eine Sonderregel für diesen Fall.
+9. **Löschen einer Quest, die gerade läuft (Status „Live"):** Erlaubt, keine Sonderbehandlung — Quest und Fortschritt verschwinden gemeinsam. Der Spieler hat sie sichtbar vor sich und bestätigt den Dialog; es gibt keinen Zustand, in dem er „mitten drin" überrascht würde.
+10. **Löschen einer Quest, die parallel in einem anderen Tab im Player geöffnet ist:** Wie Edge Case 2 — kein Cross-Tab-Sync (PRD schließt Realtime aus). Der andere Tab zeigt beim nächsten Laden/Speicherversuch verwaiste Daten bzw. eine nicht gefundene Quest. Identisch zum bestehenden Verhalten beim Löschen aus `/create` (PROJ-6, Edge Case 3).
+11. **Löschen der letzten Quest bei aktivem Filter (2026-09-21):** Der Filter bleibt stehen. Ist danach die Gesamtliste leer, greift der bestehende Gesamt-Empty-State; sind nur die Treffer dieses Filters leer, der Filter-Empty-State. Beide existieren bereits, es kommt keine neue Leeransicht dazu.
+12. **Sehr langer Quest-Name im Bestätigungsdialog:** Wie in `/create` — der Name steht im Dialogtext und bricht dort um; keine künstliche Kürzung nötig, der Dialog ist kein Platzproblem.
+13. **HTML/Script im Quest-Namen im Bestätigungsdialog:** Wird wie überall sonst als Text gerendert (React-Escaping), unabhängig von der Import-Sanitization — dieselbe zweite Verteidigungslinie, die der PROJ-5-Security-Audit für die Quest-Karte bereits bestätigt hat.
 
 ## Technical Requirements
 - Status-Ableitung ausschließlich aus vorhandenen `gq_progress_{questId}`-Daten (`visitedStations`, `completedStations`) — keine neuen Felder im Quest-Datenmodell nötig
 - Reset löscht den kompletten `gq_progress_{questId}`-Eintrag aus localStorage
 - Filterung und Sortierung der Quest-Liste rein clientseitig (kein Server, keine Persistenz des Filter-Zustands nötig)
 - Konfetti-Effekt: bestehende Implementierung aus dem Ankunfts-Overlay (PROJ-3, `navigation-screen.tsx`) wiederverwenden
-- Min. 44px Touch-Targets für den Reset-Icon-Button (PRD-Anforderung)
+- Min. 44px Touch-Targets für den Menü-Trigger und jeden Menü-Eintrag (PRD-Anforderung)
+- Löschen nutzt die bestehenden Funktionen `deleteQuest()` (quest-storage.ts) und `deleteProgress()` (quest-progress.ts) — beide sind gebaut, unit-getestet und werden von `/create` bereits genau so kombiniert aufgerufen. Keine neue Storage-Funktion
+- Bestätigungsdialog über die bereits installierte shadcn-`AlertDialog`-Komponente, nach dem Muster von `src/app/create/page.tsx` — kein neues Package
+- Aktionsmenü über die bereits installierte shadcn-`DropdownMenu`-Komponente, nach dem Muster von `quest-management-card.tsx` — kein neues Package
+- **Strukturelle Voraussetzung:** Die Kartenzustände „Neu" und „Live" sind heute ein einziger, die ganze Karte umschließender `<Link>`. Ein Menü-Trigger kann dort nicht hinein (verschachtelte interaktive Elemente sind ungültiges HTML und der Tap kollidiert mit der Navigation). Beide Zustände werden deshalb auf dasselbe Muster umgebaut, das die „Abgeschlossen"-Karte bereits nutzt und das `quest-management-card.tsx` im Creator vorgibt: ein `<div>` als Karte, der Trigger absolut positioniert oben rechts, Titel und Meta-Zeile als `<Link>` darunter
+- Der Play-Bereich läuft unter `data-theme="dark"` (`play/layout.tsx`). Radix portaliert `DropdownMenuContent` und `AlertDialogContent` nach `<body>` — beide brauchen das Theme explizit erneut gesetzt, sonst lösen die CSS-Variablen gegen den falschen Modus auf. Im Creator ist dafür `data-theme="light"` gesetzt; hier ist es der umgekehrte Fall, und das Detail ist bereits zweimal als Fehlerquelle dokumentiert (BUG-1-Falle `text-gq-grey`)
 
 ## Open Questions
-_Keine offenen Fragen._
+- [ ] Soll der Creator (`/create`) den „Zurücksetzen"-Eintrag ebenfalls bekommen? Dort fehlt er heute — ein Ersteller, der seine Quest testet, muss zum Zurücksetzen nach `/play` wechseln. Nicht gemeldet, nicht Teil dieses Refinements, aber beim Umbau aufgefallen
+- [ ] Bleibt „Zurücksetzen" dauerhaft nur auf abgeschlossenen Quests, oder wäre er auch bei „Live" sinnvoll (laufende Partie abbrechen und neu starten)? Heute ist das nicht möglich, war aber auch nie gefordert — das Kriterium hält bewusst den Ist-Zustand fest, statt still zu erweitern
 
 ## Decision Log
 
@@ -98,6 +131,12 @@ _Keine offenen Fragen._
 | Filter-Tabs Alle / Live / Neu (kein eigener "Abgeschlossen"-Tab) | Deckt den Haupt-Anwendungsfall (aktive Quest finden, neue Quest starten) ab, hält die Filter-Leiste schlank; abgeschlossene Quests bleiben über "Alle" erreichbar | 2026-08-26 |
 | Sortierung in "Alle": Aktive zuerst, dann Neue, dann Abgeschlossene | Spieler soll sofort sehen, wo er weitermachen kann, statt in der Import-Reihenfolge suchen zu müssen | 2026-08-26 |
 | Abgeschlossene Karte zeigt kein eigenes Status-Badge, nur gedimmten Titel + Reset-Icon | Übernommen aus der vom Nutzer bereitgestellten Design-Vorlage (`design-preparation/Quest_List.html`) | 2026-08-26 |
+| **Überholt (2026-09-21):** „Reset nur als Icon-Button auf der Quest-Karte" und „Abgeschlossene Karte zeigt Reset-Icon" — der Einstieg wandert ins `⋮`-Aktionsmenü | Das Menü kommt für „Löschen" ohnehin auf jede Karte. Ein loser Icon-Button daneben hätte zwei unbeschriftete Bedienelemente ergeben, eines davon destruktiv, auf einem Screen der draußen einhändig bedient wird. Das Reset-*Verhalten* (sofort, ohne Bestätigung, mit Toast) bleibt unverändert — nur der Weg dorthin kostet einen Tap mehr | 2026-09-21 |
+| Quests sind ab sofort auch aus dem Play-Modus löschbar | Der ursprüngliche Ausschluss („Löschen gehört in die Quest-Verwaltung, PROJ-6") unterstellte, dass jeder `/play`-Nutzer auch den Creator benutzt. Für den Spieler, der eine fertige Quest-Datei bekommen hat, ist `/play` aber die ganze App — er hatte bisher keine Möglichkeit, eine gespielte Quest wieder loszuwerden | 2026-09-21 |
+| Löschen wirkt uniform — keine Unterscheidung zwischen importierten und selbst erstellten Quests | Erwogen und verworfen: eine schärfere Warnung oder ein Ausblenden der Aktion bei selbst gebauten Quests. Beides bräuchte ein verlässliches Herkunfts-Merkmal, das das Datenmodell heute nicht hat (`published: true` wird beim Import gesetzt, ist aber ein für PROJ-9 reserviertes Feld, kein Herkunfts-Flag — es dafür zu überladen wäre eine zweite Wahrheit über denselben Sachverhalt). Dazu: eine Liste, in der manche Karten die Aktion haben und andere nicht, ist schwerer zu erklären als eine Regel, die immer gilt. Der Bestätigungsdialog trägt die Sicherung, wie die PRD es für destruktive Aktionen vorsieht | 2026-09-21 |
+| Bestätigungsdialog beim Löschen (anders als beim Reset, der ohne auskommt) | Kein Widerspruch zur Entscheidung vom 2026-08-26, sondern ihre Begründung angewandt: Reset betrifft nur den eigenen Spielfortschritt und ist durch erneutes Spielen wiederherstellbar. Löschen entfernt die Quest-Daten selbst — bei einer selbst erstellten Quest ohne Sicherungsdatei unwiederbringlich | 2026-09-21 |
+| Löschen entfernt Quest **und** Fortschritt gemeinsam | Identisch zu `/create`, wo `deleteQuest` und `deleteProgress` schon zusammen aufgerufen werden. Ein zurückbleibender Fortschritts-Eintrag wäre verwaister Speicher ohne Besitzer — und würde eine später erneut importierte Quest gleicher ID fälschlich als „schon gespielt" zeigen | 2026-09-21 |
+| Kein Undo, kein Papierkorb, keine Mehrfachauswahl | Bei erwarteten 10–20 Quests ohne Nutzen; die Bestätigung ist die Sicherung. Konsistent mit `/create`, das seit PROJ-6 genau so funktioniert | 2026-09-21 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -109,6 +148,10 @@ _Keine offenen Fragen._
 | Reset löscht den gesamten Fortschritts-Eintrag der Quest (eine neue Funktion in der bestehenden Fortschritts-Bibliothek) statt einzelne Felder zurückzusetzen | Einfacher und robuster — die Quest landet exakt im Zustand einer nie gespielten Quest, kein Risiko vergessener Teilfelder | 2026-08-26 |
 | "outro" als neuer Screen-Zustand in der bestehenden State Machine, aber nicht dauerhaft als solcher gespeichert (Persistenz wie beim "modules"-Screen als "stations") | Erweitert den PROJ-3/4-Flow ohne neues Routing; verhindert, dass der Outro-Screen bei jedem Wiedereinstieg erneut gezeigt wird | 2026-08-26 |
 | Quest-Karten-Status nutzt die bereits installierte shadcn "Badge"- und "Progress"-Komponente | Kein neues Package nötig, konsistent mit dem restlichen UI-Baukasten | 2026-08-26 |
+| Alle drei Kartenzustände werden auf `<div>` + absolut positionierten Menü-Trigger + inneren `<Link>` umgebaut | „Neu" und „Live" sind heute ein die ganze Karte umschließender `<Link>`; ein Button darin ist ungültiges HTML und der Tap kollidiert mit der Navigation. Der Umbau folgt dem Muster, das die „Abgeschlossen"-Karte bereits nutzt und das `quest-management-card.tsx` im Creator vorgibt — statt zwei Kartenbauweisen im selben Screen | 2026-09-21 |
+| Wiederverwendung von `DropdownMenu` und `AlertDialog` (shadcn, bereits installiert) statt eigener Umsetzung | Kein neues Package, und die `/create`-Seite liefert ein erprobtes Muster inklusive Tastaturbedienung und Fokus-Verhalten. Verworfen: Wischen zum Löschen — eine versteckte Geste ohne Hinweis auf dem Bildschirm, nirgends sonst in der App, und PROJ-4 (2026-09-20) hat gerade gezeigt, was handgebaute Touch-Gesten hier kosten | 2026-09-21 |
+| Kein neuer State und keine neue Storage-Funktion — `deleteQuest()` + `deleteProgress()` + das bestehende `refreshQuests()` | Beide Funktionen sind gebaut und unit-getestet, `useQuests` hält die Liste bereits synchron. Eine eigene Lösch-Logik für Play wäre eine zweite Wahrheit über denselben Vorgang | 2026-09-21 |
+| Portalierte Radix-Inhalte bekommen `data-theme="dark"` explizit gesetzt | `play/layout.tsx` setzt das Theme auf einem Container, Radix portaliert aber nach `<body>`. Ohne erneutes Setzen lösen die CSS-Variablen gegen den falschen Modus auf — im Creator ist derselbe Griff mit `light` bereits nötig und im Code kommentiert | 2026-09-21 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
@@ -371,3 +414,65 @@ Vollständige E2E-Suite (`npx playwright test --project="Mobile Safari"`, via We
 **Commit:** 49e58c8
 **Tag:** v1.5.0-PROJ-5
 **Verifiziert:** Alle Kern-Routen (`/`, `/play`, `/create`) antworten mit HTTP 200. Der `/play`-HTML-Response enthält die neue PROJ-5-Headline (`clamp(1.8rem,8vw,2.4rem)`), bestätigt dass der neue Build live ist. Bekannte, dokumentierte Bugs (BUG-1 Outro-Medien-Placeholder, BUG-2 Filter-Tab-Tastaturnavigation) werden bewusst mit deployed und später nachgezogen — auf ausdrücklichen Wunsch des Nutzers.
+
+---
+
+## Refinement 2026-09-21: Quests im Play-Modus löschen
+
+### Anlass
+Betreiber-Wunsch: *„der user soll die Möglichkeit bekommen im play mode quests zu löschen"*. Bisher war Löschen ausschließlich im Creator möglich (`/create`, PROJ-6) — diese Spec schloss es in ihrem Out-of-Scope-Abschnitt ausdrücklich aus.
+
+**Warum der ursprüngliche Ausschluss nicht mehr trägt:** Er lautete „Löschen der Quest selbst aus der Liste (Quest-Verwaltung — PROJ-6)" und setzte voraus, dass jeder, der `/play` benutzt, auch den Creator kennt. Für die Hälfte der Zielgruppe stimmt das nicht: Wer eine fertige Quest-Datei bekommen und importiert hat, sieht `/play` als die gesamte App. Er konnte eine gespielte Quest bisher nicht wieder loswerden.
+
+### Gemessener Ausgangszustand
+| | heute |
+|---|---|
+| Löschen auf `/play` | nicht vorhanden |
+| Löschen auf `/create` | vorhanden, mit `AlertDialog`, ruft `deleteQuest` + `deleteProgress` |
+| Karte „Neu" | ein einziger `<Link>` um die ganze Karte |
+| Karte „Live" | ein einziger `<Link>` um die ganze Karte |
+| Karte „Abgeschlossen" | `<div>`, Reset-Button außerhalb des `<Link>` |
+| Bedienelemente auf einer Play-Karte | max. 1 (Reset, nur bei „Abgeschlossen") |
+
+### Die strukturelle Hürde
+Zwei der drei Kartenzustände sind ein die ganze Karte umschließender `<Link>`. Ein Menü-Trigger oder Button lässt sich dort nicht hineinlegen: verschachtelte interaktive Elemente sind ungültiges HTML, und der Tap würde mit der Navigation kollidieren. Löschen einzubauen heißt deshalb zwangsläufig, die Kartenbauweise zu vereinheitlichen — das ist kein Zusatzaufwand, den dieses Refinement sich nimmt, sondern die Bedingung dafür, dass es überhaupt geht.
+
+Die „Abgeschlossen"-Karte zeigt bereits, wie es aussieht, und `quest-management-card.tsx` im Creator zeigt es mit Menü. Beide Vorlagen existieren.
+
+### Entschieden
+- **`⋮`-Aktionsmenü auf allen drei Kartenzuständen**, oben rechts, außerhalb des Link-Bereichs — dasselbe Muster wie im Creator
+- **„Zurücksetzen" wandert in dieses Menü** (nur bei abgeschlossenen Quests sichtbar); sein Verhalten bleibt unverändert: sofort, ohne Bestätigung, mit Toast
+- **„Löschen" mit Bestätigungsdialog**, uniform für importierte und selbst erstellte Quests
+- **Quest und Fortschritt werden gemeinsam gelöscht**, wie auf `/create`
+
+### Erwogen und verworfen
+| Alternative | Warum nicht |
+|---|---|
+| Nacktes Löschen-Icon neben dem Reset-Button | „Neu" und „Live" bräuchten trotzdem je eine neue Kopfzeile — der Umbau fällt also ohnehin an. Ergebnis wären zwei unbeschriftete Icons auf einer Karte, eines davon endgültig löschend, auf einem Screen der draußen einhändig bedient wird |
+| Wischen zum Löschen | Versteckte Geste ohne jeden Hinweis auf dem Bildschirm, nirgends sonst in der App vorhanden. PROJ-4 (2026-09-20) hat gerade gezeigt, was handgebaute Touch-Gesten hier kosten |
+| Nur importierte Quests löschbar | Bräuchte ein Herkunfts-Merkmal, das das Datenmodell nicht hat. Dazu: eine Liste, in der manche Karten die Aktion tragen und andere nicht, ist schwerer zu erklären als eine Regel, die immer gilt |
+| Zweite Warnstufe für selbst erstellte Quests | Gleiche fehlende Datengrundlage. `published: true` wird beim Import gesetzt, ist aber für PROJ-9 reserviert — es als Herkunfts-Flag zu überladen wäre eine zweite Wahrheit über denselben Sachverhalt |
+| Reset bleibt als Icon auf der Karte, Menü enthält nur „Löschen" | Vom Betreiber verworfen (Variante A1 gewählt). Hätte ein live getestetes Verhalten unangetastet gelassen, dafür aber dauerhaft zwei Bedienmuster auf derselben Karte |
+
+### Für `/frontend` zu beachten
+
+**Fünf bestehende Tests werden absichtlich falsch** — sie sind zu **ziehen, nicht zu löschen**. Alle in `tests/proj-5-player-fortschritt-abschluss.spec.ts`, alle auf `getByRole("button", { name: "Quest zurücksetzen" })`:
+
+| Zeile | Was der Test prüft | Was daraus wird |
+|---|---|---|
+| 230 | Reset-Button ist sichtbar | Menü-Trigger sichtbar, Eintrag „Zurücksetzen" im geöffneten Menü |
+| 306 | Klick setzt zurück | Menü öffnen, dann „Zurücksetzen" wählen |
+| 311 | Button verschwindet nach Reset | Eintrag ist nach dem Reset nicht mehr im Menü (Karte ist „Neu") |
+| 322 | Toast erscheint | wie 306, Assertion unverändert |
+| 333 | Klick löst nicht den Card-Link aus | gilt jetzt für den Menü-Trigger |
+
+**Der eigentliche Regressionswächter fehlt bisher ganz:** Kein Test hält fest, dass ein Tap auf ein Bedienelement der Karte nicht gleichzeitig in die Quest navigiert — Kriterium existiert (Zeile 333), aber nur für den Reset-Button auf der „Abgeschlossen"-Karte. Für „Neu" und „Live" gab es dort nie ein Bedienelement, also auch nie einen Test. Genau diese beiden Zustände werden jetzt umgebaut.
+
+**Weiter zu beachten:**
+- Der Theme-Griff: `play/layout.tsx` setzt `data-theme="dark"` auf einem Container, Radix portaliert nach `<body>`. `DropdownMenuContent` und `AlertDialogContent` brauchen das Theme explizit — im Creator steht der umgekehrte Fall (`light`) bereits kommentiert im Code
+- Die Bestätigungsdialog-Formulierung aus `/create` übernehmen statt neu zu erfinden — derselbe Vorgang, dieselbe Sprache
+- Kein neues Package: `DropdownMenu`, `AlertDialog`, `deleteQuest`, `deleteProgress` sind alle vorhanden und getestet
+
+### Nicht abgedeckt
+- Ob sich das Extra-Tap für den Reset am echten Gerät schlechter anfühlt als der bisherige Direkt-Button — eine Geschmacksfrage, die nur der Betreiber am Handy beantworten kann
+- Der Creator bekommt weiterhin keinen „Zurücksetzen"-Eintrag (als Open Question vermerkt, bewusst nicht in den Scope gezogen)

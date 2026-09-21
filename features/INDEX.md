@@ -20,7 +20,7 @@
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
 | PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
-| PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
+| PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | In Progress | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
 | PROJ-7 | Creator — Stationen-Editor | P0 | PROJ-6 | Deployed | [Spec](PROJ-7-creator-stationen-editor.md) | 2026-08-23 |
 | PROJ-8 | Creator — Modul-Editor | P0 | PROJ-7 | Deployed | [Spec](PROJ-8-creator-modul-editor.md) | 2026-08-23 |
@@ -410,6 +410,31 @@ Alle 10 Endpunkte HTTP 200 (0,07–0,36 s), Security-Header inkl. HSTS. Nachbarf
 **Ein Messfehler offen benannt:** Der Byte-Vergleich zwischen Live-CSS und lokalem Build war diesmal nicht durchführbar — das lokale `.next` trug nach dem QA-Lauf einen anderen Build. Beim vorigen Deploy hatte er nur funktioniert, weil der Production-Build noch stand. Die Auslieferung ist über Hash-Wechsel und Utility-Präsenz belegt; ein „byte-identisch" wurde **nicht** behauptet.
 
 **PROJ-12 ist abgeschlossen.** Offen bleibt allein die Bestätigung am echten iPhone — keine Testumgebung kann `env(safe-area-inset-top)` mit einem echten Wert belegen.
+
+## Offenes Refinement: Quests im Play-Modus löschen (2026-09-21)
+**PROJ-5** geht von Deployed zurück auf In Progress. **PROJ-6** ist mitbetroffen, wird aber nicht zurückgesetzt — es behält seinen Lösch-Weg unverändert, es kommt nur eine zweite Stelle hinzu.
+
+Betreiber-Wunsch: *„der user soll die Möglichkeit bekommen im play mode quests zu löschen"*. Bisher war Löschen ausschließlich im Creator möglich; diese Spec schloss es in ihrem Out-of-Scope-Abschnitt ausdrücklich aus.
+
+**Der ursprüngliche Ausschluss trägt nicht mehr.** Er lautete „Löschen der Quest selbst aus der Liste (Quest-Verwaltung — PROJ-6)" und setzte voraus, dass jeder `/play`-Nutzer auch den Creator kennt. Für die Hälfte der Zielgruppe stimmt das nicht: Wer eine fertige Quest-Datei bekommen und importiert hat, sieht `/play` als die gesamte App — und konnte eine gespielte Quest bisher nicht wieder loswerden.
+
+**Die strukturelle Hürde, im Code nachgesehen statt vermutet:** Zwei der drei Kartenzustände („Neu", „Live") sind ein die ganze Karte umschließender `<Link>`. Ein Menü-Trigger lässt sich dort nicht hineinlegen — verschachtelte interaktive Elemente sind ungültiges HTML und der Tap kollidiert mit der Navigation. Die Kartenbauweise zu vereinheitlichen ist deshalb nicht Zusatzaufwand, sondern die Bedingung dafür, dass das Feature überhaupt geht. Die „Abgeschlossen"-Karte macht es bereits vor, `quest-management-card.tsx` im Creator macht es mit Menü vor.
+
+**Entschieden (Betreiber-Variante A1):**
+- **`⋮`-Aktionsmenü auf allen drei Kartenzuständen**, oben rechts außerhalb des Link-Bereichs, Muster aus dem Creator
+- **„Zurücksetzen" wandert in dieses Menü** (nur bei abgeschlossenen Quests) — das Verhalten bleibt unverändert (sofort, ohne Bestätigung, mit Toast), nur der Weg kostet einen Tap mehr
+- **„Löschen" mit Bestätigungsdialog**, uniform für importierte und selbst erstellte Quests
+- **Quest und Fortschritt gemeinsam**, wie auf `/create`
+
+**Uniform statt differenziert, bewusst:** Erwogen und verworfen wurden eine schärfere Warnung oder ein Ausblenden der Aktion bei selbst gebauten Quests. Beides bräuchte ein Herkunfts-Merkmal, das das Datenmodell nicht hat — `published: true` wird beim Import gesetzt, ist aber ein für PROJ-9 reserviertes Feld; es dafür zu überladen wäre eine zweite Wahrheit über denselben Sachverhalt. Dazu ist eine Liste, in der manche Karten die Aktion tragen und andere nicht, schwerer zu erklären als eine Regel, die immer gilt. Der Bestätigungsdialog trägt die Sicherung, wie die PRD es für destruktive Aktionen vorsieht.
+
+**Ebenfalls verworfen:** ein nacktes Löschen-Icon neben dem Reset-Button (zwei unbeschriftete Bedienelemente auf einer Karte, eines davon endgültig löschend, auf einem Screen der draußen einhändig bedient wird) und Wischen zum Löschen (versteckte Geste ohne Hinweis, nirgends sonst in der App — und PROJ-4 hat am 2026-09-20 gezeigt, was handgebaute Touch-Gesten hier kosten).
+
+**Für `/frontend` zu beachten:** **Fünf bestehende Tests werden absichtlich falsch** (`tests/proj-5-player-fortschritt-abschluss.spec.ts`, Zeilen 230/306/311/322/333, alle auf `getByRole("button", { name: "Quest zurücksetzen" })`) — sie sind zu **ziehen, nicht zu löschen**; die Zuordnung steht als Tabelle in der Spec. Neu dazu gehört der Wächter, der bisher ganz fehlt: dass ein Tap auf den Menü-Trigger nicht gleichzeitig in die Quest navigiert. Das Kriterium existiert, aber nur für den Reset-Button auf der „Abgeschlossen"-Karte — für „Neu" und „Live" gab es nie ein Bedienelement, also auch nie einen Test, und genau diese beiden Zustände werden jetzt umgebaut. Dazu der Theme-Griff: `play/layout.tsx` setzt `data-theme="dark"` auf einem Container, Radix portaliert nach `<body>` — beide portalierten Inhalte brauchen das Theme explizit, sonst lösen die CSS-Variablen gegen den falschen Modus auf (im Creator steht der umgekehrte Fall bereits kommentiert im Code).
+
+**Kein neues Paket:** `DropdownMenu`, `AlertDialog`, `deleteQuest()` und `deleteProgress()` sind alle vorhanden und getestet; `/create` kombiniert die beiden Funktionen bereits genau so.
+
+Spec ist aktualisiert (1 User Story, 4 Acceptance-Criteria-Blöcke mit 17 Kriterien, Edge Cases 8–13, 6 Technical Requirements, 5 Produkt- und 4 technische Entscheidungen, 2 überholte Entscheidungen als solche markiert statt gelöscht, 2 aufgehobene Out-of-Scope-Einträge, 2 neue Open Questions, dazu ein eigener Abschnitt „Refinement 2026-09-21" mit Messtabelle und Test-Zuordnung).
 
 ## Next Available ID: PROJ-15
 

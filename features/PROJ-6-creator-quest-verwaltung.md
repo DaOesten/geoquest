@@ -4,6 +4,8 @@
 **Created:** 2026-08-27
 **Last Updated:** 2026-08-29
 
+> **Mitbetroffen vom Refinement in PROJ-5 (2026-09-21) — noch nicht umgesetzt:** Das Löschen einer Quest ist ab sofort **auch** im Play-Modus möglich (`/play`), nicht mehr nur hier. PROJ-6 bleibt unverändert und behält seinen eigenen Lösch-Weg; es kommt eine zweite Stelle hinzu, keine Ablösung. Technisch teilen sich beide Screens dieselben Funktionen (`deleteQuest()` + `deleteProgress()`) und denselben `gq_quests`-Speicher — eine im Play-Modus gelöschte Quest ist deshalb auch im Creator verschwunden. Das ist gewollt und in PROJ-5 begründet (es gibt keine getrennte Play-Kopie). Kein Acceptance Criterion dieser Spec ändert sich. Siehe PROJ-5, Abschnitt „Refinement 2026-09-21: Quests im Play-Modus löschen".
+
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — für Routing (`/create`) und UI-Rahmen
 - Requires: PROJ-2 (Quest Data Model & JSON Import) — für Quest-Schema, den `gq_quests`-Storage-Layer und den bestehenden Import-Button
