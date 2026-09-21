@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import {
   ArrowRight,
   Compass,
@@ -276,31 +275,16 @@ export default function AboutPage() {
           </div>
         </>
       }
-      asideFillsHeight
-      aside={
-        /* Ab `lg` füllt das Bild die Höhe der Textspalte (2026-09-21).
-           Vorher endete es 269px darüber: Der Abstand zum Divider war größer
-           als der zur Headline daneben, und nach dem Gesetz der Nähe las sich
-           das Bild als zugehörig zu nichts. Beide Spalten enden jetzt bündig.
+      /* Das Bild traegt den Hero als Hintergrund statt als Nachbar-Spalte
+         (Refinement 9, 2026-09-21). Refinement 8 hatte es auf die
+         Spaltenhoehe gestreckt und dafuer beschnitten — der Zuschnitt war die
+         einzige Stelle, die keine Messung entscheiden konnte, und er gefiel
+         nicht. Als Untergrund entfaellt die Frage ganz.
 
-           `object-cover` beschneidet dafür. Der Ausschnitt sitzt rechts
-           (`object-right`) statt mittig: Der Schriftzug „Explore. Solve.
-           Discover." steht auf der rechten Hauswand und ist die Aussage des
-           Bildes — ein zentrierter Zuschnitt hat ihn abgeschnitten (am
-           Bildschirm gesehen, nicht vermutet). Darunter (gestapelt) bleibt
-           das Bild unbeschnitten im 3:2-Verhältnis. */
-        <div className="overflow-hidden rounded-card border border-border shadow-card lg:flex-1">
-          <Image
-            src="/assets/urbanquest.png"
-            alt="Nächtliche Straße mit leuchtender Route und dem Schriftzug Explore. Solve. Discover."
-            width={1536}
-            height={1024}
-            priority
-            sizes="(min-width: 1024px) 520px, 100vw"
-            className="w-full h-auto lg:h-full lg:object-cover lg:object-right"
-          />
-        </div>
-      }
+         Kein `alt` und kein `aside` mehr: Das Bild sagt nichts, was der Text
+         daneben nicht sagt. Die Abdunklung sitzt in `InfoPageShell`, weil sie
+         nicht verhandelbar ist — ohne sie verfehlt Teal die Kontrastvorgabe. */
+      heroBackground={{ src: "/assets/hero_new.png" }}
     >
       {/* 2 — Orte als Chip-Reihe, in einer Karte wie Sektion 3. Ab hier heißt
           es „Quest": Der Hero oben hat den Besucher mit „GPS-Rallye" in seiner

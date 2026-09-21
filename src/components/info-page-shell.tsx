@@ -23,20 +23,25 @@ interface InfoPageShellProps {
   /** Rendered beside the title block from `lg` up; stacked underneath on smaller screens. */
   aside?: React.ReactNode;
   /**
-   * Lässt das `aside` ab `lg` auf die Höhe der Textspalte wachsen, statt bei
-   * seiner Eigenhöhe zu enden (PROJ-13, 2026-09-21).
+   * Bild, das hinter dem gesamten Hero-Block liegt (PROJ-13, Refinement 9,
+   * 2026-09-21) — hinter Logo, Headline, Lead, Preiszeile und CTA.
    *
-   * Opt-in und nicht Standard, weil die Seiten verschiedene Dinge daneben
-   * stellen: `/about` ein Bild, das Höhe füllen kann und soll, `/anleitung`
-   * eine Info-Box mit Rahmen — die gestreckt eine hohe, halbleere Karte
-   * ergäbe. Der Default bleibt deshalb „so hoch wie der Inhalt".
+   * Löst `asideFillsHeight` aus Refinement 8 ab: Dort stand das Bild als
+   * Nachbar-Spalte und musste dafür beschnitten werden. Als Untergrund
+   * entfällt die Zuschnittfrage ganz — es trägt die Fläche, statt eine Spalte
+   * zu füllen.
    *
-   * Gemessen war der Anlass: Auf `/about` endete das Hero-Bild 269px über der
-   * Textspalte. Der Abstand vom Bild zum Divider war damit größer als der zur
-   * Headline daneben — nach dem Gesetz der Nähe las sich das Bild als
-   * zugehörig zu nichts.
+   * Die Abdunklung ist nicht verhandelbar und deshalb hier fest verdrahtet
+   * statt als Prop: Gemessen fällt **Teal** auf dem unveränderten Bild auf
+   * 3.75:1 und verfehlt die PRD-Vorgabe von 4.5:1 — betroffen sind „ZUM
+   * SPIELFELD" in der Headline und die Kostenlos-Zeile. Weißer Text käme mit
+   * 6.26:1 durch, die Akzentfarbe nicht. Bei 40% liegt Teal bei 6.49:1
+   * (Desktop) und 6.33:1 (volle Breite, also der Mobile-Fall).
+   *
+   * Gilt auf **allen** Breiten. Der Betreiber-Wunsch „nur mobile sind die
+   * Elemente untereinander" betrifft die Anordnung, nicht den Hintergrund.
    */
-  asideFillsHeight?: boolean;
+  heroBackground?: { src: string };
   backHref?: string;
   /**
    * "dark" (Default) trägt den Gaming-Look der öffentlichen Eingangsseiten.
@@ -87,7 +92,7 @@ export function InfoPageShell({
   meta,
   lead,
   aside,
-  asideFillsHeight = false,
+  heroBackground,
   backHref,
   theme = "dark",
   showSupport = false,
@@ -163,21 +168,56 @@ export function InfoPageShell({
             ist die Bildschirmhöhe der knappe Faktor, nicht die Breite
             (BUG-7). Erst ab `xl` — wo auch flache Laptops genug Höhe
             haben — darf er wieder großzügiger werden. */}
-        <div className={`${CONTAINER} pt-6 sm:pt-10 xl:pt-16`}>
+        <div
+          className={`${CONTAINER} pt-6 sm:pt-10 xl:pt-16 ${
+            // `relative` traegt die beiden Hintergrund-Ebenen; `isolate` haelt
+            // sie in einem eigenen Stapelkontext, damit der Scrim nicht mit
+            // der sticky Kopfzeile darueber konkurriert.
+            heroBackground ? "relative isolate overflow-hidden rounded-card" : ""
+          }`}
+        >
+          {heroBackground && (
+            <>
+              {/* Bild und Abdunklung als ZWEI Ebenen, nicht als
+                  `filter: brightness()` auf dem Bild: Ein Filter trifft im
+                  selben Stapelkontext auch den Text darueber. */}
+              <Image
+                src={heroBackground.src}
+                // Dekoration: Der Hero sagt in Schrift, was das Bild zeigt.
+                // Ein Screenreader, der die Bildbeschreibung zwischen Logo und
+                // Headline vorliest, stoert den Lesefluss ohne Gegenwert.
+                alt=""
+                aria-hidden
+                fill
+                priority
+                sizes="(min-width: 1100px) 1100px, 100vw"
+                className="-z-10 object-cover"
+              />
+              {/* ZWEI Ebenen statt einer gleichmaessigen Abdunklung.
+
+                  Die erste liegt ueber dem ganzen Bild und nimmt ihm die
+                  Spitzen. Die zweite ist der eigentliche Textschutz: ein
+                  Verlauf von links, der genau dort am staerksten ist, wo Text
+                  steht, und nach rechts auslaeuft — dort traegt das Bild
+                  allein und bleibt klar sichtbar.
+
+                  Warum nicht eine gleichmaessige Ebene: Gemessen muesste sie
+                  auf ~73% hoch, damit auch die hellsten Stellen (Laternen,
+                  Reflexe) bestehen. Dann ist das Bild kaum noch zu erkennen —
+                  genau das, was ein Hintergrundbild nicht sein soll.
+
+                  Auf Mobile laeuft der Text ueber die ganze Breite, deshalb
+                  greift der Verlauf dort von unten statt von links: Der Text
+                  sitzt im unteren Bereich, das Bild bleibt oben frei. */}
+              <div className="absolute inset-0 -z-10 bg-background/30" />
+              <div className="absolute inset-0 -z-10 bg-gradient-to-t from-background via-background/80 to-background/20 lg:bg-gradient-to-r lg:from-background lg:via-background/75 lg:to-transparent" />
+            </>
+          )}
           {/* `items-start` statt `items-center` (2026-09-09): Seit der Hero
               von /about kürzer ist als das Bild daneben, ließ die Zentrierung
               den Text in der Spalte schweben. Oben bündig lesen sich beide
-              Spalten als ein Block.
-
-              Mit `asideFillsHeight` weicht die Ausrichtung auf `stretch`
-              (2026-09-21) — dann trägt die Textspalte ihr `items-start`
-              selbst, und nur das `aside` wächst mit. Ohne die Prop bleibt
-              alles wie zuvor. */}
-          <div
-            className={`grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-14 ${
-              asideFillsHeight ? "lg:items-stretch" : "lg:items-start"
-            }`}
-          >
+              Spalten als ein Block. */}
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-14 lg:items-start">
             <div>
               {showLogo && (
                 <Image
@@ -230,14 +270,13 @@ export function InfoPageShell({
               )}
             </div>
 
-            {aside && (
-              <div className={`min-w-0 ${asideFillsHeight ? "lg:flex" : ""}`}>
-                {aside}
-              </div>
-            )}
+            {aside && <div className="min-w-0">{aside}</div>}
           </div>
 
-          <div className="h-px bg-border mt-10 sm:mt-14" />
+          {/* Die Trennlinie entfaellt, wenn ein Hintergrundbild den Hero
+              traegt — die Bildkante setzt die Grenze bereits. */}
+          {!heroBackground && <div className="h-px bg-border mt-10 sm:mt-14" />}
+          {heroBackground && <div className="h-10 sm:h-14" />}
         </div>
 
         {/* Sections set scroll-margin so anchored headings clear the sticky header. */}

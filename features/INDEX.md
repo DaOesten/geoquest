@@ -1120,3 +1120,30 @@ Alle **10 Endpunkte HTTP 200** (0,08–0,43 s), Security-Header inkl. HSTS. Nach
 **Für `/frontend`:** Die Abdunklung gehört als **eigene Ebene** zwischen Bild und Text, nicht als `filter: brightness()` auf dem `Image` — ein Filter träfe im selben Stapelkontext auch den Text. Das Bild **verliert seinen Alternativtext** (als Hintergrund ist es Dekoration). `asideFillsHeight` aus Refinement 8 verliert auf `/about` seinen Zweck — prüfen und entfernen oder begründen. **Drei Tests aus Refinement 8 werden absichtlich falsch** (bündiger Abschluss, Bildausschnitt, unbeschnitten unter `lg`) und sind zu **ziehen, nicht zu löschen**; der Kontrast-Wächter tritt an ihre Stelle. Der BUG-7-Wächter bleibt unangetastet — der Hero bekommt eine Ebene, aber keine Höhe.
 
 Spec ist aktualisiert (9 Acceptance Criteria in einem eigenen Block, 4 Produkt- und 4 technische Entscheidungen, 1 geschlossene und 2 neue Open Questions, eigener Abschnitt „Refinement 9“ mit beiden Messtabellen).
+
+## Frontend umgesetzt: Hero-Bild wird Hintergrund (2026-09-21)
+**PROJ-13**, Refinement 9. Vier Dateien, kein neues Paket. `asideFillsHeight` aus Refinement 8 ist ersatzlos entfallen — keine andere Seite nutzte sie.
+
+**Der Befund, der diese Phase geprägt hat: meine eigene Spec-Messung war falsch.** Die Spec versprach bei 40% Abdunklung **6.49:1** für Teal; im Browser gemessen waren es **1.95:1**. Ursache: Ich hatte im Refinement 10×10-Rasterzellen gemittelt. Kontrast gilt aber lokal — eine Straßenlaterne hinter einem Buchstaben drückt den Wert, auch wenn der Zellmittelwert stimmt.
+
+| Methode | Teal bei 40% | Problem |
+|---|---|---|
+| Zellmittel (Spec) | 6.49:1 | zu grob |
+| Einzelpixel | 1.95:1 | zu streng — bei jedem Foto unerfüllbar |
+| **lokaler Mittelwert 21×21px** | **11.57:1** | entspricht der Wahrnehmung eines Buchstabens |
+
+Die dritte Methode wurde mit dem Betreiber abgestimmt.
+
+**Eine gleichmäßige Abdunklung war der falsche Hebel:** Sie hätte auf **73%** hochgehen müssen, damit jeder Pixel besteht — dann ist das Bild kaum noch erkennbar. Selbst reiner weißer Text hätte 61% gebraucht; die Akzentfarbe war nicht die Ursache, die hellen Bildstellen waren es. **Stattdessen ein Verlauf**, der dort am stärksten ist, wo Text steht (Desktop von links, Mobile von unten) und zum Bild hin ausläuft.
+
+**Der Betreiber hat ein neues Bild geliefert** (`hero_new.png`, 1672×941). Ehrlich benannt: Bei der reinen Kontraststatistik ist es **gleichauf** mit dem alten (0,83% gegen 0,88% Problempixel). Gestalterisch ist es klar besser — 16:9, dunkle Gasse links wo der Text steht, helle Elemente rechts.
+
+**Ergebnis:** Knappster Wert **9.31:1** bei 4.5:1 Vorgabe. Und der Verlauf löst es so gründlich, dass die Methodenfrage hinfällig ist — auch nach dem **strengsten** Maßstab (jeder einzelne Pixel) besteht alles: **0 von 213.496 Pixeln** unter der Vorgabe, schlechtester Wert 7.29:1.
+
+CTA auf allen elf Viewports über dem Falz (unverändert), 0px Überlauf, Nachbarseiten ohne Hintergrundbild, Fallback bei blockiertem Bild geprüft (18.5:1).
+
+**Tests: 4 gezogen, 5 neu.** Darunter ein **vorbestehender**, der zu Recht falsch wurde: „beide Bilder tragen einen Alternativtext" forderte `alt` für jedes Bild — für ein dekoratives Hintergrundbild ist ein leeres `alt` plus `aria-hidden` aber die **richtige** Auszeichnung. Er unterscheidet jetzt statt pauschal zu fordern. Gegenprobe: Verlauf entfernt → genau der zuständige Test fällt, beide Engines.
+
+**Unit 271/271, E2E beide Engines 1052 passed / 55 skipped / 1 unexpected** (die dokumentierte PROJ-12-Service-Worker-Flakiness, seriell grün). Build und Lint sauber.
+
+**Offen:** ob der Anschnitt von „EXPLORE" am rechten Containerrand gewollt aussieht.

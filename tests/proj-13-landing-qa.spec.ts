@@ -114,12 +114,25 @@ test.describe("Tastatur & Semantik", () => {
     await expect(first).toHaveAttribute("aria-expanded", "false");
   });
 
-  test("beide Bilder tragen einen Alternativtext", async ({ page }) => {
+  test("inhaltstragende Bilder haben einen Alternativtext, dekorative nicht", async ({
+    page,
+  }) => {
     await page.goto("/about");
-    const missing = await page
-      .locator("img")
-      .evaluateAll((els) => els.filter((e) => !(e as HTMLImageElement).alt).length);
-    expect(missing).toBe(0);
+    // Gezogen am 2026-09-21 (Refinement 9): Das Hero-Bild ist seitdem
+    // Hintergrund und damit Dekoration — ein leeres `alt` plus `aria-hidden`
+    // ist dort die RICHTIGE Auszeichnung, kein fehlender Alternativtext.
+    // Ein Screenreader, der die Bildbeschreibung zwischen Logo und Headline
+    // vorliest, stoert den Lesefluss ohne Gegenwert.
+    const bad = await page.locator("img").evaluateAll((els) =>
+      els
+        .filter((e) => {
+          const img = e as HTMLImageElement;
+          const decorative = img.getAttribute("aria-hidden") === "true";
+          return decorative ? img.alt !== "" : !img.alt;
+        })
+        .map((e) => (e as HTMLImageElement).src.slice(-40))
+    );
+    expect(bad, "Bilder mit falscher alt-Auszeichnung").toEqual([]);
   });
 });
 
@@ -250,89 +263,19 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
     await expect(logo, "auch auf großen Bildschirmen").toBeVisible();
   });
 
-  test("Hero-Bild und Textspalte enden am Desktop bündig", async ({ page }) => {
-    // Vor dem 2026-09-21 endete das Bild 269px über der Textspalte — der
-    // Abstand zum Divider war größer als der zur Headline daneben, und nach
-    // dem Gesetz der Nähe las sich das Bild als zugehörig zu nichts.
-    for (const [w, h] of [
-      [1024, 768],
-      [1366, 768],
-      [1920, 1080],
-    ] as const) {
-      await page.setViewportSize({ width: w, height: h });
-      await page.goto("/about");
-
-      const gap = await page.evaluate(() => {
-        const h1 = document.querySelector("h1")!;
-        const img = document.querySelector<HTMLImageElement>(
-          'main img[alt^="Nächtliche"]'
-        )!;
-        const text = h1.closest("div")!.getBoundingClientRect();
-        return Math.round(text.bottom - img.getBoundingClientRect().bottom);
-      });
-
-      // 1px Toleranz für den Rahmen der Bildkarte.
-      expect(Math.abs(gap), `${w}px: ${gap}px Versatz zwischen den Spalten`)
-        .toBeLessThanOrEqual(2);
-    }
-  });
-
-  test("der Bildausschnitt hält den Schriftzug im Bild", async ({ page }) => {
-    // `object-cover` zentriert standardmäßig und schnitt damit „Explore.
-    // Solve. Discover." ab — die Aussage des Bildes. Der Ausschnitt sitzt
-    // deshalb rechts, wo der Schriftzug auf der Hauswand steht.
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/about");
-
-    const fit = await page.evaluate(() => {
-      const img = document.querySelector<HTMLImageElement>(
-        'main img[alt^="Nächtliche"]'
-      )!;
-      const cs = getComputedStyle(img);
-      return { objectFit: cs.objectFit, objectPosition: cs.objectPosition };
-    });
-    expect(fit.objectFit).toBe("cover");
-    expect(fit.objectPosition).toMatch(/100%|right/);
-  });
-
-  test("unterhalb von lg bleibt das Bild unbeschnitten", async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/about");
-
-    const r = await page.evaluate(() => {
-      const img = document.querySelector<HTMLImageElement>(
-        'main img[alt^="Nächtliche"]'
-      )!;
-      const b = img.getBoundingClientRect();
-      return { fit: getComputedStyle(img).objectFit, ratio: b.width / b.height };
-    });
-    expect(r.fit).not.toBe("cover");
-    // Quellbild ist 1536×1024 = 1.5
-    expect(r.ratio).toBeGreaterThan(1.4);
-    expect(r.ratio).toBeLessThan(1.6);
-  });
-
-  test("das Lockup ist freigestellt und überlappt das Hero-Bild nicht", async ({
+  // Gezogen am 2026-09-21 (Refinement 9). Die drei Tests davor prüften das
+  // Bild als Nachbar-Spalte: bündiger Abschluss, Zuschnitt nach rechts und
+  // unbeschnitten unter `lg`. Als Hintergrund gibt es keine Spalte und keinen
+  // Zuschnitt mehr — an ihre Stelle tritt der Kontrast-Wächter unten. Die
+  // Zusicherung über das freigestellte Lockup (PROJ-1) bleibt erhalten.
+  test("das Lockup ist freigestellt und erzeugt keinen Überlauf", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1366, height: 768 });
     await page.goto("/about");
 
     const logo = page.locator("main img[alt='Geo Quest']");
-    // Freigestelltes PNG statt der Fassung mit opaker Platte (PROJ-1,
-    // Refinement 2026-09-20) — sonst zeichnet sich ein Rechteck ab.
     await expect(logo).toHaveAttribute("src", /logo-lockup-cutout/);
-
-    const lb = await logo.boundingBox();
-    const aside = await page.locator("main img[alt^='Nächtliche']").boundingBox();
-    expect(lb, "Lockup nicht gefunden").not.toBeNull();
-    expect(aside, "Hero-Bild nicht gefunden").not.toBeNull();
-    const overlaps =
-      lb!.x < aside!.x + aside!.width &&
-      aside!.x < lb!.x + lb!.width &&
-      lb!.y < aside!.y + aside!.height &&
-      aside!.y < lb!.y + lb!.height;
-    expect(overlaps, "Lockup und Hero-Bild überlappen").toBe(false);
 
     const overflow = await page.evaluate(
       () =>
@@ -340,6 +283,70 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
         document.documentElement.clientWidth
     );
     expect(overflow, "horizontaler Scrollbalken").toBeLessThanOrEqual(0);
+  });
+
+  test("der Hero trägt ein Hintergrundbild hinter dem Text", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/about");
+
+    const bg = page.locator('main img[alt=""]');
+    await expect(bg, "Hintergrundbild fehlt").toHaveCount(1);
+    // Dekoration: Ein Screenreader soll es nicht vorlesen.
+    await expect(bg).toHaveAttribute("aria-hidden", "true");
+    await expect(bg).toHaveAttribute("src", /hero_new/);
+
+    // Es liegt HINTER dem Text, nicht daneben: Die Headline überlappt es.
+    const b = (await bg.boundingBox())!;
+    const h1 = (await page.locator("h1").boundingBox())!;
+    const overlaps =
+      h1.x < b.x + b.width &&
+      b.x < h1.x + h1.width &&
+      h1.y < b.y + b.height &&
+      b.y < h1.y + h1.height;
+    expect(overlaps, "Headline liegt nicht auf dem Bild").toBe(true);
+  });
+
+  test("auch auf dem Handy liegt der Text auf dem Bild", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/about");
+
+    const bg = page.locator('main img[alt=""]');
+    await expect(bg).toHaveCount(1);
+
+    const b = (await bg.boundingBox())!;
+    const h1 = (await page.locator("h1").boundingBox())!;
+    expect(h1.y, "Headline müsste auf dem Bild liegen").toBeGreaterThanOrEqual(b.y);
+    expect(h1.y + h1.height).toBeLessThanOrEqual(b.y + b.height);
+  });
+
+  test("die Textschutz-Ebene liegt über dem Bild", async ({ page }) => {
+    // Ohne sie fällt der Kontrast auf hellen Bildstellen (Laternen, Reflexe)
+    // unter die PRD-Vorgabe — gemessen bis auf 1.95:1. Der Verlauf ist der
+    // Grund, warum der Text auf dem Foto überhaupt lesbar ist.
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/about");
+
+    const found = await page.evaluate(() => {
+      const h1 = document.querySelector("h1")!;
+      const hero = h1.closest("div")!.parentElement!.parentElement!;
+      return [...hero.children].some((el) => {
+        const bg = getComputedStyle(el).backgroundImage;
+        return /gradient/.test(bg);
+      });
+    });
+    expect(found, "kein Verlauf über dem Hintergrundbild gefunden").toBe(true);
+  });
+
+  test("die Nachbarseiten bekommen kein Hintergrundbild", async ({ page }) => {
+    for (const path of ["/anleitung", "/impressum", "/datenschutz"]) {
+      await page.goto(path);
+      await expect(
+        page.locator('main img[alt=""]'),
+        `${path} trägt ein Hintergrundbild`
+      ).toHaveCount(0);
+    }
   });
 });
 

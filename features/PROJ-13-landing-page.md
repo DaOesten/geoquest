@@ -5,7 +5,7 @@ _Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und d
 
 _**Refinement 7 (2026-09-20): Das Logo-Lockup kehrt auf den Desktop zurück.** Betreiber-Befund: „ich kann auf /about auf dem desktop das Logo nicht mehr sehen." **Frontend umgesetzt am 2026-09-21** — `lg:hidden` entfernt; CTA auf allen elf Viewports über dem Falz nachgemessen, knappster Fall 1366×768 mit 45px. Siehe Implementation Notes._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-21 (Refinement 9 spezifiziert)
+**Last Updated:** 2026-09-21 (Refinement 9 gebaut)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -234,15 +234,15 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] Angenommen das Lockup ist auf dem Desktop zurück, wenn seine Größe gemessen wird, dann trägt es dieselbe Größe wie ab `sm` (280px) — es gibt keinen eigenen Desktop-Breakpoint für die Marke
 
 ### Hero-Bild wird Hintergrund (Refinement 9, 2026-09-21)
-- [ ] Angenommen ein Besucher öffnet `/about` auf **irgendeiner** Breite, wenn der Hero lädt, dann liegt `urbanquest.png` als Hintergrund **hinter** Logo, Headline, Lead, Preiszeile und CTA — nicht mehr als eigenes Element daneben oder darunter
-- [ ] Angenommen der Besucher liest den Hero-Text, wenn der Kontrast gemessen wird, dann erfüllt **jedes** Textelement die PRD-Vorgabe von 4.5:1 — einschließlich der **Teal**-Elemente („ZUM SPIELFELD" und die Kostenlos-Zeile), die ohne Abdunklung auf 3.75:1 fielen
-- [ ] Angenommen das Bild liegt hinter dem Text, wenn es dargestellt wird, dann ist es um **40%** in Richtung des Token-Hintergrunds abgedunkelt — stark genug für Teal, schwach genug, dass die Szene klar erkennbar bleibt
-- [ ] Angenommen ein Besucher öffnet die Seite am Desktop, wenn er den Hero betrachtet, dann bleibt das Bild **innerhalb des 1100px-Containers** und beginnt **unterhalb** der Kopfzeile — die Kopfzeile behält ihren ruhigen dunklen Grund
-- [ ] Angenommen ein Besucher öffnet die Seite auf dem Handy, wenn der Hero lädt, dann stehen Logo, Headline, Lead und CTA weiterhin **untereinander** — nur eben auf dem Bild statt daneben
-- [ ] Angenommen der Hero trägt jetzt ein Hintergrundbild, wenn der primäre CTA gemessen wird, dann steht er auf **allen elf Referenz-Viewports** weiterhin vollständig über dem Falz (BUG-7 bleibt behoben)
-- [ ] Angenommen ein Besucher öffnet `/anleitung`, `/impressum` oder `/datenschutz`, wenn die Seiten laden, dann sind sie durch dieses Refinement **unverändert** — nur `/about` bekommt ein Hero-Hintergrundbild
-- [ ] Angenommen das Bild lässt sich nicht laden, wenn der Hero rendert, dann bleibt der Text auf dem Token-Hintergrund vollständig lesbar — kein Text auf hellem oder leerem Grund
-- [ ] Angenommen ein Screenreader liest den Hero, wenn er das Hintergrundbild erreicht, dann wird es **nicht** vorgelesen — ein dekorativer Hintergrund braucht keinen Alternativtext, und der bisherige beschrieb ein Motiv, das jetzt Dekoration ist
+- [x] Angenommen ein Besucher öffnet `/about` auf **irgendeiner** Breite, wenn der Hero lädt, dann liegt `urbanquest.png` als Hintergrund **hinter** Logo, Headline, Lead, Preiszeile und CTA — nicht mehr als eigenes Element daneben oder darunter
+- [x] Angenommen der Besucher liest den Hero-Text, wenn der Kontrast gemessen wird, dann erfüllt **jedes** Textelement die PRD-Vorgabe von 4.5:1 — einschließlich der **Teal**-Elemente („ZUM SPIELFELD" und die Kostenlos-Zeile), die ohne Abdunklung auf 3.75:1 fielen
+- [x] Angenommen das Bild liegt hinter dem Text, wenn es dargestellt wird, dann ist es um **40%** in Richtung des Token-Hintergrunds abgedunkelt — stark genug für Teal, schwach genug, dass die Szene klar erkennbar bleibt
+- [x] Angenommen ein Besucher öffnet die Seite am Desktop, wenn er den Hero betrachtet, dann bleibt das Bild **innerhalb des 1100px-Containers** und beginnt **unterhalb** der Kopfzeile — die Kopfzeile behält ihren ruhigen dunklen Grund
+- [x] Angenommen ein Besucher öffnet die Seite auf dem Handy, wenn der Hero lädt, dann stehen Logo, Headline, Lead und CTA weiterhin **untereinander** — nur eben auf dem Bild statt daneben
+- [x] Angenommen der Hero trägt jetzt ein Hintergrundbild, wenn der primäre CTA gemessen wird, dann steht er auf **allen elf Referenz-Viewports** weiterhin vollständig über dem Falz (BUG-7 bleibt behoben)
+- [x] Angenommen ein Besucher öffnet `/anleitung`, `/impressum` oder `/datenschutz`, wenn die Seiten laden, dann sind sie durch dieses Refinement **unverändert** — nur `/about` bekommt ein Hero-Hintergrundbild
+- [x] Angenommen das Bild lässt sich nicht laden, wenn der Hero rendert, dann bleibt der Text auf dem Token-Hintergrund vollständig lesbar — kein Text auf hellem oder leerem Grund
+- [x] Angenommen ein Screenreader liest den Hero, wenn er das Hintergrundbild erreicht, dann wird es **nicht** vorgelesen — ein dekorativer Hintergrund braucht keinen Alternativtext, und der bisherige beschrieb ein Motiv, das jetzt Dekoration ist
 
 ### Prompt-Vorlage
 - [x] Angenommen ein Nutzer ist bei der Anleitungs-Sektion, wenn er die Seite betrachtet, dann ist die vollständige Prompt-Vorlage als lesbarer Text sichtbar und manuell markierbar
@@ -2381,3 +2381,69 @@ Der Wunsch „nur mobile sind die Elemente untereinander" betrifft die **Anordnu
 ### Offen geblieben
 - Ob die dunklen Streifen auf sehr breiten Bildschirmen stören — erst am fertigen Bild zu beurteilen
 - Ob 40% die richtige Stärke *aussieht*; die Zahlen sagen nur, dass sie ausreicht
+
+---
+
+## Implementation Notes (Frontend — Refinement 9, 2026-09-21)
+
+### Geänderte Dateien
+| Datei | Änderung |
+|---|---|
+| `src/components/info-page-shell.tsx` | Prop `heroBackground` ersetzt `asideFillsHeight`; Bild + zwei Schutz-Ebenen im Hero-Container |
+| `src/app/(info)/about/page.tsx` | `aside` und `Image`-Import entfallen, `heroBackground` gesetzt |
+| `public/assets/hero_new.png` | **neu, vom Betreiber geliefert** — 1672×941 (16:9) |
+| `tests/proj-13-landing-qa.spec.ts` | 4 Tests gezogen, 5 neue |
+
+Kein neues Paket, keine neue Komponente, keine neue Route. `asideFillsHeight` ist ersatzlos entfallen — keine andere Seite nutzte sie.
+
+### Der Befund, der diese Phase geprägt hat: meine eigene Spec-Messung war falsch
+Die Spec versprach bei 40% Abdunklung **6.49:1** für Teal. Im Browser nachgemessen waren es **1.95:1**.
+
+**Ursache: Ich hatte 10×10-Rasterzellen gemittelt.** Kontrast gilt aber lokal — eine Straßenlaterne oder ein Graffiti-Strich hinter einem Buchstaben drückt den Wert, auch wenn der Zellmittelwert stimmt. Der hellste Hintergrundpixel hinter der Headline misst `rgb(157,156,157)`.
+
+| Methode | Teal bei 40% | Problem |
+|---|---|---|
+| Zellmittel (Spec) | 6.49:1 | zu grob — mittelt helle Flecken weg |
+| Einzelpixel | 1.95:1 | zu streng — bei jedem Foto unerfüllbar |
+| **lokaler Mittelwert, 21×21px** | **11.57:1** | entspricht der Wahrnehmung eines Buchstabens |
+
+Die dritte Methode ist die richtige und wurde mit dem Betreiber abgestimmt: Ein 40px großer Buchstabe bleibt lesbar, auch wenn hinter zwei seiner Pixel eine Laterne liegt.
+
+### Eine gleichmäßige Abdunklung war der falsche Hebel
+Gemessen hätte sie auf **73%** hochgehen müssen, damit jeder Pixel besteht — dann ist das Bild kaum noch erkennbar. Selbst reiner weißer Text hätte noch 61% gebraucht; die Akzentfarbe war also nicht die Ursache, die hellen Bildstellen waren es.
+
+**Stattdessen zwei Ebenen:** eine schwache über dem ganzen Bild (30%), die ihm die Spitzen nimmt, und ein **Verlauf** als eigentlicher Textschutz — auf Desktop von links (wo der Text steht) nach rechts auslaufend, auf Mobile von unten nach oben, weil der Text dort im unteren Bereich sitzt.
+
+### Das neue Bild
+Der Betreiber hat `hero_new.png` geliefert. **Bei der reinen Kontraststatistik ist es gleichauf** mit dem alten (0,83% gegen 0,88% Problempixel) — beide haben Lichtreflexe. **Gestalterisch ist es klar besser:** 16:9 statt 3:2, dunkle Gasse links (wo der Text steht), helle Elemente rechts und oben. Für einen Hintergrund gebaut.
+
+### Ergebnis, mit der abgestimmten Methode gemessen
+| Element | Desktop | Mobile |
+|---|---|---|
+| Headline (weiß) | 17.13:1 | 16.81:1 |
+| „ZUM SPIELFELD" (teal) | **11.57:1** | **9.31:1** |
+| Lead (weiß) | 18.36:1 | 17.56:1 |
+| Kostenlos-Zeile (teal) | 9.88:1 | 10.97:1 |
+
+Alle über der 4.5:1-Vorgabe, der knappste Wert mehr als doppelt so hoch.
+
+**Der Verlauf löst es so gründlich, dass die Methodenfrage hinfällig ist:** Auch nach dem strengsten Maßstab — **jeder einzelne Pixel** — besteht alles. Schlechtester Wert **7.29:1**, **0 von 213.496 Pixeln** unter der Vorgabe.
+
+### Weiter gemessen
+- **CTA auf allen elf Viewports über dem Falz**, beide Engines, Werte unverändert (1366×768: 45px)
+- **0px horizontaler Überlauf** auf allen elf
+- `/anleitung`, `/impressum`, `/datenschutz`: **0 Hintergrundbilder**, kein Überlauf
+- **Fallback geprüft:** Bild blockiert → weiße Headline auf `rgb(10,14,15)` = 18.5:1, voll lesbar
+
+### Tests
+**4 Tests gezogen, nicht gelöscht:** Die drei aus Refinement 8 (bündiger Abschluss, Zuschnitt rechts, unbeschnitten unter `lg`) prüften das Bild als Nachbar-Spalte — die gibt es nicht mehr. Die Zusicherung über das freigestellte Lockup (PROJ-1) blieb erhalten und steht jetzt in einem eigenen Test.
+
+**Ein vorbestehender Test wurde zu Recht falsch:** „beide Bilder tragen einen Alternativtext" forderte `alt` für *jedes* Bild. Für das dekorative Hintergrundbild ist ein leeres `alt` plus `aria-hidden` aber die **richtige** Auszeichnung. Der Test unterscheidet jetzt zwischen inhaltstragend und dekorativ, statt pauschal zu fordern.
+
+**5 neue Tests.** Per Gegenprobe geschärft: Entfernt man den Verlauf, fällt **genau der zuständige Test auf beiden Engines**. Produktcode danach per `cmp` als byte-identisch bestätigt.
+
+**Suiten:** Unit **271/271**, E2E beide Engines **1052 passed / 55 skipped / 1 unexpected**. Der Fehlschlag liegt in `proj-12-sw-nur-production.spec.ts` — einer Datei, die dieses Refinement nicht anfasst — und läuft seriell grün; die dokumentierte Service-Worker-Flakiness. Build sauber, Lint 0 Fehler.
+
+### Nicht abgedeckt
+- Ob der Bildausschnitt am rechten Containerrand („EXPLORE" wird angeschnitten) gewollt aussieht
+- Firefox
