@@ -473,6 +473,43 @@ Die „Abgeschlossen"-Karte zeigt bereits, wie es aussieht, und `quest-managemen
 - Die Bestätigungsdialog-Formulierung aus `/create` übernehmen statt neu zu erfinden — derselbe Vorgang, dieselbe Sprache
 - Kein neues Package: `DropdownMenu`, `AlertDialog`, `deleteQuest`, `deleteProgress` sind alle vorhanden und getestet
 
+### Frontend umgesetzt am 2026-09-21
+
+**Zwei Produktivdateien**, kein neues Paket, keine neue Komponente, keine neue Route: `src/components/quest-card.tsx` (alle drei Kartenzustände auf `<div>` + Menü-Trigger + inneren `<Link>` umgebaut, neue interne `QuestCardMenu`) und `src/app/play/page.tsx` (Lösch-Handler, Bestätigungsdialog).
+
+**Der Umbau war größer als die Spec ihn beziffert hat — und zwar in den Tests.** Die Spec nannte fünf bestehende Tests (alle auf den Reset-Button). Es sind **neun**: Vier weitere adressieren die Karte über `getByRole("link", { name: ... })`, was seit dem Umbau nicht mehr greift, weil die Karte selbst kein Link mehr ist. Aufgefallen ist das nur, weil ich vor dem Umbau alle `link`-Selektoren der Datei durchgesehen habe, nicht nur die aus der Spec. Andere Testdateien sind nicht betroffen (geprüft).
+
+Die gezogenen Selektoren zielen jetzt auf das `listitem` statt auf den Link — das ist der stabile Anker, unabhängig davon, wie die Karte innen gebaut ist. Zwei neue Helfer (`questCard`, `openQuestMenu`) halten das an einer Stelle.
+
+**Eine sichtbare Folge, die keine Messung gezeigt hätte:** Das Badge („Neu", „Live") stand bisher rechtsbündig — dort sitzt jetzt der Menü-Trigger. Es rückt nach links. Die Nutzerentscheidung aus der PROJ-5-Review vom 2026-08-26 lautete „Badge in eigener Zeile über dem Titel, bei allen drei Varianten identisch"; die eigene Zeile und die Einheitlichkeit bleiben erhalten, nur die Ausrichtung wechselt. Die Titel behalten `pr-11`, damit sie nicht unter den Trigger laufen.
+
+**Gemessen statt behauptet (beide Engines, 390×844):**
+
+| | Ergebnis |
+|---|---|
+| Menü-Trigger auf allen drei Zuständen | vorhanden, 44×44px |
+| „Zurücksetzen" im Menü | nur bei „Abgeschlossen" |
+| Tap auf Trigger navigiert | nein, URL bleibt `/play` |
+| Kartentitel führt in die Quest | ja |
+| Dialog nennt Quest-Name + Endgültigkeit | ja |
+| Quest + Fortschritt nach Bestätigen | beide entfernt, Nachbar-Quests unberührt |
+| Abbrechen | Quest und Fortschritt unverändert |
+| Gelöscht im Play → im Creator | ebenfalls weg |
+
+**Am Bildschirm abgenommen, nicht nur gemessen** — bei einer sichtbaren Änderung reichen Zahlen nicht. Beide Engines, Liste + geöffnetes Menü + Dialog: Menü und Dialog rendern im Dark Theme, der `data-theme="dark"`-Griff auf den portalierten Radix-Inhalten greift also wirklich. Ohne ihn wären beide hell auf hell.
+
+**Testabdeckung:** 14 neue Tests in `tests/proj-5-quest-loeschen-play.spec.ts` (je Engine, also 28 Läufe), darunter der Wächter, der bisher ganz fehlte: dass ein Tap auf den Menü-Trigger nicht gleichzeitig in die Quest navigiert — geprüft für **alle drei** Zustände, nicht nur für „Abgeschlossen", wie es das alte Kriterium tat.
+
+**Per Gegenprobe geschärft.** Mit dem echten Vorgängerstand aus `HEAD` (nicht mit verstellten Parametern der neuen Fassung) fallen **11 von 13** neuen Tests plus die gezogenen Bestandstests. Der Playwright-Snapshot belegt die Ursache direkt: Die Live-Karte ist dort ein einziger `link` mit dem gesamten Karteninhalt und trägt keinen `button "Quest-Aktionen"`. Die **2 neuen Tests, die auch beim Vorgängerstand bestehen, sind die richtigen** — Kartentitel-Link und Markup-Escaping funktionierten schon vorher; sie sind Wächter gegen Kollateralschaden, keine Belege für das Feature. Produktcode danach per `diff` als byte-identisch bestätigt.
+
+**Beobachtung ohne Bug-Status:** Der Bestätigen-Button im Dialog ist **Teal** (`AlertDialogAction` nutzt die Default-Variante `bg-primary`), also dieselbe Farbe wie jeder harmlose CTA der App — obwohl er endgültig löscht. Das ist **vorbestehend aus PROJ-6**: `/create` sieht identisch aus, beide Dialoge teilen sich die Komponente. Bewusst nicht mitgeändert — es wäre eine Abweichung von einem live getesteten Bestandsmuster, die niemand angefordert hat, und der Menü-Eintrag trägt die Warnfarbe bereits. Wäre ein eigenes Refinement über beide Screens wert.
+
+**Über die Spec hinaus geprüft: die Tastaturbedienung** — bei einem neuen Menü plus destruktivem Dialog die naheliegende Frage, in der Spec aber nicht gefordert. Sie funktioniert vollständig, und der wichtigste Teil ist erfreulicher als erwartet: **Der Dialog startet mit dem Fokus auf „Abbrechen“, nicht auf „Löschen“** — ein versehentliches Enter löscht also nichts. Als 14. Test festgehalten, damit es so bleibt.
+
+**Suiten gegen den Production-Build:** Unit **271/271**. E2E über beide Engines **1083 passed / 55 skipped / 0 failed / 0 flaky**. Die beiden PROJ-5-Dateien einzeln **60/60** (inkl. des nachgezogenen Tastatur-Tests). Build und Lint sauber (0 Fehler, 7 vorbestehende Warnungen, keine in geänderten Dateien). `npx tsc --noEmit` meldet nur die 2 vorbestehenden Fehler in `quest-storage.test.ts` (PROJ-6, hier nicht angefasst).
+
+**Nicht abgedeckt:** ob sich der Extra-Tap für „Zurücksetzen" am echten Gerät schlechter anfühlt als der bisherige Direkt-Button (Geschmacksfrage, nur am Handy zu beantworten), und Firefox (Binary fehlt, projektweit dokumentiert).
+
 ### Nicht abgedeckt
 - Ob sich das Extra-Tap für den Reset am echten Gerät schlechter anfühlt als der bisherige Direkt-Button — eine Geschmacksfrage, die nur der Betreiber am Handy beantworten kann
 - Der Creator bekommt weiterhin keinen „Zurücksetzen"-Eintrag (als Open Question vermerkt, bewusst nicht in den Scope gezogen)

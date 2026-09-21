@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | In Review | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
 <!-- Add features above this line -->
@@ -435,6 +435,28 @@ Betreiber-Wunsch: *„der user soll die Möglichkeit bekommen im play mode quest
 **Kein neues Paket:** `DropdownMenu`, `AlertDialog`, `deleteQuest()` und `deleteProgress()` sind alle vorhanden und getestet; `/create` kombiniert die beiden Funktionen bereits genau so.
 
 Spec ist aktualisiert (1 User Story, 4 Acceptance-Criteria-Blöcke mit 17 Kriterien, Edge Cases 8–13, 6 Technical Requirements, 5 Produkt- und 4 technische Entscheidungen, 2 überholte Entscheidungen als solche markiert statt gelöscht, 2 aufgehobene Out-of-Scope-Einträge, 2 neue Open Questions, dazu ein eigener Abschnitt „Refinement 2026-09-21" mit Messtabelle und Test-Zuordnung).
+
+**Frontend umgesetzt am 2026-09-21.** Zwei Produktivdateien (`quest-card.tsx`, `play/page.tsx`), kein neues Paket, keine neue Komponente, keine neue Route.
+
+**Die Spec hat die Testauswirkung unterschätzt — es waren neun statt fünf.** Neben den fünf genannten Reset-Tests adressierten **vier weitere** die Karte über `getByRole("link", { name: ... })`, was nach dem Umbau nicht mehr greift, weil die Karte selbst kein Link mehr ist. Gefunden nur, weil ich alle `link`-Selektoren der Datei durchgesehen habe statt nur die aus der Spec. Gezogen wurde auf das `listitem` — der stabile Anker, unabhängig von der inneren Bauweise; zwei Helfer halten das an einer Stelle. Andere Testdateien sind nicht betroffen (geprüft).
+
+**Eine sichtbare Folge, die keine Messung gezeigt hätte:** Das Badge („Neu"/„Live") stand rechtsbündig — dort sitzt jetzt der Trigger, es rückt nach links. Die Nutzerentscheidung vom 2026-08-26 lautete „eigene Zeile über dem Titel, bei allen drei Varianten identisch"; beides bleibt, nur die Ausrichtung wechselt.
+
+**Gemessen auf beiden Engines:** Menü-Trigger auf allen drei Zuständen und überall 44×44px, „Zurücksetzen" nur bei „Abgeschlossen", Tap auf den Trigger navigiert nicht, Kartentitel führt weiterhin in die Quest, Dialog nennt Namen und Endgültigkeit, Bestätigen entfernt Quest **und** Fortschritt bei unberührten Nachbar-Quests, Abbrechen lässt beides stehen, und die im Play gelöschte Quest ist auch im Creator weg.
+
+**Am Bildschirm abgenommen**, nicht nur gemessen: Menü und Dialog rendern im Dark Theme — der `data-theme="dark"`-Griff auf den portalierten Radix-Inhalten greift also wirklich. Ohne ihn wären beide hell auf hell.
+
+**Per Gegenprobe gegen den echten Vorgängerstand geschärft** (nicht mit verstellten Parametern der neuen Fassung): **11 von 13** neuen Tests fallen, dazu die gezogenen Bestandstests. Der Playwright-Snapshot belegt die Ursache direkt — die Live-Karte ist dort ein einziger `link` ohne jeden `button "Quest-Aktionen"`. Die **2 Tests, die auch beim Vorgängerstand bestehen, sind die richtigen**: Kartentitel-Link und Markup-Escaping funktionierten schon vorher, sie sind Wächter gegen Kollateralschaden, keine Feature-Belege. Produktcode danach per `diff` byte-identisch.
+
+14 neue Tests in `tests/proj-5-quest-loeschen-play.spec.ts`, darunter der bisher ganz fehlende Wächter, dass ein Tap auf den Menü-Trigger nicht in die Quest navigiert — für **alle drei** Zustände, nicht nur für „Abgeschlossen" wie das alte Kriterium.
+
+**Über die Spec hinaus geprüft: die Tastaturbedienung.** Sie funktioniert vollständig, und der wichtigste Teil ist erfreulicher als erwartet — **der Dialog startet mit dem Fokus auf „Abbrechen“, nicht auf „Löschen“**, ein versehentliches Enter löscht also nichts. Als 14. Test festgehalten.
+
+**Suiten gegen den Production-Build:** Unit **271/271**, E2E über beide Engines **1083 passed / 55 skipped / 0 failed / 0 flaky**, die beiden PROJ-5-Dateien einzeln **60/60**. Build und Lint sauber. Gelaufen mit `--workers=2` nach der in diesem INDEX dokumentierten Regel.
+
+**Beobachtung ohne Bug-Status (vorbestehend):** Der Bestätigen-Button im Dialog ist **Teal** (`AlertDialogAction` nutzt die Default-Variante `bg-primary`), also dieselbe Farbe wie jeder harmlose CTA — obwohl er endgültig löscht. `/create` sieht identisch aus, beide teilen sich die Komponente seit PROJ-6. Bewusst nicht mitgeändert: eine Abweichung von einem live getesteten Bestandsmuster, die niemand angefordert hat, und der Menü-Eintrag trägt die Warnfarbe bereits. Ein eigenes Refinement über beide Screens wäre es wert.
+
+**Nicht abgedeckt:** ob sich der Extra-Tap für „Zurücksetzen" am echten Gerät schlechter anfühlt als der bisherige Direkt-Button (nur am Handy zu beantworten), und Firefox.
 
 ## Next Available ID: PROJ-15
 

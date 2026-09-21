@@ -1,4 +1,19 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Locator, type Page } from "@playwright/test";
+
+/**
+ * Die Quest-Karte war bis zum Refinement vom 2026-09-21 selbst ein <Link> und
+ * liess sich per getByRole("link") adressieren. Seit das Aktionsmenue auf allen
+ * drei Kartenzustaenden sitzt, ist sie ein <div> mit innerem Link — das <li>
+ * drumherum ist der stabile Anker, unabhaengig von der inneren Bauweise.
+ */
+function questCard(page: Page, name: string): Locator {
+  return page.getByRole("listitem").filter({ hasText: name });
+}
+
+async function openQuestMenu(page: Page, name: string): Promise<void> {
+  await questCard(page, name).getByRole("button", { name: "Quest-Aktionen" }).click();
+  await expect(page.getByRole("menu")).toBeVisible();
+}
 
 const SINGLE_STATION_QUEST = {
   version: 1,
@@ -199,9 +214,12 @@ test.describe("PROJ-5: Player — Fortschritt & Abschluss", () => {
       await seedQuests(page, [LIST_QUEST_NEW]);
       await page.reload();
 
-      const card = page.getByRole("link", { name: new RegExp(LIST_QUEST_NEW.name) });
+      const card = questCard(page, LIST_QUEST_NEW.name);
       await expect(card).toBeVisible();
       await expect(card.getByText("Neu", { exact: true })).toBeVisible();
+      // Der Titel bleibt ein Link in die Quest, auch nachdem die Karte selbst
+      // seit dem Refinement vom 2026-09-21 kein Link mehr ist.
+      await expect(card.getByRole("link", { name: new RegExp(LIST_QUEST_NEW.name) })).toBeVisible();
     });
 
     test("an in-progress quest shows a 'Live' badge with a progress fraction", async ({ page }) => {
@@ -212,7 +230,7 @@ test.describe("PROJ-5: Player — Fortschritt & Abschluss", () => {
       });
       await page.reload();
 
-      const card = page.getByRole("link", { name: new RegExp(LIST_QUEST_LIVE.name) });
+      const card = questCard(page, LIST_QUEST_LIVE.name);
       await expect(card.getByText("Live", { exact: true })).toBeVisible();
       await expect(card.getByText("Aktuelle Quest")).toBeVisible();
       await expect(card.getByText("1 von 2 Stationen abgeschlossen")).toBeVisible();
@@ -227,7 +245,11 @@ test.describe("PROJ-5: Player — Fortschritt & Abschluss", () => {
       await page.reload();
 
       await expect(page.getByText(LIST_QUEST_DONE.name)).toBeVisible();
-      await expect(page.getByRole("button", { name: "Quest zurücksetzen" })).toBeVisible();
+      // "Zuruecksetzen" ist seit dem Refinement vom 2026-09-21 ein Menue-Eintrag
+      // statt eines Icon-Buttons am Kartenrand. Das Verhalten dahinter ist gleich
+      // geblieben, nur der Weg kostet einen Tap mehr.
+      await openQuestMenu(page, LIST_QUEST_DONE.name);
+      await expect(page.getByRole("menuitem", { name: "Zurücksetzen" })).toBeVisible();
     });
 
     test("the 'Alle' filter sorts live quests before new before done", async ({ page }) => {
@@ -241,7 +263,7 @@ test.describe("PROJ-5: Player — Fortschritt & Abschluss", () => {
       });
       await page.reload();
 
-      const names = await page.getByRole("link").allTextContents();
+      const names = await page.getByRole("listitem").allTextContents();
       const liveIdx = names.findIndex((t) => t.includes(LIST_QUEST_LIVE.name));
       const newIdx = names.findIndex((t) => t.includes(LIST_QUEST_NEW.name));
       expect(liveIdx).toBeGreaterThanOrEqual(0);
@@ -303,12 +325,16 @@ test.describe("PROJ-5: Player — Fortschritt & Abschluss", () => {
       await page.reload();
 
       await expect(page.getByRole("alertdialog")).not.toBeVisible();
-      await page.getByRole("button", { name: "Quest zurücksetzen" }).click();
+      await openQuestMenu(page, LIST_QUEST_DONE.name);
+      await page.getByRole("menuitem", { name: "Zurücksetzen" }).click();
 
       await expect(page.getByText("Fortschritt zurückgesetzt")).toBeVisible();
-      const card = page.getByRole("link", { name: new RegExp(LIST_QUEST_DONE.name) });
+      const card = questCard(page, LIST_QUEST_DONE.name);
       await expect(card.getByText("Neu", { exact: true })).toBeVisible();
-      await expect(page.getByRole("button", { name: "Quest zurücksetzen" })).not.toBeVisible();
+      // Die Karte ist jetzt "Neu" — dort gibt es nichts zurueckzusetzen, der
+      // Eintrag verschwindet also aus dem Menue.
+      await openQuestMenu(page, LIST_QUEST_DONE.name);
+      await expect(page.getByRole("menuitem", { name: "Zurücksetzen" })).toHaveCount(0);
     });
 
     test("clicking reset does not navigate into the quest", async ({ page }) => {
@@ -319,7 +345,8 @@ test.describe("PROJ-5: Player — Fortschritt & Abschluss", () => {
       });
       await page.reload();
 
-      await page.getByRole("button", { name: "Quest zurücksetzen" }).click();
+      await openQuestMenu(page, LIST_QUEST_DONE.name);
+      await page.getByRole("menuitem", { name: "Zurücksetzen" }).click();
       await expect(page).toHaveURL("/play");
     });
 
@@ -330,7 +357,8 @@ test.describe("PROJ-5: Player — Fortschritt & Abschluss", () => {
         completedStations: [LIST_QUEST_DONE.stations[0].id],
       });
       await page.reload();
-      await page.getByRole("button", { name: "Quest zurücksetzen" }).click();
+      await openQuestMenu(page, LIST_QUEST_DONE.name);
+      await page.getByRole("menuitem", { name: "Zurücksetzen" }).click();
       await expect(page.getByText("Fortschritt zurückgesetzt")).toBeVisible();
 
       const raw = await page.evaluate((id) => localStorage.getItem(`gq_progress_${id}`), LIST_QUEST_DONE.id);

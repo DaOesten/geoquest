@@ -16,9 +16,20 @@ const QuestListBackdrop = dynamic(
   () => import("@/components/quest-list-backdrop").then((m) => m.QuestListBackdrop),
   { ssr: false }
 );
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useQuests } from "@/hooks/use-quests";
 import { getProgress, deleteProgress, getQuestListStatus, type QuestListStatus } from "@/lib/quest-progress";
-import { isPlayable } from "@/lib/quest-storage";
+import { deleteQuest, isPlayable } from "@/lib/quest-storage";
+import type { Quest } from "@/lib/quest-schema";
 
 const STATUS_ORDER: Record<QuestListStatus, number> = { live: 0, new: 1, done: 2 };
 
@@ -26,6 +37,7 @@ export default function PlayPage() {
   const { quests: allQuests, refreshQuests } = useQuests();
   const [filter, setFilter] = useState<QuestFilter>("all");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [deleteTarget, setDeleteTarget] = useState<Quest | null>(null);
 
   /**
    * Der schwebende Installations-Hinweis (PROJ-12) liegt ueber dem Listenende
@@ -70,6 +82,22 @@ export default function PlayPage() {
     setRefreshKey((k) => k + 1);
     toast.success("Fortschritt zurückgesetzt");
   }, []);
+
+  /**
+   * Quest und Fortschritt werden gemeinsam geloescht — dieselbe Kombination,
+   * die /create seit PROJ-6 nutzt. Ein zurueckbleibender Fortschritts-Eintrag
+   * waere verwaister Speicher und wuerde eine spaeter erneut importierte Quest
+   * gleicher ID faelschlich als "schon gespielt" zeigen.
+   */
+  const handleDeleteConfirm = useCallback(() => {
+    if (!deleteTarget) return;
+    deleteQuest(deleteTarget.id);
+    deleteProgress(deleteTarget.id);
+    refreshQuests();
+    setRefreshKey((k) => k + 1);
+    toast.success("Quest gelöscht");
+    setDeleteTarget(null);
+  }, [deleteTarget, refreshQuests]);
 
   return (
     <>
@@ -141,6 +169,7 @@ export default function PlayPage() {
                       status={status}
                       completedCount={completedCount}
                       onReset={() => handleReset(quest.id)}
+                      onDelete={() => setDeleteTarget(quest)}
                     />
                   </li>
                 ))}
@@ -150,6 +179,25 @@ export default function PlayPage() {
           <QuestImportButton variant="dark" floating onImportSuccess={refreshQuests} />
         </>
       )}
+
+      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        {/* Radix portaliert nach <body>, ausserhalb des data-theme="dark"-Containers
+            aus play/layout.tsx — Theme und Textfarbe hier erneut setzen, sonst loesen
+            die CSS-Variablen gegen den hellen Standard auf. Der Creator macht dasselbe
+            spiegelbildlich mit "light". */}
+        <AlertDialogContent data-theme="dark" className="text-foreground">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Quest wirklich löschen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              „{deleteTarget?.name}“ wird endgültig gelöscht. Das kann nicht rückgängig gemacht werden.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm}>Löschen</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
