@@ -20,7 +20,7 @@
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
 | PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
-| PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | In Review | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
+| PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Approved | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
 | PROJ-7 | Creator — Stationen-Editor | P0 | PROJ-6 | Deployed | [Spec](PROJ-7-creator-stationen-editor.md) | 2026-08-23 |
 | PROJ-8 | Creator — Modul-Editor | P0 | PROJ-7 | Deployed | [Spec](PROJ-8-creator-modul-editor.md) | 2026-08-23 |
@@ -471,6 +471,8 @@ Weil in derselben Sitzung gebaut, habe ich die zentralen Behauptungen **neu geme
 **4 neue Tests** (Löschen-Suite jetzt 18 je Engine): der **BUG-15-Wächter** als `test.fail` — er wird grün, sobald der Fehler behoben ist, und schlägt an, falls er unbemerkt wiederkehrt — dazu der Scroll-Umweg als Beleg, dass es ein Verdeckungs- und kein Funktionsproblem ist, sowie korrupte Daten und Doppelklick.
 
 **Regression:** Unit **271/271**. E2E über beide Engines **1092 passed / 55 skipped / 1 unexpected / 0 flaky**. Der Fehlschlag liegt in `proj-12-sw-nur-production.spec.ts`, das dieses Refinement nicht anfässt, und läuft **3× seriell grün** — die in diesem Projekt dokumentierte Service-Worker-Flakiness, kein Regress. Build und Lint sauber. Produktcode nach allen Gegenproben per `git diff` als **byte-identisch** zum Commit bestätigt.
+
+**Freigabe-Entscheidung des Betreibers (2026-09-21):** Dieses Refinement geht **mit dem bekannten BUG-15 in Production** — ausdrückliche Entscheidung nach Vorlage der QA-Ergebnisse. Der Status wurde deshalb auf Approved gesetzt, obwohl die QA einen offenen Medium-Bug ausweist. Begründung der Einstufung: kein Datenverlust, kein Sicherheitsproblem, kein Critical/High — und mit einer Scroll-Bewegung umgehbar. Der `test.fail`-Wächter in `tests/proj-5-quest-loeschen-play.spec.ts` hält den Fehler fest; er wird grün, sobald er behoben ist. Das Projekt hat bei PROJ-5 am 2026-08-27 schon einmal so verfahren (BUG-1/BUG-2 bewusst mitdeployt).
 
 **Nicht abgedeckt:** ob sich der Extra-Tap für „Zurücksetzen" am echten Gerät schlechter anfühlt als der bisherige Direkt-Button (nur am Handy zu beantworten), und Firefox.
 

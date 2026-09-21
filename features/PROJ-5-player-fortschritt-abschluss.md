@@ -1,6 +1,6 @@
 # PROJ-5: Player — Fortschritt & Abschluss
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-08-26
 **Last Updated:** 2026-09-21
 
@@ -586,6 +586,8 @@ Tastaturbedienung (Menü per Enter, Pfeiltasten, Dialog per Escape) — funktion
 4 zusätzliche Tests in `tests/proj-5-quest-loeschen-play.spec.ts` (PROJ-5-Löschen-Suite jetzt **18 je Engine**): der **BUG-15-Wächter** als `test.fail` (er wird grün, sobald der Fehler behoben ist, und schlägt an, falls er unbemerkt wiederkehrt), der Scroll-Umweg als Beleg, dass es ein Verdeckungs- und kein Funktionsproblem ist, sowie korrupte Storage-Daten und Doppelklick.
 
 **Regression:** Unit **271/271**. E2E über beide Engines **1092 passed / 55 skipped / 1 unexpected / 0 flaky**. Der Fehlschlag liegt in `proj-12-sw-nur-production.spec.ts`, das dieses Refinement nicht anfässt, und läuft **3× seriell grün** — die in diesem Projekt dokumentierte Service-Worker-Flakiness, kein Regress. Build und Lint sauber. Produktcode nach allen Gegenproben per `git diff` als **byte-identisch** zum Commit bestätigt.
+
+**Freigabe-Entscheidung des Betreibers (2026-09-21):** Dieses Refinement geht **mit dem bekannten BUG-15 in Production** — ausdrückliche Entscheidung nach Vorlage der QA-Ergebnisse. Der Status wurde deshalb auf Approved gesetzt, obwohl die QA einen offenen Medium-Bug ausweist. Begründung der Einstufung: kein Datenverlust, kein Sicherheitsproblem, kein Critical/High — und mit einer Scroll-Bewegung umgehbar. Der `test.fail`-Wächter in `tests/proj-5-quest-loeschen-play.spec.ts` hält den Fehler fest; er wird grün, sobald er behoben ist. Das Projekt hat bei PROJ-5 am 2026-08-27 schon einmal so verfahren (BUG-1/BUG-2 bewusst mitdeployt).
 
 ### Produktionsreife
 
