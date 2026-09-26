@@ -1,11 +1,11 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: In Progress
+## Status: Deployed
 _Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und dort verifiziert (Tag `v1.26.0-PROJ-13`). Refinement 6 (Ko-fi-Icon in der Kopfzeile, Tooltip, JSON-LD-Altersnachzug) ist **am 2026-09-10 nach Production deployt und dort verifiziert** (Tag `v1.27.0-PROJ-13`)._
 
 _**Refinement 7 (2026-09-20): Das Logo-Lockup kehrt auf den Desktop zurück.** Betreiber-Befund: „ich kann auf /about auf dem desktop das Logo nicht mehr sehen." **Frontend umgesetzt am 2026-09-21** — `lg:hidden` entfernt; CTA auf allen elf Viewports über dem Falz nachgemessen, knappster Fall 1366×768 mit 45px. Siehe Implementation Notes._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-21 (Refinement 9 gebaut)
+**Last Updated:** 2026-09-26 (Refinement 9 deployt)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -2618,3 +2618,38 @@ Markup in der Route erzeugt **0 injizierte Elemente** und kein `window.__pwned`.
 - Firefox (Binary fehlt weiterhin)
 - Das Erscheinungsbild auf einem echten hochauflösenden Display
 - Auf Fenstern unter ~900px bleibt der Zuschnitt spürbar (bei 390px nur 48% des Bildes sichtbar) — dem festen Seitenverhältnis geschuldet, keine Regression
+
+---
+
+## Deployment — Refinement 9 (2026-09-26)
+
+**Live auf https://geoquesty.vercel.app/about**, Tag `v1.40.0-PROJ-13`.
+
+### Besonderheit: mitgenommen von einem fremden Deploy
+Die vier PROJ-13-Commits wurden **nicht von diesem Skill gepusht**, sondern von einer parallel laufenden Sitzung, die PROJ-5 deployte (`4755845`). Die Git-Historie ist linear — wer pusht, nimmt alles Vorherige mit.
+
+**Vor dem Deploy war das ein offener Punkt:** Zum Zeitpunkt der QA stand PROJ-5 auf *In Progress* ohne QA für das Löschen-Feature, und ein Push hätte es ungeprüft mitgenommen. **Nachträglich geprüft: Das ist nicht passiert.** Die parallele Sitzung hat ihre eigene QA durchlaufen (`c0490f4 test(PROJ-5)`), bevor sie deployte. Es ging nichts Ungeprüftes live.
+
+### Live verifiziert, beide Engines, neun Viewports
+| Prüfpunkt | Ergebnis |
+|---|---|
+| Karte symmetrisch | **9/9 je Engine** |
+| Text liegt auf dem Bild | **9/9** |
+| `hero_new.png` ausgeliefert | **9/9**, byte-identisch zum Repo (2.483.599 Bytes) |
+| Zuschnitt rechts verankert | `100% 50%` auf **9/9** |
+| `alt=""` + `aria-hidden` | **9/9** |
+| CTA über dem Falz | **9/9** |
+| Horizontaler Überlauf | **0** |
+
+**Alle Werte decken sich exakt mit den lokalen Messungen** (320×568: 39px CTA-Luft; 1366×768: 29px; 1920×1080: 341px). WebKit mit **0 Konsolenfehlern**.
+
+Am Bildschirm abgenommen: symmetrische Karte, Route und X sichtbar, „EXPLORE. SOLVE. DISCOVER." vollständig, Text lesbar.
+
+### Infrastruktur
+Alle sieben Routen HTTP 200 (0,10–0,37 s), Security-Header aktiv inkl. HSTS (`max-age=63072000; includeSubDomains; preload`), `x-frame-options: DENY`, `nosniff`. Nachbarseiten korrekt: Ko-fi nur auf `/anleitung`, kein `FAQPage` wo es nicht hingehört.
+
+### Eine Auffälligkeit geprüft statt weggewunken
+Chrome meldete einen Konsolenfehler, WebKit keinen. Ein ruhiger Besuch von `/about` erzeugt **0 Antworten ≥400** — es ist `/favicon.ico`, das Chrome von sich aus anfragt und das nie referenziert wurde. Vorbestehend, seit dem Deploy vom 2026-09-19 dokumentiert.
+
+### Offen
+**BUG-15 (Low)** bleibt: 23 von 9016 Pixeln (0,26%) hinter „ZUM SPIELFELD" auf 320×568 unter der Kontrastvorgabe, wenn pro Einzelpixel gemessen wird. Nach der abgestimmten Methode (lokaler Mittelwert) besteht die Stelle mit 5,59:1, und die Headline ist am Bildschirm klar lesbar. Ein Einzeiler (Verlauf auf `xs` etwas stärker) schließt es.

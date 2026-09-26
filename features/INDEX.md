@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | Approved | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
 <!-- Add features above this line -->
@@ -1284,3 +1284,18 @@ Weil alles in derselben Sitzung entstand, habe ich **nichts übernommen, sondern
 **Regression:** Unit **271/271**, E2E beide Engines **1084 passed / 55 skipped / 1 unexpected**. Der Fehlschlag liegt in `proj-12-pwa-installation.spec.ts` — einer Datei, die dieses Refinement nicht anfasst — und läuft isoliert in 1,2 s grün; die dokumentierte Parallelitäts-Flakiness. Build und Lint sauber.
 
 **Zwei eigene Messfehler offen benannt:** Eine Warteschleife auf einen Hintergrundlauf hat den Dev-Server mitgerissen (`server: 000`), wodurch ein kompletter E2E-Lauf ins Leere lief und wiederholt werden musste. Und der erste Kontrast-Messversuch verglich weißen Text gegen Screenshots, die den Text selbst enthielten — er meldete 1.00:1 und war wertlos; korrigiert durch Ausblenden des Textes vor der Aufnahme.
+
+## Deployt: Refinement 9 — Hero-Bild als Hintergrund (2026-09-26)
+**PROJ-13** ist live auf https://geoquesty.vercel.app/about, Tag `v1.40.0-PROJ-13`. Status auf Deployed.
+
+**Besonderheit: mitgenommen von einem fremden Deploy.** Die vier PROJ-13-Commits wurden nicht von `/deploy` gepusht, sondern von einer parallel laufenden Sitzung, die PROJ-5 deployte (`4755845`) — die Git-Historie ist linear, wer pusht nimmt alles Vorherige mit.
+
+**Der offene Punkt davor ist nachträglich geklärt:** Zum Zeitpunkt der QA stand PROJ-5 auf *In Progress* ohne QA für das Löschen-Feature, und ein Push hätte es ungeprüft mitgenommen. Die parallele Sitzung hat aber ihre **eigene QA** durchlaufen (`c0490f4`), bevor sie deployte. **Es ging nichts Ungeprüftes live.**
+
+**Live verifiziert, beide Engines, neun Viewports:** Karte symmetrisch 9/9, Text auf dem Bild 9/9, `hero_new.png` byte-identisch zum Repo (2.483.599 Bytes), Zuschnitt rechts verankert (`100% 50%`), `alt=""` + `aria-hidden` 9/9, CTA über dem Falz 9/9, 0px Überlauf. **Alle Werte decken sich exakt mit den lokalen Messungen.** WebKit mit 0 Konsolenfehlern. Am Bildschirm abgenommen.
+
+Sieben Routen HTTP 200 (0,10–0,37 s), Security-Header inkl. HSTS, Nachbarseiten korrekt.
+
+**Eine Auffälligkeit geprüft:** Chrome meldete einen Konsolenfehler, WebKit keinen. Ein ruhiger Besuch erzeugt **0 Antworten ≥400** — es ist `/favicon.ico`, vorbestehend seit dem 2026-09-19.
+
+**Offen: BUG-15 (Low)** — 23 von 9016 Pixeln (0,26%) hinter „ZUM SPIELFELD" auf 320×568 unter der Kontrastvorgabe bei Einzelpixel-Messung. Nach der abgestimmten Methode 5,59:1 und am Bildschirm klar lesbar. Ein Einzeiler schließt es.
