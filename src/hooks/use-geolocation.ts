@@ -26,6 +26,22 @@ export interface UseGeolocationReturn {
   permission: GeoPermissionState;
   signal: GeoSignalState;
   position: GeoPosition | null;
+  /**
+   * Läuft in **dieser Session** ein `watchPosition`? (Refinement 2026-09-26,
+   * Edge Case 24)
+   *
+   * Bewusst ein eigenes Signal statt einer Ableitung aus `position`/`signal`:
+   * Zwischen Watch-Start und erstem Fix sind beide von "nie gestartet" nicht
+   * unterscheidbar (`position: null`, `signal: "waiting"`). Wer das ableitet,
+   * startet in diesem Fenster entweder unnötig neu oder verpasst den Start —
+   * beides Fehler, die nur zeitabhängig auftreten.
+   *
+   * Nötig, weil der Wiedereinstieg über gespeicherten Fortschritt den
+   * Permission-Screen überspringt und damit den einzigen Ort, an dem
+   * `requestPermission()` aufgerufen wird. Der Auto-Start unten hängt am
+   * Permissions-API, das iOS Safari für Geolocation nicht führt.
+   */
+  watchActive: boolean;
   requestPermission: () => void;
   retry: () => void;
 }
@@ -44,6 +60,7 @@ export function useGeolocation(options?: UseGeolocationOptions): UseGeolocationR
   const [permission, setPermission] = useState<GeoPermissionState>("prompt");
   const [signal, setSignal] = useState<GeoSignalState>("waiting");
   const [position, setPosition] = useState<GeoPosition | null>(null);
+  const [watchActive, setWatchActive] = useState(false);
   const watchId = useRef<number | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const firstFixTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -60,6 +77,7 @@ export function useGeolocation(options?: UseGeolocationOptions): UseGeolocationR
       navigator.geolocation.clearWatch(watchId.current);
       watchId.current = null;
     }
+    setWatchActive(false);
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
@@ -151,6 +169,12 @@ export function useGeolocation(options?: UseGeolocationOptions): UseGeolocationR
       }
     );
 
+    // Erst hier, nicht bei den beiden frühen Returns oben: Bei `unavailable` und
+    // `insecure-context` läuft kein Watch, und ein erneuter Startversuch wäre
+    // sinnlos — aber auch nicht schädlich. Wichtig ist, dass der Screen diese
+    // Zustände nicht für "Watch läuft" hält.
+    setWatchActive(true);
+
     resetTimeout();
   }, [resetTimeout]);
 
@@ -182,5 +206,5 @@ export function useGeolocation(options?: UseGeolocationOptions): UseGeolocationR
     return () => clearWatch();
   }, [clearWatch, startWatching]);
 
-  return { permission, signal, position, requestPermission, retry };
+  return { permission, signal, position, watchActive, requestPermission, retry };
 }

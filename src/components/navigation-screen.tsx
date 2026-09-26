@@ -6,11 +6,12 @@ import { AppHeader } from "@/components/app-header";
 import { Button } from "@/components/ui/button";
 import { DirectionArrow } from "./direction-arrow";
 import { ConfettiEffect } from "./confetti-effect";
-import { useDeviceOrientation } from "@/hooks/use-device-orientation";
+import { PermissionScreen } from "./permission-screen";
 import { haversine, bearing, headingFromPositions, getDistanceColor } from "@/lib/geo-utils";
 import { useArrowRotation } from "@/hooks/use-arrow-rotation";
 import type { Station } from "@/lib/quest-schema";
 import type { UseGeolocationReturn } from "@/hooks/use-geolocation";
+import type { UseDeviceOrientationReturn } from "@/hooks/use-device-orientation";
 
 interface NavigationScreenProps {
   station: Station;
@@ -20,6 +21,16 @@ interface NavigationScreenProps {
   onArrived: () => void;
   onBack: () => void;
   geoState: UseGeolocationReturn;
+  /**
+   * Kompass-Zustand von oben, nicht per eigenem Hook-Aufruf (Edge Case 27).
+   *
+   * Bis 2026-09-26 rief dieser Screen `useDeviceOrientation()` selbst auf,
+   * während `quest-player.tsx` es ebenfalls tat — zwei React-States für einen
+   * browserweiten Sensor. Nach einem erfolgreichen `requestPermission()` wusste
+   * nur die aufrufende Instanz davon und hängte nur sie ihren Listener an: Der
+   * Knopf reagierte sichtbar, der Pfeil drehte sich nicht.
+   */
+  orientationState: UseDeviceOrientationReturn;
 }
 
 const COLOR_MAP = {
@@ -37,15 +48,40 @@ export function NavigationScreen({
   onArrived,
   onBack,
   geoState,
+  orientationState: orientation,
 }: NavigationScreenProps) {
-  const orientation = useDeviceOrientation();
   const [arrived, setArrived] = useState(false);
   const [posHistory, setPosHistory] = useState<
     [{ lat: number; lng: number } | null, { lat: number; lng: number } | null]
   >([null, null]);
 
 
-  const { position, signal } = geoState;
+  const { position, signal, permission, watchActive } = geoState;
+
+  /**
+   * Watch nachstarten, wenn in dieser Session keiner läuft (Edge Case 24).
+   *
+   * Beim Wiedereinstieg über gespeicherten Fortschritt startet `quest-player`
+   * direkt auf der Stationsliste und ruft `requestPermission()` nie auf. Der
+   * einzige Rückfall im Hook hängt an `navigator.permissions.query()` — und
+   * **iOS Safari führt Geolocation dort nicht**, der Aufruf rejected und wird
+   * verschluckt. Ohne dieses Nachstarten bleibt `position` die ganze Session
+   * `null`, und der Spieler steht vor einem Pfeil, der sich nie bewegt.
+   *
+   * `requestPermission()` beginnt mit `clearWatch()`, ist also idempotent.
+   * Trotzdem nur einmal pro Screen-Aufruf und nur bei `watchActive === false`:
+   * Ein wiederholter Aufruf würde auf iOS einen erneuten Berechtigungsdialog
+   * ohne Nutzergeste auslösen.
+   */
+  useEffect(() => {
+    if (!watchActive) {
+      geoState.requestPermission();
+    }
+    // Absichtlich nur beim Mount: `watchActive` als Dependency würde nach dem
+    // Start erneut feuern, sobald der Watch endet (z. B. bei Signalverlust),
+    // und damit den Retry-Pfad des Spielers überfahren.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Track position history — "adjust state during render" pattern
   if (position) {
@@ -130,6 +166,61 @@ export function NavigationScreen({
     );
   }
 
+  /**
+   * Kein GPS-Fix: Zustand erklären statt stumm einen Strich zeigen
+   * (Refinement 2026-09-26, Edge Cases 24–26).
+   *
+   * Bis hierher war `position === null` folgenlos — keine Verzweigung griff,
+   * und der Screen rendert mit `—` als Entfernung und einem Pfeil ohne
+   * Rotation. Der Spieler bekam keinen Hinweis, keinen Knopf und keinen
+   * Ausweg außer Zurück. Das traf nicht nur den Wiedereinstieg: Auch wer vor
+   * dem ersten Fix ein Gebäude betritt, sah denselben stummen Strich.
+   *
+   * Steht **nach** der Ankunfts- und Signalverlust-Prüfung: Ein Aussetzer nach
+   * erfolgreicher Navigation gehört zum 30s-Signalverlust oben, der den letzten
+   * bekannten Stand stehen lässt — nicht hierher (Edge Case 28).
+   *
+   * Der Wortlaut kommt aus `PermissionScreen`, statt die fünf Zustände ein
+   * zweites Mal zu formulieren. Sie entscheidet selbst, wann ein Knopf sinnvoll
+   * ist — insbesondere **keinen** bei `insecure-context`, `unavailable` und
+   * `searching`, wo der Spieler nichts ändern kann (Lehre aus BUG-6).
+   */
+  if (!position) {
+    // `searching` ist kein Fehlerzustand. Ohne diese Ableitung sähe das Fenster
+    // zwischen Watch-Start und erstem Fix wie ein Defekt aus und würde den
+    // Spieler dazu erziehen, einen Hinweis wegzutippen, der sich von selbst
+    // erledigt (Edge Case 26).
+    const isPending = permission === "prompt" || permission === "granted";
+
+    return (
+      <div className="flex flex-col min-h-[100dvh]">
+        <AppHeader title={station.name} onBack={onBack} />
+        <div className="flex-1 flex flex-col">
+          <PermissionScreen
+            permissionState={permission}
+            signalState={isPending ? "searching" : signal}
+            onRequest={() => geoState.retry()}
+            className="flex-1 py-10"
+            blockedTitle="GPS wird gebraucht"
+          />
+
+          {/* Auf iOS fehlen beim Wiedereinstieg beide Freigaben gleichzeitig.
+              Stünde der Kompass-Button nur im Navigations-Render, käme der
+              Spieler nie an ihn heran, weil dieser Zweig vorher zurückkehrt —
+              die GPS-Lücke würde die Kompass-Lösung verstecken (Edge Case 24). */}
+          {orientation.canRequestPermission && (
+            <div className="flex justify-center px-5 pb-10">
+              <CompassActivateButton
+                variant="secondary"
+                onActivate={() => orientation.requestPermission()}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-[100dvh]">
       {/* Trug bis 2026-09-06 eine eigene, inline nachgebaute Kopfzeile — dadurch
@@ -165,14 +256,8 @@ export function NavigationScreen({
         {/* Bis 2026-09-06 stand hier nur ein 9px-grauer Hinweis — auf iOS mit
             ausstehender Sensorfreigabe war er sogar der falsche Rat, weil Laufen
             das Problem nicht löst (Edge Case 10). */}
-        {!compassAvailable && position && orientation.canRequestPermission ? (
-          <Button
-            onClick={() => orientation.requestPermission()}
-            className="rounded-pill bg-gq-teal text-gq-black font-tech text-xs uppercase tracking-[0.08em] px-6 h-11 hover:bg-gq-teal-hover active:scale-[0.96] transition-all duration-fast ease-gq"
-          >
-            <Compass className="w-4 h-4 mr-2" />
-            Kompass aktivieren
-          </Button>
+        {!compassAvailable && orientation.canRequestPermission ? (
+          <CompassActivateButton onActivate={() => orientation.requestPermission()} />
         ) : (
           !compassAvailable &&
           position && (
@@ -194,6 +279,44 @@ export function NavigationScreen({
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * "Kompass aktivieren" (iOS-Sensorfreigabe).
+ *
+ * Bis 2026-09-26 stand dieser Button ausschließlich im Navigations-Render und
+ * dort zusätzlich hinter `position` — er erschien also ausgerechnet dann nicht,
+ * wenn beim Wiedereinstieg auf iOS **beide** Freigaben fehlten. Die GPS-Lücke
+ * versteckte damit die Kompass-Lösung von Edge Case 10. Jetzt eine Komponente,
+ * die in beiden Zweigen steht (mit und ohne Fix).
+ */
+function CompassActivateButton({
+  onActivate,
+  variant = "primary",
+}: {
+  onActivate: () => void;
+  /**
+   * Im Navigations-Render ist "Kompass aktivieren" die einzige Aktion und damit
+   * primär. Im GPS-Zustands-Screen steht daneben bereits der GPS-Knopf — dort
+   * wäre ein zweiter gefüllter Teal-Pill ein zweiter Haupt-CTA. Das Design
+   * System sieht dafür "Button (Secondary): Teal Outline, Pill" vor.
+   */
+  variant?: "primary" | "secondary";
+}) {
+  const look =
+    variant === "primary"
+      ? "bg-gq-teal text-gq-black hover:bg-gq-teal-hover"
+      : "border border-gq-teal text-gq-teal bg-transparent hover:bg-gq-teal/10";
+
+  return (
+    <Button
+      onClick={onActivate}
+      className={`rounded-pill font-tech text-xs uppercase tracking-[0.08em] px-6 h-11 active:scale-[0.96] transition-all duration-fast ease-gq ${look}`}
+    >
+      <Compass className="w-4 h-4 mr-2" />
+      Kompass aktivieren
+    </Button>
   );
 }
 

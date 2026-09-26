@@ -1609,3 +1609,62 @@ Der Live-Durchlauf meldete 2 Konsolen-404s. **Nachgemessen statt weggewunken:** 
 
 Vercel Dashboard → Deployments → vorheriges Deployment „Promote to Production".
 Betroffen sind nur `confetti-effect.tsx`, `navigation-screen.tsx`, `outro-screen.tsx`, `quest-player.tsx` und das neue Asset. Ein Rollback bringt die „Nächstes Ziel"-Karte, das rieselnde Endlos-Konfetti und das sichtbare Rechteck um den Pin zurück — mehr nicht. Keine Datenmigration, kein Schema, keine Umgebungsvariable betroffen.
+
+---
+
+## Implementation Notes — GPS-Zustand beim Wiedereinstieg (2026-09-26)
+
+**Fünf Dateien, kein neues Paket, keine neue Komponente, keine neue Route.** Die Zustände existierten, die Texte existierten, die Komponente existierte — dieses Refinement verdrahtet sie an der Stelle, an der sie fehlten.
+
+| Datei | Änderung |
+|---|---|
+| `use-geolocation.ts` | Neues Signal `watchActive` (+State, Lebenszyklus in `clearWatch`/`startWatching`) |
+| `permission-screen.tsx` | Zwei optionale Props: `className` (Höhe an die Aufrufstelle) und `blockedTitle` |
+| `navigation-screen.tsx` | Zustands-Zweig bei fehlender Position, Watch-Nachstart, `CompassActivateButton` extrahiert, `useDeviceOrientation()`-Aufruf entfernt |
+| `quest-player.tsx` | Eine Zeile: `orientationState={orientation}` |
+| `use-geolocation.test.ts` | 8 neue Unit-Tests |
+
+### Der gemeldete Befund ist behoben — gemessen an derselben Stelle, an der vorher nichts stand
+
+Der Zustands-Screen zeigt auf beiden Engines identisch: Stationsname in der Kopfzeile bei `top: 0`, Erklärtext, ein Knopf mit 48px Höhe, **0px Überlauf**. Der stumme Strich ist weg.
+
+Der Kern von Edge Case 24 ist am Bildschirm belegt: Auf iOS mit **beiden** fehlenden Freigaben stehen jetzt **beide** Knöpfe zur Verfügung (`EINSTELLUNGEN PRÜFEN` und `KOMPASS AKTIVIEREN`). Vorher hing der Kompass-Knopf an `position` — die GPS-Lücke versteckte die Kompass-Lösung von Edge Case 10 vollständig.
+
+**Kontrast gemessen statt geschätzt:** Überschrift **19.40:1**, Erklärtext **7.97:1**, Knöpfe **11.53:1** und **11.62:1** bei 4.5:1 Vorgabe. Tap-Ziele 48px und 44px.
+
+### Zwei Dinge, die erst der Bildschirm gezeigt hat
+
+**Die Überschrift war aus dem falschen Kontext.** `PermissionScreen` zeigt für `denied`, `unavailable` und `insecure-context` die Sammel-Überschrift „Navigation aktivieren". Beim Quest-Start stimmt das — dort hat die Navigation noch nicht begonnen. Im Navigations-Screen forderte sie den Spieler auf, etwas zu aktivieren, das er gerade benutzt. Gelöst per optionaler Prop `blockedTitle` (hier „GPS wird gebraucht"), **nicht** per zweiter Textquelle: Die Erklärtexte und die Knopf-Logik bleiben geteilt, sonst wäre genau die zweite Wahrheit entstanden, die dieses Refinement vermeiden wollte. Ein Test hält fest, dass der Quest-Start seine eigene Überschrift behält.
+
+**Zwei gefüllte Teal-Pills übereinander sind zwei Haupt-CTAs.** Im iOS-Fall stehen GPS- und Kompass-Knopf gleichzeitig auf dem Screen. Das Design System sieht dafür „Button (Secondary): Teal Outline, Pill" vor — `CompassActivateButton` hat jetzt eine `variant`; im Navigations-Render bleibt er primär (dort ist er die einzige Aktion), im Zustands-Screen ist er sekundär.
+
+Keine Messung hätte beides gezeigt — die Zahlen waren in beiden Fassungen gleich gut.
+
+### Ein Fehler in meinen eigenen Tests, das Produkt war richtig
+
+Zwei der ersten sieben E2E-Tests fielen auf **beiden** Engines. Statt das Produkt zu ändern, habe ich gemessen, was der Screen wirklich zeigt: **`grantPermissions(["geolocation"])` liefert in Playwright bereits eine Position**, auch ohne `setGeolocation` (gemessen: `1227m`). Mein „Permission erteilt, aber kein Fix" war also gar kein Suchzustand. Der Zustand muss künstlich hergestellt werden, indem `watchPosition` stillgelegt wird; für Edge Case 28 hält der Test den Callback fest und feuert ihn gezielt.
+
+### Die Gegenprobe hat zwei schwache Tests entlarvt — und eine eigene Fehlmessung
+
+Gegen die **echte Vorgängerfassung** (`git stash` der vier Produktdateien, eigener Build) fielen zunächst nur **3 von 7** Tests. Zwei Tests bestanden, obwohl sie es nicht durften:
+
+- **„Kopfzeile bleibt erreichbar"** — die alte Fassung hatte ebenfalls eine Kopfzeile mit Stationsnamen, sie zeigte bloß keine Erklärung darunter. Der Test prüft jetzt **beides gemeinsam**.
+- **„der Screen startet den Watch nach"** — eine reine Entfernungs-Assertion besteht auch, wenn die Position aus einem anderen Pfad kommt. Der Test **zählt jetzt die `watchPosition`-Aufrufe**: 0 auf der Stationsliste, > 0 nach dem Tap.
+
+Nach der Schärfung fallen **5 von 7** (10 Fehlschläge über beide Engines). Die 2, die grün bleiben, sind die richtigen: die Ausgangslage (in beiden Fassungen wahr) und der Regressionswächter „mit GPS-Fix unverändert".
+
+**Eine eigene Fehlmessung, offen benannt:** Der erste Gegenproben-Lauf meldete **14 von 14** gefallen und sah nach einem eindeutigen Ergebnis aus. Er war wertlos — einzeln ausgeführt bestand derselbe Ausgangslage-Test. Ursache ist die in INDEX.md dokumentierte Interferenz: Alle Tests teilen sich eine `localStorage`-Origin, und parallel laufende Tests überschreiben einander den geseedeten Fortschritt. **Auch `--workers=1` half nicht** (ebenfalls 14/14) — erst Einzelläufe je Test ergaben ein belastbares Bild. Für künftige Gegenproben in dieser Datei: einzeln messen, nicht als Suite.
+
+Ebenso per Gegenprobe geschärft auf Unit-Ebene: Ersetzt man `watchActive` durch die naheliegende Ableitung `position !== null || signal === "active"`, fallen **genau die 3** Tests, die den Zweck des Signals tragen — die 5, die unabhängig davon gelten, bleiben grün.
+
+### Bewusst nicht angefasst
+
+- **Der 30s-Signalverlust** bleibt zuständig für Aussetzer **nach** erfolgreicher Navigation (Edge Case 28, zweite Hälfte). Der neue Zweig steht deshalb **hinter** `signal === "lost"`.
+- **Der Watch-Nachstart läuft nur beim Mount**, nicht bei jeder `watchActive`-Änderung: Als Dependency würde er nach einem Signalverlust erneut feuern und den Retry-Pfad des Spielers überfahren. Der `eslint-disable` dafür ist im Code begründet.
+- **Der Hook selbst** (Anzeigebedingungen, 15s-Timeout, iOS-Erkennung) ist unverändert.
+
+### Nicht abgedeckt und benannt
+
+- **Das echte iPhone.** Der iOS-Pfad ist per Unit-Test (rejectendes `permissions.query()`) und per E2E mit vorgetäuschtem Permissions-API belegt, aber Safaris tatsächliches Verhalten kann keine Testumgebung beweisen. Das ist zugleich der Pfad, auf dem der Befund gemeldet wurde.
+- **Die echte iOS-Sensorfreigabe.** `DeviceOrientationEvent.requestPermission` existiert in keiner Testumgebung; der Kompass-Knopf ist über ein vorgetäuschtes API geprüft.
+- **Firefox** (Binary fehlt, dokumentiert in INDEX.md).

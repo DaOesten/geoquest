@@ -512,6 +512,25 @@ Weil in derselben Sitzung gebaut, habe ich die zentralen Behauptungen **neu geme
 **Anders als bei der Kompass-Mathematik ist diese Fehlerklasse E2E-prüfbar:** Playwright kann Geolocation-Permissions entziehen und Positionen liefern, der Wiedereinstieg lässt sich über geseedeten `gq_progress_{id}` herstellen. Der Regressionswächter, der bisher ganz fehlt: dass ein Tap auf den Pfeil **ohne** GPS zu einer lesbaren Erklärung führt statt zu `—`. Genau diese Lücke hat den Befund durchgelassen, während die Suite grün war.
 
 Spec ist aktualisiert (User Story 6, 9 Acceptance Criteria im Block „GPS-Zustand im Navigations-Screen", Edge Cases 24–28, 10 Technical Requirements, 6 Produkt- und 5 technische Entscheidungen, 3 neue Open Questions, die überholte Wiedereinstiegs-Begründung als Korrektur markiert statt gelöscht, dazu ein eigener Abschnitt „Refinement 2026-09-26" mit der vollständigen Ursachenkette).
+**Frontend umgesetzt am 2026-09-26.** Fünf Dateien, kein neues Paket, keine neue Komponente, keine neue Route. Die Zustände existierten, die Texte existierten, die Komponente existierte — dieses Refinement verdrahtet sie an der Stelle, an der sie fehlten: neues Signal `watchActive` im Hook, zwei optionale Props an `PermissionScreen`, ein Zustands-Zweig plus Watch-Nachstart im Navigations-Screen, und eine Zeile in `quest-player.tsx`.
+
+**Der gemeldete Befund ist behoben, auf beiden Engines identisch gemessen:** Stationsname in der Kopfzeile bei `top: 0`, Erklärtext, Knopf mit 48px, **0px Überlauf** — der stumme Strich ist weg. Kontrast **19.40:1** (Überschrift), **7.97:1** (Text), **11.53/11.62:1** (Knöpfe) bei 4.5:1 Vorgabe.
+
+**Der Kern von Edge Case 24 ist am Bildschirm belegt:** Auf iOS mit **beiden** fehlenden Freigaben stehen jetzt beide Knöpfe zur Verfügung. Vorher hing der Kompass-Knopf an `position` — die GPS-Lücke versteckte die Kompass-Lösung von 2026-09-06 vollständig.
+
+**Zwei Dinge hat erst der Bildschirm gezeigt, keine Messung.** Die Überschrift war aus dem falschen Kontext: `PermissionScreen` zeigt für `denied` die Sammelzeile „Navigation aktivieren" — beim Quest-Start richtig, im laufenden Spiel eine Aufforderung, etwas zu aktivieren, das der Spieler gerade benutzt. Gelöst per optionaler Prop, **nicht** per zweiter Textquelle; ein Test hält fest, dass der Quest-Start seine eigene Überschrift behält. Und zwei gefüllte Teal-Pills übereinander sind zwei Haupt-CTAs — der Kompass-Knopf ist im Zustands-Screen jetzt „Button (Secondary): Teal Outline" nach Design System, im Navigations-Render bleibt er primär.
+
+**Ein Fehler in meinen eigenen Tests, das Produkt war richtig:** Zwei E2E-Tests fielen auf beiden Engines. Gemessen statt vermutet — **`grantPermissions(["geolocation"])` liefert in Playwright bereits eine Position**, auch ohne `setGeolocation` (gemessen: 1227m). Mein „Permission erteilt, aber kein Fix" war gar kein Suchzustand; er muss durch Stilllegen von `watchPosition` hergestellt werden.
+
+**Die Gegenprobe hat zwei schwache Tests entlarvt.** Gegen die echte Vorgängerfassung fielen zunächst nur **3 von 7**. „Kopfzeile bleibt erreichbar" bestand, weil die alte Fassung ebenfalls eine Kopfzeile hatte — sie zeigte bloß keine Erklärung darunter; der Test prüft jetzt beides gemeinsam. „Der Screen startet den Watch nach" bestand, weil eine reine Entfernungs-Assertion auch bei anderer Herkunft der Position grün wird; er **zählt jetzt die `watchPosition`-Aufrufe** (0 auf der Liste, > 0 nach dem Tap). Danach fallen **5 von 7**; die 2 grün bleibenden sind die richtigen (Ausgangslage und der Regressionswächter „mit GPS-Fix unverändert").
+
+**Eine eigene Fehlmessung, offen benannt — mit Lehrwert für künftige Läufe:** Der erste Gegenproben-Lauf meldete **14 von 14** gefallen und sah eindeutig aus. Er war wertlos: Einzeln ausgeführt bestand derselbe Test. Alle Tests teilen sich eine `localStorage`-Origin und überschreiben einander den geseedeten Fortschritt. **Auch `--workers=1` half nicht** (ebenfalls 14/14) — erst Einzelläufe je Test ergaben ein belastbares Bild. Das ergänzt die dokumentierte Parallelitäts-Regel um einen Fall, in dem serielles Laufen allein nicht reicht.
+
+Auf Unit-Ebene ebenso geschärft: Ersetzt man `watchActive` durch die naheliegende Ableitung aus `position`/`signal`, fallen **genau die 3** Tests, die den Zweck des Signals tragen.
+
+**Bewusst nicht angefasst:** Der 30s-Signalverlust bleibt zuständig für Aussetzer **nach** erfolgreicher Navigation — der neue Zweig steht deshalb dahinter. Der Watch-Nachstart läuft nur beim Mount, nicht bei jeder `watchActive`-Änderung (als Dependency würde er den Retry-Pfad des Spielers überfahren). Der Hook selbst ist unverändert.
+
+**Nicht abgedeckt und benannt:** das echte iPhone (der iOS-Pfad ist per Unit-Test und vorgetäuschtem Permissions-API belegt, aber Safaris tatsächliches Verhalten kann keine Testumgebung beweisen — und genau dort wurde der Befund gemeldet), die echte iOS-Sensorfreigabe, und Firefox.
 
 ## Next Available ID: PROJ-15
 

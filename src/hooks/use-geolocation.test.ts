@@ -181,3 +181,89 @@ describe("useGeolocation — fehlende API", () => {
     expect(result.current.permission).toBe("unavailable");
   });
 });
+
+describe("useGeolocation — watchActive-Signal (Refinement 2026-09-26)", () => {
+  it("meldet zunaechst keinen laufenden Watch", () => {
+    const { result } = renderHook(() => useGeolocation());
+
+    expect(result.current.watchActive).toBe(false);
+  });
+
+  it("meldet einen laufenden Watch nach requestPermission", () => {
+    const { result } = renderHook(() => useGeolocation());
+
+    act(() => result.current.requestPermission());
+
+    expect(result.current.watchActive).toBe(true);
+  });
+
+  /**
+   * Der Kern des Signals: Zwischen Watch-Start und erstem Fix sind `position`
+   * und `signal` von "nie gestartet" nicht unterscheidbar. Wer daraus ableitet,
+   * startet in diesem Fenster unnoetig neu oder verpasst den Start.
+   */
+  it("unterscheidet 'Watch laeuft, Fix fehlt' von 'nie gestartet'", () => {
+    const { result } = renderHook(() => useGeolocation());
+
+    act(() => result.current.requestPermission());
+
+    expect(result.current.position).toBeNull();
+    expect(result.current.watchActive).toBe(true);
+  });
+
+  it("meldet KEINEN laufenden Watch ohne Geolocation-API", () => {
+    setGeolocation(undefined);
+    const { result } = renderHook(() => useGeolocation());
+
+    act(() => result.current.requestPermission());
+
+    expect(result.current.permission).toBe("unavailable");
+    expect(result.current.watchActive).toBe(false);
+  });
+
+  it("meldet KEINEN laufenden Watch ohne sicheren Kontext", () => {
+    setSecureContext(false);
+    const { result } = renderHook(() => useGeolocation());
+
+    act(() => result.current.requestPermission());
+
+    expect(result.current.permission).toBe("insecure-context");
+    expect(result.current.watchActive).toBe(false);
+  });
+
+  /**
+   * Edge Case 24: iOS Safari fuehrt Geolocation nicht im Permissions-API.
+   * `query()` rejected, der Hook verschluckt das — also startet ohne Zutun
+   * NIE ein Watch. Genau daran hing der gemeldete Wiedereinstiegs-Fehler.
+   */
+  it("startet ohne Zutun keinen Watch, wenn permissions.query rejected (iOS Safari)", async () => {
+    Object.defineProperty(navigator, "permissions", {
+      value: { query: vi.fn(() => Promise.reject(new TypeError("unsupported"))) },
+      configurable: true,
+      writable: true,
+    });
+
+    const { result } = renderHook(() => useGeolocation());
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(result.current.watchActive).toBe(false);
+    expect(mockGeolocation.watchPosition).not.toHaveBeenCalled();
+  });
+
+  it("startet von selbst einen Watch, wenn permissions.query 'granted' meldet", async () => {
+    Object.defineProperty(navigator, "permissions", {
+      value: { query: vi.fn(() => Promise.resolve({ state: "granted" })) },
+      configurable: true,
+      writable: true,
+    });
+
+    const { result } = renderHook(() => useGeolocation());
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(result.current.watchActive).toBe(true);
+  });
+});

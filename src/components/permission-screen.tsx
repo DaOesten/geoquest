@@ -8,12 +8,34 @@ interface PermissionScreenProps {
   permissionState: GeoPermissionState;
   signalState?: GeoSignalState;
   onRequest: () => void;
+  /**
+   * Zusätzliche Klassen für den äußeren Container (Refinement 2026-09-26).
+   *
+   * Die Höhe gehört an die Aufrufstelle, nicht in die Komponente: Beim
+   * Quest-Start füllt sie den Bildschirm (`min-h-[80vh]`), im
+   * Navigations-Screen steht sie **unter** einer Kopfzeile und darf sie nicht
+   * aus dem Bild schieben. Der Default hält den Quest-Start unverändert.
+   */
+  className?: string;
+  /**
+   * Überschrift für den Fall, dass weder gesucht wird noch ein Fix fehlt —
+   * also `denied`, `unavailable` und `insecure-context` (Refinement 2026-09-26).
+   *
+   * Der Default "Navigation aktivieren" ist beim Quest-Start richtig: Dort hat
+   * die Navigation noch nicht begonnen. Im Navigations-Screen läuft sie bereits,
+   * und dieselbe Zeile würde den Spieler auffordern, etwas zu aktivieren, das er
+   * gerade benutzt. Nur die Überschrift ist kontextabhängig — die Erklärtexte
+   * und die Knopf-Logik bleiben geteilt, sonst wäre es eine zweite Wahrheit.
+   */
+  blockedTitle?: string;
 }
 
 export function PermissionScreen({
   permissionState,
   signalState = "waiting",
   onRequest,
+  className = "min-h-[80vh]",
+  blockedTitle = "Navigation aktivieren",
 }: PermissionScreenProps) {
   const isDenied = permissionState === "denied";
   const isUnavailable = permissionState === "unavailable";
@@ -26,7 +48,7 @@ export function PermissionScreen({
   const Icon = isNoFix ? SatelliteDish : isInsecure ? ShieldAlert : Navigation;
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh] gap-6 px-5 text-center">
+    <div className={`flex flex-col items-center justify-center gap-6 px-5 text-center ${className}`}>
       <div
         className={`w-20 h-20 rounded-full bg-gq-teal/10 flex items-center justify-center ${
           isSearching ? "animate-[gq-pulse_1.2s_ease-out_infinite]" : ""
@@ -37,7 +59,7 @@ export function PermissionScreen({
 
       <div className="flex flex-col gap-2 max-w-xs">
         <h2 className="text-display text-2xl">
-          {isSearching ? "Suche GPS-Signal…" : isNoFix ? "Kein GPS-Signal" : "Navigation aktivieren"}
+          {isSearching ? "Suche GPS-Signal…" : isNoFix ? "Kein GPS-Signal" : blockedTitle}
         </h2>
 
         {isUnavailable ? (

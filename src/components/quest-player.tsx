@@ -157,6 +157,7 @@ export function QuestPlayer({ quest }: QuestPlayerProps) {
           onArrived={handleArrived}
           onBack={handleBackFromNavigation}
           geoState={geo}
+          orientationState={orientation}
         />
       );
     }
