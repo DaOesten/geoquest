@@ -1,8 +1,8 @@
 # PROJ-3: Player — GPS-Navigation
 
-## Status: Deployed
+## Status: In Progress
 **Created:** 2026-08-23
-**Last Updated:** 2026-09-20
+**Last Updated:** 2026-09-26
 
 > **Refinement (2026-09-06) — umgesetzt, deployt und QA-geprüft:** Zwei stille Ausfallmodi ergänzt — GPS-Fix bleibt trotz erteilter Permission aus, und der Richtungspfeil hat keine Richtung. Siehe Abschnitte "Permission-Flow", "Richtungsanzeige ohne Heading", Edge Cases 9–12 und die Implementation Notes vom 2026-09-06.
 
@@ -11,6 +11,8 @@
 > **Refinement (2026-09-20) — Ruhige Kompassnadel:** Ein Handy-Test im Gelände zeigte einen Richtungspfeil, der ruckartig springt und sich zeitweise ganz um sich selbst dreht. Die Navigation war über die Entfernungsanzeige weiter möglich, aber der Pfeil — das Kern-Element dieses Features — war unbrauchbar. Vier Ursachen im Code bestätigt: der 359°→0°-Sprung wird als volle Gegendrehung animiert, der Sensorwert wird ungefiltert durchgereicht, die Heading-Quelle kippt zwischen Kompass und GPS-Bewegungsrichtung, und die Zielpeilung rauscht mit der GPS-Position. Zusätzlich mitgenommen: der seit 2026-08-23 spezifizierte, aber nie gerenderte Kalibrierungs-Hinweis. Siehe Acceptance Criteria „Ruhige Richtungsanzeige", Edge Cases 18–22, Technical Requirements und Decision Log.
 
 > **Refinement (2026-09-19) — Gratulationsscreen (`ArrivalOverlay`), umgesetzt, QA-geprüft und am 2026-09-20 deployt (`v1.31.0-PROJ-3`):** Drei Befunde aus dem Gebrauch, alle am Ankunfts-Screen. (1) Die Karte „Nächstes Ziel" nimmt vorweg, was der Spieler gerade erst verdient hat — sie entfällt ersatzlos. (2) Das Pin-Logo zeichnet sich als Rechteck vom Hintergrund ab, weil `mark-pin.jpg` ein JPEG ohne Transparenz ist — es bekommt ein freigestelltes PNG. (3) Das Konfetti rieselt von oben und läuft endlos; es soll einmalig wie aus einer Konfetti-Kanone von unten mittig nach oben schießen — das gilt für beide Screens, die `ConfettiEffect` nutzen (Ankunft und Outro/PROJ-5). Siehe Acceptance Criteria „Ankunft — Gratulationsscreen", Edge Cases 15–17, Technical Requirements und Decision Log.
+
+> **Refinement (2026-09-26) — GPS-Zustand beim Wiedereinstieg:** Wer eine Quest mittendrin abbricht und später weiterspielt, landet direkt auf der Stationsliste — der Permission-Screen wird übersprungen, weil die Permission "bereits erteilt" ist. Damit entfällt aber auch der einzige Ort, an dem `requestPermission()` aufgerufen wird; auf iOS Safari startet dann nie ein `watchPosition`, weil der Auto-Start am Permissions-API hängt, das Geolocation dort nicht führt. Der Spieler tippt auf den Pfeil und bekommt den Navigations-Screen mit einem Strich statt der Entfernung und einem unbewegten Pfeil — ohne Hinweis, ohne Knopf, ohne Ausweg außer Zurück. Zweitbefund, nicht gemeldet und breiter: Der Navigations-Screen liest `geo.permission` **gar nicht** — `denied`, `no-fix` und `insecure-context` sind dort auch im normalen Spielverlauf unsichtbar, obwohl der Hook sie längst unterscheidet. Siehe Acceptance Criteria „GPS-Zustand im Navigations-Screen", Edge Cases 24–28, Technical Requirements und Decision Log.
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — für Routing und UI-Rahmen
@@ -25,6 +27,7 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 3. Als Spieler möchte ich automatisch benachrichtigt werden, wenn ich eine Station erreicht habe, damit ich weiß, dass ich am richtigen Ort bin.
 4. Als Spieler möchte ich eine Übersicht aller Stationen sehen, damit ich meinen Fortschritt verfolgen und die nächste Station ansteuern kann.
 5. Als Spieler möchte ich eine Quest unterbrechen und später weiterspielen können, damit ich nicht alles auf einmal machen muss.
+6. Als Spieler möchte ich beim Weiterspielen einer unterbrochenen Quest erfahren, wenn mein GPS nicht bereit ist, damit ich weiß, warum die Navigation nichts anzeigt, und es beheben kann — statt vor einem Pfeil zu stehen, der sich nicht bewegt.
 
 ## Out of Scope
 - Modul-Rendering an Stationen (Text, Bild, Audio, Video, Tasks) — PROJ-4
@@ -108,6 +111,17 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 - [ ] Angenommen das GPS-Signal ist länger als 30 Sekunden weg, wenn der Timer abläuft, dann stoppt die Navigation und ein Hinweis mit "Erneut versuchen"-Button erscheint
 - [ ] Angenommen die Navigation wurde gestoppt (GPS-Verlust), wenn der Spieler "Erneut versuchen" tippt und GPS wieder verfügbar ist, dann nimmt die Navigation den Betrieb wieder auf
 
+**GPS-Zustand im Navigations-Screen (Refinement 2026-09-26):**
+- [ ] Angenommen der Spieler tippt auf den Pfeil einer noch nicht abgeschlossenen Station, wenn keine GPS-Position vorliegt, dann zeigt der Navigations-Screen statt Pfeil und Entfernung den zuständigen GPS-Zustand mit Erklärung und — wo der Spieler etwas tun kann — einem Knopf
+- [ ] Angenommen der Navigations-Screen zeigt einen GPS-Zustand, wenn der Spieler ihn liest, dann ist es **derselbe Wortlaut** wie auf dem Permission-Screen beim Quest-Start (`no-fix`, `denied`, `insecure-context`, `unavailable`, `searching`) — nicht eine zweite Formulierung desselben Sachverhalts
+- [ ] Angenommen der Spieler steigt über gespeicherten Fortschritt ein (Permission-Screen übersprungen), wenn `watchPosition` in dieser Session noch nicht läuft, dann startet der Navigations-Screen es — ohne dass der Spieler zurück zum Quest-Start muss
+- [ ] Angenommen der Navigations-Screen zeigt einen GPS-Zustand, wenn der Spieler die Kopfzeile ansieht, dann trägt sie den Stationsnamen und einen Zurück-Pfeil zur Stationsliste — er sitzt nicht fest und kann abgeschlossene Stationen weiter nachlesen
+- [ ] Angenommen der GPS-Zustand ist `no-fix` oder `denied`, wenn der Spieler den Knopf tippt und GPS danach einen Fix liefert, dann wechselt der Screen ohne weiteren Tap in die laufende Navigation
+- [ ] Angenommen der Zustand ist `insecure-context` oder `unavailable`, wenn der Screen ihn zeigt, dann erscheint **kein** Wiederholen-Knopf — der Spieler kann daran nichts ändern, ein Knopf wäre eine Sackgasse (dieselbe Lehre wie BUG-6)
+- [ ] Angenommen eine GPS-Position liegt vor, wenn der Spieler navigiert, dann verhält sich der Screen unverändert wie vor diesem Refinement (Pfeil, Entfernung, Ankunftserkennung, 30s-Signalverlust)
+- [ ] Angenommen der Spieler steigt auf iOS über gespeicherten Fortschritt ein, wenn noch keine GPS-Position vorliegt, dann ist die Kompassfreigabe trotzdem erreichbar — der "Kompass aktivieren"-Button hängt nicht länger daran, dass vorher ein Fix da war
+- [ ] Angenommen der Spieler erteilt die iOS-Kompassfreigabe im Navigations-Screen, wenn die Freigabe `granted` liefert, dann dreht der Pfeil in **derselben** Session, ohne Neuladen der Seite
+
 **Fortschritt:**
 - [ ] Angenommen der Spieler hat Stationen besucht und verlässt die Quest, wenn er die Quest erneut öffnet, dann sieht er die Stationsliste mit dem gespeicherten Fortschritt
 - [ ] Angenommen der Spieler verlässt die Quest (Zurück-Button oder Browser schließen), wenn er geht, dann wird kein Bestätigungsdialog angezeigt (Fortschritt ist automatisch gespeichert)
@@ -140,6 +154,11 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 
 23. **Ungültiger Sensorwert (`NaN`, `Infinity`) — BUG-12, 2026-09-20:** Ein `deviceorientation`-Event mit einem nicht-endlichen Heading vergiftet jede Glättung, die gegen einen gespeicherten Vorwert rechnet: `NaN` ist absorbierend, also bleibt die Ref für den Rest der Session `NaN` und der Pfeil friert auf seiner letzten Rotation ein — ohne Fehlermeldung und ohne Erholung, auch wenn gültige Werte folgen. Ein solcher Wert ist kein Lebenszeichen des Kompasses und darf auch die Karenzzeit nicht verlängern, sonst verdrängt der tote Zustand zusätzlich die noch funktionierende GPS-Bewegungsrichtung. Die Erkennung ist eine reine Eingangsprüfung (`Number.isFinite`), die `NaN`, `Infinity` und `-Infinity` gemeinsam abdeckt.
 
+24. **Wiedereinstieg überspringt den GPS-Start (Refinement 2026-09-26):** `quest-player.tsx` startet bei gespeichertem Fortschritt direkt auf der Stationsliste und ruft `geo.requestPermission()` nie auf — dieser Aufruf hängt am "Standort erlauben"-Button des übersprungenen Permission-Screens. Der einzige Rückfallpfad ist der Auto-Start im Hook, und der prüft `navigator.permissions.query({ name: "geolocation" })`. **iOS Safari führt Geolocation nicht im Permissions-API**: Der Aufruf rejected, `.catch(() => {})` verschluckt es, kein `watchPosition` startet. `position` bleibt für die ganze Session `null`. Das ist die Ursache des gemeldeten Befunds und betrifft ausgerechnet die Plattform der Zielgruppe. Gleiche Fehlerklasse wie Edge Case 10 (Kompass), nur für GPS — und beim damaligen Fix nicht mitgezogen.
+25. **Navigations-Screen kennt `permission` nicht:** Der Screen liest ausschließlich `position` und `signal` (`navigation-screen.tsx:48`). Die vier vom Hook unterschiedenen Diagnosen `denied`, `no-fix`, `insecure-context` und `unavailable` erreichen ihn nicht. Folge: Ohne Position greift keine Verzweigung — nicht `arrived`, nicht `signal === "lost"` — und der Spieler sieht den regulären Navigations-Screen mit `—` als Entfernung (`{distance !== null ? distance : "—"}`) und einem Pfeil ohne Rotation. **Das gilt auch im normalen Spielverlauf**, nicht nur beim Wiedereinstieg: Wer während der Navigation ein Gebäude betritt, bevor der erste Fix da war, bekommt denselben stummen Strich. Die Diagnose liegt vor und wird verworfen.
+26. **`searching` ist kein Fehlerzustand und darf nicht wie einer aussehen:** Zwischen Start des Watch und erstem Fix vergehen laut PRD bis zu 5 s (Hook: 15 s bis `no-fix`). In diesem Fenster ist nichts kaputt. Der Screen muss den Suchzustand vom Fehlzustand unterscheiden, sonst erzieht er den Spieler dazu, einen Hinweis wegzutippen, der sich von selbst erledigt hätte. Der Permission-Screen trennt das bereits (`isSearching`, pulsierendes Icon, **kein** Knopf) — dieselbe Trennung gilt hier.
+27. **Zwei unabhängige `useDeviceOrientation()`-Instanzen:** Der Hook wird zweimal aufgerufen — `quest-player.tsx:61` und `navigation-screen.tsx:41`. `permission` ist React-State **pro Instanz**. Die iOS-Sensorfreigabe wirkt dagegen browserweit: Ruft eine Instanz `requestPermission()` erfolgreich auf, setzt nur sie ihr `permission` auf `"granted"` und hängt ihren Listener an — die andere bleibt auf `"prompt"`, ohne Listener. Zwei Wahrheiten über einen Sensor. Beim Ausbau des Kompass-Pfads ist das die wahrscheinlichste Fehlerquelle: Ein Knopf, der sichtbar reagiert, aber den Pfeil nicht dreht, weil die drehende Instanz nichts von der Freigabe erfahren hat.
+28. **Fix kommt, während der Zustands-Screen steht:** Der Spieler tippt "Erneut versuchen", geht nach draußen, und 20 s später liefert der Watch seinen ersten Fix. Der Screen muss dann von selbst in die laufende Navigation wechseln — ein zweiter Tap wäre eine Aufforderung ohne Anlass, und der Spieler steht womöglich schon in Sichtweite der Station. Umgekehrt darf ein einzelner ausbleibender Fix nach erfolgreicher Navigation **nicht** in diesen Zustand zurückfallen; dafür ist der bestehende 30s-Signalverlust zuständig (Edge Case 4), der den letzten bekannten Stand stehen lässt.
 
 ## Technical Requirements
 - GPS-Position: `navigator.geolocation.watchPosition()` mit `enableHighAccuracy: true`
@@ -184,6 +203,19 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 - Nicht-endliche Sensorwerte (`NaN`, `±Infinity`) müssen **vor** der Glättung und **vor** dem Karenzzeit-Signal verworfen werden. Sie dürfen weder die Glättungs-Ref noch den `compassFresh`-Zustand erreichen (BUG-12, Edge Case 23)
 - Die Glättungs- und Wrap-around-Mathematik ist per **Unit-Test** abzusichern (synthetische Sensorfolgen, ausdrücklich inklusive 359°→1° und 1°→359°). Playwright kann den Magnetometer nicht emulieren — E2E kann diese Klasse nicht prüfen
 
+**GPS-Zustand im Navigations-Screen (Refinement 2026-09-26):**
+
+- Der Navigations-Screen muss `geo.permission` **zusätzlich zu** `position` und `signal` auswerten. Ohne Position und ohne erkannten Fehlerzustand gilt „sucht noch", nicht „alles in Ordnung"
+- Die Zustands-Darstellung nutzt die **bestehende** `PermissionScreen`-Komponente, statt die fünf Fälle ein zweites Mal zu formulieren. Sie nimmt bereits genau die nötigen Props (`permissionState`, `signalState`, `onRequest`) und trifft die Knopf-Entscheidung selbst — inklusive der Regel, bei `insecure-context`, `unavailable` und `searching` **keinen** Knopf zu zeigen. Eine zweite Textquelle wäre eine zweite Wahrheit über denselben Sachverhalt und würde bei der nächsten Textkorrektur auseinanderlaufen
+- Der Zustand wird **innerhalb** des Screen-Rahmens gezeigt: `AppHeader` mit Stationsnamen und Zurück-Pfeil bleibt stehen, darunter der Zustand. Nicht als Vollbild-Ersatz — der Spieler verliert sonst den Bezug zur Station und den Ausweg zur Liste (abgeschlossene Stationen brauchen gar kein GPS)
+- `PermissionScreen` ist dafür von `min-h-[80vh]` zu entkoppeln, sonst schiebt es die Kopfzeile aus dem Bild. Die Höhe gehört an die Aufrufstelle, nicht in die Komponente — beim Quest-Start bleibt die Darstellung dadurch unverändert
+- Der Screen muss den Watch **selbst starten können**, wenn in dieser Session keiner läuft (Edge Case 24). Ein „läuft schon"-Signal aus dem Hook ist dafür verlässlicher als aus `position`/`signal` zu schließen: Zwischen Start und erstem Fix sind beide von „nie gestartet" nicht unterscheidbar. `requestPermission()` ist idempotent (`clearWatch()` zuerst), ein Doppelstart ist also unschädlich, aber ein erneuter iOS-Berechtigungsdialog ohne Nutzergeste wäre unschön
+- Der Übergang in die laufende Navigation muss **ohne zweiten Tap** erfolgen, sobald ein Fix eintrifft (Edge Case 28). Umgekehrt darf ein Aussetzer **nach** erfolgreicher Navigation nicht in den Zustands-Screen zurückfallen — dort bleibt der 30s-Signalverlust zuständig
+- Der „Kompass aktivieren"-Button darf **nicht länger an `position`** hängen (`navigation-screen.tsx:168`). Auf iOS ohne Fix fehlen sonst beide Freigaben gleichzeitig und verstecken sich gegenseitig
+- Die **doppelte `useDeviceOrientation()`-Instanz** (Edge Case 27) ist aufzulösen, nicht zu umgehen: eine Instanz, deren Zustand an den Navigations-Screen durchgereicht wird — so wie `geoState` es bereits vormacht. Andernfalls bleibt der Fall bestehen, dass eine Freigabe erteilt ist und die anzeigende Instanz nichts davon weiß
+- Kein neues Paket, keine neue Route. Die Zustände existieren, die Texte existieren, die Komponente existiert — dieses Refinement verdrahtet sie an der Stelle, an der sie fehlen
+- **Abnahme:** Playwright kann Geolocation-Permissions setzen und Positionen liefern, also ist diese Fehlerklasse E2E-prüfbar — anders als die Kompass-Mathematik. Der Wiedereinstieg ist als Test darstellbar, indem `gq_progress_{id}` mit `visitedStations.length > 0` geseedet und die Geolocation-Permission entzogen wird. Der iOS-spezifische Pfad aus Edge Case 24 (Permissions-API ohne Geolocation-Eintrag) ist zusätzlich per Unit-Test am Hook zu prüfen, weil er sich aus einem rejectenden `query()` ergibt
+
 ## Open Questions
 - [ ] Ab welcher GPS-Genauigkeit (accuracy in Metern) soll eine Warnung angezeigt werden? (z.B. accuracy > 50m = "Signal ungenau")
 - [ ] Soll die Entfernung bei > 1000m als "1,2 km" statt "1200 m" angezeigt werden?
@@ -195,6 +227,9 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 - [ ] Bleibt der Kalibrierungs-Hinweis dauerhaft stehen, solange `absolute === false`, oder blendet er nach einigen Sekunden aus? Auf Android meldet mancher Browser dauerhaft `absolute === false`, ohne dass eine Kalibrierung hilft (2026-09-20)
 - [ ] Soll die Ankunftserkennung bei sehr schlechter `accuracy` (> Stationsradius) unterdrückt werden, um Falsch-Ankünfte zu vermeiden? Hängt mit der offenen Genauigkeits-Frage oben zusammen.
 - [ ] Verhält sich **Android-Chrome** wie Desktop-Chrome (`requestPermission` vorhanden, liefert `denied`)? Lokal nicht messbar — kein Android-Gerät und kein lauffähiges Chromium-Binary. Der beschlossene `denied`-Rückfall macht die Antwort für die Korrektheit unkritisch, sie bliebe aber für die Testabdeckung interessant.
+- [ ] Soll der Zustands-Screen nach längerer erfolgloser Suche einen Weg zurück zur Stationsliste **hervorheben**, oder genügt der Zurück-Pfeil in der Kopfzeile? Erst am Gerät zu beurteilen, wenn man tatsächlich drinnen sitzt und wartet (2026-09-26)
+- [ ] Braucht `searching` im Navigations-Screen eine Zeitgrenze, nach der er von selbst auf `no-fix` wechselt, oder genügt das 15s-Timeout des Hooks? Der Hook setzt `no-fix` bereits — offen ist nur, ob sich das im Screen anders anfühlen soll als beim Quest-Start (2026-09-26)
+- [ ] Soll die Stationsliste bereits erkennbar machen, dass GPS fehlt, bevor der Spieler auf den Pfeil tippt? Würde den Fehlschlag vorwegnehmen, kostet aber eine weitere Anzeigestelle für denselben Sachverhalt — und die Liste ist auch ohne GPS voll nutzbar (2026-09-26)
 - [x] Soll die Konfetti-Kanone aus einem Punkt oder aus zwei Punkten feuern? → Ein Punkt, unten mittig. Der Fächer öffnet sich über 62° und deckt damit die volle Breite ab; ein zweiter Ursprung hätte nichts hinzugefügt, was der Streuwinkel nicht schon leistet (2026-09-19)
 - [x] Wie lange dauert der komplette Schuss? → 1,7–2,7s je Partikel plus bis zu 0,18s gestaffelte Zündung; nach rund 3s ist der Screen ruhig. Gemessen: Der Fächer steht nach 260ms voll im Bild, bei 600ms fällt er sichtbar aus (2026-09-19)
 
@@ -235,6 +270,12 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 | Zielpeilung wird mitbehandelt, nicht auf später vertagt | Das Peilungsrauschen wird nah am Ziel am stärksten — also dort, wo der Spieler den Pfeil am dringendsten braucht. Eine Lösung nur für den Kompass hätte den Befund auf den letzten Metern bestehen lassen und wäre als "behoben" durchgegangen. | 2026-09-20 |
 | Kalibrierungs-Hinweis wird in diesem Refinement mitgezogen | Er steht seit 2026-08-23 als Acceptance Criterion in der Spec und wird auch gerendert — aber mit 9px, also unlesbar. Ein unkalibrierter Sensor ist zugleich eine Ursache für genau die unruhige Nadel, um die es hier geht. Gleiche Datei, gleiche Fehlerklasse, gleicher Prüf-Durchlauf. | 2026-09-20 |
 | Pin wird freigestellt statt kaschiert | Erwogen: weiche CSS-Maske oder den Pin bewusst in ein Panel rahmen. Beides behandelt das Symptom — die Ursache ist, dass ein JPEG keinen Alpha-Kanal hat. Ein freigestelltes PNG löst es an der Wurzel und ist überall wiederverwendbar, wo der Pin künftig frei stehen soll. | 2026-09-19 |
+| GPS-Prüfung sitzt im Navigations-Screen, nicht davor | Erwogen: ein vorgeschalteter Check, der bei Problemen zum Permission-Screen zurückschickt. Der kennt die Station aber nicht — der Spieler müsste nach erfolgreicher Freigabe erneut auf den Pfeil tippen, und der Bezug zu „ich wollte zu dieser Station" geht verloren. Im Screen selbst bleibt der Stationsname stehen, und der Zustand verschwindet von selbst, sobald ein Fix kommt. Nebengewinn: Es behebt zugleich Edge Case 25, also die stummen GPS-Fehler im **normalen** Spielverlauf. | 2026-09-26 |
+| Ebenfalls verworfen: Prüfung beim Öffnen der Quest | Hätte jeden Wiedereinsteiger erst auf den Permission-Screen geschickt, bis ein Fix vorliegt — auch den, der nur eine abgeschlossene Station nachlesen will. Für dieses Lesen ist gar kein GPS nötig; eine Sperre davor wäre eine Hürde ohne Gegenwert. | 2026-09-26 |
+| Wortlaut wird wiederverwendet, nicht neu geschrieben | Der Permission-Screen formuliert alle fünf Zustände bereits sorgfältig (Icon, Headline, Text, passende Knopf-Beschriftung je Fall). Eine zweite, knappere Fassung für den Navigations-Screen wäre auf den ersten Blick spielgerechter, erzeugt aber zwei Wahrheiten über denselben Sachverhalt: Bei der nächsten Textkorrektur laufen sie auseinander, und der Spieler liest für dasselbe Problem zwei verschiedene Ratschläge. Dieselbe Begründung, mit der PROJ-12 auf eine einzige Zustandsquelle bestanden hat. | 2026-09-26 |
+| Kopfzeile bleibt, kein Vollbild ohne Ausweg | Der Zustand erscheint mitten im Spiel, nicht beim Einrichten. Der Spieler muss erkennen können, zu welcher Station er wollte, und jederzeit zurück zur Liste kommen — etwa weil er drinnen sitzt und stattdessen eine abgeschlossene Station nachliest. Ein Vollbild ohne Zurück hätte ihn festgesetzt, bis GPS kommt. | 2026-09-26 |
+| Kein Wiederholen-Knopf bei `insecure-context` und `unavailable` | Beides kann der Spieler nicht beheben — fehlendes HTTPS ist ein Betreiber-Fehler, ein fehlendes GPS-Modul ein Geräte-Fakt. Ein Knopf, der garantiert nichts ändert, ist eine Sackgasse; genau das war der Kern von BUG-6 (2026-09-07). Der Permission-Screen setzt diese Regel bereits um, die Wiederverwendung erbt sie. | 2026-09-26 |
+| iOS-Kompassfreigabe wird mitgenommen | Gleiche Ursache (übersprungener Permission-Screen), gleiche Datei, gleicher Prüf-Durchlauf. Der bestehende „Kompass aktivieren"-Button hängt heute an `position` und erscheint deshalb ausgerechnet dann nicht, wenn auch GPS fehlt — zwei Freigaben, die sich gegenseitig verstecken. Edge Case 10 hat den Kompass-Wiedereinstieg 2026-09-06 gelöst, den GPS-Wiedereinstieg aber nicht mitgezogen; das wird hier nachgeholt. | 2026-09-26 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -261,6 +302,81 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 | Konfetti-Umbau in der geteilten Komponente statt einer zweiten Variante | Eine Varianten-Prop würde zwei Verhalten dauerhaft nebeneinander pflegen, obwohl beide Screens dasselbe wollen. Der Preis ist, dass jede Änderung beide trifft — das ist hier gewollt und in PROJ-5 vermerkt. | 2026-09-19 |
 | Kein `infinite` mehr — Animation endet von selbst | Die heutige Endlosschleife hält 40 Elemente dauerhaft animiert, auch lange nachdem der Spieler den Screen gelesen hat. Ein einmaliger Schuss beendet die Arbeit des Compositors und respektiert die Motion-Regel des Design Systems. | 2026-09-19 |
 | `prefers-reduced-motion` wird in der Konfetti-Komponente behandelt, nicht bei jedem Aufrufer | Ein Ort für eine Regel, die für jede Nutzung der Komponente gilt. Bisher fehlt die Behandlung ganz — der Umbau ist der richtige Zeitpunkt, sie nachzuziehen. | 2026-09-19 |
+| `PermissionScreen` wird eingebunden statt kopiert | Die Komponente nimmt schon genau die passenden Props (`permissionState`, `signalState`, `onRequest`) und kapselt die Knopf-Entscheidung je Zustand. Sie in den Navigations-Screen einzubinden kostet keine neue Datei und hält die fünf Zustände an einem Ort. Preis: Sie muss von ihrem `min-h-[80vh]` entkoppelt werden, damit sie unter einer Kopfzeile stehen kann — die Höhe gehört an die Aufrufstelle. | 2026-09-26 |
+| Der Screen startet den Watch selbst, statt sich auf den Auto-Start zu verlassen | Der Auto-Start im Hook hängt an `navigator.permissions.query()`, und genau dieser Pfad fällt auf iOS Safari aus (Edge Case 24). Sich darauf zu verlassen heißt, den gemeldeten Fehler auf der Plattform der Zielgruppe offen zu lassen. `requestPermission()` ist idempotent, ein Doppelstart also unschädlich. | 2026-09-26 |
+| „Läuft ein Watch?" kommt als eigenes Signal aus dem Hook, nicht als Ableitung aus `position`/`signal` | Zwischen Watch-Start und erstem Fix sind beide Werte von „nie gestartet" nicht unterscheidbar (`position: null`, `signal: "waiting"`). Eine Ableitung würde in diesem Fenster entweder unnötig neu starten oder den Start verpassen — beides Fehler, die nur zeitabhängig auftreten und deshalb schlecht zu finden sind. | 2026-09-26 |
+| Die doppelte `useDeviceOrientation()`-Instanz wird aufgelöst, nicht umgangen | Zwei Instanzen halten zwei `permission`-States für einen browserweiten Sensor (Edge Case 27). Nach erfolgreicher iOS-Freigabe weiß nur die aufrufende Instanz davon und hängt nur sie ihren Listener an. Der Zustand nach unten durchzureichen folgt dem Muster, das `geoState` im selben Screen bereits vormacht — die Alternative wäre ein Abgleich zwischen zwei Quellen, also dieselbe Fehlerklasse wie BUG-6. | 2026-09-26 |
+| Diese Fehlerklasse ist E2E-prüfbar — anders als die Kompass-Mathematik | Playwright kann Geolocation-Permissions entziehen und Positionen liefern; der Wiedereinstieg lässt sich über geseedeten `gq_progress_{id}` herstellen. Damit ist der gemeldete Befund als Regressionstest darstellbar, statt nur per Unit-Test um ihn herum zu prüfen. Der iOS-Pfad aus Edge Case 24 (rejectendes `query()`) braucht zusätzlich einen Unit-Test am Hook, weil Playwright das Permissions-API nicht selektiv entfernen kann. | 2026-09-26 |
+
+---
+
+## Refinement 2026-09-26: GPS-Zustand beim Wiedereinstieg
+
+**Gemeldet:** *„wenn eine quest mittendrin abgebrochen und erst später wieder weitergespielt wird, habe ich Probleme bei der Navigation. Meine Erwartung ist, dass wenn der User auf den Pfeil einer noch nicht abgeschlossenen Station klickt, geprüft werden muss, ob GPS und und so eingeschaltet sind."*
+
+Die Erwartung ist richtig, und die Prüfung fehlt tatsächlich. Im Code bestätigt.
+
+### Die Kette, die zum stummen Screen führt
+
+| Schritt | Stelle | Was passiert |
+|---|---|---|
+| 1 | `quest-player.tsx:35-38` | `hasExistingProgress` → Startscreen ist `"stations"`, nicht `"permission"` |
+| 2 | `quest-player.tsx:62` | `handlePermissionRequest()` wird nur vom Permission-Screen aufgerufen — in dieser Session also **nie** |
+| 3 | `use-geolocation.ts:169` | Einziger Rückfall: Auto-Start via `navigator.permissions.query({ name: "geolocation" })` |
+| 4 | — | **iOS Safari führt Geolocation nicht im Permissions-API.** `query()` rejected, `.catch(() => {})` verschluckt es, kein `watchPosition` startet |
+| 5 | `navigation-screen.tsx:48` | Screen liest nur `position` und `signal` — `permission` gar nicht |
+| 6 | `navigation-screen.tsx` | `position === null`, `signal === "waiting"` → keine Verzweigung greift; regulärer Screen mit `—` als Entfernung und Pfeil ohne Rotation |
+
+Schritt 4 ist der Grund, warum der Befund gerade auf dem iPhone auftritt — der Plattform der Zielgruppe.
+
+### Was der Screen anzeigen könnte, aber nicht tut
+
+Der Hook unterscheidet fünf Zustände, der Navigations-Screen keinen davon:
+
+| `geo.permission` | Was der Spieler tun kann | Heute im Navigations-Screen sichtbar |
+|---|---|---|
+| `searching` (über `signal`) | Warten — kommt gleich | nein, nur `—` |
+| `no-fix` | Nach draußen gehen | nein, nur `—` |
+| `denied` | In den Einstellungen erlauben | nein, nur `—` |
+| `insecure-context` | nichts (Betreiber-Fehler) | nein, nur `—` |
+| `unavailable` | nichts (Geräte-Fakt) | nein, nur `—` |
+
+Der Permission-Screen formuliert **alle fünf** bereits aus, inklusive Icon, Headline, Text und der Entscheidung, ob ein Knopf sinnvoll ist. Diese Arbeit ist getan — sie erreicht den Navigations-Screen nur nicht.
+
+### Zweitbefund: nicht auf den Wiedereinstieg begrenzt
+
+Weil Schritt 5 unabhängig vom Einstiegsweg gilt, trifft derselbe stumme Strich auch den regulären Spielverlauf: Wer die Quest frisch startet und ein Gebäude betritt, bevor der erste Fix da ist, sieht dasselbe. Der gemeldete Weg ist der häufigste, nicht der einzige.
+
+### Die Vorgeschichte: derselbe Fehler, halb behoben
+
+Edge Case 10 (2026-09-06) beschreibt genau diese Kette — für den **Kompass**: Der Wiedereinstieg überspringt den Permission-Screen und damit die iOS-Sensorfreigabe. Die Lösung war der „Kompass aktivieren"-Button im Navigations-Screen. Die GPS-Hälfte derselben Ursache wurde damals nicht mitgezogen.
+
+Schlimmer: Der Button hängt an `position` (`navigation-screen.tsx:168`). Fehlen beim Wiedereinstieg auf iOS **beide** Freigaben, erscheint er nie — die GPS-Lücke versteckt die Kompass-Lösung.
+
+### Ein Fund, der nicht gemeldet war: zwei Sensor-Instanzen
+
+`useDeviceOrientation()` läuft zweimal — `quest-player.tsx:61` und `navigation-screen.tsx:41`. `permission` ist React-State pro Instanz, die iOS-Freigabe wirkt browserweit. Nach einem erfolgreichen `requestPermission()` setzt nur die aufrufende Instanz ihr `permission` auf `"granted"` und hängt nur sie ihren Listener an (`use-device-orientation.ts:205-207`).
+
+Für `/frontend` ist das die wahrscheinlichste Stolperstelle beim Kompass-Teil: ein Knopf, der sichtbar reagiert, aber den Pfeil nicht dreht, weil die anzeigende Instanz nichts von der Freigabe erfahren hat.
+
+### Entschiedener Umfang
+
+Vier Entscheidungen, alle vom Betreiber bestätigt:
+
+1. **Prüfung im Navigations-Screen**, nicht davor und nicht beim Quest-Öffnen — der Stationsbezug bleibt erhalten, und der Zweitbefund ist mit abgedeckt
+2. **Bestehende `PermissionScreen`-Texte wiederverwenden** statt zweite Formulierung
+3. **Kopfzeile bleibt** (Stationsname + Zurück-Pfeil) — kein Vollbild ohne Ausweg
+4. **iOS-Kompassfreigabe mitnehmen** — gleiche Ursache, gleiche Datei, ein Prüf-Durchlauf
+
+### Für `/frontend` vorab benannt
+
+- Der Inset-Fallstrick hat hier ein Gegenstück: `PermissionScreen` trägt `min-h-[80vh]`. Unverändert eingebunden schiebt es die Kopfzeile aus dem Bild. Die Höhe gehört an die Aufrufstelle — beim Quest-Start darf sich dadurch **nichts** ändern
+- `searching` ist **kein** Fehlerzustand (Edge Case 26). Ein Hinweis mit Knopf in diesem Fenster erzieht den Spieler dazu, etwas wegzutippen, was sich von selbst erledigt
+- Bei `insecure-context` und `unavailable` darf **kein** Knopf erscheinen — das war der Kern von BUG-6
+- Ein Fix, der während des Zustands-Screens eintrifft, muss **ohne zweiten Tap** in die Navigation wechseln (Edge Case 28)
+- Umgekehrt darf ein Aussetzer **nach** erfolgreicher Navigation nicht hierher zurückfallen — dort bleibt der 30s-Signalverlust zuständig
+- Bestehende PROJ-3-E2E-Tests, die den Navigations-Screen ohne Position prüfen, können durch die neue Verzweigung falsch werden und sind zu **ziehen, nicht zu löschen**
+- Der Regressionswächter, der bisher ganz fehlt: dass ein Tap auf den Pfeil **ohne** GPS zu einer lesbaren Erklärung führt statt zu `—`. Genau diese Lücke hat den Befund durchgelassen, während die Suite grün war
 
 ---
 <!-- Sections below are added by subsequent skills -->
@@ -403,8 +519,10 @@ src/
 ### Wiedereinstieg bei gespeichertem Fortschritt
 
 - Wenn `gq_progress_{id}` existiert UND `visitedStations.length > 0`:
-  → Überspringt Permission (bereits erteilt) + Intro (bereits gesehen)
+  → Überspringt Permission-Screen + Intro (bereits gesehen)
   → Geht direkt zur Stationsliste
+
+> **Korrektur (2026-09-26):** Hier stand „Überspringt Permission (**bereits erteilt**)". Diese Begründung war die Ursache des am 2026-09-26 gemeldeten Befunds. Eine vor Tagen erteilte Permission sagt nichts darüber, ob GPS **jetzt** eingeschaltet ist und einen Fix liefert — und vor allem wird auf dem übersprungenen Screen `requestPermission()` aufgerufen, also der Watch überhaupt erst gestartet. Der Wiedereinstieg bleibt richtig, aber er darf einen laufenden GPS-Betrieb nicht voraussetzen: Der Navigations-Screen prüft den Zustand selbst und startet den Watch nach, wenn nötig (Edge Cases 24–28).
 - Wenn `gq_progress_{id}` nicht existiert:
   → Startet bei Permission-Screen
 
