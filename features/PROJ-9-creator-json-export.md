@@ -1,8 +1,8 @@
 # PROJ-9: Creator — JSON-Export
 
-## Status: Approved
+## Status: In Progress
 **Created:** 2026-08-28
-**Last Updated:** 2026-08-29
+**Last Updated:** 2026-09-27 (Refinement: Veröffentlichen prüft nur Stationen, nicht ihren Inhalt)
 
 ## Dependencies
 - Requires: PROJ-6 (Creator — Quest-Verwaltung) — für die `QuestManagementCard`, ihr Aktionen-Menü und die bereits vorbereiteten (aber bislang ungenutzten) Felder/Funktionen `published`, `isPublished()`, `publishQuest()`
@@ -13,7 +13,9 @@
 Zwei getrennte, aber verwandte Aktionen im Creator-Aktionen-Menü einer Quest:
 
 1. **"Sicherung"** — lädt die Quest jederzeit als JSON-Datei herunter, unabhängig vom Vollständigkeits- oder Spielbarkeitsstatus. Reiner Backup-Mechanismus gegen Datenverlust durch `localStorage`-Löschung (z.B. iOS Safaris automatische Bereinigung nach Inaktivität) — GeoQuest hat laut PRD kein Backend/Account, `localStorage` ist die einzige Datenhaltung.
-2. **"Veröffentlichen"** — sichert die Quest genauso wie "Sicherung" (Export ist immer Teil davon), prüft zusätzlich `isPlayable` (mind. 1 Station, aus PROJ-6) und setzt bei Erfolg den `published`-Status auf `true`, wodurch das "Entwurf"-Badge auf der Karte verschwindet. Ist die Quest nicht spielbar, wird trotzdem exportiert, aber der Status bleibt "Entwurf" und eine Fehlermeldung erklärt warum.
+2. **"Veröffentlichen"** — prüft die Quest auf Vollständigkeit und schreibt die Datei **nur, wenn die Prüfung besteht**; bei Erfolg wird der `published`-Status auf `true` gesetzt und das "Entwurf"-Badge verschwindet. Scheitert die Prüfung, entsteht **keine Datei** und eine Fehlermeldung nennt die betroffene Station beim Namen.
+
+> **Korrigiert am 2026-09-27 (Refinement).** Ursprünglich stand hier: „sichert die Quest genauso wie ‚Sicherung' (Export ist immer Teil davon) … Ist die Quest nicht spielbar, wird trotzdem exportiert." Beides war falsch gedacht. Die Prüfung war zu schwach (`isPlayable` zählte nur Stationen, nicht ihren Inhalt) **und** sie lief nach dem Schreiben der Datei. Wer veröffentlicht, gibt eine Datei an andere weiter — eine unvollständige Datei zu erzeugen und erst danach zu bemängeln, ist für diesen Zweck genau die falsche Reihenfolge. Die Sicherung bleibt davon unberührt und exportiert weiterhin bedingungslos.
 
 Beide Aktionen sind komplett unabhängig von der Play-Sichtbarkeit (PROJ-6, `isPlayable`/Stationsanzahl) — Export und Veröffentlichen ändern nichts daran, ob eine Quest im Play-Modus erscheint.
 
@@ -22,7 +24,9 @@ Beide Aktionen sind komplett unabhängig von der Play-Sichtbarkeit (PROJ-6, `isP
 2. Als Ersteller möchte ich auch eine unfertige Quest sichern können, damit ich keinen Fortschritt riskiere, nur weil ich noch nicht fertig bin.
 3. Als Ersteller möchte ich sehen, welche meiner Quests seit der letzten Änderung noch nicht gesichert wurden, damit ich weiß, wo ich ein Backup nachholen sollte.
 4. Als Ersteller möchte ich eine fertige Quest veröffentlichen können, damit ich (und andere über die Datei) klar erkennen, dass sie nicht mehr nur ein Entwurf ist.
-5. Als Ersteller möchte ich beim Veröffentlichen einer noch nicht spielbaren Quest eine klare Fehlermeldung sehen, damit ich weiß, was noch fehlt (mindestens eine Station).
+5. Als Ersteller möchte ich beim Veröffentlichen einer noch nicht spielbaren Quest eine klare Fehlermeldung sehen, damit ich weiß, was noch fehlt — **und zwar unter Nennung der betroffenen Station**. *(Refinement 2026-09-27: „mindestens eine Station" war zu wenig; siehe User Story 7)*
+7. Als Ersteller möchte ich, dass eine Station ohne Inhalt **beim Veröffentlichen** auffällt und keine Datei erzeugt, damit ich keine Quest weitergebe, die der Empfänger nicht importieren kann. *(Refinement 2026-09-27)*
+8. Als Ersteller möchte ich in der Fehlermeldung den **Namen** der unfertigen Station lesen, damit ich sie sofort finde, statt in allen Stationen zu suchen. *(Refinement 2026-09-27)*
 6. Als Ersteller möchte ich die heruntergeladene Datei später wieder importieren können, damit Sicherung und Wiederherstellung zuverlässig zusammenspielen.
 
 ## Out of Scope
@@ -30,7 +34,9 @@ Beide Aktionen sind komplett unabhängig von der Play-Sichtbarkeit (PROJ-6, `isP
 - Automatisches/periodisches Backup ohne Nutzeraktion (kein Hintergrund-Mechanismus, nur manueller Klick)
 - Cloud-Sicherung / Versand der Datei per E-Mail o.ä. (kein Backend laut PRD — nur lokaler Datei-Download über den Browser)
 - "Unveröffentlichen" / Zurücksetzen des `published`-Status (kein Rückweg vorgesehen, konsistent mit der ursprünglichen PROJ-6-Entscheidung)
-- Vollständigkeits-Prüfung (`isQuestComplete`) als Bedingung für Veröffentlichen — bewusst durch `isPlayable` ersetzt (siehe Decision Log)
+- ~~Vollständigkeits-Prüfung (`isQuestComplete`) als Bedingung für Veröffentlichen — bewusst durch `isPlayable` ersetzt (siehe Decision Log)~~ → **Aufgehoben am 2026-09-27 (Refinement).** `isPlayable` allein genügt nicht: Es zählt Stationen, prüft aber nicht, ob sie Inhalt haben. Veröffentlichen prüft künftig auch die Module. Der ursprüngliche Grund für den Ausschluss (Export soll nie blocken) bleibt richtig — er gilt nur für die **Sicherung**, nicht für das Veröffentlichen.
+- Eine Vollständigkeits-Prüfung für die **Sicherung** — bleibt ausdrücklich ausgeschlossen (Backup-Zweck, siehe Decision Log)
+- Leere Stationen als gültiges Quest-Element (reines GPS-Wegpunkt-Ziel ohne Aufgabe) — nicht Teil dieses Refinements; das Import-Schema verlangt weiterhin mindestens ein Modul pro Station. Als Open Question vermerkt.
 - Passwortschutz beim Export (PROJ-11, separates Feature für den Import-Fall)
 - Mehrere Quests auf einmal exportieren (Bulk-Export) — kein MVP-Bedarf bei erwarteten 10–20 Quests
 - Eigene Benachrichtigung/Reminder außerhalb der Karte (z.B. Push, E-Mail) für "nicht gesichert" — nur visuelles Badge auf der Karte
@@ -57,9 +63,21 @@ Beide Aktionen sind komplett unabhängig von der Play-Sichtbarkeit (PROJ-6, `isP
 **Veröffentlichen (nicht spielbare Quest):**
 - [ ] Angenommen eine Quest hat 0 Stationen, wenn der Nutzer im Aktionen-Menü "Veröffentlichen" wählt, dann wird die Quest trotzdem exportiert (Sicherung findet immer statt), aber `published` bleibt `false`, das "Entwurf"-Badge bleibt sichtbar, und eine Fehlermeldung erscheint ("Quest braucht mindestens 1 Station, um veröffentlicht zu werden.")
 
+### Veröffentlichen prüft den Inhalt, nicht nur die Anzahl (Refinement 2026-09-27)
+
+- [ ] Angenommen eine Quest hat eine Station ohne jedes Modul, wenn der Ersteller „Veröffentlichen" wählt, dann wird der Vorgang abgebrochen, der Status bleibt „Entwurf" und **es wird keine Datei heruntergeladen**
+- [ ] Angenommen der Vorgang wurde abgebrochen, wenn die Fehlermeldung erscheint, dann nennt sie die betroffene Station **mit ihrem Namen** (z.B. „Station „Café" hat noch kein Modul.") und nicht nur eine Anzahl
+- [ ] Angenommen mehrere Stationen haben kein Modul, wenn der Ersteller „Veröffentlichen" wählt, dann nennt die Meldung sie alle oder die erste mit einem Hinweis auf die Gesamtzahl — nicht nur ein unspezifisches „unvollständig"
+- [ ] Angenommen eine Station hat keinen Namen und kein Modul, wenn die Meldung erzeugt wird, dann nennt sie eine verständliche Ersatzbezeichnung (z.B. „Station 2") statt eines leeren Namens
+- [ ] Angenommen eine Quest hat 0 Stationen, wenn der Ersteller „Veröffentlichen" wählt, dann wird ebenfalls abgebrochen und ohne Datei-Download abgewiesen — die bestehende Regel bleibt, nur die Reihenfolge ändert sich
+- [ ] Angenommen jede Station der Quest hat mindestens ein Modul, wenn der Ersteller „Veröffentlichen" wählt, dann wird die Datei geschrieben und der Status auf „veröffentlicht" gesetzt — wie bisher
+- [ ] Angenommen eine Quest ist unvollständig, wenn der Ersteller „Sicherung" wählt, dann wird sie **unverändert bedingungslos** exportiert — dieses Refinement darf den Backup-Weg nicht einschränken
+- [ ] Angenommen eine veröffentlichte Datei wird von einem anderen Gerät importiert, wenn der Import läuft, dann besteht er die Schema-Prüfung — Veröffentlichen und Import-Schema sagen künftig dasselbe über eine gültige Quest
+- [ ] Angenommen das Veröffentlichen wurde abgewiesen, wenn der Ersteller die fehlende Station ergänzt und erneut veröffentlicht, dann gelingt es ohne weiteren Zwischenschritt
+
 ## Edge Cases
 1. **Export einer Quest mit 0 Stationen ("Sicherung"):** Erlaubt und erwartet — Backup-Zweck erfordert keine Vollständigkeit. Datei ist danach ggf. selbst nicht direkt sinnvoll spielbar, aber jederzeit re-importierbar zum Weiterbearbeiten.
-2. **"Veröffentlichen" bei 0 Stationen:** Export findet trotzdem statt (kein Datenverlust-Risiko), nur der Status-Wechsel wird verweigert — siehe AC oben.
+2. ~~**"Veröffentlichen" bei 0 Stationen:** Export findet trotzdem statt (kein Datenverlust-Risiko), nur der Status-Wechsel wird verweigert.~~ → **Überholt am 2026-09-27 (Refinement).** Es findet **kein** Export statt: Die Prüfung läuft vor dem Schreiben der Datei. Das Datenverlust-Argument trägt hier nicht — wer sichern will, hat dafür „Sicherung", die unverändert bedingungslos exportiert. Eine Datei zu erzeugen, die der Empfänger nicht importieren kann, ist kein Schutz vor Datenverlust, sondern eine Fehlerquelle.
 3. **Wiederholtes Veröffentlichen nach weiteren Änderungen:** Kein "einmalig/endgültig"-Zustand mehr (Korrektur ggü. ursprünglicher PROJ-6-Annahme) — der Menüpunkt bleibt immer sichtbar und klickbar, jeder Klick exportiert erneut und bestätigt/setzt den Status.
 4. **Sehr häufiges Klicken auf Sicherung/Veröffentlichen:** Jeder Klick löst einen neuen Download aus (Browser erzeugt ggf. Datei mit Suffix wie `(1)`), kein künstliches Rate-Limiting nötig — Download ist eine lokale, kostenlose Operation.
 5. **Download vom Browser blockiert (Pop-up-/Download-Blocker):** Kein Programmfehler — Browser-Download-Mechanismus (`Blob` + `<a download>`) läuft ohne Pop-up, sollte auf allen unterstützten Browsern (Chrome, Safari, Firefox, Edge, PRD-Anforderung) funktionieren. Kein Sonderfall nötig.
@@ -69,16 +87,43 @@ Beide Aktionen sind komplett unabhängig von der Play-Sichtbarkeit (PROJ-6, `isP
 9. **Veröffentlichen-Status bei importierten Quests:** Import setzt `published` weiterhin nicht automatisch (PROJ-9 ändert nichts an der PROJ-2/PROJ-6-Importlogik) — eine importierte, spielbare Quest zeigt bis zum ersten manuellen "Veröffentlichen" weiterhin das "Entwurf"-Badge. Das ist eine bewusste Abweichung von der ursprünglichen PROJ-6-Annahme ("Import = automatisch veröffentlicht") und wird im Decision Log vermerkt.
 10. **localStorage-Schreibfehler beim Setzen von `lastExported`/`published` nach einem erfolgreichen Download:** Datei wurde bereits heruntergeladen (Backup ist sicher), nur die Status-Aktualisierung in `localStorage` könnte fehlschlagen (z.B. Speicher voll) → gleiche Fehlermeldung wie in PROJ-2 ("Speicher voll..."), Badge bleibt ggf. fälschlich auf "nicht gesichert" stehen bis der Nutzer erneut exportiert — kein Datenverlust, nur ein optisch nicht perfekt synchroner Status.
 
+11. **Station ohne jedes Modul** *(Refinement 2026-09-27)* → Der gemeldete Fall. `isPlayable` hielt die Quest für veröffentlichbar (gemessen: `stations.length > 0` ist `true`), das Import-Schema lehnte sie ab (`modules` mit `.min(1)`). Künftig prüft das Veröffentlichen die Module mit und bricht vor dem Datei-Download ab.
+
+12. **Quest, in der JEDE Station leer ist** *(Refinement 2026-09-27)* → Ebenfalls im Test bestätigt: `isPlayable` liefert auch dann `true`. Die neue Prüfung fängt das mit ab; die Meldung nennt alle betroffenen Stationen bzw. die erste plus Gesamtzahl.
+
+13. **Station ohne Namen und ohne Modul** *(Refinement 2026-09-27)* → Die Meldung darf keinen leeren Namen in Anführungszeichen zeigen („Station „" hat kein Modul"). Ersatzbezeichnung anhand der Position, z.B. „Station 2".
+
+14. **Sicherung einer Quest mit leerer Station** *(Refinement 2026-09-27)* → Unverändert erlaubt und erwünscht. Dieses Refinement ändert **nur** den Veröffentlichen-Weg. Ein Arbeitsstand muss sicherbar bleiben, auch wenn er unfertig ist — das ist der Zweck von PROJ-9 und bleibt unangetastet.
+
+15. **Eine bereits veröffentlichte Quest, die nachträglich eine leere Station bekommt** *(Refinement 2026-09-27)* → Der `published`-Status bleibt zunächst stehen (es gibt kein „Unveröffentlichen", siehe Out of Scope). Beim nächsten Veröffentlichen-Versuch greift die Prüfung. Zu entscheiden ist, ob das Badge in der Zwischenzeit irreführend ist — als Open Question vermerkt.
+
+16. **Eine importierte Datei aus der Zeit vor dieser Behebung** *(Refinement 2026-09-27)* → Dateien wie die gemeldete existieren bereits „in der Welt" und lassen sich nicht nachträglich reparieren. Sie scheitern beim Import weiterhin am Schema — die Import-Fehlermeldung bleibt für sie der einzige Hinweis. Ihre Präzisierung ist als eigener Punkt in den Open Questions vermerkt, nicht Teil dieses Refinements.
+
 ## Technical Requirements
 - Download-Mechanismus: `Blob` + `URL.createObjectURL` + unsichtbarer `<a download>`-Link (Standard-Browser-API, kein neues Paket nötig)
 - Dateiname: `{quest-id-kurz}-{quest-name-slug}.json`, z.B. `a1b2c3d4-stadtrallye-berlin.json`
 - Export-Inhalt: exakt das bestehende `questSchema`-Format aus PROJ-2 (validierungs-kompatibel für erneuten Import) — auch bei unvollständigen Quests wird das Objekt so exportiert, wie es aktuell in `localStorage` liegt (kein zusätzliches Zod-Parsing/Blocken beim Export selbst)
 - Neues Feld `lastExported?: string` (ISO 8601) auf der Quest, analog zu `published?: boolean` aus PROJ-6 — ebenfalls NICHT Teil des strikten `questSchema` (lokale, geräte-spezifische Information, kein Teil des teilbaren Dateiformats)
 - Reaktiviert bestehende, bereits gebaute und unit-getestete Funktionen aus PROJ-6: `isPublished()`, `publishQuest()` — Bedingung für `publishQuest()` wird neu an `isPlayable()` (PROJ-6-Korrektur) geknüpft statt an die ursprünglich vorgesehene Vollständigkeitsprüfung
+
+### Refinement 2026-09-27 — Veröffentlichen prüft den Inhalt
+
+- **Die Prüfung läuft VOR `exportQuest()`.** Heute steht in `src/app/create/page.tsx` (`handlePublish`): `exportQuest()` → `markExported()` → `publishQuest()`. Die Datei ist geschrieben, bevor geprüft wird. Neue Reihenfolge: prüfen → bei Erfolg exportieren, `markExported()`, `publishQuest()` → bei Misserfolg abbrechen mit Meldung, **ohne** Datei und **ohne** `markExported()`.
+- **`isPlayable()` in `src/lib/quest-storage.ts:112` ist zu schwach.** Heute: `return quest.stations.length > 0;`. Es muss zusätzlich gelten, dass **jede** Station mindestens ein Modul hat — dieselbe Regel, die `questSchema` beim Import anwendet (`modules` mit `.min(1)`, `quest-schema.ts:95`).
+- **Achtung, `isPlayable` hat einen zweiten Aufrufer.** Es entscheidet laut PROJ-6 auch über die **Play-Sichtbarkeit** einer Quest. Eine Verschärfung an dieser Stelle würde bestehende Quests mit leerer Station aus der Play-Liste entfernen — eine Nebenwirkung, die niemand angefordert hat. **Zu prüfen, nicht anzunehmen:** Entweder eine eigene Funktion für die Veröffentlichen-Prüfung einführen (z.B. `getPublishBlockers()`), oder die Verschärfung bewusst auch für die Play-Sichtbarkeit übernehmen. Die erste Variante ist die engere und damit vorzuziehen, solange nichts anderes entschieden wird.
+- **Die Prüfung liefert die betroffenen Stationen zurück, nicht nur `true`/`false`.** Ein boolescher Rückgabewert kann die Meldung „Station „Café" hat noch kein Modul" nicht erzeugen. Gebraucht wird die Liste der unvollständigen Stationen mit Name und Position.
+- **Ersatzbezeichnung für namenlose Stationen:** Ist der Name leer, nennt die Meldung die Position („Station 2"). Kein leerer Name in Anführungszeichen.
+- **Eine einzige Wahrheit über „gültige Quest".** Die Veröffentlichen-Prüfung und `questSchema` müssen dasselbe verlangen. Laufen sie auseinander, entsteht erneut genau dieser Fehler — eine Datei, die das eine System freigibt und das andere ablehnt. Wird die Schema-Regel künftig geändert, muss die Veröffentlichen-Prüfung mitgezogen werden; idealerweise leitet sie sich direkt aus dem Schema ab statt die Regel zu wiederholen.
+- **Die Sicherung bleibt unverändert.** `exportQuest()` selbst bekommt **keine** Prüfung — der Kommentar im Kopf der Funktion („must never block on questSchema validity") bleibt gültig und richtig. Geändert wird nur der Aufrufer `handlePublish`.
+- **Bestehende Tests:** `src/lib/quest-storage.test.ts` prüft `isPlayable` und `publishQuest`. Diese Tests werden durch eine Verschärfung möglicherweise falsch und sind zu **ziehen, nicht zu löschen**. Neu dazu gehört der Wächter, der bisher ganz fehlt: dass eine Quest mit leerer Station **nicht** veröffentlicht werden kann und **keine Datei** erzeugt. Genau diese Lücke hat den Befund durchgelassen.
 - Touch-Targets: min. 44px (PRD-Anforderung), gilt für die neuen Menüpunkte im bestehenden DropdownMenu
 - Bestätigungsdialog nicht nötig — weder Sicherung noch Veröffentlichen sind destruktiv (PRD verlangt Bestätigung nur bei kritischen/destruktiven Aktionen wie Löschen)
 
 ## Open Questions
+- [ ] Soll die Import-Fehlermeldung präzisiert werden? *(Refinement 2026-09-27)* Sie lautet heute „Station 2 hat ein ungültiges Modul." (reproduziert), obwohl **keines** vorhanden ist — irreführend. Ursache: `formatValidationError` in `src/lib/quest-import.ts:161` fasst jeden Pfad unter `modules` zu einem Satz zusammen und verwirft die brauchbare Schema-Meldung („Station braucht mindestens ein Modul."). Gehört zu **PROJ-2**, nicht hierher; relevant bleibt es für Dateien, die vor dieser Behebung entstanden sind (Edge Case 16).
+- [ ] Soll eine Station ohne Module als gültiges Quest-Element erlaubt werden? *(Refinement 2026-09-27)* Ein reines GPS-Wegpunkt-Ziel („lauf dorthin, dann weiter") ist ein plausibler Baustein, den das Schema heute verbietet. Bewusst **nicht** Teil dieses Refinements — es würde Player (Station ohne Module abschließen), Creator, Export und Schema berühren und damit PROJ-2, PROJ-4, PROJ-5, PROJ-7, PROJ-8. Der Betreiber hat entschieden, die Regel beizubehalten und stattdessen früher zu warnen.
+- [ ] Ist das „veröffentlicht"-Badge irreführend, wenn eine bereits veröffentlichte Quest nachträglich eine leere Station bekommt? *(Refinement 2026-09-27, Edge Case 15)* Es gibt kein „Unveröffentlichen" (Out of Scope), der Status bleibt also stehen. Vorschlag: vorerst belassen — die bereits verteilte Datei ist ja gültig; der Status beschreibt sie, nicht den aktuellen Entwurf.
+- [ ] Soll die Verschärfung auch für die **Play-Sichtbarkeit** gelten? *(Refinement 2026-09-27)* `isPlayable` entscheidet laut PROJ-6 über beides. Eine gemeinsame Verschärfung würde bestehende Quests mit leerer Station aus der Play-Liste entfernen — nicht angefordert. Vorschlag: getrennte Prüffunktion für das Veröffentlichen, damit die Play-Sichtbarkeit unberührt bleibt.
 - [ ] Soll es einen globalen Hinweis geben (z.B. auf der `/create`-Übersicht), wenn MEHRERE Quests "nicht gesichert" sind, oder reicht das Badge pro Karte? Aktuell: nur Karten-Badge, kein globaler Hinweis (kann bei Bedarf in `/refine` ergänzt werden)
 - [ ] Soll `lastExported` beim Umbenennen (das `lastModified` aktualisiert, aber den Inhalt sonst nicht ändert) den "nicht gesichert"-Zustand auslösen? Aktuell: Ja, da die Spec generisch auf `lastModified > lastExported` prüft — Umbenennen ist auch eine Änderung, die im nächsten Export mitgesichert werden sollte
 
@@ -99,6 +144,11 @@ Beide Aktionen sind komplett unabhängig von der Play-Sichtbarkeit (PROJ-6, `isP
 | Kein neues "Fertig"-Badge — "Fertig" bedeutet nur Abwesenheit des "Entwurf"-Badges | Reaktiviert exakt das ursprüngliche PROJ-6-Tech-Design (`isDraft = !isQuestComplete \|\| !isPublished`) vor der Korrektur — kein zusätzliches visuelles Element nötig, bestehendes Kartenmuster (Vollton vs. gestrichelt) deckt es ab | 2026-08-28 |
 | Import setzt `published` weiterhin NICHT automatisch (Abweichung von der ursprünglichen PROJ-6-Planung "Import = automatisch veröffentlicht") | Da "Veröffentlichen" jetzt ein aktiver, geprüfter Schritt mit Export-Kopplung ist, soll er für jede Quelle (selbst erstellt oder importiert) gleich funktionieren — eine Sonderregel nur für Importe würde die Logik unnötig verzweigen | 2026-08-28 |
 | Kein Bestätigungsdialog für Sicherung oder Veröffentlichen | Beide Aktionen sind nicht destruktiv — PRD verlangt Bestätigung nur bei kritischen/löschenden Aktionen | 2026-08-28 |
+| **Veröffentlichen prüft künftig auch den Inhalt der Stationen, nicht nur ihre Anzahl** | **Refinement 2026-09-27.** Der Betreiber hat eine Quest veröffentlicht, deren zweite Station („Café") kein Modul hatte. Sie ließ sich veröffentlichen, die Datei wurde erzeugt und weitergegeben — und schlug beim Empfänger im Import fehl. Gemessen: `isPlayable` prüft nur `stations.length > 0` und liefert selbst dann `true`, wenn **jede** Station leer ist. Das Import-Schema verlangt dagegen mindestens ein Modul je Station. Zwei unterschiedliche Wahrheiten über dieselbe Frage — dieselbe Fehlerklasse wie BUG-6. Wer veröffentlicht, gibt eine Datei an andere weiter; die Prüfung muss dieselbe sein wie beim Import. | 2026-09-27 |
+| **Die Prüfung läuft vor dem Schreiben der Datei, nicht danach** | **Refinement 2026-09-27.** Bisher: `exportQuest()` → `publishQuest()`. Selbst bei abgewiesener Veröffentlichung lag die unvollständige Datei schon im Download-Ordner — und genau die wurde weitergegeben. Der Betreiber dazu: *„beim Import ist es zu spät."* Richtig: Zu dem Zeitpunkt hat die Datei den Empfänger erreicht. Das frühere Gegenargument (Datenverlust-Schutz) trägt nicht, weil „Sicherung" diesen Zweck unverändert und bedingungslos erfüllt. | 2026-09-27 |
+| **Die Fehlermeldung nennt die Station beim Namen** | **Refinement 2026-09-27.** „Quest braucht mindestens 1 Station" sagt nicht, welche Station unfertig ist — bei 20 erlaubten Stationen ist das eine Suchaufgabe. Die Meldung nennt künftig den Namen (z.B. „Station „Café" hat noch kein Modul.") und bei fehlendem Namen die Position. Dass eine unpräzise Meldung echten Schaden anrichtet, zeigt der Import-Fall: Dort ließ „hat ein ungültiges Modul" den Betreiber nach einem defekten Modul suchen, das es nie gab. | 2026-09-27 |
+| **Die Sicherung bleibt bedingungslos** | **Refinement 2026-09-27.** Erwogen und verworfen: auch den Export zu prüfen. Das würde Arbeitsstände unsicherbar machen — genau den Datenverlust, gegen den PROJ-9 gebaut wurde (kein Backend, `localStorage` als einzige Datenhaltung, iOS Safari räumt sie nach Inaktivität auf). Die beiden Wege haben verschiedene Zwecke und dürfen verschiedene Regeln haben: Sicherung ist für mich, Veröffentlichen für andere. | 2026-09-27 |
+| **Leere Stationen bleiben unerlaubt — gewarnt wird früher, die Regel bleibt** | **Refinement 2026-09-27.** Erwogen: eine Station ohne Module als reines GPS-Wegpunkt-Ziel zu erlauben; das hätte die Datei des Betreibers gültig gemacht. Verworfen auf seine Entscheidung — es würde Player, Creator, Export und Schema berühren (PROJ-2/4/5/7/8), also fünf Features für einen Fall ändern, der sich durch eine frühere Warnung lösen lässt. Als Open Question festgehalten, falls der Bedarf wiederkehrt. | 2026-09-27 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -114,6 +164,10 @@ Beide Aktionen sind komplett unabhängig von der Play-Sichtbarkeit (PROJ-6, `isP
 | Dateiname-Erzeugung (Slug + Kurz-ID) lebt in `quest-export.ts`, nicht als separates Slug-Utility | Wird aktuell nur an dieser einen Stelle gebraucht — kein Bedarf für eine eigene, wiederverwendbare Utility-Datei | 2026-08-29 |
 
 ---
+| Eigene Prüffunktion für das Veröffentlichen statt `isPlayable` zu verschärfen | **Refinement 2026-09-27.** `isPlayable` hat einen zweiten Aufrufer: Es entscheidet laut PROJ-6 auch über die **Play-Sichtbarkeit**. Eine Verschärfung dort würde bestehende Quests mit leerer Station aus der Play-Liste entfernen — eine Nebenwirkung, die niemand angefordert hat und die einen Nutzer seine bereits importierten Quests verlieren ließe. Eine eigene Funktion für die Veröffentlichen-Prüfung hält den Eingriff eng. Als Open Question vermerkt, damit die Entscheidung in `/frontend` bewusst getroffen und nicht stillschweigend anders gelöst wird. | 2026-09-27 |
+| Die Prüfung gibt die betroffenen Stationen zurück, nicht `true`/`false` | **Refinement 2026-09-27.** Ein boolescher Rückgabewert kann die Meldung „Station „Café" hat noch kein Modul" nicht erzeugen — genau die Information, die dem Ersteller die Suche erspart. Die Prüfung liefert deshalb die Liste der unvollständigen Stationen mit Name und Position; die Meldung wird daraus gebaut. | 2026-09-27 |
+| Die Veröffentlichen-Regel soll sich aus `questSchema` ableiten, nicht die Regel wiederholen | **Refinement 2026-09-27.** Der gemeldete Fehler entstand, weil zwei Stellen dieselbe Frage unterschiedlich beantworteten. Wird die Modul-Mindestanzahl im Schema künftig geändert und die Veröffentlichen-Prüfung nicht mitgezogen, entsteht derselbe Fehler erneut. Eine abgeleitete Prüfung kann nicht auseinanderlaufen; eine kopierte Regel schon. | 2026-09-27 |
+
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
@@ -318,3 +372,64 @@ Gemeinsam mit PROJ-6 deployed (derselbe Commit, siehe PROJ-6-Deployment-Abschnit
 
 ### Post-Deployment-Verifikation (live auf Production)
 Browser-Check (Playwright/WebKit) gegen `https://geoquesty.vercel.app/create` bestätigt: "Sicherung" und "Veröffentlichen" erscheinen korrekt im Aktionen-Menü, Touch-Target-Höhe ≥44px (BUG-5-Fix), "Nicht gesichert"-Badge sichtbar bei ungesicherter Quest. Keine Konsolenfehler.
+
+---
+
+## Refinement 2026-09-27 — Veröffentlichen prüft nur die Anzahl der Stationen, nicht ihren Inhalt
+
+**Anlass:** Der Betreiber hat eine Quest („Test for EY and JH") veröffentlicht und die Datei an zwei Tester weitergegeben. Beim Import schlug sie fehl: **„Station 2 hat ein ungültiges Modul."**
+
+Die Datei ist im Repo-Kontext dieses Refinements dokumentiert: Station 1 („Langenhorn Markt") hat zwei Module, Station 2 („Café") hat `"modules": []` — ein leeres Array.
+
+**Der Befund des Betreibers, der die Diagnose gedreht hat:** *„das hätte schon beim ‚veröffentlichen' auffallen müssen, dass da ein Modul fehlt. Beim Import ist es zu spät."* Das ist die richtige Einordnung — die Import-Fehlermeldung ist der Bote, nicht die Ursache.
+
+### Was gemessen wurde
+
+Gegen den echten Produktcode reproduziert (temporäre Vitest-Dateien, danach entfernt; `src/` blieb unverändert):
+
+| Prüfung | Ergebnis | Bewertung |
+|---|---|---|
+| Import der Betreiber-Datei | `success: false`, „Station 2 hat ein ungültiges Modul." | **exakt der gemeldete Fehler** |
+| Dieselbe Datei, Station 2 mit einem Textmodul | `success: true` | leeres `modules` ist die Ursache |
+| `isPlayable()` auf die Betreiber-Quest | **`true`** | hielt sie für veröffentlichbar |
+| `isPlayable()`, wenn **jede** Station leer ist | **`true`** | Lücke ist noch größer als gemeldet |
+| `questSchema`, `modules` | `.min(1, "Station braucht mindestens ein Modul.")` (`quest-schema.ts:95`) | Import verlangt Inhalt |
+| `isPlayable()` | `return quest.stations.length > 0;` (`quest-storage.ts:112`) | Veröffentlichen verlangt ihn nicht |
+| `handlePublish()` Reihenfolge | `exportQuest()` → `markExported()` → `publishQuest()` (`create/page.tsx:104-107`) | **Datei vor der Prüfung geschrieben** |
+| `exportQuest()` | keine Validierung, bewusst („must never block") | für die Sicherung korrekt |
+
+### Die drei Schichten des Fehlers
+
+1. **Die Prüfung ist zu schwach.** `isPlayable` zählt Stationen und sieht nicht nach, ob sie Inhalt haben. Selbst eine Quest aus ausschließlich leeren Stationen gilt als veröffentlichbar — im Test bestätigt.
+
+2. **Die Prüfung läuft zu spät.** `exportQuest()` steht **vor** `publishQuest()`. Die Datei liegt im Download-Ordner, bevor irgendetwas geprüft wird. Selbst mit korrekter Prüfung hätte der Betreiber die kaputte Datei bereits gehabt — und genau die weitergegeben. Das ist die Schicht, die sein Satz „beim Import ist es zu spät" trifft.
+
+3. **Zwei Systeme sagen Unterschiedliches über dieselbe Frage.** Das Import-Schema verlangt mindestens ein Modul je Station, das Veröffentlichen nicht. Eine Datei, die das eine System freigibt und das andere ablehnt, ist die vorhersehbare Folge. Dieselbe Fehlerklasse wie BUG-6 (dort: iOS-Erkennung an einem Merkmal, das auch Desktop-Chrome erfüllt).
+
+Die irreführende Import-Meldung kommt oben drauf: `formatValidationError` (`quest-import.ts:161`) fasst **jeden** Pfad unter `modules` zu „hat ein ungültiges Modul" zusammen und verwirft die brauchbare Schema-Meldung („Station braucht mindestens ein Modul."). Der Satz behauptet, ein Modul sei vorhanden und kaputt — wahr ist, dass keines da ist. Er schickt den Leser auf die Suche nach etwas, das es nicht gibt. **Gehört zu PROJ-2** und ist dort als Open Question vermerkt; für Dateien, die vor dieser Behebung entstanden sind, bleibt er der einzige Hinweis (Edge Case 16).
+
+### Die Lösung
+
+Veröffentlichen prüft künftig, dass **jede** Station mindestens ein Modul hat — dieselbe Regel wie das Import-Schema — und zwar **vor** dem Schreiben der Datei. Scheitert die Prüfung, entsteht keine Datei, der Status bleibt „Entwurf", und die Meldung nennt die betroffene Station beim Namen.
+
+**Die Sicherung bleibt bedingungslos.** Beide Wege haben verschiedene Zwecke: Sicherung ist für mich, Veröffentlichen für andere.
+
+**Verworfen:** leere Stationen zu erlauben (hätte die Datei gültig gemacht, berührt aber fünf Features — PROJ-2/4/5/7/8 — für einen Fall, den eine frühere Warnung löst; als Open Question festgehalten) und den Export ebenfalls zu sperren (macht Arbeitsstände unsicherbar, genau der Datenverlust, gegen den PROJ-9 gebaut wurde).
+
+### Für `/frontend` zu beachten
+
+- **Der Fallstrick:** `isPlayable` hat einen **zweiten Aufrufer** — es entscheidet laut PROJ-6 auch über die **Play-Sichtbarkeit**. Es einfach zu verschärfen würde bestehende Quests mit leerer Station aus der Play-Liste entfernen; ein Nutzer verlöre importierte Quests, ohne dass es jemand angefordert hat. Vorzugsweise eine eigene Prüffunktion für das Veröffentlichen. **Zu entscheiden und zu begründen, nicht stillschweigend zu lösen.**
+- **Die Prüfung muss die betroffenen Stationen zurückgeben**, nicht `true`/`false` — sonst lässt sich die Meldung mit Stationsnamen nicht bauen.
+- **Namenlose Station:** Ersatzbezeichnung nach Position („Station 2"), kein leerer Name in Anführungszeichen.
+- **Die Regel möglichst aus `questSchema` ableiten** statt sie zu wiederholen. Eine kopierte Regel kann erneut auseinanderlaufen — genau so ist dieser Fehler entstanden.
+- **Bestehende Tests:** `src/lib/quest-storage.test.ts` prüft `isPlayable` und `publishQuest` und wird möglicherweise falsch — **ziehen, nicht löschen**. Neu dazu gehört der Wächter, der bisher ganz fehlt: eine Quest mit leerer Station lässt sich nicht veröffentlichen **und erzeugt keine Datei**. Genau diese Lücke hat den Befund durchgelassen; die vorhandenen Tests hätten ihn nie gefangen.
+
+### Sofort-Workaround für den Betreiber
+
+Der Station „Café" ein Modul geben (ein Textmodul genügt), dann erneut veröffentlichen. Gegengeprüft: Mit einem Modul besteht die Datei den Import.
+
+### Nicht Teil dieses Refinements
+
+- Die Präzisierung der Import-Fehlermeldung (**PROJ-2**, Open Question dort vermerkt)
+- Leere Stationen als gültiges Element (Open Question, berührt fünf Features)
+- Die bereits verteilten Dateien — sie lassen sich nicht nachträglich reparieren (Edge Case 16)

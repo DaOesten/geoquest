@@ -24,7 +24,7 @@
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
 | PROJ-7 | Creator — Stationen-Editor | P0 | PROJ-6 | Deployed | [Spec](PROJ-7-creator-stationen-editor.md) | 2026-08-23 |
 | PROJ-8 | Creator — Modul-Editor | P0 | PROJ-7 | Deployed | [Spec](PROJ-8-creator-modul-editor.md) | 2026-08-23 |
-| PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Deployed | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
+| PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | In Progress | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | In Progress | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
@@ -1397,8 +1397,37 @@ Sieben Routen HTTP 200 (0,10–0,37 s), Security-Header inkl. HSTS, Nachbarseite
 
 **Eine Fehlspur, offen benannt, damit sie niemand erneut verfolgt:** Der Router des Betreibers (Fritz!Box) hielt einen unauflösbaren DNS-Eintrag (`cname.vercel-dns.` ohne TLD, 22 h Restlaufzeit). Das ist belegt — aber **nicht** die Ursache: Auch Tester in fremden Netzen sind betroffen. Hätte ich es dabei belassen, wäre ein echter Produktfehler als Nutzerproblem abgelegt worden. Behebung liegt beim Nutzer (Router neu starten oder Mobilfunk), dokumentiert als Edge Case 33.
 
-**Der Android-Importbefund wird nicht eigenständig behandelt** — erst nach der Behebung prüfen, ob er fortbesteht; dann wäre das `accept`-Attribut in `quest-import-button.tsx:113` der nächste Verdacht (Androids Dateiauswahl blendet JSON je nach Quelle aus). Kein zweiter Eingriff auf Verdacht.
+**Der Android-Importbefund gehört nicht hierher — Korrektur vom 2026-09-27.** Ich hatte ihn diesem Worker zugeschrieben, weil „die Dateiauswahl öffnete sich gar nicht" dazu passte. Die nachgelieferte Fehlermeldung („Station 2 hat ein ungültiges Modul.") belegt das Gegenteil: Auswahl, Lesen und Parsen funktionierten, erst die **Validierung** wies ab. Es ist ein eigener Fehler und in **PROJ-9** behandelt. Der Worker-Befund bleibt eigenständig gültig, erklärt aber den Importfehler nicht.
 
 **Für `/frontend`:** Eine Datei (`public/sw.js`). Der bestehende Offline-Test nutzt `setOffline(true)`, was `navigator.onLine` auf `false` setzt und weiterhin greifen sollte — **zu verifizieren, nicht anzunehmen**. Neu dazu gehört der Wächter, der bisher ganz fehlt: ein fehlgeschlagener Ladevorgang **bei vorhandenem Netz** darf die Offline-Seite nicht zeigen. Genau diese Lücke hat den Befund durchgelassen.
 
 Spec ist aktualisiert (2 User Stories, 8 Acceptance Criteria in einem eigenen Block, Edge Cases 29–33, 7 Technical Requirements, 4 Produkt- und 5 technische Entscheidungen, 2 neue Open Questions, dazu ein Abschnitt „Refinement 5" mit der vollständigen Messtabelle).
+
+## Offenes Refinement: Veröffentlichen prüft nur die Anzahl der Stationen, nicht ihren Inhalt (2026-09-27)
+**PROJ-9** geht von Deployed zurück auf In Progress. **PROJ-2** ist mitbetroffen, wird aber nicht zurückgesetzt — es bekommt nur eine Open Question zur irreführenden Fehlermeldung.
+
+Der Betreiber hat eine Quest veröffentlicht und an zwei Tester weitergegeben. Beim Import schlug sie fehl: **„Station 2 hat ein ungültiges Modul."** Seine Einordnung hat die Diagnose gedreht: *„das hätte schon beim ‚veröffentlichen' auffallen müssen. Beim Import ist es zu spät."* Das ist richtig — die Import-Meldung ist der Bote, nicht die Ursache.
+
+**Gegen den echten Produktcode reproduziert** (temporäre Vitest-Dateien, danach entfernt, `src/` unverändert):
+
+| Prüfung | Ergebnis |
+|---|---|
+| Import der Betreiber-Datei | `success: false`, exakt die gemeldete Meldung |
+| Dieselbe Datei mit einem Modul in Station 2 | `success: true` |
+| `isPlayable()` auf die Quest | **`true`** — hielt sie für veröffentlichbar |
+| `isPlayable()`, wenn **jede** Station leer ist | **`true`** — Lücke größer als gemeldet |
+| `handlePublish()` Reihenfolge | `exportQuest()` **vor** `publishQuest()` |
+
+**Drei Schichten:** Die Prüfung ist zu schwach (`isPlayable` zählt nur `stations.length > 0`, `quest-storage.ts:112`), sie läuft zu spät (die Datei wird vor der Prüfung geschrieben, `create/page.tsx:104-107`), und zwei Systeme sagen Unterschiedliches über dieselbe Frage — das Import-Schema verlangt mindestens ein Modul je Station (`quest-schema.ts:95`), das Veröffentlichen nicht. Dieselbe Fehlerklasse wie BUG-6.
+
+**Entschieden (Betreiber):** Veröffentlichen prüft künftig, dass jede Station mindestens ein Modul hat — **vor** dem Schreiben der Datei —, und die Meldung nennt die betroffene Station beim Namen. Die **Sicherung bleibt bedingungslos**: Beide Wege haben verschiedene Zwecke, Sicherung ist für mich, Veröffentlichen für andere. Verworfen: leere Stationen erlauben (berührt PROJ-2/4/5/7/8 für einen Fall, den eine frühere Warnung löst) und den Export sperren (macht Arbeitsstände unsicherbar — genau der Datenverlust, gegen den PROJ-9 gebaut wurde).
+
+**Der Fallstrick für `/frontend`, vorab benannt:** `isPlayable` hat einen **zweiten Aufrufer** — es entscheidet laut PROJ-6 auch über die **Play-Sichtbarkeit**. Es einfach zu verschärfen würde bestehende Quests mit leerer Station aus der Play-Liste entfernen; ein Nutzer verlöre importierte Quests, ohne dass es jemand angefordert hat. Vorzugsweise eine eigene Prüffunktion, die die betroffenen Stationen **zurückgibt** statt `true`/`false` (sonst lässt sich die Meldung mit Stationsnamen nicht bauen). Die Regel möglichst aus `questSchema` ableiten statt sie zu wiederholen — eine kopierte Regel kann erneut auseinanderlaufen, genau so ist der Fehler entstanden.
+
+**Die Testlücke:** `src/lib/quest-storage.test.ts` prüft `isPlayable` und `publishQuest` und hätte den Befund **nie gefangen**. Neu dazu gehört der Wächter, dass eine Quest mit leerer Station sich nicht veröffentlichen lässt **und keine Datei erzeugt**.
+
+**Sofort-Workaround:** Der Station „Café" ein Modul geben, dann erneut veröffentlichen — gegengeprüft, die Datei besteht dann den Import.
+
+**Eine Korrektur meiner eigenen Diagnose, offen benannt:** Ich hatte den zuvor gemeldeten Android-Importfehler dem Service Worker zugeschrieben (PROJ-12, Refinement 5) — auf Grundlage der Angabe, die Dateiauswahl öffne sich gar nicht. Die Fehlermeldung zeigt, dass die Auswahl funktionierte und die Datei gelesen wurde; es war von Anfang an ein Validierungsfehler. Der Service-Worker-Befund bleibt eigenständig gültig (dort gemessen und belegt), erklärt aber diesen Import-Fehler **nicht**. Zwei unabhängige Fehler, die sich als einer tarnten.
+
+Spec ist aktualisiert (PROJ-9: Summary-Korrektur mit markierter Vorfassung, 3 User Stories, 9 Acceptance Criteria in einem eigenen Block, Edge Case 2 als überholt markiert statt gelöscht, Edge Cases 11–16, 8 Technical Requirements, 5 Produkt- und 3 technische Entscheidungen, 4 neue Open Questions, 1 aufgehobener Out-of-Scope-Eintrag, dazu ein Abschnitt „Refinement 2026-09-27" mit der Messtabelle. PROJ-2: 1 Open Question zur Fehlermeldung).

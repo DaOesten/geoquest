@@ -167,6 +167,7 @@ Jedes Modul hat ein `type`-Feld, das den Typ bestimmt:
 - Browser: Datei-Picker funktioniert auf iOS Safari, Android Chrome, Desktop-Browser
 
 ## Open Questions
+- [ ] Soll die Fehlermeldung bei einer Station **ohne** Modul präzisiert werden? *(aufgekommen im PROJ-9-Refinement vom 2026-09-27)* Sie lautet heute „Station 2 hat ein ungültiges Modul." — gegen den echten Code reproduziert — obwohl **keines** vorhanden ist. Der Satz behauptet, ein Modul sei da und kaputt, und schickt den Leser auf die Suche nach etwas, das es nicht gibt; beim Betreiber ist genau das passiert. Ursache: `formatValidationError` (`src/lib/quest-import.ts:161`) fasst jeden Pfad unter `modules` zu einem Satz zusammen und verwirft die brauchbare Schema-Meldung („Station braucht mindestens ein Modul.", `quest-schema.ts:95`). Vorschlag: den Fall „leeres Array" von „fehlerhaftes Modul" unterscheiden und den Stationsnamen nennen statt nur die Nummer. Die **Ursache** des gemeldeten Falls liegt in PROJ-9 (Veröffentlichen prüft den Inhalt nicht) und ist dort behoben; dieser Punkt betrifft nur noch Dateien, die vorher entstanden sind — die lassen sich nicht nachträglich reparieren, für sie bleibt die Meldung der einzige Hinweis.
 - [ ] Soll die Schwierigkeit ("easy"/"medium"/"hard") als Text oder als Icon/Sterne dargestellt werden? (betrifft PROJ-3/PROJ-6 UI)
 - [ ] Maximale Textlänge für einzelne Felder (Quest-Name, Stationsname, Modultext)? Oder reicht das 5 MB Gesamtlimit?
 
