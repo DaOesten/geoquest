@@ -1,6 +1,6 @@
 # PROJ-3: Player — GPS-Navigation
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-08-23
 **Last Updated:** 2026-09-26
 
@@ -1790,3 +1790,48 @@ PROJ-3 wächst von 50 auf **67 Tests je Engine** (134 über beide).
 - **Das echte iPhone.** Der iOS-Pfad ist per Unit-Test (rejectendes `permissions.query()`) und per E2E mit vorgetäuschtem Permissions-API belegt — Safaris tatsächliches Verhalten kann keine Testumgebung beweisen. Das ist zugleich der Pfad, auf dem der Befund gemeldet wurde, und bleibt die einzige offene Bestätigung.
 - **Die echte iOS-Sensorfreigabe.** `DeviceOrientationEvent.requestPermission` existiert in keiner Testumgebung; geprüft über ein vorgetäuschtes API.
 - **Firefox** (Binary fehlt, in INDEX.md dokumentiert).
+
+---
+
+## Deployment — GPS-Zustand beim Wiedereinstieg (2026-09-27)
+
+**Live auf https://geoquesty.vercel.app** — Tag `v1.41.0-PROJ-3`, Commits `79e1620` / `32bf368` / `be86493`. Vercel deployte automatisch von `main`.
+
+### Die Auslieferung ist am Bundle belegt, nicht am Statuscode
+
+Der Marker `GPS wird gebraucht` steht im live ausgelieferten Chunk `bfe5ac9d50cf4bcb.js`. Er existiert **nur** in der neuen Fassung — damit ist bewiesen, dass die neue und nicht die vorherige Version live ist.
+
+**Ein eigener Messfehler, offen benannt:** Mein erster Live-Check suchte den Marker in den Chunks von `/play` und meldete achtmal „noch alte Fassung". Der Check konnte **nie** anschlagen: Der Navigations-Screen wird lazy geladen, sein Chunk ist ausschließlich von `/play/<id>` referenziert — lokal gegengeprüft (0 Treffer auf `/play`, 1 Treffer auf `/play/<id>`). Die Wartezeit war verschenkt, das Deployment war längst live. Dieselbe Fehlerklasse wie beim Deploy vom 2026-09-20 (Marker im Server-HTML gesucht, wo er clientseitig rendert).
+
+### Im Live-Browser gemessen, beide Engines identisch
+
+| Prüfung | Chrome 152 | WebKit |
+|---|---|---|
+| Überschrift ohne GPS | `GPS WIRD GEBRAUCHT` | `GPS WIRD GEBRAUCHT` |
+| Erklärtext | vollständig | vollständig |
+| **Stummer Strich `—`** | **weg** (`false`) | **weg** (`false`) |
+| Knopf | `EINSTELLUNGEN PRÜFEN`, 48px | `EINSTELLUNGEN PRÜFEN`, 48px |
+| Kopfzeile | `top: 0`, Stationsname | `top: 0`, Stationsname |
+| Überlauf | 0px | 0px |
+| Abgeschl. Station ohne GPS lesbar | ja | ja |
+| Mit GPS | `2586m`, Navigation normal | `2586m`, Navigation normal |
+| **Ankunftserkennung** | `ZIEL ERREICHT!` | `ZIEL ERREICHT!` |
+| Konsolenfehler | 3 (siehe unten) | **0** |
+
+Der gemeldete Befund ist damit **in Production messbar behoben** — und die wertvollste Bestandsfunktion, die Ankunftserkennung, ist unbeschädigt.
+
+### Eine Auffälligkeit geprüft statt weggewunken
+
+Chrome meldete 3 Konsolenfehler und beide Engines 2 fehlgeschlagene Requests. Ein **ruhiger Besuch** von `/`, `/play`, `/create` und `/about` ergibt **0 Antworten ≥400**. Die 404 stammen aus `/play/<id>`, das serverseitig 404 liefert, weil Quests nur im localStorage liegen; der Client rendert korrekt, für den Nutzer unsichtbar. Vorbestehend, seit dem Deploy vom 2026-09-07 dokumentiert. Der verbleibende Konsolenfehler ist `/favicon.ico`, ebenfalls vorbestehend.
+
+### Infrastruktur und Nachbarfeatures
+
+Alle **10 Endpunkte HTTP 200** (0,06–0,44 s). Security-Header aktiv inkl. HSTS (`max-age=63072000; includeSubDomains; preload`), `x-frame-options: DENY`, `nosniff`.
+
+Nachbarfeatures unbeschädigt: `/about` mit `FAQPage` und 1× Ko-fi, `/anleitung` weiterhin **0 Treffer** für den zurückgehaltenen Prompt, `manifest.webmanifest`, `sw.js` und `offline.html` erreichbar.
+
+### Weiterhin offen — und nur am Gerät zu klären
+
+Das **echte iPhone**. Der iOS-Pfad (Safari führt Geolocation nicht im Permissions-API) ist per Unit-Test und vorgetäuschtem API belegt, aber keine Testumgebung kann Safaris tatsächliches Verhalten beweisen. Das ist zugleich der Pfad, auf dem der Befund gemeldet wurde.
+
+**Zu prüfen durch den Betreiber:** Quest auf dem iPhone mittendrin abbrechen, GPS ausschalten, später wieder öffnen und auf den Pfeil einer offenen Station tippen — es muss eine lesbare Erklärung mit Knopf erscheinen statt eines Strichs.

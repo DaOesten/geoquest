@@ -18,7 +18,7 @@
 |----|---------|----------|--------------|--------|------|---------|
 | PROJ-1 | App Shell & Mode Switch | P0 | None | Deployed | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
-| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Approved | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
+| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
 | PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
@@ -554,6 +554,19 @@ Weil in derselben Sitzung gebaut, habe ich die zentralen Behauptungen **neu geme
 **Beobachtung ohne Bug-Status:** Der Sammellauf mit `--workers=2` meldete 18 Fehlschläge, davon 17 in PROJ-7/PROJ-8 — Creator-Dateien, die dieses Refinement nicht anfasst. **Isoliert laufen dieselben 46 Tests grün durch**, und der **serielle Gesamtlauf derselben Suite gegen denselben Build ergibt 0 unexpected**. Gemessen statt plausibel gemacht — es waren Last-Artefakte, kein Regress.
 
 **Nicht abgedeckt:** das echte iPhone — Safaris tatsächliches Verhalten kann keine Testumgebung beweisen, und genau dort wurde der Befund gemeldet. Dazu die echte iOS-Sensorfreigabe und Firefox.
+**Am 2026-09-27 nach Production deployt** (Tag `v1.41.0-PROJ-3`, Commits `79e1620`/`32bf368`/`be86493`) — live auf https://geoquesty.vercel.app und dort verifiziert. Vercel deployte automatisch von `main`.
+
+**Die Auslieferung ist am Bundle belegt, nicht am Statuscode:** Der Marker `GPS wird gebraucht` steht im live ausgelieferten Chunk `bfe5ac9d50cf4bcb.js` und existiert nur in der neuen Fassung.
+
+**Im Live-Browser auf beiden Engines identisch gemessen:** Überschrift `GPS WIRD GEBRAUCHT`, vollständiger Erklärtext, Knopf `EINSTELLUNGEN PRÜFEN` mit 48px, Kopfzeile bei `top: 0` mit Stationsnamen, **0px Überlauf** — und **der stumme Strich ist weg** (`"strich": false`). Eine abgeschlossene Station bleibt ohne GPS lesbar. Mit GPS läuft die Navigation normal (`2586m`), und die **Ankunftserkennung ist unbeschädigt** (`ZIEL ERREICHT!`). **WebKit mit 0 Konsolenfehlern.**
+
+Alle **10 Endpunkte HTTP 200** (0,06–0,44 s), Security-Header inkl. HSTS. Nachbarfeatures unbeschädigt (`/about` mit FAQPage + 1× Ko-fi, `/anleitung` weiterhin 0 Treffer für den Prompt).
+
+**Ein eigener Messfehler, offen benannt:** Mein erster Live-Check suchte den Marker in den Chunks von `/play` und meldete achtmal „noch alte Fassung" — er konnte **nie** anschlagen, weil der Navigations-Screen lazy geladen wird und sein Chunk ausschließlich von `/play/<id>` referenziert ist (lokal gegengeprüft: 0 vs. 1 Treffer). Das Deployment war längst live. Dieselbe Fehlerklasse wie beim Deploy vom 2026-09-20.
+
+**Eine Auffälligkeit geprüft statt weggewunken:** Chrome meldete 3 Konsolenfehler, beide Engines 2 fehlgeschlagene Requests. Ein ruhiger Besuch von `/`, `/play`, `/create` und `/about` ergibt **0 Antworten ≥400** — die 404 stammen aus `/play/<id>`, das serverseitig 404 liefert, weil Quests nur im localStorage liegen. Vorbestehend seit dem 2026-09-07, für den Nutzer unsichtbar.
+
+**PROJ-3 ist abgeschlossen.** Offen bleibt allein die Bestätigung am echten iPhone: Quest mittendrin abbrechen, GPS ausschalten, später wieder öffnen und auf den Pfeil einer offenen Station tippen. Keine Testumgebung kann Safaris tatsächliches Verhalten beim Permissions-API beweisen — und genau dort wurde der Befund gemeldet.
 
 ## Next Available ID: PROJ-15
 
