@@ -141,22 +141,174 @@ test.describe("PROJ-9: Creator — JSON-Export", () => {
   });
 
   test.describe("Veröffentlichen (nicht spielbare Quest)", () => {
-    test("still exports (backup always happens) but published stays false and shows the specific error", async ({ page }) => {
+    /**
+     * GEZOGEN AM 2026-09-27 (PROJ-9 Refinement), nicht gelöscht.
+     *
+     * Vorher hieß dieser Test "still exports (backup always happens) but
+     * published stays false" und erwartete einen Download plus gesetztes
+     * `lastExported`. Das war die alte Reihenfolge: exportieren, dann prüfen.
+     * Genau daran ist der gemeldete Fehler entstanden — die unvollständige
+     * Datei lag im Download-Ordner und wurde weitergegeben. Jetzt wird
+     * geprüft, bevor geschrieben wird; "Sicherung" bleibt der Weg, der
+     * bedingungslos exportiert (eigener Test oben).
+     */
+    test("does NOT export and leaves published false, showing the specific error", async ({ page }) => {
       await seedQuests(page, [draftQuestNoStations(NO_STATIONS_ID, "Nicht Spielbar", "2020-01-01T00:00:00.000Z")]);
+
+      let downloadStarted = false;
+      page.on("download", () => { downloadStarted = true; });
+
+      await page.getByRole("button", { name: "Quest-Aktionen" }).click();
+      await page.getByRole("menuitem", { name: "Veröffentlichen" }).click();
+      await expect(page.getByText("Quest braucht mindestens 1 Station, um veröffentlicht zu werden.")).toBeVisible();
+
+      expect(downloadStarted).toBe(false);
+
+      const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("gq_quests") || "[]"));
+      expect(stored[0].published).toBe(false);
+      // No file was written, so nothing was "gesichert" either.
+      expect(stored[0].lastExported).toBeUndefined();
+
+      await page.reload();
+      const card = page.getByRole("listitem").filter({ hasText: "Nicht Spielbar" });
+      await expect(card.locator(".border-dashed")).toBeVisible();
+    });
+  });
+
+  /**
+   * Der gemeldete Fehler (Refinement 2026-09-27): Eine Quest, deren zweite
+   * Station kein Modul hatte, ließ sich veröffentlichen. Die Datei wurde
+   * erzeugt, weitergegeben — und schlug beim Empfänger im Import fehl
+   * ("Station 2 hat ein ungültiges Modul").
+   *
+   * Diese Wächter fehlten bisher ganz: Keine Assertion prüfte, ob die
+   * Stationen einer veröffentlichten Quest überhaupt Inhalt haben.
+   */
+  test.describe("Veröffentlichen prüft den Inhalt der Stationen", () => {
+    const LEER_ID = "aaaaaaaa-2222-4aaa-8aaa-aaaaaaaaaaaa";
+
+    /** Die Datei des Betreibers, reduziert auf das Wesentliche. */
+    function questMitLeererStation(name: string, zweiterName = "Café") {
+      return {
+        version: 1, id: LEER_ID, name, lastModified: "2020-01-01T00:00:00.000Z",
+        intro: { text: "Willkommen" }, outro: { text: "Geschafft" },
+        stations: [
+          { id: "aaaaaaaa-3333-4aaa-8aaa-aaaaaaaaaaaa", name: "Langenhorn Markt", lat: 53.6497, lng: 10.0151, radiusMeters: 25, modules: [{ type: "text", content: "Ein Test" }] },
+          { id: "aaaaaaaa-4444-4aaa-8aaa-aaaaaaaaaaaa", name: zweiterName, lat: 53.6498, lng: 10.0131, radiusMeters: 10, modules: [] },
+        ],
+        published: false,
+      };
+    }
+
+    test("erzeugt KEINE Datei, wenn eine Station kein Modul hat", async ({ page }) => {
+      await seedQuests(page, [questMitLeererStation("Test for EY and JH")]);
+
+      let downloadStarted = false;
+      page.on("download", () => { downloadStarted = true; });
+
+      await page.getByRole("button", { name: "Quest-Aktionen" }).click();
+      await page.getByRole("menuitem", { name: "Veröffentlichen" }).click();
+
+      // Das ist der Kern: Die Datei, die der Betreiber weitergegeben hat,
+      // darf gar nicht erst entstehen.
+      await expect(page.getByText(/hat noch kein Modul/)).toBeVisible();
+      expect(downloadStarted).toBe(false);
+
+      const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("gq_quests") || "[]"));
+      expect(stored[0].published).toBe(false);
+      expect(stored[0].lastExported).toBeUndefined();
+    });
+
+    test("nennt die betroffene Station beim Namen, nicht nur eine Anzahl", async ({ page }) => {
+      await seedQuests(page, [questMitLeererStation("Namen Test")]);
+
+      await page.getByRole("button", { name: "Quest-Aktionen" }).click();
+      await page.getByRole("menuitem", { name: "Veröffentlichen" }).click();
+
+      // Bei bis zu 20 erlaubten Stationen ist "irgendwas ist unvollständig"
+      // eine Suchaufgabe. Der Name erspart sie.
+      await expect(page.getByText(/„Café" hat noch kein Modul/)).toBeVisible();
+    });
+
+    test("nennt die Position, wenn die Station keinen Namen hat", async ({ page }) => {
+      await seedQuests(page, [questMitLeererStation("Ohne Namen", "   ")]);
+
+      await page.getByRole("button", { name: "Quest-Aktionen" }).click();
+      await page.getByRole("menuitem", { name: "Veröffentlichen" }).click();
+
+      // Kein leerer Name in Anführungszeichen ("„" hat kein Modul").
+      await expect(page.getByText(/„Station 2" hat noch kein Modul/)).toBeVisible();
+    });
+
+    test("nennt die Gesamtzahl, wenn mehrere Stationen leer sind", async ({ page }) => {
+      const q = questMitLeererStation("Mehrere Leer");
+      q.stations[0].modules = [];
+      await seedQuests(page, [q]);
+
+      await page.getByRole("button", { name: "Quest-Aktionen" }).click();
+      await page.getByRole("menuitem", { name: "Veröffentlichen" }).click();
+
+      await expect(page.getByText(/2 Stationen haben noch kein Modul/)).toBeVisible();
+    });
+
+    test("Sicherung exportiert dieselbe Quest weiterhin bedingungslos", async ({ page }) => {
+      await seedQuests(page, [questMitLeererStation("Sicherung Trotzdem")]);
+
+      // Der Backup-Weg darf durch dieses Refinement NICHT eingeschränkt
+      // werden — ein unfertiger Arbeitsstand muss sicherbar bleiben.
+      const downloadPromise = page.waitForEvent("download");
+      await page.getByRole("button", { name: "Quest-Aktionen" }).click();
+      await page.getByRole("menuitem", { name: "Sicherung" }).click();
+      const download = await downloadPromise;
+      expect(download.suggestedFilename()).toMatch(/\.json$/);
+    });
+
+    test("veröffentlicht, sobald die leere Station ein Modul bekommt", async ({ page }) => {
+      const q = questMitLeererStation("Reparierbar");
+      q.stations[1].modules = [{ type: "text", content: "Ziel erreicht" }];
+      await seedQuests(page, [q]);
 
       const downloadPromise = page.waitForEvent("download");
       await page.getByRole("button", { name: "Quest-Aktionen" }).click();
       await page.getByRole("menuitem", { name: "Veröffentlichen" }).click();
       await downloadPromise;
-      await expect(page.getByText("Quest braucht mindestens 1 Station, um veröffentlicht zu werden.")).toBeVisible();
+      await expect(page.getByText("Quest veröffentlicht")).toBeVisible();
 
       const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("gq_quests") || "[]"));
-      expect(stored[0].published).toBe(false);
-      expect(stored[0].lastExported).toBeDefined();
+      expect(stored[0].published).toBe(true);
+    });
 
-      await page.reload();
-      const card = page.getByRole("listitem").filter({ hasText: "Nicht Spielbar" });
-      await expect(card.locator(".border-dashed")).toBeVisible();
+    test("die veröffentlichte Datei besteht den eigenen Import", async ({ page }) => {
+      // Veröffentlichen und Import müssen dasselbe über eine gültige Quest
+      // sagen — genau das lief auseinander und verursachte den Fehler.
+      const q = questMitLeererStation("Reimport");
+      q.stations[1].modules = [{ type: "text", content: "Ziel erreicht" }];
+      await seedQuests(page, [q]);
+
+      const downloadPromise = page.waitForEvent("download");
+      await page.getByRole("button", { name: "Quest-Aktionen" }).click();
+      await page.getByRole("menuitem", { name: "Veröffentlichen" }).click();
+      const download = await downloadPromise;
+
+      const stream = await download.createReadStream();
+      const chunks: Buffer[] = [];
+      for await (const c of stream) chunks.push(c as Buffer);
+      const datei = JSON.parse(Buffer.concat(chunks).toString("utf-8"));
+
+      // Jede Station der ausgelieferten Datei hat Inhalt.
+      expect(datei.stations.length).toBeGreaterThan(0);
+      for (const st of datei.stations) {
+        expect(st.modules.length).toBeGreaterThan(0);
+      }
+    });
+
+    test("die Quest bleibt in der Play-Liste sichtbar (keine Nebenwirkung)", async ({ page }) => {
+      // isPlayable entscheidet auch über die Play-Sichtbarkeit. Eine
+      // Verschärfung dort hätte bestehende Quests aus der Liste entfernt —
+      // deshalb ist die Veröffentlichen-Prüfung eine eigene Funktion.
+      await seedQuests(page, [questMitLeererStation("Sichtbar Im Play")]);
+      await page.goto("/play");
+      await expect(page.getByRole("listitem").filter({ hasText: "Sichtbar Im Play" })).toBeVisible();
     });
   });
 

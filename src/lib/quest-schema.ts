@@ -86,7 +86,7 @@ const moduleSchema = z.union([
   taskModule,
 ]);
 
-const stationSchema = z.object({
+export const stationSchema = z.object({
   id: z.string().uuid("Stations-ID muss eine gültige UUID sein."),
   name: z.string().min(1, "Station braucht einen Namen."),
   lat: z.number().min(-90).max(90),

@@ -1,4 +1,4 @@
-import { questSchema, type Quest, type Station, type Module } from "./quest-schema";
+import { questSchema, stationSchema, type Quest, type Station, type Module } from "./quest-schema";
 import { stripHtmlTags } from "./sanitize";
 import { markCreatedHere } from "./quest-access";
 
@@ -123,14 +123,70 @@ export function isPublished(quest: Quest): boolean {
 }
 
 /**
- * Publishes a quest if it's playable (has at least one station) — the same
- * rule that gates Play-mode visibility (PROJ-6). Returns whether publishing
- * succeeded so the caller (PROJ-9's "Veröffentlichen" menu item) can show
- * the right toast; a non-playable quest keeps its current `published` value.
+ * A station that would make a published file un-importable, with the label to
+ * name it by in the error message (PROJ-9 refinement 2026-09-27).
+ */
+export type PublishBlocker = {
+  /** 1-based position, as the creator counts stations in the editor. */
+  stationNumber: number;
+  /** The station's name, or "Station N" when it has none — never an empty string. */
+  label: string;
+};
+
+/**
+ * Which stations block publishing, in order. Empty array = safe to publish.
+ *
+ * WHY THIS IS SEPARATE FROM `isPlayable`: `isPlayable` also gates Play-mode
+ * visibility (see play/page.tsx). Tightening it there would silently drop
+ * already-imported quests out of a player's list — a side effect nobody asked
+ * for. Publishing is the stricter of the two on purpose: a backup is for me,
+ * a published file is for someone else.
+ *
+ * WHY THE RULE IS DERIVED, NOT COPIED: The bug this fixes existed because two
+ * places answered "is this quest valid?" differently — publishing said yes,
+ * the import schema said no. Re-typing `modules.length < 1` here would let them
+ * drift apart again the moment the schema changes. Instead each station is
+ * checked against the real `stationSchema`, so the rule cannot disagree with
+ * the one the importer applies.
+ */
+export function getPublishBlockers(quest: Quest): PublishBlocker[] {
+  return quest.stations.flatMap((station, index) => {
+    // Only the modules constraint is a publish blocker. A station may still be
+    // missing a name or coordinates while the creator works on it; those are
+    // caught by isQuestComplete and must not block publishing on their own.
+    if (stationSchema.shape.modules.safeParse(station.modules).success) return [];
+
+    const stationNumber = index + 1;
+    /**
+     * `typeof`-Pruefung, nicht nur `.trim()`: `normalizeQuest` garantiert oben,
+     * dass `modules` ein Array ist, aber NICHT, dass `name` ein String ist.
+     * Eine korrupte localStorage-Fassung (fehlender oder numerischer Name)
+     * liess `.trim()` hier werfen — gemessen `TypeError: station.name.trim is
+     * not a function`. Das Projekt sichert an anderer Stelle ausdruecklich zu,
+     * dass korrupte `gq_quests`-Daten keinen `pageerror` erzeugen.
+     */
+    const name = typeof station.name === "string" ? station.name.trim() : "";
+    return [{
+      stationNumber,
+      label: name || `Station ${stationNumber}`,
+    }];
+  });
+}
+
+/**
+ * Publishes a quest if it has at least one station AND every station passes the
+ * import schema's modules rule. Returns whether publishing succeeded.
+ *
+ * The modules check was added on 2026-09-27: publishing previously only counted
+ * stations, so a quest with an empty station could be published, exported and
+ * handed to someone whose import then rejected it. Callers that need to tell the
+ * user *which* station is missing content use `getPublishBlockers` — this
+ * function stays boolean for the existing call sites.
  */
 export function publishQuest(id: string): boolean {
   const quest = getQuestById(id);
   if (!quest || !isPlayable(quest)) return false;
+  if (getPublishBlockers(quest).length > 0) return false;
   saveQuest({
     ...quest,
     published: true,

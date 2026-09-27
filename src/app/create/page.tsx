@@ -32,6 +32,7 @@ import {
   isPublished,
   markExported,
   publishQuest,
+  getPublishBlockers,
   saveQuest,
   updateQuestDetails,
 } from "@/lib/quest-storage";
@@ -103,6 +104,36 @@ export default function CreatePage() {
 
   const handlePublish = useCallback(
     (quest: Quest) => {
+      /**
+       * CHECK BEFORE WRITING THE FILE (PROJ-9 refinement 2026-09-27).
+       *
+       * This used to call exportQuest() first and only then publishQuest().
+       * The download therefore landed in the user's folder even when publishing
+       * was refused — and that unfinished file was the one that got shared. By
+       * the time the recipient's import complained, it was far too late.
+       *
+       * "Sicherung" (handleExport above) still exports unconditionally: a backup
+       * is for yourself and must never be blocked. Publishing is for someone
+       * else, so it has to hold itself to the importer's standard.
+       */
+      if (quest.stations.length === 0) {
+        toast.error("Quest braucht mindestens 1 Station, um veröffentlicht zu werden.");
+        return;
+      }
+
+      const blockers = getPublishBlockers(quest);
+      if (blockers.length > 0) {
+        // Name the station instead of just counting: with up to 20 stations
+        // allowed, "something is incomplete" turns into a search task.
+        const [first] = blockers;
+        toast.error(
+          blockers.length === 1
+            ? `„${first.label}" hat noch kein Modul. Füge mindestens eines hinzu, um zu veröffentlichen.`
+            : `${blockers.length} Stationen haben noch kein Modul — zuerst „${first.label}". Füge jeder mindestens eines hinzu, um zu veröffentlichen.`
+        );
+        return;
+      }
+
       exportQuest(quest);
       try {
         markExported(quest.id);
@@ -111,7 +142,10 @@ export default function CreatePage() {
         if (published) {
           toast.success("Quest veröffentlicht");
         } else {
-          toast.error("Quest braucht mindestens 1 Station, um veröffentlicht zu werden.");
+          // publishQuest re-reads from storage, so it can still refuse if the
+          // quest changed between render and click. Kept as a real branch
+          // rather than an assertion.
+          toast.error("Quest konnte nicht veröffentlicht werden.");
         }
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Etwas ist schiefgelaufen.");

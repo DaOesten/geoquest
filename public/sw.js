@@ -25,7 +25,10 @@
 
 // Version im Namen: Ein neuer Wert erzwingt einen frischen Cache und raeumt den
 // alten in `activate` ab.
-const CACHE_NAME = "geoquest-offline-v1";
+// v2 (2026-09-27): Ein abgebrochener v1-`install` kann einen leeren Cache
+// hinterlassen haben. `activate` loescht jeden Cache mit anderem Namen, also
+// raeumt die Versionserhoehung diesen Zustand ohne zusaetzlichen Code ab.
+const CACHE_NAME = "geoquest-offline-v2";
 const OFFLINE_URL = "/offline.html";
 
 self.addEventListener("install", (event) => {
@@ -76,15 +79,44 @@ self.addEventListener("fetch", (event) => {
         // Immer aus dem Netz. Kein Cache-First, kein Stale-While-Revalidate —
         // niemand soll auf einer alten Version festhaengen.
         return await fetch(request);
-      } catch {
-        // Nur hier greift der Cache, und nur fuer diese eine Datei.
+      } catch (fehler) {
+        /**
+         * NUR ECHTE NETZAUSFAELLE BEKOMMEN DIE OFFLINE-SEITE (Refinement 5,
+         * 2026-09-27).
+         *
+         * Hier stand vorher: jeden Fehler mit der Offline-Seite beantworten.
+         * Das war zu grob. `fetch()` wirft nicht nur ohne Netz, sondern bei
+         * JEDEM Transportfehler — abgebrochene Verbindung bei schwachem
+         * Mobilfunk, Timeout, TLS-Neuverhandlung, Wechsel WLAN -> Mobilfunk.
+         * Nutzer mit einwandfreier Verbindung lasen deshalb "keine
+         * Internetverbindung" und suchten nach einem Netzproblem, das es nicht
+         * gab. Aufgefallen beim Umzug auf die eigene Domain: Der Worker-Scope
+         * ist die Origin, jeder Nutzer war dort Erstbesucher.
+         *
+         * `navigator.onLine` ist grob — es meldet "mit einem Netz verbunden",
+         * nicht "Internet erreichbar". Fuer diesen Zweck ist das die richtige
+         * Richtung: `false` ist verlaesslich ein echter Verbindungsverlust,
+         * erzeugt also keine Falschalarme. Der umgekehrte Fall (verbunden, aber
+         * ohne Internet — Hotel-WLAN vor dem Login) landet bei der
+         * Browser-Fehlerseite, die den Captive-Portal-Fall selbst behandelt.
+         */
+        if (navigator.onLine) throw fehler;
+
         const cache = await caches.open(CACHE_NAME);
         const cached = await cache.match(OFFLINE_URL);
         if (cached) return cached;
 
-        // Sollte die Fehlerseite wider Erwarten fehlen, ist die Browser-
-        // Fehlerseite immer noch besser als eine leere Antwort.
-        throw new Error("Offline-Seite nicht im Cache");
+        /**
+         * Fehlt die Offline-Seite, den urspruenglichen Fehler weitergeben —
+         * NICHT einen eigenen werfen.
+         *
+         * Dieser Zustand tritt bei jedem Erstbesuch auf: Der fetch-Handler
+         * greift schon, waehrend `install` die Offline-Seite noch laedt. Eine
+         * abgelehnte `respondWith`-Zusage ergibt fuer den Nutzer eine LEERE
+         * SEITE — das gemeldete "es oeffnet sich gar nichts". Mit dem
+         * urspruenglichen Fehler uebernimmt der Browser und nennt den Grund.
+         */
+        throw fehler;
       }
     })()
   );

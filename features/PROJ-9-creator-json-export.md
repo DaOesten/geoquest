@@ -433,3 +433,75 @@ Der Station „Café" ein Modul geben (ein Textmodul genügt), dann erneut verö
 - Die Präzisierung der Import-Fehlermeldung (**PROJ-2**, Open Question dort vermerkt)
 - Leere Stationen als gültiges Element (Open Question, berührt fünf Features)
 - Die bereits verteilten Dateien — sie lassen sich nicht nachträglich reparieren (Edge Case 16)
+
+---
+
+## Implementation Notes (Frontend) — Refinement 2026-09-27
+
+**Drei Produktivdateien**, kein neues Paket, keine neue Komponente, keine neue Route.
+
+| Datei | Änderung |
+|---|---|
+| `src/lib/quest-storage.ts` | neue Funktion `getPublishBlockers()` + `publishQuest()` prüft sie mit |
+| `src/app/create/page.tsx` | `handlePublish()` prüft **vor** `exportQuest()` und nennt die Station |
+| `src/lib/quest-schema.ts` | `stationSchema` exportiert (eine Zeile, `const` → `export const`) |
+
+### Die Reihenfolge ist umgedreht — das war der Kern
+
+`handlePublish` rief `exportQuest()` als **erste** Anweisung. Jetzt stehen beide Prüfungen davor und kehren bei Misserfolg früh zurück; es wird weder eine Datei geschrieben noch `markExported()` gesetzt. Genau diese Reihenfolge hat dem Betreiber die unvollständige Datei in den Download-Ordner gelegt, die er dann weitergegeben hat.
+
+### `isPlayable` ist unangetastet — die Falle der Spec ist vermieden
+
+Die Spec hat vorgewarnt: `isPlayable` entscheidet über **zwei** Dinge. Im Code bestätigt — `src/app/play/page.tsx:54` filtert damit die Play-Liste (`allQuests.filter(isPlayable)`). Eine Verschärfung dort hätte bestehende Quests mit leerer Station aus der Liste eines Spielers entfernt, ohne dass es jemand angefordert hat.
+
+Stattdessen eine eigene Funktion `getPublishBlockers()`. Ein Test hält beides zugleich fest: `isPlayable` akzeptiert die Betreiber-Quest weiterhin, `getPublishBlockers` lehnt sie ab.
+
+### Die Regel ist abgeleitet, nicht kopiert
+
+`getPublishBlockers` prüft jede Station gegen `stationSchema.shape.modules` — dieselbe Zod-Regel, die der Import anwendet. Ein `modules.length < 1` hier hinzuschreiben wäre die kürzere Lösung gewesen und hätte genau den Fehler wieder möglich gemacht, der behoben wird: zwei Stellen, die dieselbe Frage unterschiedlich beantworten.
+
+**Ein erster Ansatz war zu clever und wurde verworfen:** Den Mindestwert per Introspektion aus dem Schema zu lesen (`mods.def.checks` → `min_length: 1`). Das funktionierte gemessen, hängt aber an Zods internem `_zod.def`-Aufbau und wäre bei einem Versionswechsel still gebrochen. Die Validierung der echten Daten gegen das echte Schema ist robust und liest sich besser.
+
+**Absichtlich nur die Modul-Regel, nicht das ganze `stationSchema`:** Eine Station ohne Namen oder ohne Koordinaten ist ein normaler Zwischenstand beim Bauen und darf das Veröffentlichen nicht allein blockieren — dafür gibt es `isQuestComplete`. Ein Test hält das fest.
+
+### Die Meldung nennt die Station
+
+- Eine leere Station: `„Café" hat noch kein Modul. Füge mindestens eines hinzu, um zu veröffentlichen.`
+- Mehrere: `2 Stationen haben noch kein Modul — zuerst „Café". …`
+- Ohne Namen: Position statt leerer Anführungszeichen (`„Station 2"`)
+
+`getPublishBlockers` gibt deshalb Objekte mit `stationNumber` und `label` zurück statt `true`/`false` — mit einem booleschen Rückgabewert liesse sich keine dieser Meldungen bauen.
+
+### Tests
+
+**10 neue Unit-Tests** in `src/lib/quest-storage.test.ts` (71 statt 61 in der Datei), **9 neue E2E-Tests** und **1 gezogener** in `tests/proj-9-creator-json-export.spec.ts`.
+
+**Der gezogene Test ist der aufschlussreichste:** `"still exports (backup always happens) but published stays false"` erwartete einen Download **und** gesetztes `lastExported` — er kodierte die fehlerhafte Reihenfolge als gewünschtes Verhalten. Gezogen, nicht gelöscht: Er prüft jetzt, dass **kein** Download startet und `lastExported` **nicht** gesetzt wird. Der Backup-Weg ist durch einen eigenen Test abgedeckt.
+
+**Gegenprobe gegen den echten Vorgängerstand** (`git stash` von `quest-storage.ts`, `create/page.tsx`, `quest-schema.ts`): **9 von 70** Unit-Tests fallen, danach per `diff` als byte-identisch wiederhergestellt bestätigt.
+
+**Ehrlich zur Qualität dieser Gegenprobe:** 8 der 9 fallen mit `TypeError: getPublishBlockers is not a function` — also am fehlenden Import, nicht an einer Verhaltensprüfung. Nur **einer** fällt mit einer echten Assertion (`AssertionError: expected true to be false` in „refuses to publish a quest with an empty station"), weil er über `publishQuest` geht und damit unabhängig vom neuen Funktionsnamen ist. Das ist die Zusicherung, die den gemeldeten Fehler wirklich fängt; die E2E-Tests prüfen dieselbe Wirkung am Bildschirm über Toast und ausbleibenden Download.
+
+### Ein echter Fehler in meiner Implementierung, durch eine eigene Sonde gefunden
+
+Der erste Entwurf rief `station.name.trim()` direkt. `normalizeQuest` garantiert oben aber nur, dass `modules` ein **Array** ist — **nicht**, dass `name` ein String ist. Gemessen an einer korrupten localStorage-Fassung: `TypeError: station.name.trim is not a function` bei numerischem Namen, und `Cannot read properties of undefined` bei fehlendem. Das Veröffentlichen hätte an einer beschädigten Quest die Seite zum Absturz gebracht.
+
+Das Projekt sichert ausdrücklich zu, dass korrupte `gq_quests`-Daten **0 `pageerror`** erzeugen (PROJ-5-QA vom 2026-09-21, sechs Varianten geprüft) — der Fehler wäre ein Regress dieser Zusicherung gewesen. Behoben mit einer `typeof`-Prüfung; zwei Tests halten beide Formen fest.
+
+**Aufgefallen ist das nicht durch einen roten Lauf**, sondern weil ich nach dem Diff gezielt gefragt habe, was `station.name` garantiert — die Antwort stand in `normalizeQuest`, zwölf Zeilen darüber.
+
+**Ein Fehler in einem Testnamen, gefunden durch `tsc`:** `test("„Sicherung" exportiert …")` — das schließende Zeichen nach `Sicherung` war ein ASCII-`"` und beendete den String; `tsc` meldete fünf Folgefehler in derselben Zeile. Genau das in INDEX.md dokumentierte Muster („deutsche Anführungszeichen in JS-Strings"). Anführungszeichen im Namen entfernt.
+
+**Ein Messfehler, offen benannt:** Mein erster E2E-Lauf lief mit `| tail -20` im Hintergrund — die Pipe verschluckte die Ergebnisse und hinterließ eine leere Ausgabedatei. Zusätzlich kollidierte eine parallele Sonde mit dem laufenden Lauf auf Port 3100, also genau die in INDEX.md dokumentierte Regel „immer nur eine Suite gleichzeitig". Wiederholt mit JSON-Reporter in eine Datei.
+
+### Nicht angefasst
+
+- `exportQuest()` selbst — der Kommentar „must never block on questSchema validity" bleibt gültig; „Sicherung" exportiert unverändert bedingungslos
+- Die Import-Fehlermeldung (gehört zu PROJ-2, dort als Open Question vermerkt)
+- Die drei bestehenden `isPlayable`-Unit-Tests — sie bleiben gültig und mussten nicht gezogen werden, weil die Funktion unverändert ist
+
+### Suiten
+
+Gegen den Production-Build: **Unit 293/293** (vorher 271), **PROJ-9-E2E 38/38 auf beiden Engines**, Gesamtsuite **1153 passed / 1 unexpected / 0 flaky / 56 skipped**. Der einzige Fehlschlag liegt in `proj-12-sw-nur-production.spec.ts` und läuft 3× seriell grün — die dokumentierte Service-Worker-Flakiness unter Parallellast. Build sauber, Lint 0 Fehler.
+
+`npx tsc --noEmit` meldet weiterhin die **2 vorbestehenden** Fehler in `quest-storage.test.ts` (ungenutzte `@ts-expect-error`-Direktiven aus PROJ-6, seit dem 2026-09-21 dokumentiert) — nicht von diesem Refinement und bewusst nicht mitbehoben.

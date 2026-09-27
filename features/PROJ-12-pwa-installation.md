@@ -1754,3 +1754,58 @@ Der `catch`-Zweig prüft `navigator.onLine`. Nur bei `false` kommt die Offline-S
 
 - Der veraltete DNS-Eintrag im Router des Betreibers (Edge Case 33) — kein Produktfehler, Behebung beim Nutzer: Router neu starten oder Mobilfunk verwenden.
 - Eine Weiterleitung von `geoquesty.vercel.app` auf die eigene Domain — siehe Open Questions; sie würde bestehende Installationen auf der alten Origin ins Leere laufen lassen.
+
+### Implementation Notes (Frontend) — Refinement 5, 2026-09-27
+
+**Eine Produktivdatei:** `public/sw.js`. Kein neues Paket, keine neue Komponente, keine neue Route. Manifest, Icons, Offline-Seite, Installations-Hinweis und der Production-Schalter aus dem Refinement vom 2026-09-20 sind unangetastet.
+
+**Zwei Eingriffe im `catch`-Zweig des `fetch`-Handlers:**
+
+```js
+} catch (fehler) {
+  if (navigator.onLine) throw fehler;   // (1) Falschalarm beenden
+  const cached = await cache.match(OFFLINE_URL);
+  if (cached) return cached;
+  throw fehler;                          // (2) statt new Error(...)
+}
+```
+
+1. **`if (navigator.onLine) throw fehler;`** — Nur ein echter Verbindungsverlust bekommt die Offline-Seite. Jeder andere Transportfehler (Timeout, abgebrochene Verbindung, Netzwechsel) geht an den Browser zurück, der den echten Grund nennt.
+
+2. **`throw fehler` statt `throw new Error("Offline-Seite nicht im Cache")`** — Der ursprüngliche Fehler wird weitergegeben. Das ist der subtilere der beiden Eingriffe: Ein **eigener** Fehler lehnt die `respondWith`-Zusage ebenso ab, aber der Browser hat dann keinen Netzwerkfehler in der Hand, den er als Fehlerseite darstellen kann — für den Nutzer bleibt eine leere Seite. Genau das war „es öffnet sich gar nichts".
+
+**`CACHE_NAME` auf `geoquest-offline-v2`** — ein abgebrochener v1-`install` kann einen leeren Cache hinterlassen haben; `activate` löscht jeden Cache mit anderem Namen und räumt das ohne zusätzlichen Code ab.
+
+**Der `fetch`-Handler bleibt vorhanden**, ebenso die erste Prüfung `request.mode !== "navigate"`. Zwei Tests halten beides fest — ohne den Handler feuert Chrome/Android kein `beforeinstallprompt`, und das P0-Feature „PWA-Installation" fiele auf einer der beiden Hauptplattformen weg.
+
+### Der wichtigste Befund dieser Phase betrifft meinen eigenen Test
+
+**Mein erster E2E-Test für den Hauptbefund bestand auch gegen die fehlerhafte Fassung** — ein grüner Test, der nichts belegte. Aufgefallen ist das **ausschließlich durch die Gegenprobe**, nie durch einen roten Lauf.
+
+Er wollte den Transportfehler per `page.route("**/play", r => r.abort("connectionfailed"))` erzeugen. Gemessen greift Playwrights Route-Interception aber **nicht für Requests, die der Service Worker stellt**: Die Navigation kam mit **HTTP 200** und der echten Quest-Liste zurück (`"MEINE QUESTS / KEINE QUESTS GELADEN …"`). Der Test prüfte damit eine erfolgreich geladene Seite und stellte fest, dass dort keine Offline-Meldung steht — was trivial wahr ist, mit und ohne Fix.
+
+Ein zweiter Versuch über einen echten Verbindungsfehler (`http://localhost:3199/play`) scheiterte an der Scope-Regel: Eine andere Origin hat ihren eigenen Worker-Scope, unser Handler läuft dort gar nicht.
+
+**Die ehrliche Schlussfolgerung: Playwright kann den `fetch()` DES WORKERS nicht scheitern lassen, während `navigator.onLine` true bleibt.** `setOffline()` trifft nur den Fall, der schon immer richtig war. Damit ist der gemeldete Fehler per E2E in dieser Umgebung **nicht** prüfbar.
+
+**Die Lösung: `src/lib/sw-fetch-handler.test.ts` führt das echte `public/sw.js` aus.** Die Datei wird gelesen und in einem nachgebauten Worker-Scope ausgeführt (`self`, `caches`, `navigator`, `fetch` als Mocks) — keine Kopie der Logik, kein Regex auf den Quelltext, sondern der ausgelieferte Handler selbst. Damit ist genau die Kombination prüfbar, die der Betreiber hatte: Netz vorhanden, einzelner Request scheitert.
+
+**4 Unit-Tests, und die Gegenprobe ist diesmal aussagekräftig:** Gegen die echte fehlerhafte Fassung fallen **genau die 2 Tests der beiden gemeldeten Symptome** („gibt bei onLine=true den Fehler weiter" und „bei leerem Cache keine leere Seite"), während die **2, die grün bleiben müssen**, grün bleiben (Offline-Seite bei echtem Ausfall, Normalfall aus dem Netz). Das ist der Beleg, den der E2E-Test nicht liefern konnte.
+
+**6 E2E-Tests** in `tests/proj-12-sw-echte-netzausfaelle.spec.ts` für das, was dort prüfbar ist: die Offline-Seite bei echtem Ausfall, der Cache-Inhalt, der Wechsel auf `v2`, das Fortbestehen des `fetch`-Handlers und der `navigate`-Filter. Der entfernte Test ist durch einen Kommentar ersetzt, der die Messung festhält — damit niemand denselben Weg erneut versucht.
+
+**Das Prüfmittel ist selbst abgesichert.** Ein Test prüft, dass `context.setOffline(true)` `navigator.onLine` wirklich auf `false` setzt. Ohne diesen Nachweis hinge der Offline-Test in der Luft: Würde `setOffline` den Wert nicht ändern, liefe er trotzdem grün und prüfte etwas anderes als er behauptet.
+
+**Bestehende Tests:** Die Offline-Tests in `proj-12-pwa-installation.spec.ts` nutzen `setOffline(true)` und sind damit vom neuen Guard nicht betroffen — verifiziert, nicht angenommen.
+
+### Nicht abgedeckt und benannt
+
+- **Das echte iPhone.** Keine Testumgebung kann die Bedingungen des Betreibers exakt nachstellen (schwacher Mobilfunk auf einer frisch installierten Origin). Die Mechanik ist belegt, der Augenschein bleibt ihm.
+- **Der veraltete DNS-Eintrag in seinem Router** — kein Produktfehler (Edge Case 33), Behebung durch Router-Neustart oder Mobilfunk.
+- **Firefox** — Binary fehlt weiterhin; Risiko gering, da nur `navigator.onLine` und Standard-Worker-APIs genutzt werden.
+
+### Suiten
+
+Gegen den Production-Build: **Unit 293/293** (vorher 271), alle drei PROJ-12-Suiten **110 passed / 0 failed / 8 skipped**, Gesamtsuite **1153 passed / 1 unexpected / 0 flaky / 56 skipped**.
+
+Der einzige Fehlschlag liegt in `proj-12-sw-nur-production.spec.ts` — einer Datei dieses Features. **Weil dieses Refinement den Worker anfasst, ausdrücklich gegengeprüft statt weggewunken: 3× seriell 6/6 grün.** Es ist die in INDEX.md dokumentierte Service-Worker-Flakiness unter Parallellast, kein Regress. Build sauber, Lint 0 Fehler.

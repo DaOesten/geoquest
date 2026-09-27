@@ -11,6 +11,7 @@ import {
   isPlayable,
   isPublished,
   publishQuest,
+  getPublishBlockers,
   hasUnsavedChanges,
   markExported,
   updateQuestDetails,
@@ -202,6 +203,136 @@ describe("quest-storage", () => {
 
     it("returns true for a fully complete quest", () => {
       expect(isPlayable(completeQuest)).toBe(true);
+    });
+  });
+
+  /**
+   * PROJ-9 refinement 2026-09-27. The reported bug: a quest whose second station
+   * had `modules: []` could be published, was exported, and then failed on the
+   * recipient's import with "Station 2 hat ein ungültiges Modul".
+   *
+   * The pre-existing tests could never have caught this — they only asked
+   * whether a quest had stations, never whether those stations had content.
+   */
+  describe("getPublishBlockers", () => {
+    /** The operator's file, reduced to what matters: station 2 has no modules. */
+    const questMitLeererStation: Quest = {
+      ...completeQuest,
+      id: crypto.randomUUID(),
+      name: "Test for EY and JH",
+      stations: [
+        { ...completeQuest.stations[0], name: "Langenhorn Markt" },
+        {
+          id: crypto.randomUUID(),
+          name: "Café",
+          lat: 53.6498,
+          lng: 10.0131,
+          radiusMeters: 10,
+          modules: [],
+        },
+      ],
+    };
+
+    it("reports no blockers when every station has at least one module", () => {
+      expect(getPublishBlockers(completeQuest)).toEqual([]);
+    });
+
+    it("reports the station that has no modules, by name", () => {
+      const blockers = getPublishBlockers(questMitLeererStation);
+      expect(blockers).toEqual([{ stationNumber: 2, label: "Café" }]);
+    });
+
+    it("reports every empty station, not just the first", () => {
+      const alleLeer = {
+        ...questMitLeererStation,
+        stations: questMitLeererStation.stations.map((st) => ({ ...st, modules: [] })),
+      };
+      expect(getPublishBlockers(alleLeer).map((b) => b.stationNumber)).toEqual([1, 2]);
+    });
+
+    it("falls back to the position when a station has no name", () => {
+      const ohneName = {
+        ...questMitLeererStation,
+        stations: [
+          completeQuest.stations[0],
+          { ...questMitLeererStation.stations[1], name: "   " },
+        ],
+      };
+      // Never an empty label — "„" hat kein Modul" would be unreadable.
+      expect(getPublishBlockers(ohneName)).toEqual([{ stationNumber: 2, label: "Station 2" }]);
+    });
+
+    it("does not treat a missing station name as a publish blocker on its own", () => {
+      const nameLosAberMitModul = {
+        ...completeQuest,
+        stations: [{ ...completeQuest.stations[0], name: "" }],
+      };
+      // Only the modules rule blocks publishing; an unnamed station is the
+      // creator's business while they work (isQuestComplete covers that).
+      expect(getPublishBlockers(nameLosAberMitModul)).toEqual([]);
+    });
+
+    it("agrees with the import schema — a quest it clears passes questSchema", () => {
+      // This is the whole point of deriving the rule: publishing and importing
+      // must not disagree about what a valid quest is.
+      expect(getPublishBlockers(completeQuest)).toEqual([]);
+      expect(isQuestComplete(completeQuest)).toBe(true);
+    });
+
+    it("agrees with the import schema — a quest it blocks fails questSchema", () => {
+      expect(getPublishBlockers(questMitLeererStation).length).toBeGreaterThan(0);
+      expect(isQuestComplete(questMitLeererStation)).toBe(false);
+    });
+
+    it("leaves Play-mode visibility untouched — isPlayable still accepts it", () => {
+      // Deliberate: tightening isPlayable would have dropped already-imported
+      // quests out of a player's list. Publishing is the stricter of the two.
+      expect(isPlayable(questMitLeererStation)).toBe(true);
+      expect(getPublishBlockers(questMitLeererStation).length).toBeGreaterThan(0);
+    });
+
+    it("survives a corrupted station name instead of throwing", () => {
+      /**
+       * `normalizeQuest` garantiert, dass `modules` ein Array ist — aber NICHT,
+       * dass `name` ein String ist. Ein erster Entwurf rief direkt
+       * `station.name.trim()` und warf bei einer korrupten localStorage-Fassung
+       * `TypeError: station.name.trim is not a function`. Das Projekt sichert
+       * ausdruecklich zu, dass korrupte `gq_quests`-Daten keinen `pageerror`
+       * erzeugen; dieser Test haelt das fest.
+       */
+      const ohneName = {
+        ...questMitLeererStation,
+        stations: [{ ...questMitLeererStation.stations[1], name: undefined }],
+      } as unknown as Quest;
+      expect(() => getPublishBlockers(ohneName)).not.toThrow();
+      expect(getPublishBlockers(ohneName)).toEqual([{ stationNumber: 1, label: "Station 1" }]);
+
+      const numerischerName = {
+        ...questMitLeererStation,
+        stations: [{ ...questMitLeererStation.stations[1], name: 42 }],
+      } as unknown as Quest;
+      expect(() => getPublishBlockers(numerischerName)).not.toThrow();
+    });
+
+    it("refuses to publish a quest with an empty station", () => {
+      saveQuest(questMitLeererStation);
+      expect(publishQuest(questMitLeererStation.id)).toBe(false);
+      // and the status must not have changed
+      expect(getQuestById(questMitLeererStation.id)?.published).toBeUndefined();
+    });
+
+    it("publishes once the empty station gets a module", () => {
+      const repariert = {
+        ...questMitLeererStation,
+        stations: questMitLeererStation.stations.map((st) =>
+          st.modules.length === 0
+            ? { ...st, modules: [{ type: "text" as const, content: "Ziel erreicht" }] }
+            : st
+        ),
+      };
+      saveQuest(repariert);
+      expect(publishQuest(repariert.id)).toBe(true);
+      expect(getQuestById(repariert.id)?.published).toBe(true);
     });
   });
 
