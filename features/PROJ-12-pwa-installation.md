@@ -1,8 +1,8 @@
 # PROJ-12: PWA-Installation (Add to Homescreen)
 
-## Status: Deployed
+## Status: In Progress
 **Created:** 2026-09-18
-**Last Updated:** 2026-09-21 (Refinement 4: Safe Area — der Startscreen-Inhalt rückt nicht mit)
+**Last Updated:** 2026-09-27 (Refinement 5: Der Service Worker meldet Netzfehler, die es nicht gibt — eigene Domain)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — der Startscreen `/` trägt einen der beiden Hinweis-Orte, und das Wurzel-Layout (`src/app/layout.tsx`) hält heute schon `themeColor` und `viewportFit: "cover"`
@@ -25,6 +25,18 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 
 **Der Befund vom 2026-09-20 (Refinement 3):** Der Betreiber hat die App auf iOS installiert — und dort verdecken Uhrzeit, Batterie und WLAN-Anzeige das Burger-Menu und den Zurück-Pfeil. Im Browser tritt das nicht auf. Das ist kein Zufall, sondern die direkte Folge zweier Zeilen, die dieses Feature gesetzt hat: `statusBarStyle: "black-translucent"` und `viewportFit: "cover"`. Zusammen sagen sie iOS, dass die Seite den gesamten Bildschirm bekommt und die Statusleiste **über** ihr schweben soll. Im Browser hält Safari mit seiner Adressleiste den Platz von selbst frei; installiert fällt sie weg, und der Inhalt beginnt bei y=0 — genau dort, wo die Systemanzeigen stehen. Was fehlt, ist die Gegenleistung für diese Freiheit: **kein einziger Screen liest `env(safe-area-inset-top)`.** Gemessen sind alle vier Safe-Area-Vorkommen im Projekt `inset-bottom`. Siehe Refinement 3.
 
+**Der Befund vom 2026-09-27 (Refinement 5):** Der Betreiber hat die App unter der eigenen Domain `geoquest.technolomagie.de` verfügbar gemacht. Seitdem melden Nutzer auf dem iPhone, sie könnten die App nicht öffnen — Safari zeige „keine Internetverbindung", oder es öffne sich gar nichts. Auf Android/Chrome und auf dem Mac ließ sie sich öffnen, dort versagte aber der „Quest importieren"-Button. Betroffen sind **auch Tester in fremden Netzen**.
+
+Gemessen ist die Infrastruktur **gesund**: Alle acht geprüften Endpunkte antworten mit HTTP 200 in 0,06–0,28 s, das TLS-Zertifikat ist gültig (Let's Encrypt, `CN=geoquest.technolomagie.de`, bis 2026-12-26), die Security-Header stehen, `http://` leitet mit 308 auf `https://` um, und alle vier Vercel-IPs liefern die Seite aus. Neun von zehn öffentlichen Resolvern geben den korrekten DNS-Eintrag zurück. **Der Fehler liegt nicht am Server, nicht am DNS und nicht an der Domain — er liegt im Service Worker dieses Features.**
+
+Die Ursache ist der `fetch`-Handler in `public/sw.js`. Er fängt **jede** Navigation ab und antwortet aus dem Cache, sobald `fetch()` eine Ausnahme wirft. Ein `fetch()` wirft aber nicht nur bei fehlendem Netz, sondern bei **jedem** Transportfehler: abgebrochene Verbindung bei schwachem Mobilfunk, Timeout, TLS-Neuverhandlung, Wechsel von WLAN auf Mobilfunk. In all diesen Fällen zeigt die App „Keine Verbindung", obwohl das Netz vorhanden ist — der Handler kann die beiden Fälle nicht unterscheiden.
+
+**Warum genau jetzt, mit der neuen Domain:** Der Scope eines Service Workers ist die **Origin**. `geoquesty.vercel.app` und `geoquest.technolomagie.de` sind zwei verschiedene Origins, also installiert sich der Worker auf der neuen Domain als **frischer Erstbesuch**. In diesem Moment ist der `fetch`-Handler schon aktiv, während der Cache noch leer ist (`install` lädt `/offline.html` erst). Schlägt eine Navigation in diesem Fenster fehl, greift der Zweig unter dem Cache-Treffer: `throw new Error("Offline-Seite nicht im Cache")`. Eine `respondWith`-Zusage, die abgelehnt wird, ergibt für den Nutzer eine **leere Seite** — das gemeldete „es öffnet sich gar nichts".
+
+**Der Android-Befund hat dieselbe Wurzel.** Beantwortet der Worker die Navigation mit der Offline-Seite oder einer abgelehnten Zusage, läuft das JavaScript der App nie an. Der „Quest importieren"-Button ist dann zwar sichtbar (die Offline-Seite ist statisches HTML, oder die Seite bleibt leer), aber ohne React-Hydration hängt kein Klick-Handler daran — ein Tap tut nichts. Das deckt sich mit der Beobachtung des Betreibers, dass sich die Dateiauswahl **gar nicht öffnete**.
+
+**Es ist dieselbe Fehlerklasse wie am 2026-09-20** (Refinement „Service Worker nur in Production"): Damals zeigte ein gestoppter Dev-Server „Keine Verbindung" statt der echten Browsermeldung. Die Behebung schränkte den Worker auf Production ein — und behandelte damit den Ort, nicht die Ursache. Der Handler kann weiterhin nicht zwischen „offline" und „Transportfehler" unterscheiden; auf einer neuen Domain trifft das jetzt **echte Nutzer in Production**.
+
 **Ausgangsmaterial für die Icons:** Der Betreiber hat `public/assets/geoquest_pwaIcon.jpeg` geliefert — 1024×1024, markengetreu. Es ist als Quelle brauchbar, aber **nicht direkt einsetzbar** (siehe Product Decisions): Es trägt einen weißen Rand um eine bereits abgerundete Kachel, und der volle Schriftzug ist bei 48px unleserlich.
 
 ## User Stories
@@ -35,6 +47,9 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 - Als **Spieler**, der ohne Empfang auf das App-Icon tippt, möchte ich eine verständliche Meldung statt einer Browser-Fehlerseite sehen, damit ich weiß, dass mein Netz das Problem ist und nicht die App.
 - Als **Nutzer**, der die App nicht installieren will, möchte ich den Hinweis wegklicken können und in Ruhe gelassen werden, damit er mich nicht bei jedem Besuch stört.
 - Als **Betreiber** möchte ich, dass eine neue Version sofort bei allen installierten Nutzern ankommt, damit niemand mit einer veralteten App unterwegs ist, die er nicht per Adressleiste neu laden kann.
+- Als **Nutzer mit Internetverbindung** möchte ich die App zuverlässig öffnen können, auch wenn eine einzelne Anfrage unterwegs scheitert, damit ich nicht eine Offline-Meldung sehe, während mein Netz einwandfrei funktioniert. *(Refinement 5, 2026-09-27)*
+- Als **Nutzer** möchte ich bei einem Ladefehler die echte Fehlermeldung des Browsers sehen, damit ich den wahren Grund erfahre, statt einer Offline-Meldung zu glauben, die nicht zutrifft. *(Refinement 5, 2026-09-27)*
+
 - Als **Nutzer der installierten App** möchte ich Burger-Menu und Zurück-Pfeil vollständig sehen und treffen können, obwohl die Statusleiste des Systems über der App schwebt, damit ich in der installierten App genauso navigieren kann wie im Browser. *(Refinement 3, 2026-09-20)*
 
 ## Out of Scope
@@ -133,6 +148,17 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 - [ ] Angenommen `/` wird **im Browser** geöffnet, wenn mit dem Zustand vor dieser Änderung verglichen wird, dann ist die Darstellung unverändert — Logo weiterhin bei y=24, Burger bei y=12
 - [ ] Angenommen ein Gerät mit 360×640, wenn `/` installiert geöffnet wird, dann bleiben Logo, Headline und beide Mode-Cards ohne Scrollen sichtbar (bestehendes PROJ-1-Kriterium)
 
+### Der Worker meldet nur echte Netzausfälle (Refinement 5, 2026-09-27)
+
+- [ ] Angenommen der Nutzer hat eine funktionierende Internetverbindung, wenn eine Navigation an einem Transportfehler scheitert (abgebrochene Verbindung, Timeout, Netzwechsel), dann zeigt die App **nicht** die Offline-Seite, sondern gibt die Navigation an den Browser zurück, der seine eigene Fehlermeldung anzeigt
+- [ ] Angenommen das Gerät ist tatsächlich offline (`navigator.onLine === false`), wenn der Nutzer die App startet, dann erscheint die Geo-Quest-Offline-Seite wie bisher — dieses Refinement darf die Offline-Seite **nicht** abschaffen
+- [ ] Angenommen der Service Worker wurde gerade erst installiert und sein Cache ist noch leer, wenn in diesem Fenster eine Navigation fehlschlägt, dann sieht der Nutzer **niemals eine leere Seite** — die Zusage wird nicht abgelehnt, sondern die Navigation an den Browser zurückgegeben
+- [ ] Angenommen ein Nutzer öffnet die App erstmals unter `geoquest.technolomagie.de`, wenn der Worker sich dort als Erstbesuch registriert, dann lädt die App normal, ohne Offline-Meldung und ohne leere Seite
+- [ ] Angenommen die App wurde unter der neuen Domain geladen, wenn der Nutzer „Quest importieren" antippt, dann öffnet sich die Dateiauswahl des Systems — das JavaScript der App ist angelaufen
+- [ ] Angenommen ein Nutzer hat den fehlerhaften Worker aus einem früheren Besuch noch aktiv, wenn er die App nach dem Deploy erneut öffnet, dann ersetzt sich der Worker **ohne Zutun des Nutzers** (keine Deinstallation, kein Cache-Leeren nötig)
+- [ ] Angenommen der Worker wurde korrigiert, wenn Chrome auf Android die Installierbarkeit prüft, dann bietet es den Installationsweg weiterhin an — der `fetch`-Handler bleibt vorhanden
+- [ ] Angenommen eine Anfrage ist keine Seitennavigation (Kartenkachel, Bild, Audio, JS, CSS), wenn sie fehlschlägt, dann verhält sie sich unverändert wie ohne Service Worker — der Worker fasst sie nicht an
+
 ### Verhalten ohne Netz
 
 - [ ] Angenommen die App ist installiert und der Service Worker aktiv, wenn der Nutzer sie ohne Internetverbindung startet, dann sieht er eine Geo-Quest-eigene Seite mit der Aussage, dass die App eine Internetverbindung zum Starten braucht — nicht die Fehlerseite des Browsers
@@ -211,6 +237,16 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 
 28. **320×568 mit Inset** *(Refinement 4)* → Die Seite scrollt. Sie tut das aber **schon heute ohne Inset** um 13px (vorbestehend, seit 2026-09-19 dokumentiert); ein realistischer Inset für dieses Gerät sind 20px (iPhone SE, Home-Button, keine Notch), nicht die 59px von Dynamic Island. Das Nicht-Scrollen-Kriterium nennt 360×640, und dort ist es erfüllt.
 
+29. **Ein Transportfehler bei vorhandenem Netz** *(Refinement 5)* → Abgebrochene Verbindung bei schwachem Mobilfunk, Timeout, TLS-Neuverhandlung, Wechsel WLAN→Mobilfunk. `fetch()` wirft in all diesen Fällen genauso wie bei fehlendem Netz. Der Worker darf daraus **nicht** auf „offline" schließen: Er prüft `navigator.onLine` und gibt die Navigation andernfalls an den Browser zurück, der den echten Grund nennt. Das ist der gemeldete Hauptbefund.
+
+30. **Der Worker ist aktiv, sein Cache aber noch leer** *(Refinement 5)* → Tritt bei **jedem Erstbesuch** auf, weil `install` die Offline-Seite erst lädt, während der `fetch`-Handler schon greift. Die alte Fassung warf hier `new Error(...)`; eine abgelehnte `respondWith`-Zusage ergibt für den Nutzer eine **leere Seite**. Das ist das gemeldete „es öffnet sich gar nichts". Neu: Die Zusage wird nie abgelehnt — fehlt die Offline-Seite, geht die Navigation an den Browser.
+
+31. **Die App wechselt auf eine neue Domain** *(Refinement 5)* → Der Scope eines Workers ist die **Origin**. Auf `geoquest.technolomagie.de` ist jeder Nutzer ein Erstbesucher, unabhängig davon, wie lange er `geoquesty.vercel.app` genutzt hat. Der alte Worker auf der alten Origin bleibt dort registriert und gilt weiter — er stört nicht, ist aber auch nicht abgeräumt. Wer beide Adressen aufruft, hat zwei unabhängige Registrierungen.
+
+32. **Ein Nutzer hat die fehlerhafte Fassung des Workers noch aktiv** *(Refinement 5)* → Löst sich ohne Zutun: `sw.js` wird mit `cache-control: public, max-age=0, must-revalidate` ausgeliefert (gemessen), der Browser prüft die Datei also bei jedem Start; `skipWaiting()` und `clients.claim()` stehen bereits im Worker. Die korrigierte Fassung übernimmt damit beim nächsten Öffnen. **Keine Deinstallation und kein Cache-Leeren nötig** — wichtig, weil die installierte App keine Adressleiste hat und ein Nutzer ein hängendes Update gar nicht selbst erzwingen könnte.
+
+33. **Ein veralteter DNS-Eintrag im Router des Nutzers** *(Refinement 5)* → Kein Produktfehler und **nicht** die Ursache der gemeldeten Befunde, aber beim Untersuchen aufgetreten und hier festgehalten, damit es niemand erneut verfolgt: Der Router des Betreibers (Fritz!Box, 192.168.178.1) hielt `geoquest.technolomagie.de → cname.vercel-dns.` — ein Ziel ohne TLD, also unauflösbar, mit 22 Stunden Restlaufzeit. Die autoritativen Nameserver (netcup) liefern **nur** den korrekten Eintrag, und neun von zehn öffentlichen Resolvern ebenso. Behebung ausschließlich beim Nutzer: Router neu starten oder Mobilfunk verwenden. Da auch Tester in fremden Netzen betroffen waren, konnte dies nie die Hauptursache sein.
+
 ## Technical Requirements
 
 - **Kein Backend, keine neuen Netzabhängigkeiten** — alle neuen Dateien werden von der eigenen Domain ausgeliefert
@@ -250,6 +286,16 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 - **Die drei Creator-FABs respektieren `env(safe-area-inset-bottom)`** — `src/app/create/page.tsx:263`, `src/app/create/[id]/page.tsx:236` und `src/app/create/[id]/station/[stationId]/page.tsx:184` stehen heute auf `fixed bottom-6` ohne Inset. Der FAB auf `/play` (`quest-import-button.tsx`) macht es bereits richtig und ist die Vorlage
 - **Der Browser-Zustand bleibt messbar unverändert** — die Kriterien sind gegen den Zustand vor der Änderung zu prüfen, nicht nur gegen „sieht gut aus"
 
+### Refinement 5 — der Worker meldet nur echte Netzausfälle (2026-09-27)
+
+- **`public/sw.js`, `fetch`-Handler:** Der `catch`-Zweig prüft `navigator.onLine`. Nur bei `false` wird die Offline-Seite ausgeliefert. In jedem anderen Fall wird der Fehler **erneut geworfen und die Navigation damit an den Browser zurückgegeben** — nicht mit einer eigenen Ersatzantwort beantwortet.
+- **Die Zusage darf nie abgelehnt werden, ohne dass der Browser übernimmt.** Fehlt die Offline-Seite im Cache (Erstbesuch, `install` noch nicht fertig), gibt es keine eigene Ersatzantwort: Der ursprüngliche Fehler wird weitergegeben, sodass der Browser seine Fehlerseite zeigt. Eine leere Seite ist in keinem Fall zulässig.
+- **Der `fetch`-Handler bleibt vorhanden.** Er ist die Bedingung dafür, dass Chrome auf Android `beforeinstallprompt` feuert. Er darf nicht entfernt und nicht durch einen leeren Handler ersetzt werden — das würde das P0-Feature „PWA-Installation" auf Android beseitigen.
+- **`request.mode !== "navigate"` bleibt die erste Prüfung.** Kartenkacheln, Medien, JS und CSS werden unverändert nicht angefasst.
+- **`CACHE_NAME` wird auf `geoquest-offline-v2` erhöht.** Der `activate`-Schritt löscht alle Caches mit anderem Namen, sodass ein möglicherweise unvollständiger v1-Cache sicher abgeräumt wird.
+- **Nicht anzufassen:** `skipWaiting()`, `clients.claim()`, der Production-Schalter aus dem Refinement vom 2026-09-20, das Manifest, die Icons, die Offline-Seite und der Installations-Hinweis. Dieses Refinement ändert **eine** Entscheidung: wann die Offline-Seite greift.
+- **`navigator.onLine` ist ein grobes Signal** — es meldet „mit einem Netz verbunden", nicht „das Internet ist erreichbar". Für diesen Zweck ist das die richtige Richtung: Es liefert `false` nur bei echtem Verbindungsverlust und erzeugt damit keine Falschalarme. Der umgekehrte Fall (verbunden, aber ohne Internet, z.B. ein Hotel-WLAN vor dem Login) führt zur Browser-Fehlerseite statt zur Offline-Seite — das ist hinnehmbar und sogar hilfreicher, weil der Browser den Captive-Portal-Fall selbst behandelt.
+
 ## Open Questions
 
 - [x] ~~Lässt sich der Pin sauber aus `geoquest_pwaIcon.jpeg` freistellen, oder braucht es eine Zulieferung des Betreibers?~~ **Geschlossen in `/architecture` (2026-09-18): ja, keine Zulieferung nötig.** Das Quellbild wurde vermessen — weißer Rand 55/54/61px, und zwischen Pin-Gruppe und Schriftzug liegt eine motivfreie Spalte bei x 392..401. Ein Probeschnitt (330×420 ab x=62, y=250) zeigt Pin, gestrichelte Route und X vollständig, ohne Buchstabenrest und ohne weißen Rand. Werkzeug: `sips` (Teil von macOS).
@@ -262,6 +308,8 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 - [ ] Reicht der 8%-Freiraum von `SheetContent` (`h-[92dvh]`, auf 844px rund 67px) verlässlich über den größten iOS-Inset (59px bei Dynamic Island)? *(Refinement 3, Edge Case 25)* Rechnerisch ja, aber nur am Gerät zu bestätigen. Wenn nein, braucht auch `sheet.tsx` den oberen Inset — das wäre eine geteilte shadcn-Komponente und beträfe alle Sheets der App.
 - [ ] Erreicht der „Station entdecken"-Button des Player-Navigations-Screens den Home-Indikator? *(Refinement 3, Edge Case 26)* Aus dem Markup abgeleitet: nein, weil `justify-center` zentriert statt unten anzuhängen. Nicht gemessen — am Gerät zu bestätigen, bevor dort vorsorglich Polsterung eingebaut wird.
 - [ ] Gehört die Safe-Area-Behandlung als Regel nach `docs/design-system.md`? *(Refinement 3)* Es ist jetzt die zweite Fehlerklasse dieser Art in diesem Feature (unten beim Overlay, oben bei den Kopfzeilen) und betrifft jedes künftige Element am Bildschirmrand. Vorschlag: ein Satz bei den Layout-Regeln, zusammen mit der bereits offenen Bottom-Nav-Ausnahme in einem Zug.
+- [ ] Soll die alte Origin `geoquesty.vercel.app` dauerhaft erreichbar bleiben? *(Refinement 5)* Sie antwortet weiterhin mit HTTP 200 und trägt einen eigenen, unabhängig registrierten Service Worker. Wer die App dort installiert hat, bekommt Updates weiterhin von dort — was richtig ist, solange beide Adressen dasselbe Deployment bedienen. Zu entscheiden ist, ob sie später auf die eigene Domain weiterleiten soll; eine Weiterleitung würde bestehende Installationen auf der alten Origin allerdings nicht mitnehmen, sondern deren Startadresse ins Leere laufen lassen.
+- [ ] Sollten Nutzer, die die App unter `geoquesty.vercel.app` installiert haben, zum Wechsel auf die eigene Domain aufgefordert werden? *(Refinement 5)* Technisch lässt sich eine Installation nicht umziehen — sie müsste neu angelegt werden. Betrifft nur den Betreiber und die bisherigen Tester; vorerst kein Handlungsbedarf, aber vor einer breiteren Verbreitung zu klären.
 - [ ] Wie weit soll der Pin die `any`-Icons ausfüllen? Randlos wirkt kräftig, kann auf iOS aber gedrungen aussehen, weil dort kein Sicherheitsrand abgezogen wird. Beim Erzeugen der PNGs im Augenschein zu entscheiden — betrifft nur die Optik, nicht die Installierbarkeit.
 
 ## Decision Log
@@ -294,6 +342,10 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 | **Die Info-Seiten kommen mit in den Scope** | Betreiber-Entscheidung 2026-09-20. Sie sind installiert übers Burger-Menu erreichbar und hätten sonst denselben Fehler — nur seltener gesehen, weil `start_url` auf `/` zeigt. Eine Datei mehr (`info-page-shell.tsx`), derselbe Prüf-Durchlauf, dasselbe Gerät. Ein eigener Zyklus dafür hätte mehr gekostet als die Scope-Erweiterung. | 2026-09-20 |
 | **Der untere Rand kommt mit in den Scope** | Betreiber-Entscheidung 2026-09-20. Gleiche Ursache (`viewportFit: "cover"`), gleiches Gerät zum Prüfen. Beim Nachsehen zeigte sich mehr als vermutet: **drei** Creator-FABs stehen auf `fixed bottom-6` ohne Inset und säßen auf einem iPhone mit Home-Indikator teilweise unter dem Strich. Die ursprüngliche Vermutung, der Player-Navigations-Screen sei betroffen, hielt der Prüfung dagegen **nicht** stand — er zentriert seinen Inhalt. Sie steht als zu prüfende Annahme in Edge Case 26, nicht als bestätigter Fehler. | 2026-09-20 |
 | Der Service Worker läuft **nur in Production**, nicht auf `localhost` | Ein Betreiber-Befund vom 2026-09-20: Desktop-Safari zeigte beim Öffnen von `localhost` nur noch „Keine Verbindung". Reproduziert — der Dev-Server lief nicht, der Worker fing die Navigation ab und antwortete aus dem Cache. Technisch korrekt, aber am falschen Ort: Lokal ist ein gestoppter Server der **Normalfall**, und die Offline-Seite verdeckt dann die wahre Ursache. Der Nutzen des Workers (Installierbarkeit auf Android, würdige Fehlerseite draußen) entsteht ausschließlich in Production; lokal hat er nur Kosten. | 2026-09-20 |
+| **Eine Offline-Meldung nur zeigen, wenn der Nutzer wirklich offline ist** | **Refinement 5, 2026-09-27.** Der Betreiber meldete nach dem Umzug auf die eigene Domain, die App lasse sich auf dem iPhone nicht öffnen — „keine Internetverbindung", oder es öffne sich gar nichts. Gemessen ist die Infrastruktur gesund (8 Endpunkte HTTP 200, gültiges Zertifikat, Header aktiv). Die Meldung kam aus der App selbst. Eine falsche Offline-Meldung ist schlimmer als gar keine: Sie schickt den Nutzer auf die Suche nach einem Netzproblem, das es nicht gibt, und lässt die App kaputt wirken, obwohl sie erreichbar ist. Ehrlichkeit ist hier wichtiger als ein gestalteter Fehlerbildschirm — wenn die App den Grund nicht kennt, soll der Browser ihn nennen. | 2026-09-27 |
+| **Der Befund gilt als Produktfehler, nicht als Netzproblem des Nutzers** | **Refinement 5, 2026-09-27.** Der naheliegende erste Verdacht war das Netz des Betreibers, und er ließ sich sogar belegen: Sein Router hielt einen unauflösbaren DNS-Eintrag. Der Hinweis, dass **auch Tester in fremden Netzen** betroffen sind, hat diese Erklärung widerlegt. Festgehalten als Lehre: Ein bestätigter Nebenbefund ist kein Beweis für die Hauptursache. Wäre es beim DNS-Befund geblieben, wäre ein echter Produktfehler als Nutzerproblem abgelegt worden — und hätte jeden neuen Nutzer auf der neuen Domain getroffen. | 2026-09-27 |
+| **Der Android-Importfehler wird nicht eigenständig behandelt** | **Refinement 5, 2026-09-27.** Der Betreiber berichtete, „Quest importieren" habe auf Android versagt — die Dateiauswahl öffnete sich gar nicht. Erwogen wurde das `accept`-Attribut des Datei-Feldes als Ursache (Androids Dateiauswahl blendet JSON-Dateien je nach Quelle aus). Verworfen: Die Beobachtung „Auswahl öffnete sich **gar nicht**" passt nicht zu einem Filterproblem, wohl aber zur Worker-Ursache — beantwortet der Worker die Navigation, läuft das JavaScript der App nie an und an dem Button hängt kein Klick-Handler. Erst nach der Behebung wird geprüft, ob der Befund fortbesteht; dann wäre `accept` der nächste Verdacht. Kein zweiter Eingriff auf Verdacht. | 2026-09-27 |
+| **Die eigene Domain wird zur Produktionsadresse, die Specs ziehen nach** | **Refinement 5, 2026-09-27.** Bisher nennen alle Deploy-Abschnitte `geoquesty.vercel.app`. Die App ist unter `geoquest.technolomagie.de` verfügbar und soll dort erreichbar bleiben. Wichtig als Folge: Ein Service Worker ist **pro Origin** registriert — bestehende Installationen auf der alten Adresse ziehen nicht mit, sie bleiben dort funktionsfähig, müssten für die neue Adresse aber neu angelegt werden. Betrifft derzeit nur den Betreiber und die Tester. | 2026-09-27 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -325,6 +377,11 @@ Der Nutzen ist für den **Spieler** am größten und sehr konkret: Ohne Browser-
 | Unterscheidung über `process.env.NODE_ENV`, **nicht** über den Hostnamen | Die E2E-Suite testet den echten Production-Build auf `localhost:3100` (`playwright.prod.config.ts`). Eine Hostname-Prüfung auf `localhost` würde dort den Worker abschalten und die 37 PROJ-12-Tests entwerten, ohne dass eine einzige Zeile Produktcode kaputt aussieht — ein stiller Testverlust. `NODE_ENV` trennt Dev-Server von Production-Build sauber, unabhängig vom Port. | 2026-09-20 |
 | Bestehende lokale Worker aktiv abmelden statt nur neue verhindern | Der Scope eines Service Workers ist die **Origin**, nicht der Port — ein einmal auf `localhost` registrierter Worker überlebt den Dev-Server und gilt für **jedes** Projekt auf dieser Maschine. Würde man nur neue Registrierungen unterlassen, bliebe der bereits ausgelieferte Worker auf allen Entwicklerrechnern liegen und müsste von Hand gelöscht werden. Die Abmeldung ist wenige Zeilen und räumt den Fehler dort auf, wo er entstanden ist. | 2026-09-20 |
 | Kein Opt-in-Schalter für lokales Testen | Erwogen und verworfen: Die Offline-Seite und die Installierbarkeit lassen sich gegen den Production-Build prüfen (`playwright.prod.config.ts`, Port 3100) — genau dort, wo die Suite ohnehin läuft. Ein zusätzlicher Schalter wäre ein dritter Zustand, den niemand regelmäßig testet. | 2026-09-20 |
+| Die Offline-Seite greift nur bei `navigator.onLine === false` | **Refinement 5.** Der alte `catch`-Zweig behandelte jeden `fetch()`-Fehler als „offline". `fetch()` wirft aber bei jedem Transportfehler — abgebrochene Verbindung, Timeout, Netzwechsel. Nutzer mit einwandfreiem Netz sahen „Keine Verbindung". Die Prüfung auf `navigator.onLine` trennt die Fälle mit dem einzigen Signal, das der Browser dafür anbietet. Bewusst in dieser Richtung: `onLine === false` ist verlässlich ein echter Verbindungsverlust, erzeugt also keine Falschalarme. | 2026-09-27 |
+| Bei allen anderen Fehlern den Fehler weitergeben statt eine Ersatzantwort zu liefern | **Refinement 5.** Die alte Fassung warf `new Error("Offline-Seite nicht im Cache")`. Eine abgelehnte `respondWith`-Zusage ergibt eine **leere Seite** — das gemeldete „es öffnet sich gar nichts". Wird der ursprüngliche Fehler weitergegeben, übernimmt der Browser und zeigt seine Fehlerseite mit dem echten Grund. Der Worker soll die Diagnose nicht verschlechtern, wenn er sie nicht verbessern kann. | 2026-09-27 |
+| `fetch`-Handler bleibt erhalten, statt ihn zu entfernen | **Refinement 5.** Erwogen: den Handler ganz zu streichen — das behebt den Falschalarm restlos. Verworfen, weil Chrome/Android `beforeinstallprompt` nur mit registriertem `fetch`-Handler feuert. Ohne ihn fällt „PWA-Installation" auf Android weg, ein P0-Feature des PRD auf einer der beiden Hauptplattformen. Der Handler ist nicht das Problem, seine Fehlerbehandlung war es. | 2026-09-27 |
+| `CACHE_NAME` auf `geoquest-offline-v2` erhöhen | **Refinement 5.** Ein Erstbesuch, dessen `install` abbrach, kann einen leeren oder unvollständigen `v1`-Cache hinterlassen haben. Der `activate`-Schritt löscht alle Caches mit anderem Namen als dem aktuellen — eine Versionserhöhung räumt diesen Zustand also sicher ab, ohne zusätzlichen Code. | 2026-09-27 |
+| Kein Eingriff am DNS und keine Code-Änderung wegen des Router-Befundes | **Refinement 5.** Der Router des Betreibers hielt einen unauflösbaren Eintrag (`cname.vercel-dns.`, ohne TLD, 22h Restlaufzeit). Gemessen liefern die autoritativen Nameserver und neun von zehn öffentlichen Resolvern den korrekten Eintrag; alle vier Vercel-IPs antworten mit HTTP 200, das Zertifikat ist gültig. Da auch Tester in fremden Netzen betroffen waren, war dies nie die Hauptursache — es hätte als Erklärung vom echten Fehler weggeführt. Behebung liegt beim Nutzer (Router neu starten), dokumentiert als Edge Case 33. | 2026-09-27 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
@@ -1620,3 +1677,80 @@ Alle **10 Endpunkte HTTP 200** mit 0,06–0,08 s, Security-Header aktiv inkl. HS
 2. Mein Icon-Check fragte `icon-maskable-192.png` und `icon-maskable-512.png` ab und meldete zwei 404. **Diese Dateien gibt es nicht und gab es nie** — die echten heißen `icon-maskable.png` und `apple-touch-icon.png`. Alle vier tatsächlich referenzierten Icons liefern 200 und sind byte-identisch zum Repository.
 
 **Nicht abgedeckt und unverändert benannt:** die echte Safe Area auf einem iPhone mit Home-Indikator (am Gerät zu begutachten), Bildschirmtastatur, Firefox, und der echte `beforeinstallprompt`.
+
+---
+
+## Refinement 5 — Der Service Worker meldet Netzfehler, die es nicht gibt (2026-09-27)
+
+**Anlass:** Der Betreiber hat die App unter `geoquest.technolomagie.de` verfügbar gemacht. Danach drei Befunde:
+1. iPhone/Safari: App lässt sich nicht öffnen — „keine Internetverbindung", oder es öffnet sich gar nichts
+2. Android/Chrome und Mac/Safari: Seite öffnet sich
+3. Android: Der „Quest importieren"-Button versagt — die Dateiauswahl öffnet sich **gar nicht**
+
+**Betroffen sind auch Tester in fremden Netzen** — das ist die Angabe, die die Diagnose entschieden hat.
+
+### Was gemessen wurde
+
+Alle Werte gegen die Live-Domain, DNS bewusst umgangen (`--resolve`), um Server und Namensauflösung zu trennen.
+
+| Prüfung | Ergebnis | Bewertung |
+|---|---|---|
+| `/`, `/play`, `/create`, `/about` | HTTP 200, 0,06–0,28 s | gesund |
+| `/sw.js` | HTTP 200, `application/javascript` | gesund |
+| `/manifest.webmanifest` | HTTP 200, `application/manifest+json` | gesund |
+| `/offline.html`, `/icons/icon-192.png` | HTTP 200 | gesund |
+| TLS-Zertifikat | `CN=geoquest.technolomagie.de`, Let's Encrypt, bis 2026-12-26 | gültig |
+| `http://` → `https://` | HTTP 308 | korrekt |
+| Security-Header | HSTS, `x-frame-options: DENY`, `nosniff` | aktiv |
+| Alle vier Vercel-IPs einzeln | 4× HTTP 200 | gesund |
+| Autoritative NS (netcup, 3 Server) | nur der korrekte CNAME | korrekt |
+| 10 öffentliche Resolver | 9× korrekt, 1× nicht erreichbar | korrekt |
+| Router des Betreibers (192.168.178.1) | `cname.vercel-dns.` (ohne TLD), 22 h TTL | **veraltet, nur lokal** |
+| `sw.js` Cache-Control | `public, max-age=0, must-revalidate` | Update erreicht Nutzer |
+| `skipWaiting()` / `clients.claim()` | beide vorhanden | Update ohne Nutzerzutun |
+
+**Fazit:** Server, TLS, Header, Domain und DNS sind in Ordnung. Der Fehler liegt im Produktcode.
+
+### Die Ursache
+
+`public/sw.js`, `fetch`-Handler — zwei Zeilen tragen beide Symptome:
+
+```js
+try {
+  return await fetch(request);        // wirft bei JEDEM Transportfehler
+} catch {
+  const cached = await cache.match(OFFLINE_URL);
+  if (cached) return cached;          // → "Keine Verbindung", obwohl online
+  throw new Error("...");             // → leere Seite
+}
+```
+
+1. **`fetch()` wirft nicht nur bei fehlendem Netz**, sondern bei abgebrochener Verbindung, Timeout, TLS-Neuverhandlung und Netzwechsel. Jeder dieser Fälle erzeugt die Offline-Meldung bei einwandfreiem Netz. → Symptom 1a
+2. **Der `throw` im leeren Cache** lehnt die `respondWith`-Zusage ab; der Nutzer bekommt eine **leere Seite**. Dieser Zustand tritt bei **jedem Erstbesuch** auf, weil `install` die Offline-Seite erst lädt, während der Handler schon greift. → Symptom 1b
+3. **Beantwortet der Worker die Navigation, läuft das JavaScript der App nie an.** Ohne React-Hydration hängt an „Quest importieren" kein Klick-Handler — ein Tap tut nichts. Das deckt sich mit „die Dateiauswahl öffnete sich gar nicht". → Symptom 3
+
+**Warum genau mit der neuen Domain:** Der Scope eines Service Workers ist die **Origin**. `geoquesty.vercel.app` und `geoquest.technolomagie.de` sind verschiedene Origins — auf der neuen Domain ist jeder Nutzer ein Erstbesucher und durchläuft genau das Fenster aus Punkt 2. Auf der alten Domain war der Cache längst gefüllt, weshalb der Fehler dort nie auffiel.
+
+**Es ist dieselbe Fehlerklasse wie am 2026-09-20.** Damals zeigte ein gestoppter Dev-Server „Keine Verbindung"; die Behebung schränkte den Worker auf Production ein und behandelte damit den **Ort**, nicht die **Ursache**. Der Handler konnte weiterhin nicht zwischen „offline" und „Transportfehler" unterscheiden — auf einer neuen Domain trifft das nun echte Nutzer.
+
+### Die Lösung
+
+Der `catch`-Zweig prüft `navigator.onLine`. Nur bei `false` kommt die Offline-Seite; in jedem anderen Fall wird der Fehler weitergegeben, sodass der Browser seine echte Fehlermeldung zeigt. Der `fetch`-Handler bleibt erhalten (ohne ihn keine Installierbarkeit auf Android), `CACHE_NAME` steigt auf `v2`, damit ein unvollständiger v1-Cache abgeräumt wird.
+
+**Verworfen:** den `fetch`-Handler ganz entfernen (behebt den Falschalarm, kostet aber das P0-Feature „PWA-Installation" auf Android) und den Worker abschalten (kostet zusätzlich die Offline-Seite).
+
+**Die Behebung erreicht betroffene Nutzer ohne Zutun:** `sw.js` wird mit `max-age=0` ausgeliefert, `skipWaiting()` und `clients.claim()` stehen bereits im Worker — beides gemessen. Keine Deinstallation, kein Cache-Leeren.
+
+### Für `/frontend` zu beachten
+
+- **Eine Datei:** `public/sw.js`. Kein neues Paket, keine neue Komponente, keine neue Route.
+- **Der `fetch`-Handler darf nicht entfernt werden.** Er ist die Bedingung für `beforeinstallprompt` auf Android.
+- **Die Zusage nie ablehnen, ohne dass der Browser übernimmt.** Eine leere Seite ist in keinem Fall zulässig — sie war Symptom 1b.
+- **`navigator.onLine` ist ein grobes Signal.** Es meldet „mit einem Netz verbunden", nicht „Internet erreichbar". Für diesen Zweck genügt das: `false` ist verlässlich ein echter Verbindungsverlust. Der umgekehrte Fall (verbunden ohne Internet, z.B. Hotel-WLAN vor dem Login) führt zur Browser-Fehlerseite — hinnehmbar und sogar hilfreicher, weil Browser den Captive-Portal-Fall selbst behandeln.
+- **Bestehende Tests:** `tests/proj-12-pwa-installation.spec.ts` prüft die Offline-Seite über `setOffline(true)` — das setzt `navigator.onLine` auf `false` und sollte weiterhin greifen. **Zu verifizieren, nicht anzunehmen.** Neu dazu gehört der Wächter, der bisher ganz fehlt: ein fehlgeschlagener Ladevorgang **bei vorhandenem Netz** darf die Offline-Seite nicht zeigen. Genau diese Lücke hat den Befund durchgelassen.
+- **Der Android-Importbefund wird nicht eigenständig behandelt.** Erst nach der Behebung prüfen, ob er fortbesteht; dann wäre das `accept`-Attribut in `quest-import-button.tsx:113` der nächste Verdacht.
+
+### Nicht Teil dieses Refinements
+
+- Der veraltete DNS-Eintrag im Router des Betreibers (Edge Case 33) — kein Produktfehler, Behebung beim Nutzer: Router neu starten oder Mobilfunk verwenden.
+- Eine Weiterleitung von `geoquesty.vercel.app` auf die eigene Domain — siehe Open Questions; sie würde bestehende Installationen auf der alten Origin ins Leere laufen lassen.

@@ -27,7 +27,7 @@
 | PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Deployed | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
-| PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
+| PROJ-12 | PWA-Installation | P0 | PROJ-1 | In Progress | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
@@ -1379,3 +1379,26 @@ Sieben Routen HTTP 200 (0,10–0,37 s), Security-Header inkl. HSTS, Nachbarseite
 **Eine Auffälligkeit geprüft:** Chrome meldete einen Konsolenfehler, WebKit keinen. Ein ruhiger Besuch erzeugt **0 Antworten ≥400** — es ist `/favicon.ico`, vorbestehend seit dem 2026-09-19.
 
 **Offen: BUG-15 (Low)** — 23 von 9016 Pixeln (0,26%) hinter „ZUM SPIELFELD" auf 320×568 unter der Kontrastvorgabe bei Einzelpixel-Messung. Nach der abgestimmten Methode 5,59:1 und am Bildschirm klar lesbar. Ein Einzeiler schließt es.
+
+## Offenes Refinement 5: Der Service Worker meldet Netzfehler, die es nicht gibt (2026-09-27)
+**PROJ-12** geht von Deployed zurück auf In Progress. Der Betreiber hat die App unter der eigenen Domain `geoquest.technolomagie.de` verfügbar gemacht; seitdem drei Befunde: iPhone/Safari lässt sich nicht öffnen („keine Internetverbindung", oder es öffnet sich gar nichts), Android/Chrome und Mac/Safari öffnen die Seite, aber auf Android versagt „Quest importieren" — die Dateiauswahl öffnet sich **gar nicht**.
+
+**Die Infrastruktur ist gemessen gesund, der Fehler liegt im Produktcode.** Acht Endpunkte HTTP 200 in 0,06–0,28 s, TLS gültig (Let's Encrypt, bis 2026-12-26), Security-Header aktiv, `http://` → 308, alle vier Vercel-IPs antworten, die autoritativen Nameserver liefern nur den korrekten Eintrag, neun von zehn öffentlichen Resolvern ebenso.
+
+**Ursache: der `fetch`-Handler in `public/sw.js`.** Er behandelt **jeden** `fetch()`-Fehler als „offline". `fetch()` wirft aber auch bei abgebrochener Verbindung, Timeout, TLS-Neuverhandlung und Netzwechsel — dann zeigt die App „Keine Verbindung" bei einwandfreiem Netz. Und der `throw` im leeren Cache lehnt die `respondWith`-Zusage ab, was für den Nutzer eine **leere Seite** ergibt; dieser Zustand tritt bei **jedem Erstbesuch** auf, weil `install` die Offline-Seite erst lädt, während der Handler schon greift.
+
+**Warum gerade jetzt:** Der Scope eines Workers ist die **Origin**. Auf der neuen Domain ist jeder Nutzer Erstbesucher und durchläuft genau dieses Fenster; auf der alten war der Cache längst gefüllt. Der Android-Importbefund hat dieselbe Wurzel — beantwortet der Worker die Navigation, läuft das JavaScript nie an und am Button hängt kein Klick-Handler.
+
+**Es ist dieselbe Fehlerklasse wie am 2026-09-20.** Damals zeigte ein gestoppter Dev-Server „Keine Verbindung"; die Behebung schränkte den Worker auf Production ein und behandelte damit den **Ort**, nicht die **Ursache**.
+
+**Entschieden (Betreiber):** Die Offline-Seite greift nur bei `navigator.onLine === false`; jeder andere Fehler wird an den Browser zurückgegeben, der den echten Grund nennt. Der `fetch`-Handler **bleibt** — ohne ihn feuert Chrome/Android kein `beforeinstallprompt`, und das P0-Feature „PWA-Installation" fiele auf einer der beiden Hauptplattformen weg. `CACHE_NAME` steigt auf `v2`, damit ein unvollständiger v1-Cache abgeräumt wird. Verworfen: Handler entfernen, Worker abschalten.
+
+**Die Behebung erreicht betroffene Nutzer ohne Zutun** — gemessen: `sw.js` wird mit `max-age=0` ausgeliefert, `skipWaiting()` und `clients.claim()` stehen bereits im Worker. Keine Deinstallation, kein Cache-Leeren.
+
+**Eine Fehlspur, offen benannt, damit sie niemand erneut verfolgt:** Der Router des Betreibers (Fritz!Box) hielt einen unauflösbaren DNS-Eintrag (`cname.vercel-dns.` ohne TLD, 22 h Restlaufzeit). Das ist belegt — aber **nicht** die Ursache: Auch Tester in fremden Netzen sind betroffen. Hätte ich es dabei belassen, wäre ein echter Produktfehler als Nutzerproblem abgelegt worden. Behebung liegt beim Nutzer (Router neu starten oder Mobilfunk), dokumentiert als Edge Case 33.
+
+**Der Android-Importbefund wird nicht eigenständig behandelt** — erst nach der Behebung prüfen, ob er fortbesteht; dann wäre das `accept`-Attribut in `quest-import-button.tsx:113` der nächste Verdacht (Androids Dateiauswahl blendet JSON je nach Quelle aus). Kein zweiter Eingriff auf Verdacht.
+
+**Für `/frontend`:** Eine Datei (`public/sw.js`). Der bestehende Offline-Test nutzt `setOffline(true)`, was `navigator.onLine` auf `false` setzt und weiterhin greifen sollte — **zu verifizieren, nicht anzunehmen**. Neu dazu gehört der Wächter, der bisher ganz fehlt: ein fehlgeschlagener Ladevorgang **bei vorhandenem Netz** darf die Offline-Seite nicht zeigen. Genau diese Lücke hat den Befund durchgelassen.
+
+Spec ist aktualisiert (2 User Stories, 8 Acceptance Criteria in einem eigenen Block, Edge Cases 29–33, 7 Technical Requirements, 4 Produkt- und 5 technische Entscheidungen, 2 neue Open Questions, dazu ein Abschnitt „Refinement 5" mit der vollständigen Messtabelle).

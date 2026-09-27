@@ -33,6 +33,9 @@ Geo Quest ist eine Mobile-First-Web-App (PWA), die Kinder und Jugendliche (etwa 
 3. Stabile lokale Datenhaltung
 4. Reibungsloser Import/Export von Quests
 
+## Produktionsadresse
+Die App läuft unter **https://geoquest.technolomagie.de** (eigene Domain, seit 2026-09-27). Die frühere Adresse `geoquesty.vercel.app` bedient dasselbe Deployment und bleibt vorerst erreichbar. Zu beachten: Ein Service Worker ist **pro Origin** registriert — eine Installation auf der alten Adresse zieht nicht auf die neue um, sie müsste dort neu angelegt werden.
+
 ## Success Metrics
 - App funktioniert zuverlässig auf mobilen Geräten (iOS Safari, Android Chrome)
 - Mindestens eine vollständige Quest erstellt und von anderen gespielt
