@@ -1,6 +1,6 @@
 # PROJ-3: Player — GPS-Navigation
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-08-23
 **Last Updated:** 2026-09-26
 
@@ -358,6 +358,8 @@ Schlimmer: Der Button hängt an `position` (`navigation-screen.tsx:168`). Fehlen
 `useDeviceOrientation()` läuft zweimal — `quest-player.tsx:61` und `navigation-screen.tsx:41`. `permission` ist React-State pro Instanz, die iOS-Freigabe wirkt browserweit. Nach einem erfolgreichen `requestPermission()` setzt nur die aufrufende Instanz ihr `permission` auf `"granted"` und hängt nur sie ihren Listener an (`use-device-orientation.ts:205-207`).
 
 Für `/frontend` ist das die wahrscheinlichste Stolperstelle beim Kompass-Teil: ein Knopf, der sichtbar reagiert, aber den Pfeil nicht dreht, weil die anzeigende Instanz nichts von der Freigabe erfahren hat.
+
+> **Korrektur aus der QA (2026-09-26):** Diese Befürchtung ist **gemessen widerlegt**. AC-9 besteht auch gegen den Vorgängerstand — der Pfeil dreht dort ebenfalls auf `rotate(150.672deg)`, `requestPermission` wird 1× aufgerufen. Grund: Jede Instanz hielt ihren **eigenen** `listenerAdded`-Ref und hängte ihren **eigenen** Listener an; die Instanz des Navigations-Screens hat also sowohl die Freigabe angefordert als auch gerendert. Die beiden Instanzen mussten nie miteinander reden. Die Zusammenlegung bleibt richtig (eine Wahrheit über einen Sensor, ein Listener statt zwei), ist aber **Vorsorge, nicht Behebung eines gemeldeten Fehlers**.
 
 ### Entschiedener Umfang
 
@@ -1668,3 +1670,123 @@ Ebenso per Gegenprobe geschärft auf Unit-Ebene: Ersetzt man `watchActive` durch
 - **Das echte iPhone.** Der iOS-Pfad ist per Unit-Test (rejectendes `permissions.query()`) und per E2E mit vorgetäuschtem Permissions-API belegt, aber Safaris tatsächliches Verhalten kann keine Testumgebung beweisen. Das ist zugleich der Pfad, auf dem der Befund gemeldet wurde.
 - **Die echte iOS-Sensorfreigabe.** `DeviceOrientationEvent.requestPermission` existiert in keiner Testumgebung; der Kompass-Knopf ist über ein vorgetäuschtes API geprüft.
 - **Firefox** (Binary fehlt, dokumentiert in INDEX.md).
+
+---
+
+## QA Test Results — GPS-Zustand beim Wiedereinstieg (2026-09-26)
+
+**Getestet:** 2026-09-26
+**Umgebung:** Production-Build (`next start`, Port 3100), Chrome 152 + WebKit (Mobile Safari)
+**Ergebnis: 9/9 Acceptance Criteria erfüllt, keine Bugs jeglicher Schwere. Production-Ready.**
+
+Weil das Feature in derselben Sitzung gebaut wurde, habe ich die zentralen Behauptungen **nicht übernommen, sondern neu gemessen** — und dabei die drei Kriterien nachgeholt, die die Frontend-Phase nie isoliert geprüft hatte (AC-2, AC-6, AC-9).
+
+### Der wichtigste Einzelbefund betrifft die Testabdeckung, nicht das Produkt
+
+In den **drei bestehenden PROJ-3-Testdateien kommt `clearPermissions` null Mal vor**. Kein einziger Test hat den Navigations-Screen je ohne GPS-Fix betreten — deshalb konnte der Befund live gehen, während die Suite grün war. Nicht „die Tests waren zu lasch", sondern: dieser Zustand war strukturell unerreichbar.
+
+Gegenprobe gegen die **echte Vorgängerfassung** (`32bf368~1`, eigener Build) reproduziert den gemeldeten Befund wörtlich:
+
+```
+ZWEITE STATION | ZIEL 2 VON 2 | N | O | S | W | —m | ZUR NÄCHSTEN STATION
+Knöpfe: []
+```
+
+Genau der stumme Strich ohne jede Handlungsmöglichkeit. Gegen denselben Stand fallen **7 von 8** neuen QA-Tests (14 Fehlschläge über beide Engines). Der eine, der besteht („korrupter Fortschritt"), ist der richtige — ein Wächter gegen Kollateralschaden, der in beiden Fassungen halten muss.
+
+### Acceptance Criteria (im Browser gemessen, nicht aus Testnamen abgeleitet)
+
+| AC | Ergebnis | Messung |
+|---|---|---|
+| **AC-1** Zustand statt Strich | PASS | Alle 5 Zustände zeigen Erklärung; beide Engines identisch |
+| **AC-2** Wortlaut wie Quest-Start | PASS | Erklärtext und Knopf **byte-identisch**; siehe Korrektur unten |
+| **AC-3** Watch-Nachstart | PASS | **0** `watchPosition`-Aufrufe auf der Liste, **exakt 1** nach dem Tap — bei rejectendem Permissions-API (iOS-Bedingung), beide Engines |
+| **AC-4** Kopfzeile + Ausweg | PASS | Stationsname sichtbar, Zurück führt zur Liste, abgeschlossene Station **ohne GPS lesbar** |
+| **AC-5** Fix ohne zweiten Tap | PASS | „SUCHE GPS-SIGNAL…" → `2586m` Navigation, ohne Nutzeraktion, beide Engines |
+| **AC-6** kein Sackgassen-Knopf | PASS | `unavailable` und `searching`: **0 Knöpfe**, beide Engines |
+| **AC-7** mit Fix unverändert | PASS | Navigation normal; **Ankunftserkennung intakt** („ZIEL ERREICHT! / STATION ENTDECKEN") |
+| **AC-8** Kompass ohne Fix erreichbar | PASS | Auf iOS mit **beiden** fehlenden Freigaben stehen **beide** Knöpfe |
+| **AC-9** Kompass wirkt sofort | PASS | `requestPermission` 1×, Pfeil dreht auf `rotate(150.672deg)` — **ohne Neuladen** |
+
+### Eine Korrektur an einer eigenen Messung (AC-2)
+
+Mein erster Vergleich meldete für `denied` und `unavailable` „Wortlaut nicht identisch" und sah nach einem Befund aus. **Die Messung war falsch, nicht das Produkt:** Sie verglich zwei verschiedene *Zeitpunkte*. Beim Quest-Start kennt der Screen die Diagnose erst, **nachdem** der Spieler „Standort erlauben" gedrückt hat — `permission` steht vorher auf `"prompt"`, also erscheint der generische Text. Der Navigations-Screen startet den Watch selbst und hat die echte Diagnose sofort.
+
+Zum selben Zeitpunkt gemessen sind Erklärtext und Knopf identisch:
+
+| Zustand | Erklärtext | Knopf |
+|---|---|---|
+| `denied` | identisch | „EINSTELLUNGEN PRÜFEN" beidseits |
+| `unavailable` | identisch | **keiner** beidseits |
+| `searching` | identisch | keiner beidseits |
+| `no-fix` | identisch | „ERNEUT VERSUCHEN" beidseits |
+
+Einziger Unterschied ist die Überschrift — die bewusste `blockedTitle`-Prop. **Das neue Verhalten ist sogar besser als das alte:** Der Navigations-Screen erreicht die richtige Diagnose ohne Knopfdruck.
+
+### Eine Behauptung der Frontend-Phase ist widerlegt
+
+Die Implementation Notes führen die aufgelöste Doppel-Instanz von `useDeviceOrientation()` als Bedingung dafür, dass AC-9 funktioniert. **Gemessen stimmt das nicht:** AC-9 besteht auch gegen den Vorgängerstand (Pfeil dreht auf `rotate(150.672deg)`, `requestPermission` 1×). Im alten Code hielt **jede Instanz ihren eigenen `listenerAdded`-Ref** und hängte ihren eigenen Listener an — die Instanz des Navigations-Screens hat also sowohl die Freigabe angefordert als auch gerendert. Die beiden Instanzen mussten nie miteinander reden.
+
+Die Zusammenlegung bleibt richtig (eine Wahrheit über einen Sensor, ein Listener statt zwei), aber sie hat **keinen gemeldeten Fehler behoben** — sie ist Vorsorge, nicht Behebung. Edge Case 27 beschreibt ein reales Strukturproblem, dessen praktische Auswirkung die Spec überschätzt hat.
+
+### Edge Cases
+
+| EC | Ergebnis | Messung |
+|---|---|---|
+| **EC-24** Wiedereinstieg ohne Watch | PASS | Mit rejectendem `permissions.query()`: 0 → 1 Aufruf nach dem Tap |
+| **EC-25** `permission` unbekannt | PASS | Alle 5 Zustände erreichen den Screen |
+| **EC-26** `searching` kein Fehler | PASS | Eigene Überschrift, **kein** Knopf |
+| **EC-27** Doppel-Instanz | PASS (strukturell) | Genau **1** `useDeviceOrientation()` im Produktcode; praktische Auswirkung siehe oben |
+| **EC-28** Fix trifft ein / Aussetzer danach | PASS | Beide Richtungen: Fix → Navigation ohne Tap; **32s Aussetzer nach der Navigation → „GPS-SIGNAL VERLOREN"**, also der bestehende 30s-Pfad, nicht der neue Zweig |
+
+### Über die Spec hinaus geprüft
+
+- **Kein Doppelstart:** `watchPosition` bleibt über 9s bei **genau 1** Aufruf, auch nach Verlassen und erneutem Betreten des Screens. Auf iOS gäbe es sonst wiederholte Berechtigungsdialoge ohne Nutzergeste.
+- **Responsive:** 320×568, 375×667, 768×1024, 1440×900 × 2 Engines = **8 Kombinationen**, überall `overflow: 0`, Tap-Ziel 48px, **0 abgeschnittene Elemente**, Kopfzeile bei `top: 0`.
+- **Kontrast gemessen:** Überschrift **19.24:1**, Text **7.90:1**, Knöpfe **11.53:1**, Kopfzeilen-Titel **19.40:1** bei 4.5:1 Vorgabe. Beide Engines identisch. Der neue Code nutzt ausschließlich Marken-Farben (teal/black) — **kein `text-gq-grey`**, die BUG-1-Falle ist vermieden.
+- **Tastaturbedienung:** Auf Chrome 3 Elemente in sinnvoller Reihenfolge (Zurück → Menü → Knopf). WebKit meldet beim Tabben durchgehend `BODY` — **engine-bedingt, kein Produktfehler**: Gegengeprüft auf `/about`, einer von diesem Refinement unberührten Seite, dort dasselbe Verhalten (Safari braucht „Vollzugriff über Tastatur" als Systemeinstellung).
+- **Quest-Start unverändert:** `min-height: 675.2px` (= 80vh), Überschrift „NAVIGATION AKTIVIEREN", Knopf „STANDORT ERLAUBEN" — die `className`-Prop hat den Default korrekt erhalten.
+
+### Security Audit — ohne Befund
+
+Der Stationsname ist das einzige angreiferkontrollierte Feld auf diesem Screen.
+
+- `<img src=x onerror=...>` und `<script>` im Stationsnamen: **als escapter Text gerendert** (sichtbar als Literal in der Kopfzeile), **0** injizierte Elemente, `window.__pwn` bleibt `null`, **0** Dialoge
+- Fünf Varianten korrupter `gq_progress_*`-Daten (`"nope"`, `null`, `[]`, falsche Typen, kein JSON): App durchgehend bedienbar, **0 `pageerror`**
+- Kein horizontaler Überlauf durch den Payload (`overflow: 0`)
+
+### Neue Tests
+
+**8 Tests** in `tests/proj-3-gps-wiedereinstieg-qa.spec.ts` (16 über beide Engines), gezielt für das, was die Frontend-Phase nicht abdeckte: AC-2 wortgleich, AC-6 in zwei Ausprägungen, AC-4 Ausweg, Kontrast/Tap-Ziele, 320px, XSS, korrupte Daten.
+
+Per Gegenprobe geschärft: Gegen die echte Vorgängerfassung fallen **7 von 8**.
+
+### Regression — isoliert gemessen statt aus dem Sammellauf abgeleitet
+
+| Bereich | Ergebnis |
+|---|---|
+| **PROJ-3 bestehend** (3 Dateien, je Engine 50 Tests) | **100/100** — keine der vorherigen Zusicherungen gebrochen |
+| **PROJ-4 + PROJ-5** (Player-Nachbarn) | **102/102** |
+| **PROJ-7 + PROJ-8** (Creator, im Sammellauf auffällig) | **46/46** |
+| **PROJ-3 Wiedereinstieg** (Frontend + QA) | **34/34**, 3× seriell identisch — keine Flakiness |
+| **Unit** | **278/278** |
+| **Gesamtsuite seriell** (beide Engines) | **1127 expected / 55 skipped / 0 unexpected / 0 flaky** |
+
+Dazu ein **vollständiger Quest-Durchlauf** auf WebKit: Intro → Stationsliste → Ankunft → Module → Outro, alle fünf Schritte korrekt, **0 `pageerror`**. Damit sind PROJ-4 und PROJ-5 auch end-to-end bestätigt.
+
+**0 Skips** in allen fünf PROJ-3-Dateien — keine stillgelegten Tests.
+
+Build sauber, Lint **0 Fehler** (7 vorbestehende Warnungen, keine in geänderten Dateien). `npx tsc --noEmit` meldet 2 Fehler in `src/lib/quest-storage.test.ts` — **vorbestehend aus PROJ-6**, in dieser Sitzung nicht angefasst (`git diff` über den gesamten Sitzungsbereich: 0 Zeilen).
+
+PROJ-3 wächst von 50 auf **67 Tests je Engine** (134 über beide).
+
+### Beobachtungen ohne Bug-Status
+
+- **Sammellauf-Flakiness bestätigt, nicht angenommen:** Der Gesamtlauf mit `--workers=2` meldete 18 Fehlschläge, davon 17 in PROJ-7/PROJ-8 — Creator-Dateien, die dieses Refinement nicht anfasst. **Isoliert laufen dieselben 46 Tests grün durch**, und der **serielle Gesamtlauf derselben Suite gegen denselben Build ergibt 0 unexpected**. Damit ist es gemessen und nicht bloß plausibel: Die 18 waren Last-Artefakte. Das in INDEX.md dokumentierte Muster, hier um den direkten Vergleich parallel/seriell ergänzt.
+- **BUG-15** (PROJ-5) erscheint im Lauf als Fehlschlag. Das ist der `test.fail`-Wächter eines bewusst mitdeployten Bugs und verhält sich korrekt; Playwrights eigene Zählung führt ihn als `expected`.
+
+### Nicht abgedeckt
+
+- **Das echte iPhone.** Der iOS-Pfad ist per Unit-Test (rejectendes `permissions.query()`) und per E2E mit vorgetäuschtem Permissions-API belegt — Safaris tatsächliches Verhalten kann keine Testumgebung beweisen. Das ist zugleich der Pfad, auf dem der Befund gemeldet wurde, und bleibt die einzige offene Bestätigung.
+- **Die echte iOS-Sensorfreigabe.** `DeviceOrientationEvent.requestPermission` existiert in keiner Testumgebung; geprüft über ein vorgetäuschtes API.
+- **Firefox** (Binary fehlt, in INDEX.md dokumentiert).

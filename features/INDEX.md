@@ -18,7 +18,7 @@
 |----|---------|----------|--------------|--------|------|---------|
 | PROJ-1 | App Shell & Mode Switch | P0 | None | Deployed | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
-| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | In Progress | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
+| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Approved | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
 | PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
@@ -531,6 +531,29 @@ Auf Unit-Ebene ebenso geschärft: Ersetzt man `watchActive` durch die naheliegen
 **Bewusst nicht angefasst:** Der 30s-Signalverlust bleibt zuständig für Aussetzer **nach** erfolgreicher Navigation — der neue Zweig steht deshalb dahinter. Der Watch-Nachstart läuft nur beim Mount, nicht bei jeder `watchActive`-Änderung (als Dependency würde er den Retry-Pfad des Spielers überfahren). Der Hook selbst ist unverändert.
 
 **Nicht abgedeckt und benannt:** das echte iPhone (der iOS-Pfad ist per Unit-Test und vorgetäuschtem Permissions-API belegt, aber Safaris tatsächliches Verhalten kann keine Testumgebung beweisen — und genau dort wurde der Befund gemeldet), die echte iOS-Sensorfreigabe, und Firefox.
+**QA am 2026-09-26 abgeschlossen: 9/9 Acceptance Criteria erfüllt, keine Bugs jeglicher Schwere, Production-Ready.**
+
+Weil in derselben Sitzung gebaut, habe ich die zentralen Behauptungen **neu gemessen statt übernommen** — und die drei Kriterien nachgeholt, die die Frontend-Phase nie isoliert geprüft hatte (AC-2 Wortlaut-Gleichheit, AC-6 kein Sackgassen-Knopf, AC-9 Kompass wirkt sofort).
+
+**Der wichtigste Einzelbefund betrifft die Testabdeckung:** In den drei bestehenden PROJ-3-Dateien kommt `clearPermissions` **null Mal** vor — kein Test hat den Navigations-Screen je ohne GPS-Fix betreten. Der Zustand war strukturell unerreichbar, deshalb konnte der Befund live gehen, während die Suite grün war. Die Gegenprobe gegen die echte Vorgängerfassung reproduziert ihn wörtlich: `ZIEL 2 VON 2 | … | —m | ZUR NÄCHSTEN STATION` mit **0 Knöpfen**. Gegen denselben Stand fallen **7 von 8** neuen QA-Tests; der eine bestehende ist der richtige (Kollateral-Wächter).
+
+**Gemessen, beide Engines identisch:** AC-3 am Mechanismus statt am Symptom — **0** `watchPosition`-Aufrufe auf der Stationsliste, **exakt 1** nach dem Tap, bei rejectendem Permissions-API (iOS-Bedingung). AC-5: „SUCHE GPS-SIGNAL…" → `2586m` ohne zweiten Tap. AC-7: **Ankunftserkennung intakt** („ZIEL ERREICHT!"). AC-9: Pfeil dreht auf `rotate(150.672deg)` ohne Neuladen.
+
+**Eine eigene Messung korrigiert (AC-2):** Mein erster Vergleich meldete „Wortlaut nicht identisch" und sah nach einem Befund aus — er verglich zwei verschiedene **Zeitpunkte**. Beim Quest-Start kennt der Screen die Diagnose erst **nach** dem Knopfdruck (`permission` steht vorher auf `"prompt"`). Zum selben Zeitpunkt gemessen sind Erklärtext und Knopf in allen Zuständen identisch. Das neue Verhalten ist sogar besser: Der Navigations-Screen erreicht die richtige Diagnose ohne Knopfdruck.
+
+**Eine Behauptung der Frontend-Phase ist widerlegt:** Die aufgelöste Doppel-Instanz von `useDeviceOrientation()` galt dort als Bedingung für AC-9. Gemessen besteht AC-9 **auch gegen den Vorgängerstand** — jede Instanz hielt ihren eigenen `listenerAdded`-Ref und hängte ihren eigenen Listener an, die beiden mussten nie miteinander reden. Die Zusammenlegung bleibt richtig (eine Wahrheit über einen Sensor), ist aber **Vorsorge, nicht Behebung**. Die Spec ist an der Stelle korrigiert.
+
+**Über die Spec hinaus geprüft:** kein Doppelstart des Watch (über 9s und nach erneutem Betreten **genau 1** Aufruf — auf iOS gäbe es sonst wiederholte Berechtigungsdialoge), Responsive auf **8 Kombinationen** (320–1440px × 2 Engines, überall 0px Überlauf, 0 abgeschnittene Elemente), Tastaturbedienung, und Edge Case 28 in **beiden** Richtungen — ein 32s-Aussetzer **nach** erfolgreicher Navigation landet korrekt bei „GPS-SIGNAL VERLOREN", also im bestehenden 30s-Pfad statt im neuen Zweig.
+
+**Kontrast gemessen:** Überschrift **19.24:1**, Text **7.90:1**, Knöpfe **11.53:1** bei 4.5:1 Vorgabe. Der neue Code nutzt ausschließlich Marken-Farben — **kein `text-gq-grey`**, die BUG-1-Falle ist vermieden.
+
+**Security ohne Befund:** Markup im Stationsnamen wird als escapter Text gerendert (0 injizierte Elemente, `window.__pwn` bleibt `null`, 0 Dialoge), fünf Varianten korrupter Fortschrittsdaten ergeben **0 `pageerror`** bei durchgehend bedienbarer App.
+
+**Regression isoliert gemessen statt aus dem Sammellauf abgeleitet:** PROJ-3 bestehend **100/100**, PROJ-4+PROJ-5 **102/102**, PROJ-7+PROJ-8 **46/46**, die beiden Wiedereinstiegs-Dateien **34/34** (3× seriell identisch, keine Flakiness), Unit **278/278**, **Gesamtsuite seriell 1127 expected / 55 skipped / 0 unexpected / 0 flaky**. Dazu ein vollständiger Quest-Durchlauf auf WebKit über alle fünf Schritte mit **0 `pageerror`**. **0 Skips** in allen fünf PROJ-3-Dateien. PROJ-3 wächst von 50 auf **67 Tests je Engine**.
+
+**Beobachtung ohne Bug-Status:** Der Sammellauf mit `--workers=2` meldete 18 Fehlschläge, davon 17 in PROJ-7/PROJ-8 — Creator-Dateien, die dieses Refinement nicht anfasst. **Isoliert laufen dieselben 46 Tests grün durch**, und der **serielle Gesamtlauf derselben Suite gegen denselben Build ergibt 0 unexpected**. Gemessen statt plausibel gemacht — es waren Last-Artefakte, kein Regress.
+
+**Nicht abgedeckt:** das echte iPhone — Safaris tatsächliches Verhalten kann keine Testumgebung beweisen, und genau dort wurde der Befund gemeldet. Dazu die echte iOS-Sensorfreigabe und Firefox.
 
 ## Next Available ID: PROJ-15
 
