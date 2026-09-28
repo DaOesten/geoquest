@@ -1,8 +1,8 @@
 # PROJ-9: Creator — JSON-Export
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-08-28
-**Last Updated:** 2026-09-28 (QA: 17/17 Acceptance Criteria, 1 Medium-Bug BUG-16, Production-Ready)
+**Last Updated:** 2026-09-28 (Deployed nach Production, Tag `v1.42.0-PROJ-9`)
 
 ## Dependencies
 - Requires: PROJ-6 (Creator — Quest-Verwaltung) — für die `QuestManagementCard`, ihr Aktionen-Menü und die bereits vorbereiteten (aber bislang ungenutzten) Felder/Funktionen `published`, `isPublished()`, `publishQuest()`
@@ -611,3 +611,24 @@ Alle 16 dokumentierten Edge Cases geprüft (11 unverändert aus dem ursprünglic
 - **Security:** Pass (XSS, Korruption, Prototype-Pollution, Performance alle ohne Befund; BUG-16 ist ein Integritäts-, kein Sicherheitsproblem)
 - **Production Ready:** YES
 - **Recommendation:** Deploy. BUG-16 ist dokumentiert und regressionsgesichert, aber nicht blockierend — schmales Zeitfenster, kein Datenverlust, betrifft nur Mehrfach-Tab-Nutzung.
+
+---
+
+## Deployment
+
+**Deployed:** 2026-09-28
+**Tag:** `v1.42.0-PROJ-9`
+**Commit:** `d2236ce`
+**Production-URLs:** https://geoquesty.vercel.app und https://geoquest.technolomagie.de (dieselbe Vercel-Bereitstellung, zwei Domains)
+
+Vercel deployte automatisch von `main` nach dem Push, live nach **45 Sekunden** (gemessen am Wechsel des `sw.js`-Inhalts, siehe PROJ-12-Deployment-Abschnitt für dieselbe Messung).
+
+**Der Kern ist am live ausgelieferten Bundle bestätigt, nicht nur am Statuscode:** Der Chunk `5aa18b55227b8bc2.js` enthält den neuen Meldungstext `„…" hat noch kein Modul` — 1 Treffer, nach Durchsuchen aller 18 von `/create` referenzierten Chunks.
+
+**Ein echter Live-Funktionstest** (nicht nur ein Bundle-Scan) gegen `https://geoquesty.vercel.app/create`: Eine Quest mit einer Station ohne Modul wurde per `localStorage` gesetzt, „Veröffentlichen" angeklickt — Ergebnis: **kein Download ausgelöst**, Toast zeigt `„Leere Station" hat noch kein Modul. Füge mindestens eines hinzu, um zu veröffentlichen.` Exakt das spezifizierte Verhalten, live bestätigt.
+
+**Nachbarrouten unbeschädigt:** `/`, `/play`, `/create`, `/about` alle HTTP 200, **0 Konsolenfehler** bei ruhigem Besuch von `/` und `/play`.
+
+**Die eigene Domain ist bestätigt identisch zur bisherigen Vercel-Adresse.** Der lokale DNS-Resolver dieser Umgebung hielt beim ersten Prüfversuch einen veralteten Eintrag (dieselbe Fehlerklasse wie beim Router des Betreibers, Edge Case 33 in PROJ-12) — mit `--resolve` gegen die korrekte IP umgangen, danach zeigten beide Domains identischen Inhalt (`sw.js` byte-äquivalent, alle Routen 200, Security-Header aktiv inkl. HSTS).
+
+**BUG-16 bleibt offen und nicht blockierend** — dokumentiert in den QA Test Results oben, kein Deploy-Hindernis laut QA-Empfehlung.

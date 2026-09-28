@@ -1,8 +1,8 @@
 # PROJ-12: PWA-Installation (Add to Homescreen)
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-09-18
-**Last Updated:** 2026-09-28 (QA: 8/8 Acceptance Criteria, keine Bugs, Production-Ready)
+**Last Updated:** 2026-09-28 (Deployed nach Production, Tag `v1.42.0-PROJ-12`)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — der Startscreen `/` trägt einen der beiden Hinweis-Orte, und das Wurzel-Layout (`src/app/layout.tsx`) hält heute schon `themeColor` und `viewportFit: "cover"`
@@ -1882,3 +1882,29 @@ Keine.
 - **Security:** Pass, keine Befunde
 - **Production Ready:** YES
 - **Recommendation:** Deploy. Der zentrale Mechanismus ist doppelt belegt (Unit-Test gegen echten Code + Gegenprobe gegen die echte fehlerhafte Fassung). Einzige offene Bestätigung ist der reale Gerätetest durch den Betreiber, der kein Blocker für das Deployment ist — die Spec hat das von Anfang an so vorgesehen.
+
+---
+
+## Deployment (Refinement 5)
+
+**Deployed:** 2026-09-28
+**Tag:** `v1.42.0-PROJ-12`
+**Commit:** `d2236ce`
+**Production-URLs:** https://geoquesty.vercel.app und https://geoquest.technolomagie.de (dieselbe Vercel-Bereitstellung, zwei Domains)
+
+Vercel deployte automatisch von `main` nach dem Push, **live nach 45 Sekunden** — gemessen per Polling auf `sw.js`, das erst `navigator.onLine` nicht enthielt und dann enthielt.
+
+**Der Kern ist am live ausgelieferten Asset bestätigt:** `sw.js` trägt `const CACHE_NAME = "geoquest-offline-v2";` und zweimal `navigator.onLine`. `cache-control: public, max-age=0, must-revalidate` unverändert aktiv — Nutzer mit einer alten, fehlerhaften Worker-Fassung bekommen die Korrektur beim nächsten Öffnen ohne eigenes Zutun, wie in der Spec vorausgesagt.
+
+**Zwei echte Live-Funktionstests** (Browser gegen die echte Produktions-URL, nicht nur Bundle-Text):
+1. **Cache-Inhalt:** `caches.keys()` liefert exakt `["geoquest-offline-v2"]`, der Cache enthält exakt `["/offline.html"]` — deckungsgleich mit der lokalen QA-Messung.
+2. **v1→v2-Upgrade im echten Lebenszyklus:** Ein künstlich hinterlegter `geoquest-offline-v1`-Cache wurde nach Neuregistrierung des Workers korrekt entfernt, `v2` blieb bestehen — derselbe Test wie lokal, jetzt gegen die Live-Origin.
+3. **Echter Offline-Fall:** `context.setOffline(true)` gegen die Live-Seite zeigt weiterhin **„KEINE VERBINDUNG"** — die eigene Fehlerseite, keine leere Seite, kein Browser-Dinosaurier.
+
+**Die zentrale Behauptung des Refinements — kein Falschalarm mehr bei vorhandenem Netz — ist strukturell nicht als Live-Browsertest nachstellbar** (siehe QA Test Results: Playwright kann den `fetch()` des Workers selbst nicht scheitern lassen, während `navigator.onLine` true bleibt). Das ausgelieferte Bundle enthält nachweislich denselben Code, der bereits gegen die echte Vorgängerfassung gegengeprüft wurde (2 von 4 Unit-Tests fallen exakt bei den gemeldeten Symptomen) — die Korrektheit ist damit durch den Code-Abgleich und nicht durch einen zusätzlichen Live-Test belegt.
+
+**Nachbarrouten unbeschädigt:** alle sieben Routen HTTP 200, Security-Header (HSTS, `x-frame-options`, `nosniff`) aktiv, 0 Konsolenfehler bei ruhigem Besuch.
+
+**Die eigene Domain `geoquest.technolomagie.de` ist bestätigt identisch versorgt.** Beim ersten Prüfversuch hielt der lokale DNS-Resolver dieser Umgebung einen veralteten `cname.vercel-dns.`-Eintrag (ohne TLD, exakt dieselbe Fehlerklasse wie beim Router des Betreibers, Edge Case 33) — mit `--resolve` gegen die korrekte IP (`216.198.79.1`) umgangen, danach: `sw.js` byte-äquivalent zur Vercel-Adresse, alle Routen 200, Header aktiv. Dieser DNS-Cache-Effekt bestätigt erneut, wie in Refinement 5 analysiert, dass er ausschließlich lokale Resolver betrifft und nichts mit dem Deployment selbst zu tun hat.
+
+**Damit ist PROJ-12 (inkl. aller vorherigen Refinements) vollständig deployed.**

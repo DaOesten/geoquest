@@ -24,10 +24,10 @@
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
 | PROJ-7 | Creator — Stationen-Editor | P0 | PROJ-6 | Deployed | [Spec](PROJ-7-creator-stationen-editor.md) | 2026-08-23 |
 | PROJ-8 | Creator — Modul-Editor | P0 | PROJ-7 | Deployed | [Spec](PROJ-8-creator-modul-editor.md) | 2026-08-23 |
-| PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Approved | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
+| PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Deployed | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
-| PROJ-12 | PWA-Installation | P0 | PROJ-1 | Approved | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
+| PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
@@ -1489,3 +1489,18 @@ Die Config hat **keinen `webServer`-Block** — sie erwartet, dass auf Port 3100
 **Kontrast und Touch-Targets gemessen:** Fehlermeldungs-Toast 19.40:1 (Vorgabe 4.5:1), Menü-Trigger und "Veröffentlichen"-Eintrag 44×44px. Responsive auf 375/768/1440px ohne horizontalen Überlauf, auch mit 500-Zeichen-Stationsnamen.
 
 **Nicht abgedeckt:** das echte iPhone unter schwachem Mobilfunk auf frisch installierter Origin (PROJ-12, strukturell nicht testbar, in der Spec bereits als Betreiber-Aufgabe vermerkt) und Firefox (Binary fehlt weiterhin auf dieser Maschine).
+
+## Deployt: Service Worker + Veröffentlichen-Prüfung (2026-09-28)
+**PROJ-9** und **PROJ-12** sind **nach Production deployt** (Tags `v1.42.0-PROJ-9` und `v1.42.0-PROJ-12`, Commit `d2236ce`) — live auf https://geoquesty.vercel.app und https://geoquest.technolomagie.de (dieselbe Vercel-Bereitstellung). Vercel deployte automatisch von `main`, **live nach 45 Sekunden**, gemessen per Polling auf den Wechsel im ausgelieferten `sw.js`.
+
+**Der PROJ-12-Kern ist am Asset bestätigt:** `sw.js` trägt `CACHE_NAME = "geoquest-offline-v2"` und zweimal `navigator.onLine`. Zwei echte Live-Browsertests gegen die Produktions-URL: Cache-Inhalt exakt `["geoquest-offline-v2"]` mit genau `/offline.html`, und ein künstlich hinterlegter `v1`-Cache wird beim Reaktivieren des Workers korrekt entfernt. Ein echter Offline-Fall (`context.setOffline(true)`) zeigt weiterhin die eigene "KEINE VERBINDUNG"-Seite, nicht leer. Der zentrale Falschalarm-Fix selbst ist strukturell nicht per Live-Browsertest nachstellbar (dieselbe Playwright-Grenze wie in der QA) — belegt über den Code-Abgleich des ausgelieferten Bundles mit der bereits unit-gegengeprüften Fassung.
+
+**Der PROJ-9-Kern ist per echtem Live-Funktionstest bestätigt, nicht nur am Bundle:** Eine Quest mit leerer Station wurde live auf `https://geoquesty.vercel.app/create` angelegt, "Veröffentlichen" geklickt — **kein Download ausgelöst**, Toast zeigt `„Leere Station" hat noch kein Modul. Füge mindestens eines hinzu, um zu veröffentlichen.` Zusätzlich im Bundle nachgewiesen: Der neue Meldungstext steckt in `5aa18b55227b8bc2.js`, nach Durchsuchen aller 18 von `/create` referenzierten Chunks.
+
+**Alle Routen gesund:** `/`, `/play`, `/create`, `/about`, `/sw.js`, `/manifest.webmanifest`, `/offline.html` je HTTP 200, Security-Header (HSTS, `x-frame-options`, `nosniff`) aktiv, 0 Konsolenfehler bei ruhigem Besuch.
+
+**Die eigene Domain bestätigt identisch versorgt.** Beim ersten Prüfversuch lieferte der lokale DNS-Resolver dieser Umgebung einen veralteten `cname.vercel-dns.`-Eintrag (ohne TLD) — dieselbe Fehlerklasse, die schon beim Router des Betreibers auftrat (Edge Case 33 in PROJ-12). Mit `--resolve` gegen die korrekte IP umgangen: `sw.js` byte-äquivalent zur bisherigen Vercel-Adresse, alle Routen 200. Ein weiterer, unabhängiger Beleg dafür, dass dieser Effekt ausschließlich lokale DNS-Resolver betrifft und nichts mit dem Deployment zu tun hat.
+
+**BUG-16 (Medium, PROJ-9) bleibt offen** — dokumentiert, regressionsgesichert, nicht blockierend laut QA-Empfehlung.
+
+**Damit sind PROJ-9 und PROJ-12 vollständig abgeschlossen.**
