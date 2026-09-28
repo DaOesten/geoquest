@@ -1,11 +1,13 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Deployed
+## Status: In Progress
+_Refinement 9 (Hero-Bild wird Hintergrund) ist deployt (Tag `v1.40.0-PROJ-13`, 2026-09-26). **Refinement 10 (Gameplay-Video als neue Sektion 2) ist am 2026-09-28 gespect, aber noch nicht gebaut** — wartet auf die vom Betreiber komprimierte Videodatei. Siehe Abschnitt „Refinement 10" am Ende dieser Spec._
+
 _Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und dort verifiziert (Tag `v1.26.0-PROJ-13`). Refinement 6 (Ko-fi-Icon in der Kopfzeile, Tooltip, JSON-LD-Altersnachzug) ist **am 2026-09-10 nach Production deployt und dort verifiziert** (Tag `v1.27.0-PROJ-13`)._
 
 _**Refinement 7 (2026-09-20): Das Logo-Lockup kehrt auf den Desktop zurück.** Betreiber-Befund: „ich kann auf /about auf dem desktop das Logo nicht mehr sehen." **Frontend umgesetzt am 2026-09-21** — `lg:hidden` entfernt; CTA auf allen elf Viewports über dem Falz nachgemessen, knappster Fall 1366×768 mit 45px. Siehe Implementation Notes._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-26 (Refinement 9 deployt)
+**Last Updated:** 2026-09-28 (Refinement 10 gespect — Gameplay-Video, noch nicht gebaut)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -13,6 +15,8 @@ _**Refinement 7 (2026-09-20): Das Logo-Lockup kehrt auf den Desktop zurück.** B
 - Bezieht sich inhaltlich auf: PROJ-7 (Stationen-Editor) — Koordinaten und Medien-URLs werden dort nachgetragen
 
 _Keine Code-Abhängigkeit in Gegenrichtung: PROJ-13 verändert weder Import noch Editor._
+
+_**Refinement 10 (2026-09-28): Gameplay-Video als neue Sektion 2.** Betreiber will ein vorhandenes MP4 (`public/assets/video-geoquest-4x5-game-social.mp4`, 4:5, 52s, 16 MB, Social-Media-Zuschnitt) auf `/about` einbinden — Anlass war die Frage, ob das Format passt. Antwort: MP4/H.264 ist technisch richtig, die konkrete Datei aber zu schwer und im falschen Seitenverhältnis für einen direkten Einsatz. Spec verlangt eine komprimierte, herunterskalierte Ableitung im 4:5-Format (Original-Seitenverhältnis bleibt, kein Zuschnitt auf 16:9 — Gefahr, das Motiv im Hochformat abzuschneiden), Poster-Frame + Klick-zum-Abspielen statt Autoplay. Neue Sektion sitzt zwischen Hero und „Jeder Ort kann ein Level sein.", damit werden alle bisherigen Sektionen 2–7 zu 3–8. Details siehe Abschnitt „Refinement 10" unten. Noch nicht gebaut._
 
 ## Kontext
 
@@ -54,12 +58,13 @@ Das Feature besteht aus **zwei zusammengehörenden statischen Seiten**, die geme
 _Neu gefasst in Refinement 4 (2026-09-07). Die vollständige Copy steht im Abschnitt „Refinement 4" am Ende dieser Spec._
 
 1. **Hero** — ohne Eyebrow; „Die reale Welt wird zum Spielfeld.", zwei gleichrangige Sätze (Erstellen und Spielen), „Kostenlos. Ohne Abo. Ohne Account.", zwei CTAs (`Quest erstellen` → `/create`, `Mit KI erstellen` → `/anleitung`)
-2. **Jeder Ort kann ein Level sein.** — Karte mit Teal-Rahmen: fünf Orte als Chip-Reihe, Erklärung wie eine Quest entsteht, Merkzeile „Die Welt ist deine Spielkarte."
-3. **Nicht nur spielen. Selber machen.** — Karte mit Lime-Rahmen: Game-Designer-Gedanke, kein Vorwissen nötig
-4. **Eine Quest erstellen? Ganz einfach.** — drei nummerierte Schritte
-5. **Für wen ist Geo Quest?** — vier Zielgruppen-Karten (Familien, Schule & Pädagogik, Kinder & Jugendliche, Gruppen & Events)
-6. **Häufige Fragen** — eingeklapptes Accordion, gespiegelt im JSON-LD; vier bestehende Fragen plus neu „Was kann ich in eine Quest einbauen?"
-7. **Abschluss-CTA** — „Deine Umgebung. Dein Abenteuer." mit Button nach `/create`
+2. **So spielt sich Geo Quest.** _(neu, Refinement 10, 2026-09-28)_ — Gameplay-Video, Poster-Frame mit Klick-zum-Abspielen, 4:5-Format
+3. **Jeder Ort kann ein Level sein.** — Karte mit Teal-Rahmen: fünf Orte als Chip-Reihe, Erklärung wie eine Quest entsteht, Merkzeile „Die Welt ist deine Spielkarte."
+4. **Nicht nur spielen. Selber machen.** — Karte mit Lime-Rahmen: Game-Designer-Gedanke, kein Vorwissen nötig
+5. **Eine Quest erstellen? Ganz einfach.** — drei nummerierte Schritte
+6. **Für wen ist Geo Quest?** — vier Zielgruppen-Karten (Familien, Schule & Pädagogik, Kinder & Jugendliche, Gruppen & Events)
+7. **Häufige Fragen** — eingeklapptes Accordion, gespiegelt im JSON-LD; vier bestehende Fragen plus neu „Was kann ich in eine Quest einbauen?"
+8. **Abschluss-CTA** — „Deine Umgebung. Dein Abenteuer." mit Button nach `/create`
 
 _Nachtrag 2026-09-08: Die ursprünglich als Sektion 2 gespecte „Draußen spielen. Wie ein Game." ist nach der ersten Browser-Abnahme entfallen — der Hook lag bereits in der Headline, nur die Erklärung der Spielmechanik war einmalig und steht jetzt im Hero. Damit sieben statt acht Sektionen._
 
@@ -233,6 +238,17 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] Angenommen ein Besucher öffnet `/anleitung`, `/impressum` oder `/datenschutz`, wenn die Seiten laden, dann sind sie durch dieses Refinement **unverändert** — nur `/about` setzt `showLogo`
 - [x] Angenommen das Lockup ist auf dem Desktop zurück, wenn seine Größe gemessen wird, dann trägt es dieselbe Größe wie ab `sm` (280px) — es gibt keinen eigenen Desktop-Breakpoint für die Marke
 
+### Gameplay-Video als neue Sektion 2 (Refinement 10, 2026-09-28)
+- [ ] Angenommen ein Besucher scrollt vom Hero weiter, wenn er die nächste Sektion erreicht, dann sieht er ein Video-Element mit Poster-Frame und einem sichtbaren Play-Symbol — das Video lädt nicht automatisch und spielt nicht automatisch ab
+- [ ] Angenommen ein Besucher klickt/tippt auf das Poster-Frame, wenn das Video startet, dann läuft es mit Ton (falls vorhanden) im 4:5-Seitenverhältnis der Quelldatei — kein Zuschnitt auf ein breiteres Format
+- [ ] Angenommen die Videodatei lässt sich nicht laden oder abspielen, wenn die Sektion rendert, dann bleibt das Poster-Bild sichtbar und die Sektion wirkt nicht kaputt oder leer
+- [ ] Angenommen ein Besucher öffnet `/about` auf einem Mobilgerät (360–430px), wenn er die Video-Sektion erreicht, dann ist sie vollständig ohne horizontales Scrollen sichtbar und das Play-Symbol ist mindestens 44px groß
+- [ ] Angenommen ein Besucher öffnet `/about` am Desktop (ab 1024px), wenn er die Video-Sektion betrachtet, dann füllt das hochformatige Video nicht die volle Content-Breite, sondern steht als eigenständiges Element (ähnlich einem Phone-Mockup), ohne dass links/rechts unproportional viel Leerraum entsteht
+- [ ] Angenommen ein Screenreader-Nutzer erreicht die Sektion, wenn er sie vorgelesen bekommt, dann hört er eine Überschrift („So spielt sich Geo Quest.") als Orientierungspunkt, wie bei jeder anderen Sektion der Seite
+- [ ] Angenommen die ausgelieferte Videodatei wird gemessen, wenn ihre Größe geprüft wird, dann liegt sie deutlich unter den ursprünglichen 16 MB der Quelldatei — die PRD-Ladezeitvorgabe (< 2s) darf durch die neue Sektion nicht gefährdet werden, insbesondere weil das Video erst auf Klick nachlädt und nicht beim Seitenaufruf
+- [ ] Angenommen ein Besucher zählt die Sektionen von `/about`, wenn er von oben nach unten scrollt, dann sind es jetzt **acht** statt sieben, mit der Video-Sektion an Position 2 (direkt nach dem Hero, vor „Jeder Ort kann ein Level sein.")
+- [ ] Angenommen ein KI-System oder Crawler wertet `/about` aus, wenn es das Video-Element erreicht, dann trägt das `<video>`-Element keinen irreführenden Alternativtext-Ersatz — die Sektionsüberschrift trägt den beschreibenden Inhalt, das Video selbst ist ergänzend, nicht die einzige Informationsquelle
+
 ### Hero-Bild wird Hintergrund (Refinement 9, 2026-09-21)
 - [x] Angenommen ein Besucher öffnet `/about` auf **irgendeiner** Breite, wenn der Hero lädt, dann liegt `urbanquest.png` als Hintergrund **hinter** Logo, Headline, Lead, Preiszeile und CTA — nicht mehr als eigenes Element daneben oder darunter
 - [x] Angenommen der Besucher liest den Hero-Text, wenn der Kontrast gemessen wird, dann erfüllt **jedes** Textelement die PRD-Vorgabe von 4.5:1 — einschließlich der **Teal**-Elemente („ZUM SPIELFELD" und die Kostenlos-Zeile), die ohne Abdunklung auf 3.75:1 fielen
@@ -305,6 +321,9 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] ~~Wann und wohin genau zeigt der Ko-fi-Link?~~ → Geklärt am 2026-09-09 (Refinement 6): Ziel ist https://ko-fi.com/technolomagie. „Zur App" bleibt als Aktions-Button erhalten — es ist der Conversion-Weg der Seite; Ko-fi bekommt links daneben einen Icon-Button ohne Text, nur auf `/about` und `/anleitung`. Die ausgeschriebene Beschriftung „Support me" trägt das Burger-Menu (PROJ-1)
 - [x] ~~Bekommt der Icon-Button auf dem Desktop einen sichtbaren Tooltip?~~ → Ja, umgesetzt am 2026-09-10: Tooltip „Unterstütze mich" bei Hover und Tastatur-Fokus, als eigene Client-Komponente `support-link.tsx`, damit die Shell serverseitig bleibt. Das `aria-label` bleibt daneben bestehen — auf Touch ist der Tooltip unsichtbar
 - [ ] Sollen `/impressum` und `/datenschutz` das Icon nachträglich auch bekommen? Zunächst bewusst nicht (2026-09-09)
+- [ ] Welche Zielgröße/Auflösung hat die vom Betreiber komprimierte Videodatei am Ende tatsächlich? Empfehlung war max. 720px Breite, unter 3 MB — zu verifizieren, sobald die Datei geliefert ist (2026-09-28)
+- [ ] Braucht das Video Untertitel/eine Textalternative für gesprochene Inhalte, falls welche vorkommen? Bisher nicht geklärt, da der Inhalt des Videos noch nicht im Detail bekannt ist (2026-09-28)
+- [ ] Soll das Video in einem Lightbox/Overlay abgespielt werden oder inline in der Sektion bleiben? Aktuell angenommen: inline, kein Overlay — einfachste Umsetzung, zu bestätigen in `/frontend` (2026-09-28)
 - [x] ~~Trägt der Desktop-Header die Marke ausreichend, sodass das Hero-Lockup ab `lg` entfallen kann?~~ → **Nein, die Annahme war von Anfang an falsch** (geklärt 2026-09-20, Refinement 7). Der Header führte nie eine Bildmarke — „Zur App" ist ein Button in Tech-Schrift, die Navigation waren Textlinks. Seit PROJ-14 `HEADER_NAV_LINKS` geleert hat, ist die Zeile zusätzlich leer. Das Lockup kehrt ab `lg` zurück
 - [x] ~~Soll das Logo-Lockup ein freigestelltes PNG mit Alpha bekommen?~~ → **Ja, entschieden am 2026-09-20.** Als eigenes Refinement an **PROJ-1** geführt, weil das Lockup zum Startscreen gehört und `/about` es mitbenutzt — es ist dieselbe Datei, ein Austausch wirkt an beiden Stellen. Gemessen: Platte rgb(5–6,7–8,9–10) gegen Hintergrund rgb(11,15,18); Grund flach (Eckspanne 0,57 gegen 17,9 beim Pin), Histogramm-Tal bei Luminanz 25–48. Erprobt LO=13/HI=30 plus ein Flecken-Filter gegen **3884 Korn-Flecken** der Quelldatei — damit Rahmen-Abweichung **0** statt 144. Details und Messtabellen in PROJ-1
 - [x] ~~Braucht `/about` zusätzlich einen Footer mit Impressum/Datenschutz für Desktop-Besucher?~~ → Ja, entschieden am 2026-09-05: Footer auf allen Info-Seiten mit Kontakt und Rechtslinks; die Links verlassen dafür den Desktop-Header
@@ -382,6 +401,10 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 | Abdunklung **40%**, nicht mehr und nicht weniger | Gemessen: Ohne Abdunklung fällt **Teal** auf **3.75:1** und verfehlt die PRD-Vorgabe von 4.5:1 — weißer Text wäre mit 6.26:1 durchgekommen, die Akzentfarbe nicht. Bei 40% liegt Teal bei **6.49:1** (Desktop) bzw. **6.33:1** (volle Breite/Mobile). Stärkere Abdunklung (55/70%) wäre sicherer, macht das Bild aber zur bloßen Textur und nimmt dem Gaming-Look des PRD seine Wirkung | 2026-09-21 |
 | Bild bleibt im 1100px-Container und unter der Kopfzeile | Betreiber-Entscheidung gegen die randlose Variante. Die Kopfzeile behält damit ihren ruhigen dunklen Grund; ihr halbtransparenter Blur über einem Bild hätte je nach Bildstelle unterschiedlich ausgesehen. Preis: auf sehr breiten Bildschirmen dunkle Streifen links und rechts | 2026-09-21 |
 | Auch auf dem Handy liegt der Text auf dem Bild | Eine Gestaltung für alle Breiten statt zwei nebeneinander. Der Betreiber-Wunsch „nur mobile sind die Elemente untereinander" betrifft die **Anordnung**, nicht den Hintergrund — Logo, Headline, Lead und CTA stehen dort weiterhin gestapelt. Gemessen ist der Kontrast auf voller Bildbreite sogar unkritisch (Teal 6.33:1, 0 von 100 Zellen unter 4.5) | 2026-09-21 |
+| Gameplay-Video wird als neue Sektion 2 eingebunden, nicht in den Hero | Der Hero wurde in Refinement 9 gerade erst auf ein ruhiges Hintergrundbild umgebaut — ein weiteres bewegtes Element dort wäre ein erneuter Eingriff in denselben, mehrfach nachjustierten Bereich. Die Sektion direkt danach lässt den Besucher zuerst die Kernaussage lesen und sie dann sofort in Bewegung sehen | 2026-09-28 |
+| 4:5-Seitenverhältnis der Quelldatei bleibt erhalten, kein Zuschnitt auf 16:9 | Ein Breitformat-Krop riskiert, das im Hochformat gefilmte Motiv (vermutlich Handy in der Hand) an den Rändern zu beschneiden. Auf Mobile ist 4:5 ohnehin die natürliche Form, am Desktop wirkt ein Hochformat-Video als eigenständiges Element neben Text | 2026-09-28 |
+| Poster-Frame + Klick-zum-Abspielen statt Autoplay | Folgt derselben „keine Ambient-Loops"-Regel wie das Konfetti-Refinement in PROJ-3; hält die Seite ruhig und die Ladezeit niedrig, da das Video nicht vorlädt. 52 Sekunden Inhalt sind eine aktive Entscheidung des Besuchers | 2026-09-28 |
+| Kompression/Zuschnitt der Videodatei liegt beim Betreiber, nicht im Scope dieses Refinements | Die Spec beschreibt die Einbindung (Poster, Lazy-Load, Format-Vorgaben), nicht die Bildbearbeitung selbst — der Betreiber liefert die web-optimierte Datei nach | 2026-09-28 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -2650,6 +2673,44 @@ Alle sieben Routen HTTP 200 (0,10–0,37 s), Security-Header aktiv inkl. HSTS (`
 
 ### Eine Auffälligkeit geprüft statt weggewunken
 Chrome meldete einen Konsolenfehler, WebKit keinen. Ein ruhiger Besuch von `/about` erzeugt **0 Antworten ≥400** — es ist `/favicon.ico`, das Chrome von sich aus anfragt und das nie referenziert wurde. Vorbestehend, seit dem Deploy vom 2026-09-19 dokumentiert.
+
+## Refinement 10 (2026-09-28) — Gameplay-Video als neue Sektion 2
+
+**Anlass:** Der Betreiber hat `public/assets/video-geoquest-4x5-game-social.mp4` abgelegt und wollte wissen, ob das Format für die Webseite passt, bevor er es auf `/about` einbindet.
+
+### Ausgangslage der Datei, gemessen
+| Eigenschaft | Wert |
+|---|---|
+| Auflösung | 1080×1350 (Seitenverhältnis 4:5) |
+| Dauer | 52,0 s |
+| Codec | H.264 / AAC |
+| Dateigröße | 15,9 MB |
+| Dateiname | `video-geoquest-4x5-game-social.mp4` — deutet auf Social-Media-Zuschnitt hin, nicht auf Web-Content |
+
+### Bewertung
+MP4/H.264+AAC ist als Container/Codec **technisch richtig** für das Web — jeder unterstützte Browser (letzte 2 Versionen Chrome, Safari, Firefox, Edge, siehe Technical Requirements) spielt es nativ ab. Die konkrete Datei ist in dieser Form aber **nicht direkt geeignet**:
+
+1. **16 MB verletzt die PRD-Ladezeitvorgabe** (< 2s), wenn die Datei beim Seitenaufruf mitgeladen würde. Gelöst durch Klick-zum-Abspielen (siehe unten) — das Video lädt nicht vor.
+2. **1080×1350 ist mehr Auflösung, als eine eingebettete Sektion braucht.** Real dargestellt vermutlich 400–720px breit; eine Herunterskalierung auf max. 720px Breite spart deutlich Bytes ohne sichtbaren Qualitätsverlust.
+3. **Das 4:5-Hochformat ist beabsichtigt beizubehalten, nicht auf 16:9 zuzuschneiden.** Ein Zuschnitt auf Breitformat riskiert, das Motiv (vermutlich ein Handy im Hochformat mit GPS-Pfeil/Aufgabe im Bild) an den Rändern zu beschneiden. Auf Mobile ist 4:5 ohnehin die natürliche Form; am Desktop steht es als eigenständiges, nicht content-breites Element (ähnlich einem Phone-Mockup neben Text).
+
+### Entschieden (Betreiber bestätigt)
+- **Format bleibt 4:5**, kein Zuschnitt auf Breitformat
+- **Komprimieren + herunterskalieren** auf unter 3 MB, Zielbereich 1,5–2,5 MB bei 52s, max. 720px Breite — Betreiber liefert die aufbereitete Datei selbst nach; diese Spec beschreibt nur die Einbindung, nicht die Bildbearbeitung
+- **Poster-Frame + Klick-zum-Abspielen statt Autoplay.** Kein automatischer Start, kein Vorladen des Videos beim Seitenaufruf. Begründung: passt zur bestehenden Design-System-Regel „keine Ambient-Loops" (dieselbe Regel, nach der das Konfetti-Refinement in PROJ-3 auf `infinite`-Animationen verzichtet), hält die Ladezeit niedrig, und 52 Sekunden Inhalt sind eine aktive Entscheidung des Besuchers, keine Hintergrundberieselung
+- **Neue Sektion zwischen Hero und „Jeder Ort kann ein Level sein."** — direkt unter dem Hero-CTA. Der Besucher sieht zuerst die Kernaussage (Hero), dann sofort, wie sich das Ganze anfühlt (Video), bevor die erklärenden Sektionen folgen. Verworfen: Video im Hero selbst (Refinement 9 hat den Hero gerade erst auf ein ruhiges Hintergrundbild umgebaut — ein Video-Element dort wäre ein erneuter Eingriff in denselben, bereits mehrfach nachjustierten Bereich) und Video am Seitenende (verliert die Wirkung, weil viele Besucher vorher abspringen oder schon überzeugt/abgelenkt sind)
+- **Eigene Sektionsüberschrift „So spielt sich Geo Quest."** — nötig, weil das bestehende Konsistenz-Kriterium verlangt, dass jede Sektion eine Überschrift/Merkzeile als Orientierungspunkt trägt (AC bereits vorhanden: Darstellungsformen wechseln durchgehend, aber jede Sektion bleibt für sich benennbar), und weil ein `<video>`-Element ohne umgebende Überschrift weder für Screenreader-Navigation noch für Crawler einen Ankerpunkt hätte
+- **Poster-Bild als Fallback**, falls das Video nicht lädt/abspielbar ist — kein kaputtes Element, keine leere Fläche
+
+### Für `/frontend` zu beachten
+- Sektion 2 einfügen, bestehende Sektionen 2–7 werden zu 3–8 — betrifft die AC-Blöcke zur Sektionszählung (Refinement 4) und ggf. Tests, die Sektionen über ihre Position ansprechen (zu prüfen, nicht anzunehmen)
+- `<video>`-Element mit `preload="none"`, `poster`, ohne `autoplay`, mit sichtbaren nativen oder eigenen Controls nach Klick
+- Poster-Bild als separates JPG/WebP, aus einem Frame des Videos, nicht aus dem Video selbst zur Laufzeit extrahiert
+- Kein `alt` am `<video>` (nicht Teil der Spezifikation für Videoelemente) — die Sektionsüberschrift trägt die textuelle Beschreibung; falls das Video gesprochenen Inhalt hat, ist eine Untertitel-/Transcript-Frage offen (siehe Open Questions)
+- BUG-7-Wächter (CTA über dem Falz) bleibt zu beobachten — eine zusätzliche Sektion verlängert die Seite, betrifft aber nicht direkt den Hero-CTA, da das Video nach dem Hero sitzt
+
+### Nicht abgedeckt
+Der tatsächliche Inhalt des Videos (was darin gezeigt wird) war zum Zeitpunkt dieses Refinements nicht bekannt — die Bewertung stützt sich ausschließlich auf Dateiformat/-größe/-maße. Ob der gewählte Ausschnitt/das Motiv für eine Marketing-Sektion überzeugend ist, kann erst am fertigen, komprimierten Material beurteilt werden.
 
 ### Offen
 **BUG-15 (Low)** bleibt: 23 von 9016 Pixeln (0,26%) hinter „ZUM SPIELFELD" auf 320×568 unter der Kontrastvorgabe, wenn pro Einzelpixel gemessen wird. Nach der abgestimmten Methode (lokaler Mittelwert) besteht die Stelle mit 5,59:1, und die Headline ist am Bildschirm klar lesbar. Ein Einzeiler (Verlauf auf `xs` etwas stärker) schließt es.

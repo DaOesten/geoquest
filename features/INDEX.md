@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
 <!-- Add features above this line -->
@@ -1537,3 +1537,12 @@ Betreiber-Befund: *„Bilder aus dem Internet, die im Create mode per URL eingeb
 Spec ist aktualisiert (User Story 10, 9 Acceptance Criteria im Block „Bildvorschau", Edge Case 6 präzisiert, Edge Cases 11–16, 10 Technical Requirements, 4 Produkt- und 3 technische Entscheidungen, 3 neue Open Questions, 6 Out-of-Scope-Einträge, eigener Abschnitt „Refinement 2026-09-28").
 
 **Sofort-Workaround für bestehende Quests:** Auf der Bildseite lange auf das Bild drücken bzw. Rechtsklick → „Bildadresse kopieren" und diese Adresse eintragen. Bei Magnific/Freepik ist die direkte Adresse oft schwer zu bekommen, und die kostenlose Lizenz verlangt meist eine Namensnennung — Bilder von Wikimedia Commons sind der einfachere Weg.
+
+## Offenes Refinement: Gameplay-Video als neue Sektion 2 auf `/about` (2026-09-28)
+**PROJ-13** geht von Deployed zurück auf In Progress. Betreiber-Frage: Ein abgelegtes MP4 (`public/assets/video-geoquest-4x5-game-social.mp4`, 1080×1350/4:5, 52s, 15,9 MB, H.264/AAC) soll auf `/about` eingebunden werden — ist das Format passend?
+
+**Antwort: Codec/Container (MP4/H.264+AAC) ist richtig, die konkrete Datei in dieser Form aber zu schwer und im falschen Verwendungskontext.** Der Dateiname deutet auf einen Social-Media-Zuschnitt hin, nicht auf Web-Content. 16 MB würde die PRD-Ladezeitvorgabe (< 2s) verletzen, wenn die Datei beim Seitenaufruf mitgeladen würde.
+
+**Entschieden (Betreiber bestätigt):** 4:5-Format bleibt erhalten (kein Zuschnitt auf 16:9 — Risiko, das im Hochformat gefilmte Motiv an den Rändern zu beschneiden). Komprimieren/herunterskalieren auf unter 3 MB, max. 720px Breite — der Betreiber liefert die aufbereitete Datei selbst nach, die Spec beschreibt nur die Einbindung. Poster-Frame mit Klick-zum-Abspielen statt Autoplay, folgt derselben „keine Ambient-Loops"-Regel wie das Konfetti-Refinement in PROJ-3. Neue Sektion **„So spielt sich Geo Quest."** sitzt zwischen Hero und „Jeder Ort kann ein Level sein." — die bisherigen Sektionen 2–7 werden zu 3–8, die Seite hat künftig acht statt sieben Sektionen. Verworfen: Video im Hero (Refinement 9 hat den Hero gerade erst auf ein ruhiges Hintergrundbild umgebaut) und Video am Seitenende (verliert Wirkung durch Absprünge).
+
+Spec ist aktualisiert (10 Acceptance Criteria in einem eigenen Block, 4 neue Product Decisions, 3 neue Open Questions zu Zielgröße/Untertiteln/Lightbox, eigener Abschnitt „Refinement 10" mit Messtabelle und Begründung). **Noch nicht gebaut** — nächster Schritt ist `/frontend`, sobald die komprimierte Videodatei vom Betreiber vorliegt.
