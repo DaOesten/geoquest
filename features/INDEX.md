@@ -24,10 +24,10 @@
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
 | PROJ-7 | Creator — Stationen-Editor | P0 | PROJ-6 | Deployed | [Spec](PROJ-7-creator-stationen-editor.md) | 2026-08-23 |
 | PROJ-8 | Creator — Modul-Editor | P0 | PROJ-7 | Deployed | [Spec](PROJ-8-creator-modul-editor.md) | 2026-08-23 |
-| PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | In Progress | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
+| PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Approved | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
-| PROJ-12 | PWA-Installation | P0 | PROJ-1 | In Progress | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
+| PROJ-12 | PWA-Installation | P0 | PROJ-1 | Approved | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
@@ -1472,3 +1472,20 @@ Die Config hat **keinen `webServer`-Block** — sie erwartet, dass auf Port 3100
 **Regel:** Vor einem Lauf gegen `playwright.prod.config.ts` prüfen, dass `curl localhost:3100` antwortet — und niemals den Server killen, um eine Port-Kollision zu lösen. Das ergänzt die beiden bereits dokumentierten Regeln (nur eine Suite gleichzeitig, Stabilitätsaussagen nur mit reduzierter Worker-Zahl).
 
 **Nicht abgedeckt und benannt:** das echte iPhone unter schwachem Mobilfunk auf einer frisch installierten Origin (keine Testumgebung stellt das nach — die Mechanik ist belegt, der Augenschein bleibt dem Betreiber), der veraltete DNS-Eintrag in seinem Router (Edge Case 33, kein Produktfehler), und Firefox.
+
+## QA abgeschlossen: Service Worker + Veröffentlichen-Prüfung (2026-09-28)
+**PROJ-9** und **PROJ-12** sind QA-geprüft: **PROJ-9 17/17 Acceptance Criteria, PROJ-12 8/8 Acceptance Criteria, zusammen 1 Medium-Bug (BUG-16 in PROJ-9), keine Critical/High. Beide Production-Ready.** Status auf Approved.
+
+**PROJ-12 ohne Befund.** Der zentrale Mechanismus (echte Netzausfälle vs. Falschalarm) ist doppelt belegt: `src/lib/sw-fetch-handler.test.ts` führt das echte `public/sw.js` in einem nachgebauten Worker-Scope aus, und die Gegenprobe gegen den echten Vorgänger-Commit lässt **genau die 2 Tests der gemeldeten Symptome** fallen (die 2, die unabhängig vom Fix bestehen müssen, bleiben grün). Zusätzlich geprüft und in der Frontend-Phase nicht abgedeckt: der echte v1→v2-Cache-Upgrade im Browser-Lifecycle (nicht nur Unit-Logik), auf beiden Engines. Ein Versuch, den Netzfehler zusätzlich per Chrome DevTools Protocol nachzustellen, scheiterte an der eigenen Testinfrastruktur (extremes Throttling brach die CDP-Verbindung selbst ab) — kein Produktbefund, nicht weiterverfolgt, da der Unit-Test-Weg bereits eindeutig ist.
+
+**PROJ-9: BUG-16 (Medium) gefunden — TOCTOU zwischen Menü-Öffnen und Klick.** `getPublishBlockers(quest)` in `handlePublish` prüft die React-Prop, nicht den aktuellen `localStorage`-Stand. Wird die Quest zwischen dem Öffnen des Aktionen-Menüs und dem Klick auf "Veröffentlichen" extern verändert (realistisch nur über einen **zweiten Tab** derselben Origin — `useQuests`' `storage`-Listener feuert nachweislich nur cross-tab), kann eine Datei mit **veralteten** Daten entstehen, während die Meldung "Quest konnte nicht veröffentlicht werden" zeigt. Kein Datenverlust: `publishQuest()` liest frisch aus dem Storage und verweigert `published: true` korrekt. **Kein Regress dieses Refinements** — gegen `5ff8bf5~1` geprüft: `exportQuest(quest)` nutzte schon immer dieselbe ungeprüfte React-Prop, das Refinement hat nur einen zweiten Konsumenten derselben vorbestehenden Schwäche hinzugefügt. Regressionstest hält das Ist-Verhalten fest.
+
+**10 neue E2E-Tests in PROJ-9** (`tests/proj-9-creator-json-export.spec.ts`, Datei jetzt 24 Tests): Security (XSS im Stationsnamen wird als Text gerendert, 0 injizierte Elemente), 6 Varianten korrupter `gq_quests`-Daten (0 `pageerror`), nicht benachbarte Lücken, Station 20 von 20, und der BUG-16-Wächter. Dazu **4 neue Unit-Tests** außerhalb der Suite verifiziert (Performance bei 20×20 Modulen < 1ms, `__proto__`-Stationsname harmlos) — nicht in die permanente Suite übernommen, da sie keine neue Fehlerklasse abdecken, die die E2E-Tests nicht schon zeigen.
+
+**Gegenprobe gegen den echten Vorgänger-Commit** (`5ff8bf5~1`, vor beiden Refinements): **9 von 24 PROJ-9-Tests fallen**, darunter alle 4 neuen QA-Tests und der BUG-16-Test — letzterer aus einem aussagekräftigeren Grund als geplant: Die alte Fassung setzt `published: true`, obwohl die Station leer ist, weil `isPlayable` allein als Gate diente. Das ist der ursprünglich gemeldete Fehler in Reinform. Nach Wiederherstellung: 24/24 wieder grün auf beiden Engines, Produktcode per `git status`/`git diff` als unverändert zu HEAD bestätigt.
+
+**Suiten:** Unit **293/293**. E2E über beide Engines **1164 passed / 0 failed / 0 flaky / 56 skipped** (1220 Tests gesamt, 10 neu in dieser QA-Runde). Build sauber, Lint 0 Fehler, `tsc` nur die 2 dokumentierten vorbestehenden Fehler aus PROJ-6.
+
+**Kontrast und Touch-Targets gemessen:** Fehlermeldungs-Toast 19.40:1 (Vorgabe 4.5:1), Menü-Trigger und "Veröffentlichen"-Eintrag 44×44px. Responsive auf 375/768/1440px ohne horizontalen Überlauf, auch mit 500-Zeichen-Stationsnamen.
+
+**Nicht abgedeckt:** das echte iPhone unter schwachem Mobilfunk auf frisch installierter Origin (PROJ-12, strukturell nicht testbar, in der Spec bereits als Betreiber-Aufgabe vermerkt) und Firefox (Binary fehlt weiterhin auf dieser Maschine).

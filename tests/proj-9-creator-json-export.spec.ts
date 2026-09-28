@@ -367,4 +367,151 @@ test.describe("PROJ-9: Creator — JSON-Export", () => {
       }
     });
   });
+
+  /**
+   * QA am 2026-09-28 (Refinement 2026-09-27). Diese Gruppe deckt, was die
+   * Frontend-Phase nicht isoliert geprüft hatte: Security-Payload im
+   * Stationsnamen, korrupte localStorage-Daten, und ein TOCTOU-Fund (siehe
+   * unten). Alle Tests laufen gegen den echten Produktcode, keine Simulation.
+   */
+  test.describe("QA — Security & Edge Cases (2026-09-28)", () => {
+    const XSS_ID = "e1e1e1e1-1111-4e1e-8e1e-e1e1e1e1e1e1";
+
+    test("Markup im Stationsnamen wird in der Fehlermeldung als Text gerendert, nicht ausgeführt", async ({ page }) => {
+      const payload = '<img src=x onerror="window.__pwned=true">';
+      await seedQuests(page, [{
+        version: 1, id: XSS_ID, name: "XSS Test", lastModified: "2020-01-01T00:00:00.000Z",
+        intro: { text: "W" }, outro: { text: "G" },
+        stations: [{ id: crypto.randomUUID(), name: payload, lat: 53.6, lng: 10.0, radiusMeters: 10, modules: [] }],
+        published: false,
+      }]);
+
+      await page.getByRole("button", { name: "Quest-Aktionen" }).click();
+      await page.getByRole("menuitem", { name: "Veröffentlichen" }).click();
+      await page.waitForTimeout(600);
+
+      const pwned = await page.evaluate(() => (window as unknown as { __pwned?: boolean }).__pwned ?? false);
+      expect(pwned).toBe(false);
+      expect(await page.locator("[data-sonner-toast] img").count()).toBe(0);
+      // Der Payload steht trotzdem lesbar als Text in der Meldung — kein
+      // stilles Verschlucken, nur kein Ausführen.
+      await expect(page.locator("[data-sonner-toast]").first()).toContainText(payload);
+    });
+
+    test("nicht benachbarte leere Stationen: Gesamtzahl und erste Station stimmen", async ({ page }) => {
+      // Regressionswächter für einen Zählfehler, der bei einer naiven
+      // Index-Implementierung entstehen könnte (z.B. nur direkt
+      // aufeinanderfolgende Lücken zu zählen).
+      await seedQuests(page, [{
+        version: 1, id: crypto.randomUUID(), name: "Luecken", lastModified: "2020-01-01T00:00:00.000Z",
+        intro: { text: "W" }, outro: { text: "G" },
+        stations: [
+          { id: crypto.randomUUID(), name: "A", lat: 1, lng: 1, radiusMeters: 10, modules: [] },
+          { id: crypto.randomUUID(), name: "B", lat: 1, lng: 1, radiusMeters: 10, modules: [{ type: "text", content: "x" }] },
+          { id: crypto.randomUUID(), name: "C", lat: 1, lng: 1, radiusMeters: 10, modules: [] },
+        ],
+        published: false,
+      }]);
+      await page.getByRole("button", { name: "Quest-Aktionen" }).click();
+      await page.getByRole("menuitem", { name: "Veröffentlichen" }).click();
+      await expect(page.getByText(/2 Stationen haben noch kein Modul — zuerst „A"/)).toBeVisible();
+    });
+
+    test("Station 20 (letzte von 20) korrekt nummeriert", async ({ page }) => {
+      const stations = Array.from({ length: 20 }, (_, i) => ({
+        id: crypto.randomUUID(), name: `Station ${i + 1}`, lat: 1, lng: 1, radiusMeters: 10,
+        modules: i === 19 ? [] : [{ type: "text" as const, content: "x" }],
+      }));
+      await seedQuests(page, [{
+        version: 1, id: crypto.randomUUID(), name: "Zwanzig", lastModified: "2020-01-01T00:00:00.000Z",
+        intro: { text: "W" }, outro: { text: "G" }, stations, published: false,
+      }]);
+      await page.getByRole("button", { name: "Quest-Aktionen" }).click();
+      await page.getByRole("menuitem", { name: "Veröffentlichen" }).click();
+      await expect(page.getByText(/„Station 20" hat noch kein Modul/)).toBeVisible();
+    });
+
+    test("korrupte gq_quests-Daten (sechs Varianten) erzeugen 0 pageerror", async ({ page }) => {
+      const varianten: Record<string, unknown> = {
+        kaputtesJson: "{{{broken",
+        stationsIstKeinArray: [{ version: 1, id: crypto.randomUUID(), name: "Q", lastModified: "2020-01-01T00:00:00.000Z", intro: { text: "" }, outro: { text: "" }, stations: "oops" }],
+        stationsnameIstZahl: [{ version: 1, id: crypto.randomUUID(), name: "Q", lastModified: "2020-01-01T00:00:00.000Z", intro: { text: "" }, outro: { text: "" }, stations: [{ id: crypto.randomUUID(), name: 42, lat: 1, lng: 1, radiusMeters: 10, modules: [] }] }],
+        stationsnameFehlt: [{ version: 1, id: crypto.randomUUID(), name: "Q", lastModified: "2020-01-01T00:00:00.000Z", intro: { text: "" }, outro: { text: "" }, stations: [{ id: crypto.randomUUID(), lat: 1, lng: 1, radiusMeters: 10, modules: [] }] }],
+        modulesFeldFehltGanz: [{ version: 1, id: crypto.randomUUID(), name: "Q", lastModified: "2020-01-01T00:00:00.000Z", intro: { text: "" }, outro: { text: "" }, stations: [{ id: crypto.randomUUID(), name: "S", lat: 1, lng: 1, radiusMeters: 10 }] }],
+        leeresArray: [],
+      };
+
+      for (const [label, data] of Object.entries(varianten)) {
+        const errors: string[] = [];
+        page.on("pageerror", (e) => errors.push(String(e)));
+        await page.goto("/create");
+        await page.evaluate(({ data, isString }) => {
+          localStorage.setItem("gq_first_visit_done", "true");
+          localStorage.setItem("gq_quests", isString ? (data as string) : JSON.stringify(data));
+        }, { data, isString: typeof data === "string" });
+        await page.reload();
+        await page.waitForTimeout(300);
+
+        const menuBtn = page.getByRole("button", { name: "Quest-Aktionen" }).first();
+        if (await menuBtn.count() > 0) {
+          await menuBtn.click().catch(() => {});
+          const publishItem = page.getByRole("menuitem", { name: "Veröffentlichen" });
+          if (await publishItem.count() > 0) await publishItem.click().catch(() => {});
+          await page.waitForTimeout(300);
+        }
+        expect(errors, `Variante "${label}"`).toEqual([]);
+        page.removeAllListeners("pageerror");
+      }
+    });
+
+    /**
+     * BUG-16 (Medium, gefunden bei der QA vom 2026-09-28) — siehe QA Test
+     * Results unten für die vollständige Analyse. Dieser Test hält den
+     * Fund fest: `getPublishBlockers(quest)` in `handlePublish` prüft die
+     * React-Prop, nicht den aktuellen Storage-Stand. Wird die Quest zwischen
+     * dem Öffnen des Menüs und dem Klick auf "Veröffentlichen" extern
+     * verändert (z.B. ein zweiter Tab), nutzt der Blocker-Check die
+     * veraltete, noch gültige Fassung — und eine Datei mit den ALTEN
+     * (fälschlich als gültig erkannten) Daten wird heruntergeladen, obwohl
+     * die Quest zum Zeitpunkt des Klicks bereits ungültig ist. `publishQuest()`
+     * liest zum Glück frisch aus dem Storage und verweigert `published: true`
+     * korrekt — kein falscher "veröffentlicht"-Status, aber eine
+     * irreführende Kombination aus "Datei da" + "Fehlermeldung".
+     *
+     * Vorbestehend, kein Regress dieses Refinements: `exportQuest(quest)`
+     * nutzte schon vor diesem Refinement immer die React-Prop.
+     */
+    test("BUG-16: TOCTOU — Datei mit veralteten Daten kann trotz Fehlermeldung entstehen", async ({ page }) => {
+      const id = crypto.randomUUID();
+      await seedQuests(page, [{
+        version: 1, id, name: "TOCTOU", lastModified: "2020-01-01T00:00:00.000Z",
+        intro: { text: "" }, outro: { text: "" },
+        stations: [{ id: crypto.randomUUID(), name: "S1", lat: 1, lng: 1, radiusMeters: 10, modules: [{ type: "text", content: "x" }] }],
+        published: false,
+      }]);
+
+      await page.getByRole("button", { name: "Quest-Aktionen" }).click();
+
+      // Externe Änderung NACH dem Öffnen des Menüs, VOR dem Klick — simuliert
+      // einen zweiten Tab, der dieselbe Quest gerade bearbeitet.
+      await page.evaluate((id) => {
+        const qs = JSON.parse(localStorage.getItem("gq_quests") || "[]");
+        const q = qs.find((x: { id: string }) => x.id === id);
+        q.stations[0].modules = [];
+        localStorage.setItem("gq_quests", JSON.stringify(qs));
+      }, id);
+
+      let downloaded = false;
+      page.on("download", () => { downloaded = true; });
+      await page.getByRole("menuitem", { name: "Veröffentlichen" }).click();
+      await page.waitForTimeout(600);
+
+      // Dokumentiertes Ist-Verhalten (BUG-16): Datei entsteht trotzdem.
+      expect(downloaded).toBe(true);
+      // Der wichtige Teil funktioniert: kein falscher "veröffentlicht"-Status.
+      const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("gq_quests") || "[]"));
+      expect(stored[0].published).toBe(false);
+      await expect(page.getByText("Quest konnte nicht veröffentlicht werden.")).toBeVisible();
+    });
+  });
 });

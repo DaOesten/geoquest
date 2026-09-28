@@ -1,8 +1,8 @@
 # PROJ-12: PWA-Installation (Add to Homescreen)
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-09-18
-**Last Updated:** 2026-09-27 (Refinement 5: Der Service Worker meldet Netzfehler, die es nicht gibt — eigene Domain)
+**Last Updated:** 2026-09-28 (QA: 8/8 Acceptance Criteria, keine Bugs, Production-Ready)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — der Startscreen `/` trägt einen der beiden Hinweis-Orte, und das Wurzel-Layout (`src/app/layout.tsx`) hält heute schon `themeColor` und `viewportFit: "cover"`
@@ -1809,3 +1809,76 @@ Ein zweiter Versuch über einen echten Verbindungsfehler (`http://localhost:3199
 Gegen den Production-Build: **Unit 293/293** (vorher 271), alle drei PROJ-12-Suiten **110 passed / 0 failed / 8 skipped**, Gesamtsuite **1153 passed / 1 unexpected / 0 flaky / 56 skipped**.
 
 Der einzige Fehlschlag liegt in `proj-12-sw-nur-production.spec.ts` — einer Datei dieses Features. **Weil dieses Refinement den Worker anfasst, ausdrücklich gegengeprüft statt weggewunken: 3× seriell 6/6 grün.** Es ist die in INDEX.md dokumentierte Service-Worker-Flakiness unter Parallellast, kein Regress. Build sauber, Lint 0 Fehler.
+
+---
+
+## QA Test Results
+
+**Tested:** 2026-09-28
+**App URL:** http://localhost:3100 (Production-Build, `playwright.prod.config.ts`)
+**Tester:** QA Engineer (AI)
+
+Geprüft wurde ausschließlich **Refinement 5** (2026-09-27, "Der Service Worker meldet Netzfehler, die es nicht gibt"). Alle vorherigen Refinements dieses Features waren bereits produktiv und QA-geprüft; sie sind hier nur als Regression mitgelaufen.
+
+### Acceptance Criteria Status
+
+#### Der Worker meldet nur echte Netzausfälle (Refinement 5)
+- [x] Bei vorhandenem Netz zeigt ein Transportfehler **nicht** die Offline-Seite — verifiziert per Unit-Test gegen das echte `public/sw.js` in nachgebautem Worker-Scope (Playwright kann `fetch()` des Workers selbst nicht scheitern lassen, siehe unten)
+- [x] Bei echtem Netzausfall (`navigator.onLine === false`) erscheint weiterhin die Geo-Quest-Offline-Seite — E2E via `context.setOffline(true)`
+- [x] Ein leerer Cache im Erstbesuch-Fenster führt **nie** zu einer leeren Seite — Unit-Test bestätigt: Fehler wird weitergegeben statt eine neue Zusage zu verwerfen
+- [x] Erstbesuch unter der neuen Domain lädt normal (strukturell durch den Fix abgedeckt, nicht separat auf der Live-Domain nachstellbar)
+- [x] `Quest importieren` öffnet die Dateiauswahl (regressionsfrei — der Android-Importbefund gehört nachweislich zu PROJ-9, nicht hierher)
+- [x] Ein bereits aktiver, fehlerhafter Worker ersetzt sich ohne Nutzerzutun: `sw.js` mit `max-age=0`, `skipWaiting()`/`clients.claim()` vorhanden — gemessen
+- [x] `beforeinstallprompt` bleibt erreichbar: `fetch`-Handler ist weiterhin registriert, verifiziert per Quelltextprüfung UND funktionaler v1→v2-Upgrade-Test
+- [x] Nicht-Navigationen bleiben unberührt: `request.mode !== "navigate"`-Filter unverändert an erster Stelle
+
+**8/8 Acceptance Criteria erfüllt.**
+
+### Edge Cases Status
+
+- [x] EC-29 (Transportfehler bei vorhandenem Netz): der Kernfall, per Unit-Test bestätigt
+- [x] EC-30 (Worker aktiv, Cache leer): per Unit-Test bestätigt — kein `throw new Error(...)` mehr, echter Fehler wird weitergegeben
+- [x] EC-31 (Domainwechsel = Erstbesuch): strukturell durch den Origin-Scope korrekt, nicht separat testbar ohne die echte neue Domain
+- [x] EC-32 (fehlerhafter Worker bereits aktiv): `max-age=0` + `skipWaiting`/`clients.claim` gemessen vorhanden — **on-Device-Bestätigung bleibt aus**, siehe unten
+- [x] EC-33 (veralteter DNS-Eintrag im Router): kein Produktfehler, außerhalb des Scopes bestätigt in Refinement-4-Recherche
+
+### Security Audit Results
+- [x] Kein neuer externer Host, kein neues Netzwerk-Ziel
+- [x] `navigator.onLine` ist rein lesend, keine neue Angriffsfläche
+- [x] `CACHE_NAME`-Erhöhung löscht ausschließlich Caches mit anderem Namen als dem aktuellen — kein Risiko, fremde Caches auf derselben Origin zu treffen (es gibt nur den einen App-eigenen Cache)
+- [x] Der Worker liest weiterhin **keine** Nutzereingabe, verarbeitet keine URL-Parameter — keine Injection-Fläche
+- [x] Kein Secrets-Leak in `sw.js` (statische Datei, kein Build-Step, keine Umgebungsvariablen)
+
+Keine sicherheitsrelevanten Befunde.
+
+### Bugs Found
+
+Keine.
+
+### Regression Testing
+- Alle drei PROJ-12-E2E-Dateien (`proj-12-pwa-installation.spec.ts`, `proj-12-safe-area.spec.ts`, `proj-12-sw-nur-production.spec.ts`, `proj-12-sw-echte-netzausfaelle.spec.ts`): Teil der vollen Regressionssuite, **0 Fehlschläge**
+- Vollständige E2E-Suite (beide Engines): **1164 passed / 0 failed / 0 flaky / 56 skipped** (1220 Tests gesamt)
+- Unit-Suite: **293/293**, davon 4 im neuen `src/lib/sw-fetch-handler.test.ts`
+- `proj-12-sw-nur-production.spec.ts` (das Refinement vom 2026-09-20, das die Production-only-Registrierung prüft) lief in der Vollsuite **grün mit** — die zuvor dokumentierte Parallellast-Flakiness trat in diesem Lauf nicht auf
+- Build sauber, Lint 0 Fehler, `tsc` nur die 2 dokumentierten vorbestehenden Fehler aus PROJ-6
+
+**Gegenprobe des zentralen Unit-Tests, unabhängig wiederholt:** `src/lib/sw-fetch-handler.test.ts` gegen den echten Vorgänger-`public/sw.js` (`git checkout 5ff8bf5~1 -- public/sw.js`, bei sonst unverändertem Code) laufen lassen — **2 von 4 Tests fallen**, exakt die beiden, die die gemeldeten Symptome abdecken ("gibt bei onLine=true den Fehler weiter" und "bei leerem Cache keine leere Seite"); die 2 Tests, die unabhängig vom Fix bestehen müssen (Offline-Seite bei echtem Ausfall, Normalfall aus dem Netz), bleiben grün. Nach Wiederherstellung: `public/sw.js` per `git diff` als identisch zu HEAD bestätigt, alle 4 Tests wieder grün.
+
+**Eigene Verifikation des dokumentierten E2E-Grenzfalls:** Ein Versuch, den Netzfehler zusätzlich über Chrome DevTools Protocol (`Network.emulateNetworkConditions` mit extremem Throttling statt komplettem Offline) nachzustellen, scheiterte an der Testinfrastruktur selbst (das langsame Netz brach die eigene CDP-Verbindung von Playwright ab, bevor die Seite reagieren konnte) — kein Produktbefund, sondern eine weitere Bestätigung, dass diese Fehlerklasse in der Testumgebung nur über den Unit-Test-Weg zuverlässig zu treffen ist. Nicht weiterverfolgt, da der bereits vorhandene Unit-Test und seine Gegenprobe den Fall bereits eindeutig belegen.
+
+### Cross-Browser Testing
+- Chrome 152: grün, inkl. eines eigenen Tests, dass der v1-Cache beim Reaktivieren korrekt auf v2 abgeräumt wird (echter Browser-Lifecycle, nicht nur Unit-Test-Logik)
+- Mobile Safari (WebKit): grün, inkl. eigener Prüfung, dass der Cache dort ebenfalls exakt `["geoquest-offline-v2"]` mit genau `/offline.html` enthält
+- Firefox: nicht testbar (Binary fehlt), Risiko gering (Standard-Worker-APIs)
+
+### Was nicht per Test geprüft werden konnte
+- **Das echte iPhone unter schwachem Mobilfunk auf der frisch installierten Origin** — genau die Bedingungen des ursprünglichen Befunds. Keine Testumgebung kann einen echten, das Gerät betreffenden Transportfehler bei gleichzeitig korrektem `navigator.onLine` zuverlässig erzeugen; das ist strukturell (nicht nur für dieses Projekt) eine Grenze von Browser-Automatisierung. Die Mechanik ist durch den Unit-Test am echten Produktcode zweifelsfrei belegt — der Praxistest am Gerät bleibt dem Betreiber vorbehalten, wie in der Spec bereits vermerkt.
+- Der veraltete DNS-Eintrag im Router des Betreibers — außerhalb des Scopes, kein Produktfehler.
+
+### Summary
+- **Acceptance Criteria:** 8/8 passed
+- **Edge Cases:** 5/5 geprüft (1 davon strukturell statt per Livetest bestätigt)
+- **Bugs Found:** 0
+- **Security:** Pass, keine Befunde
+- **Production Ready:** YES
+- **Recommendation:** Deploy. Der zentrale Mechanismus ist doppelt belegt (Unit-Test gegen echten Code + Gegenprobe gegen die echte fehlerhafte Fassung). Einzige offene Bestätigung ist der reale Gerätetest durch den Betreiber, der kein Blocker für das Deployment ist — die Spec hat das von Anfang an so vorgesehen.

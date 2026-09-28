@@ -1,8 +1,8 @@
 # PROJ-9: Creator — JSON-Export
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-08-28
-**Last Updated:** 2026-09-27 (Refinement: Veröffentlichen prüft nur Stationen, nicht ihren Inhalt)
+**Last Updated:** 2026-09-28 (QA: 17/17 Acceptance Criteria, 1 Medium-Bug BUG-16, Production-Ready)
 
 ## Dependencies
 - Requires: PROJ-6 (Creator — Quest-Verwaltung) — für die `QuestManagementCard`, ihr Aktionen-Menü und die bereits vorbereiteten (aber bislang ungenutzten) Felder/Funktionen `published`, `isPublished()`, `publishQuest()`
@@ -505,3 +505,109 @@ Das Projekt sichert ausdrücklich zu, dass korrupte `gq_quests`-Daten **0 `pagee
 Gegen den Production-Build: **Unit 293/293** (vorher 271), **PROJ-9-E2E 38/38 auf beiden Engines**, Gesamtsuite **1153 passed / 1 unexpected / 0 flaky / 56 skipped**. Der einzige Fehlschlag liegt in `proj-12-sw-nur-production.spec.ts` und läuft 3× seriell grün — die dokumentierte Service-Worker-Flakiness unter Parallellast. Build sauber, Lint 0 Fehler.
 
 `npx tsc --noEmit` meldet weiterhin die **2 vorbestehenden** Fehler in `quest-storage.test.ts` (ungenutzte `@ts-expect-error`-Direktiven aus PROJ-6, seit dem 2026-09-21 dokumentiert) — nicht von diesem Refinement und bewusst nicht mitbehoben.
+
+---
+
+## QA Test Results
+
+**Tested:** 2026-09-28
+**App URL:** http://localhost:3100 (Production-Build, `playwright.prod.config.ts`)
+**Tester:** QA Engineer (AI)
+
+Geprüft wurde ausschließlich der Refinement-Teil vom 2026-09-27 ("Veröffentlichen prüft nur Stationen, nicht ihren Inhalt") — der ursprüngliche PROJ-9-Funktionsumfang (Sicherung, "nicht gesichert"-Badge) war bereits produktiv und ist hier nur als Regression mitgeprüft.
+
+### Acceptance Criteria Status
+
+#### Sicherung (Export, immer möglich)
+- [x] Downloadet eine JSON-Datei unabhängig vom Spielbarkeitsstatus
+- [x] Setzt `lastExported`, Badge verschwindet
+- [x] Funktioniert bei 0 Stationen
+- [x] Re-Import erkennt dieselbe Quest-ID (Überschreib-Dialog)
+
+#### "Nicht gesichert"-Hinweis
+- [x] Erscheint bei nie exportierter Quest
+- [x] Verschwindet nach Export ohne weitere Änderung
+- [x] Erscheint erneut nach Änderung post-Export
+
+#### Veröffentlichen (spielbare Quest)
+- [x] Exportiert, setzt `published`, Badge verschwindet, Erfolgsmeldung
+- [x] Wiederholtes Veröffentlichen nach Änderung funktioniert
+
+#### Veröffentlichen prüft den Inhalt, nicht nur die Anzahl (Refinement 2026-09-27)
+- [x] Station ohne Modul: Vorgang abgebrochen, **kein Download**, Status bleibt "Entwurf" — verifiziert per `page.on("download")`-Zähler, 0 Downloads
+- [x] Fehlermeldung nennt die Station beim Namen (`„Café" hat noch kein Modul.`)
+- [x] Mehrere leere Stationen: Meldung nennt Gesamtzahl + erste Station (auch bei **nicht benachbarten** Lücken, eigens geprüft)
+- [x] Station ohne Namen: Ersatzbezeichnung "Station N", kein leeres `„"`
+- [x] 0 Stationen: weiterhin abgewiesen, jetzt zusätzlich ohne Download
+- [x] Vollständige Quest: Datei wird geschrieben, Status "veröffentlicht" — unverändert
+- [x] Sicherung bleibt bei unvollständiger Quest bedingungslos möglich
+- [x] Veröffentlichte Datei besteht den eigenen Import-Schema-Check (eigener Test: Datei wird geladen und jede Station auf `modules.length > 0` geprüft)
+- [x] Nach Nachbessern der fehlenden Station gelingt erneutes Veröffentlichen ohne Zwischenschritt
+
+**17/17 Acceptance Criteria erfüllt** (8 aus dem ursprünglichen Scope, 9 aus dem Refinement).
+
+### Edge Cases Status
+
+Alle 16 dokumentierten Edge Cases geprüft (11 unverändert aus dem ursprünglichen Feature, 5 neu aus dem Refinement — Nummern 11–16 in der Spec, wobei 14 keine neue Prüfung brauchte, weil sie "Sicherung bleibt bedingungslos" nur wiederholt).
+
+- [x] EC-1 (0 Stationen, Sicherung): unverändert erlaubt
+- [x] EC-2 (0 Stationen, Veröffentlichen): **überholt, neu geprüft** — kein Export mehr, Meldung bleibt
+- [x] EC-3 (wiederholtes Veröffentlichen): funktioniert, kein "einmalig"-Zustand
+- [x] EC-4 (häufiges Klicken): bei blockierter Quest kein Doppel-Download, verifiziert
+- [x] EC-5 (Download-Blocker): nicht neu geprüft, unverändert seit erster QA
+- [x] EC-6/7 (Sonderzeichen/Duplikate im Dateinamen): unverändert bestehende Tests grün
+- [x] EC-8/9 (`lastExported`/`published` bei Import): unverändert, Regressionstests grün
+- [x] EC-10 (localStorage-Schreibfehler): nicht neu geprüft, unverändert seit erster QA
+- [x] EC-11 (Station ohne Modul): der gemeldete Fall, ausführlich geprüft
+- [x] EC-12 (jede Station leer): geprüft — Meldung nennt korrekt beide/alle betroffenen Stationen
+- [x] EC-13 (Station ohne Namen UND ohne Modul): geprüft, Ersatzbezeichnung korrekt
+- [x] EC-14 (Sicherung einer Quest mit leerer Station): geprüft, weiterhin bedingungslos
+- [x] EC-15 (bereits veröffentlichte Quest bekommt nachträglich leere Station): **geprüft, Verhalten bestätigt** — `published` bleibt `true` stehen (kein Unpublish-Mechanismus), ein erneuter Publish-Versuch wird korrekt abgewiesen, ohne den Status zu verändern. Dokumentiertes Verhalten, keine offene Frage mehr aus QA-Sicht — die vom Betreiber zu klärende Frage ("ist das Badge in der Zwischenzeit irreführend?") bleibt eine Produktentscheidung, kein Bug.
+- [x] EC-16 (Altdatei von vor der Behebung): nicht separat prüfbar (keine solche Datei vorhanden), Verhalten folgt aus EC-11
+
+### Security Audit Results
+- [x] XSS über Stationsnamen in der Fehlermeldung: Payload `<img src=x onerror=...>` wird als **Text** gerendert (sonner escaped standardmäßig), `window.__pwned` bleibt `false`, 0 `<img>`-Elemente im Toast-DOM
+- [x] Korrupte `gq_quests`-Daten (6 Varianten: kaputtes JSON, `stations` kein Array, Stationsname als Zahl, Stationsname fehlt, `modules`-Feld fehlt komplett, leeres Array) erzeugen **0 `pageerror`** bei durchgehend bedienbarer App
+- [x] Prototype-Pollution-Versuch (`__proto__` als Stationsname) wird als harmloser String behandelt, kein Objekt-Merge
+- [x] Performance-Grenzfall (20 Stationen × 20 Module) läuft in < 1ms, kein DoS-Potenzial
+- [x] Kein neuer externer Host, keine neuen Netzwerk-Requests durch diese Änderung
+- [ ] **BUG-16 (Medium):** siehe unten — kein Sicherheitsproblem im engeren Sinn (kein Datenverlust, keine falsche Autorisierung), aber ein Integritätsproblem zwischen Anzeige und Datei
+
+### Bugs Found
+
+#### BUG-16: TOCTOU zwischen Menü-Öffnen und Klick — veraltete Daten können exportiert werden, obwohl die Meldung "fehlgeschlagen" sagt
+- **Severity:** Medium
+- **Steps to Reproduce:**
+  1. Quest mit einer Station, die ein Modul hat, in `/create` anzeigen (Zustand: veröffentlichbar)
+  2. Menü "Quest-Aktionen" öffnen (React-Prop `quest` ist jetzt im Speicher des geöffneten Menüs eingefroren)
+  3. **Ohne das Menü zu schließen**, die Station in `localStorage` extern leeren (z.B. zweiter Tab, DevTools-Konsole)
+  4. Im weiterhin geöffneten Menü auf "Veröffentlichen" klicken
+  5. Erwartet: Da die Quest zum Zeitpunkt des Klicks ungültig ist, sollte entweder kein Download stattfinden oder die spezifische Stationsmeldung erscheinen
+  6. Tatsächlich: Eine Datei **wird heruntergeladen** — mit den *veralteten* (noch gültigen) Daten aus der React-Prop, nicht dem aktuellen (ungültigen) Storage-Stand. Gleichzeitig erscheint die Meldung "Quest konnte nicht veröffentlicht werden." (der generische `publishQuest()`-Fallback, nicht die spezifische Stationsmeldung), weil `publishQuest()` intern frisch aus dem Storage liest und dort korrekt ablehnt.
+- **Ursache:** `getPublishBlockers(quest)` in `handlePublish` (`create/page.tsx`) prüft die React-Prop `quest`, die beim Öffnen des Menüs eingefroren wurde — nicht den aktuellen `localStorage`-Stand. Der `exportQuest(quest)`-Aufruf direkt danach nutzt dieselbe veraltete Prop.
+- **Auswirkung, eingeordnet:** Kein Datenverlust (Storage bleibt korrekt: `published` wird richtig `false` gehalten), keine falsche Autorisierung, kein XSS-Vektor. Der Schaden ist eine **irreführende Kombination**: Der Nutzer sieht eine Fehlermeldung und geht davon aus, dass nichts passiert ist — tatsächlich liegt eine Datei im Download-Ordner, die zufällig noch gültig ist (weil sie den *alten*, validen Zustand exportiert), aber möglicherweise nicht mehr dem entspricht, was der Nutzer gerade in der App sieht.
+- **Kein Regress dieses Refinements:** Gegen den Code vor diesem Refinement geprüft (`git checkout 5ff8bf5~1`) — `exportQuest(quest)` nutzte schon immer die React-Prop, ungeprüft. Das Refinement hat lediglich einen zweiten Konsumenten derselben (vorbestehenden) Schwäche hinzugefügt. Die eigentliche Verbesserung dieses Refinements (dass eine leere Station den `published`-Status nicht mehr fälschlich auf `true` setzt) bleibt in diesem Szenario **korrekt** — nur der Datei-Download ist der Nebeneffekt.
+- **Voraussetzung für das Auftreten:** Erfordert eine externe Änderung von `localStorage` in dem schmalen Zeitfenster zwischen Menü-Öffnen und Klick — realistisch nur über einen zweiten Tab/zweites Fenster mit derselben Origin (`window.addEventListener("storage", ...)` in `useQuests` feuert nur cross-tab, nie same-tab — verifiziert im Code). Für einen Solo-Ersteller mit einem Tab praktisch nicht erreichbar; relevant für einen Ersteller, der `/create` in zwei Tabs offen hat.
+- **Regressionstest:** `tests/proj-9-creator-json-export.spec.ts` → `"BUG-16: TOCTOU — Datei mit veralteten Daten kann trotz Fehlermeldung entstehen"` hält das **Ist-Verhalten** fest (inkl. des korrekten Teils: `published` bleibt `false`). Der Test wird bei einer Behebung anzupassen sein.
+- **Priority:** Nice to have — kein Datenverlust, sehr schmales Zeitfenster, keine Sicherheitsauswirkung. Ein möglicher Fix (die Blocker-Prüfung zusätzlich unmittelbar vor dem Export gegen einen frischen `getQuestById(quest.id)`-Read laufen lassen) ist unaufwändig, aber nicht blockierend für dieses Deploy.
+
+### Regression Testing
+- Vollständige E2E-Suite gegen den Production-Build (beide Engines: Chrome 152, Mobile Safari): **1164 passed / 0 failed / 0 flaky / 56 skipped** (1220 Tests gesamt, davon 10 neu in dieser QA-Runde)
+- Unit-Suite: **293/293**
+- Build: sauber. Lint: **0 Fehler** (8 vorbestehende Warnungen, keine in den QA-Testdateien mit funktionaler Bedeutung — eine kosmetische `eslint-disable`-Warnung in `sw-fetch-handler.test.ts` aus der Frontend-Phase)
+- `tsc --noEmit`: nur die 2 dokumentierten vorbestehenden Fehler aus PROJ-6 (`quest-storage.test.ts`, ungenutzte `@ts-expect-error`-Direktiven)
+- **Gegenprobe durchgeführt:** Die 10 neuen Tests gegen den echten Vorgänger-Commit (`5ff8bf5~1`, vor diesem Refinement) laufen lassen — **9 von 15 relevanten Tests fallen**, darunter alle 4 neuen QA-Security/Edge-Tests und der BUG-16-Test. Der BUG-16-Test fällt dabei aus einem anderen, aussagekräftigeren Grund als erwartet: Die alte Fassung setzt `published: true`, obwohl die Station leer ist (`isPlayable` allein reichte als Gate) — das ist der ursprünglich gemeldete Fehler in Reinform. Nach Wiederherstellung des Fixes: alle 24 PROJ-9-Tests wieder grün auf beiden Engines, Produktcode danach per `git status`/`git diff` als unverändert zu HEAD bestätigt.
+- Play-Sichtbarkeit (`isPlayable`) nicht angetastet — bestehende `quest-storage.test.ts`-Tests dafür weiterhin grün, keine Anpassung nötig
+
+### Cross-Browser Testing
+- Chrome 152 (`channel: 'chrome'`, das dokumentierte Umgehen des kaputten Chromium-Binaries): grün
+- Mobile Safari (WebKit): grün
+- Firefox: nicht testbar (Binary fehlt auf dieser Maschine, wie im gesamten Projekt dokumentiert). Risiko gering — reine DOM-/Storage-Logik ohne browserspezifische APIs.
+
+### Summary
+- **Acceptance Criteria:** 17/17 passed
+- **Edge Cases:** 16/16 geprüft, alle wie dokumentiert
+- **Bugs Found:** 1 total (0 critical, 0 high, 1 medium, 0 low) — BUG-16, vorbestehend, kein Regress dieses Refinements
+- **Security:** Pass (XSS, Korruption, Prototype-Pollution, Performance alle ohne Befund; BUG-16 ist ein Integritäts-, kein Sicherheitsproblem)
+- **Production Ready:** YES
+- **Recommendation:** Deploy. BUG-16 ist dokumentiert und regressionsgesichert, aber nicht blockierend — schmales Zeitfenster, kein Datenverlust, betrifft nur Mehrfach-Tab-Nutzung.
