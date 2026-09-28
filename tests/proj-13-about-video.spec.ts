@@ -207,3 +207,91 @@ test.describe("Ausgelieferte Dateien", () => {
     expect((await poster.body()).length).toBeLessThan(200 * 1024);
   });
 });
+
+/**
+ * QA 2026-09-28 — was die Frontend-Phase nicht abgedeckt hat.
+ */
+test.describe("QA: Auslieferung", () => {
+  test("Range-Requests liefern 206 — ohne sie spielt iOS Safari kein Video", async ({
+    request,
+  }) => {
+    const res = await request.get(VIDEO, { headers: { Range: "bytes=0-99" } });
+    expect(res.status()).toBe(206);
+    expect(res.headers()["content-range"]).toMatch(/^bytes 0-99\/\d+$/);
+    expect(res.headers()["content-type"]).toBe("video/mp4");
+  });
+});
+
+test.describe("QA: Kontrast", () => {
+  test("die Laufzeit „0:52“ erreicht 4.5:1 auf Teal — Alpha korrekt verrechnet", async ({
+    page,
+  }) => {
+    await page.goto("/about");
+    const ratio = await playButton(page).evaluate((btn) => {
+      const parse = (s: string) => s.match(/[\d.]+/g)!.map(Number);
+      const bg = parse(getComputedStyle(btn).backgroundColor);
+      const [r, g, b, a = 1] = parse(getComputedStyle(btn.querySelector("span")!).color);
+      const fg = [r, g, b].map((c, i) => a * c + (1 - a) * bg[i]);
+      const lum = (c: number[]) => {
+        const [R, G, B] = c.map((x) => {
+          x /= 255;
+          return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+        });
+        return 0.2126 * R + 0.7152 * G + 0.0722 * B;
+      };
+      const [l1, l2] = [lum(fg), lum(bg)].sort((x, y) => y - x);
+      return (l1 + 0.05) / (l2 + 0.05);
+    });
+    expect(ratio).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+test.describe("QA: ohne JavaScript", () => {
+  test.use({ javaScriptEnabled: false });
+  test("Poster und Überschrift stehen, kein Video-Byte wird geladen", async ({ page }) => {
+    const mp4: string[] = [];
+    page.on("request", (r) => r.url().includes(".mp4") && mp4.push(r.url()));
+    await page.goto("/about");
+    await expect(
+      page.getByRole("heading", { name: "So funktioniert Geo Quest." })
+    ).toBeVisible();
+    await expect(page.locator("main video")).toHaveAttribute("poster", POSTER);
+    expect(mp4).toEqual([]);
+  });
+});
+
+test.describe("QA: offene Befunde", () => {
+  // BUG-17 (Medium): `play().catch(() => setFailed(true))` wertet JEDE
+  // Ablehnung als Defekt. Pausiert der Nutzer, bevor das Video angelaufen
+  // ist, lehnt der Browser `play()` mit AbortError ab — das Video ist
+  // gesund (`video.error === null`), die Komponente meldet trotzdem „lässt
+  // sich nicht abspielen" und entfernt die Bedienelemente. Wird grün, sobald
+  // behoben.
+  test.fail("Pause während des Ladens ist kein Abspielfehler", async ({ page }) => {
+    await page.route("**/*.mp4", async (route) => {
+      await new Promise((s) => setTimeout(s, 1500));
+      await route.continue();
+    });
+    await page.goto("/about");
+    await playButton(page).click();
+    await page.locator("main video").evaluate((v: HTMLVideoElement) => v.pause());
+    await page.waitForTimeout(2500);
+
+    expect(await page.locator("main video").evaluate((v: HTMLVideoElement) => v.error)).toBeNull();
+    await expect(page.getByRole("status")).toHaveCount(0);
+    await expect(page.locator("main video")).toHaveAttribute("controls", "");
+  });
+
+  // BUG-18 (Low): Der Startknopf verschwindet nach dem Drücken aus dem DOM,
+  // der Fokus fällt auf <body>. Sehende Tastaturnutzer merken es kaum (der
+  // nächste Tab landet auf dem Video), ein Screenreader verliert aber seine
+  // Position. Wird grün, sobald der Fokus aufs Video wandert.
+  test.fail("nach dem Start per Tastatur liegt der Fokus auf dem Video", async ({ page }) => {
+    await page.goto("/about");
+    await playButton(page).focus();
+    await page.keyboard.press("Enter");
+    await expect
+      .poll(() => page.evaluate(() => document.activeElement?.tagName))
+      .toBe("VIDEO");
+  });
+});

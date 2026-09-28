@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | Approved | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 
 <!-- Add features above this line -->
@@ -1558,3 +1558,9 @@ Spec ist aktualisiert (10 Acceptance Criteria in einem eigenen Block, 4 neue Pro
 **Offen:** ob die Tonspur Sprache enthält (dann Untertitel nötig), und ob die ungenutzte 16-MB-Quelldatei im Repo bleiben soll — sie ist bewusst nicht committet.
 
 **Nachgezogen am 2026-09-28: Kinoformat statt zwei Spalten.** Der Betreiber lehnte „Schrift links, Video rechts" ab und wählte aus drei Vorschlägen das Kinoformat: Überschrift linksbündig darüber, darunter eine Karte über die volle Breite (16:10, ab `lg` 16:9) mit dem unbeschnittenen 4:5-Video in der Mitte. Die Ränder füllt eine unscharfe Kopie des Posters, ohne zusätzlichen Download. Am Bildschirm nachjustiert: Abdunklung von 55 % auf 25 % gesenkt und ein weicher Schatten um das Video ergänzt, weil die Kante sonst wie eine Stufe wirkte. Zwei Hero-Tests fanden das neue dekorative Bild mit und erwarteten nur eines; der Selektor ist an allen sechs Stellen eingegrenzt. PROJ-13 174 passed / 20 skipped / 0 failed.
+
+**QA am 2026-09-28 abgeschlossen: 11/11 Acceptance Criteria, keine Critical/High, Production-Ready.** Neu gemessen auf beiden Engines und acht Viewports (320–1920px), identische Werte: 0 MP4-Requests vor dem Klick, 4:5 exakt, Video auf 0px mittig, Hero-CTA weiter über dem Falz. Über die Spec hinaus belegt: Die MP4 ist für Streaming vorbereitet (`moov` vor `mdat`, als Unit-Test mit Gegenprobe), Range-Requests liefern 206 (Voraussetzung für iOS Safari), Poster und Rand teilen sich einen Download.
+
+**BUG-17 (Medium):** Pausiert der Nutzer, bevor das Video angelaufen ist, meldet die Komponente „lässt sich nicht abspielen" und entfernt die Bedienelemente, obwohl das Video gesund ist (`AbortError` wird als Defekt gewertet). Beide Engines, selten, nur per Neuladen behebbar. **BUG-18 (Low):** Nach dem Start per Tastatur fällt der Fokus auf `<body>`. Beide mit `test.fail`-Wächter.
+
+Regression: Unit 305/305, Gesamtsuite beider Engines **1216 passed / 0 failed / 0 flaky**. Offen: Tonspur (Untertitel?), Firefox, echtes iPhone.

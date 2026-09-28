@@ -1,13 +1,13 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: In Progress
-_Refinement 9 (Hero-Bild wird Hintergrund) ist deployt (Tag `v1.40.0-PROJ-13`, 2026-09-26). **Refinement 10 (Erklärvideo als neue Sektion 2) ist am 2026-09-28 gespect und im Frontend umgesetzt** — QA steht aus. Siehe Abschnitte „Refinement 10" und „Implementation Notes (Frontend — Refinement 10)" am Ende dieser Spec._
+## Status: Approved
+_Refinement 9 (Hero-Bild wird Hintergrund) ist deployt (Tag `v1.40.0-PROJ-13`, 2026-09-26). **Refinement 10 (Erklärvideo als neue Sektion 2) ist am 2026-09-28 gespect, gebaut und QA-geprüft** — 11/11 Acceptance Criteria, 1 Medium- und 1 Low-Bug (BUG-17, BUG-18), keine Critical/High. Approved. Siehe Abschnitte „Refinement 10" und „Implementation Notes (Frontend — Refinement 10)" am Ende dieser Spec._
 
 _Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und dort verifiziert (Tag `v1.26.0-PROJ-13`). Refinement 6 (Ko-fi-Icon in der Kopfzeile, Tooltip, JSON-LD-Altersnachzug) ist **am 2026-09-10 nach Production deployt und dort verifiziert** (Tag `v1.27.0-PROJ-13`)._
 
 _**Refinement 7 (2026-09-20): Das Logo-Lockup kehrt auf den Desktop zurück.** Betreiber-Befund: „ich kann auf /about auf dem desktop das Logo nicht mehr sehen." **Frontend umgesetzt am 2026-09-21** — `lg:hidden` entfernt; CTA auf allen elf Viewports über dem Falz nachgemessen, knappster Fall 1366×768 mit 45px. Siehe Implementation Notes._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-28 (Refinement 10 im Frontend umgesetzt — Erklärvideo)
+**Last Updated:** 2026-09-28 (Refinement 10 QA-geprüft — Erklärvideo)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -2770,3 +2770,62 @@ Betreiber: *„Die Aufteilung gefällt mir nicht: Schrift links, Video rechts."*
 **Ein Testfehler, kein Produktfehler:** Zwei Hero-Tests suchten das Hero-Bild über `main img[alt=""]` und erwarteten genau ein Bild. Das Unschärfe-Bild ist korrekt dekorativ ausgezeichnet und wurde deshalb mitgezählt. Alle sechs Vorkommen dieses Selektors sind jetzt auf `:not(section img)` begrenzt; vier davon (`querySelector`) bestanden vorher nur, weil das Hero-Bild im DOM zufällig zuerst steht.
 
 **Tests:** Der Desktop-Test zur zweispaltigen Fassung ist gezogen, nicht gelöscht: Kinoformat auf 768 und 1440 (volle Breite, Seitenverhältnis, Video mittig und in voller Kartenhöhe, Rand als dekoratives, unscharfes Poster), dazu ein Handy-Test (kein Rand). **PROJ-13 174 passed / 20 skipped / 0 failed** über beide Engines, Lint ohne Befund in geänderten Dateien.
+
+## QA Test Results — Refinement 10: Erklärvideo (2026-09-28)
+
+**Ergebnis: 11/11 Acceptance Criteria erfüllt, 1 Medium-Bug, 1 Low-Bug, keine Critical/High. Production-Ready.**
+
+Getestet gegen den Production-Build (eigener Server auf Port 3101) auf Desktop Chrome 152 und Mobile Safari (WebKit), acht Viewports von 320×568 bis 1920×1080. Die Behauptungen der Frontend-Phase sind **neu gemessen**, nicht übernommen. Beide Engines messen identisch.
+
+### Acceptance Criteria
+| # | Kriterium | Ergebnis |
+|---|---|---|
+| 1 | Poster + sichtbarer Startknopf, kein Autoladen/Autoplay | ✅ `preload="none"`, `autoplay: false`, **0 MP4-Requests** vor dem Klick auf allen 8 Viewports |
+| 2 | Klick startet das Video, 4:5 ohne Zuschnitt | ✅ Seitenverhältnis exakt 1.250 auf allen 8 Viewports, Abspielen auf beiden Engines |
+| 3 | Ladefehler → Poster bleibt, keine kaputte Fläche | ✅ bei 404 bleiben Poster und ein `role="status"`-Hinweis |
+| 4 | Mobil ohne Überlauf, Knopf ≥ 44px | ✅ 0px Überlauf, Knopf 48px, vollständig in der Videofläche |
+| 5 | Desktop-Darstellung | Ersetzt am 2026-09-28 (Kinoformat) |
+| 5a | ab 640px Kinoformat-Karte über volle Breite, Video mittig | ✅ Karte = Sektionsbreite, Video auf **0px** genau mittig, 16:10 / 16:9 |
+| 5b | unter 640px kein Rand | ✅ |
+| 6 | Überschrift als Orientierungspunkt | ✅ `h2`-Kicker + `h3`-Titel wie die übrigen Sektionen |
+| 7 | Datei deutlich unter 16 MB, Ladezeit nicht gefährdet | ✅ 2,8 MB, lädt erst auf Klick |
+| 8 | acht Sektionen, Video an Position 2 | ✅ |
+| 9 | kein irreführender Alternativtext am Video | ✅ Überschrift trägt die Beschreibung; der unscharfe Rand ist `alt="" aria-hidden` |
+
+### Über die Spec hinaus geprüft
+- **Streaming-Tauglichkeit der Datei** (die Frontend-Phase prüfte nur die Größe): `moov` steht bei Byte 32, **vor** `mdat` — das Video startet nach wenigen KB statt nach 2,8 MB. Als Unit-Test festgehalten; Gegenprobe mit umgestellten Atomen → genau dieser Test fällt, Originaldatei per Prüfsumme bestätigt
+- **Range-Requests**: `206 Partial Content` mit korrektem `Content-Range` — ohne das spielt iOS Safari kein Video ab
+- **Service Worker**: fasst nur Seitennavigationen an, das Video läuft unberührt
+- **Ein Download für Poster und Rand**: je Viewport genau **1** Poster-Request
+- **Kontrast**: Beschriftung 11,53:1, Laufzeit „0:52" **5,74:1** (meine erste Sonde meldete 11,53:1, weil sie den Alpha-Wert von `rgba(…,0.7)` ignorierte — korrigiert und als Test festgehalten), Kicker 11,62:1, Einleitungssatz 7,97:1
+- **Doppelklick** auf den Startknopf: unkritisch, das Video läuft weiter
+- **Ohne JavaScript**: Poster und Überschrift stehen, kein Video-Byte wird geladen
+- **BUG-7 unverändert**: Hero-CTA auf allen 8 Viewports über dem Falz (knappster Fall 29px auf 1024×768 und 1366×768, wie vor dem Refinement)
+- **Security**: keine Nutzereingabe, feste Asset-Pfade, `nosniff` auf Video und Poster, korrekte Content-Types
+
+### Bugs
+
+**BUG-17 (Medium, offen): Pause während des Ladens wird als Abspielfehler gemeldet.**
+`play().catch(() => setFailed(true))` in `about-video.tsx` wertet *jede* Ablehnung von `play()` als Defekt. Pausiert der Nutzer, bevor das Video angelaufen ist, lehnt der Browser mit `AbortError` ab.
+- **Reproduktion:** Netz langsam (hier: MP4 um 1,5 s verzögert), „Video ansehen" tippen, sofort auf die native Pause
+- **Ergebnis:** „Das Video lässt sich gerade nicht abspielen", Bedienelemente verschwinden — obwohl `video.error === null`. Abspielen ist danach nur per Neuladen möglich
+- **Beide Engines** reproduziert. Ein Doppelklick löst es **nicht** aus (geprüft)
+- Medium: seltener Auslöser, aber Totalausfall des Elements mit falscher Meldung; Workaround Neuladen. Naheliegende Behebung: nur `NotAllowedError`/`NotSupportedError` bzw. `video.error` als Fehler werten, `AbortError` ignorieren
+- Wächter: `test.fail` in `tests/proj-13-about-video.spec.ts`, wird grün, sobald behoben
+
+**BUG-18 (Low, offen): Fokus fällt nach dem Start per Tastatur auf `<body>`.**
+Der Startknopf verschwindet aus dem DOM. Für sehende Tastaturnutzer kaum spürbar (der nächste Tab landet auf dem Video), ein Screenreader verliert aber seine Position. Behebung: nach dem Start `videoRef.current.focus()`. Wächter: `test.fail`.
+
+### Tests
+- **Unit:** neu `src/lib/about-video-asset.test.ts` (4 Tests: faststart, < 3 MB, 4:5 ≤ 720px, Poster-Maße = Video-Maße)
+- **E2E:** 5 neue QA-Tests je Engine in `tests/proj-13-about-video.spec.ts` (Range, Kontrast mit Alpha, ohne JS, zwei `test.fail`-Wächter); Datei jetzt **20 Tests je Engine**, alle wie erwartet
+- **Regression:** Unit **305/305**. Gesamtsuite beider Engines **1216 passed / 0 failed / 0 flaky / 56 skipped** (die Skips sind die vorbestehenden Plattform- und Schalter-Skips). Build sauber, `tsc` nur die 2 vorbestehenden Fehler in `quest-storage.test.ts` (PROJ-6)
+
+### Ein eigener Fehler, offen benannt
+Die faststart-Gegenprobe ersetzte die MP4 in `public/` für etwa eine Sekunde, **während die Gesamtsuite gegen denselben Server lief** — `next start` liefert `public/` direkt von der Platte. Kein Test ist dadurch auffällig geworden (0 unexpected), aber eine solche Gegenprobe gehört vor oder nach einen Lauf, nicht in ihn hinein.
+
+### Nicht abgedeckt
+- **Tonspur** nicht abgehört — ob Untertitel nötig sind, entscheidet der Betreiber (Open Question)
+- **Firefox** (Binary fehlt weiterhin)
+- Echtes iPhone: Range, faststart und `playsInline` sind belegt, das Abspielen auf dem Gerät nicht
+- Ohne JavaScript lässt sich das Video nicht starten (Startknopf braucht React, native Bedienelemente erscheinen erst nach dem Start). Kein Bug: Die Spec verlangt ohne JS nur lesbaren Inhalt, und das Poster steht
