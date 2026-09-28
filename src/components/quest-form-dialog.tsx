@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { ImageUrlPreview } from "@/components/image-url-preview";
 import { Button } from "@/components/ui/button";
 import { stripHtmlTags } from "@/lib/sanitize";
 import { hashNewPassword } from "@/lib/quest-access";
@@ -185,6 +186,7 @@ export function QuestFormDialog({
                 placeholder="https://beispiel.de/bild.jpg"
               />
               {errors.introUrl && <p className="font-body text-xs text-destructive">{errors.introUrl}</p>}
+              <ImageUrlPreview url={introUrl} />
             </div>
 
             <div className="flex flex-col gap-2">
@@ -217,6 +219,7 @@ export function QuestFormDialog({
                 placeholder="https://beispiel.de/bild.jpg"
               />
               {errors.outroUrl && <p className="font-body text-xs text-destructive">{errors.outroUrl}</p>}
+              <ImageUrlPreview url={outroUrl} />
             </div>
 
             <div className="flex flex-col gap-2">

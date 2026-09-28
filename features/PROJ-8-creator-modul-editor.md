@@ -507,3 +507,37 @@ Zwei nutzergetriebene Styling-Änderungen ohne neue Acceptance Criteria (siehe P
 Modul-Liste (`create/[id]/station/[stationId]/page.tsx`) übernimmt das Eyebrow/Titel/Meta-Zeile/Divider-Muster (Eyebrow „Stationsinhalte", Meta-Zeile „X Module"), jetzt dokumentiert in `docs/design-system.md` → "List-Header-Pattern". Locked-State zeigt weiterhin „Geschützte Station" statt Stationsname (unverändert aus PROJ-11), Modulanzahl bleibt sichtbar — keine neue Informationslücke, da ohne Backend ohnehin alles im Browser-`localStorage` liegt.
 
 **Verifikation:** `npm run build` ✓ · `npm test` ✓ (151/151) · `npm run lint` ✓ (0 Fehler, 6 vorbestehende Warnungen). E2E nicht ausgeführt (Playwright-Chromium fehlte lokal, Neuinstallation vom Nutzer abgelehnt) — stattdessen `proj-1`/`proj-3`/`proj-5`/`proj-8`-Spec-Dateien manuell gegen den Diff geprüft: `proj-8:58` (`Zurück`-Link) bleibt gültig, `proj-3:228`/`proj-5:121` betreffen andere, unberührte Komponenten. Details siehe konsolidierter QA-Eintrag in PROJ-6.
+
+---
+
+## Implementation Notes — Bildvorschau (2026-09-28)
+
+**Drei Produktivdateien, eine davon neu.** Kein neues Paket, keine neue Route, kein Eingriff ins Datenmodell.
+
+| Datei | Änderung |
+|---|---|
+| `src/components/image-url-preview.tsx` (neu) | Prüfung, Vorschau, Warnung — eine Komponente für beide Einbauorte |
+| `src/components/module-editor-sheets.tsx` | eine Zeile unter dem URL-Feld, nur bei `mediaType === "image"` |
+| `src/components/quest-form-dialog.tsx` | je eine Zeile unter Intro- und Outro-URL (PROJ-6) |
+
+**Prüfung als Bild, nicht per `fetch()`** — `new Image()` ohne `crossOrigin`, damit dieselben Ladebedingungen gelten wie im Player (Origin, `Referrer-Policy` aus `next.config.ts`). Die beim Öffnen vorhandene Adresse wird sofort geprüft, jede spätere Eingabe mit 450 ms entprellt. Ein `cancelled`-Flag im Effekt-Cleanup verhindert, dass eine ältere, langsamere Prüfung das Ergebnis einer neueren überschreibt; zusätzlich zeigt die Komponente ein Ergebnis nur an, wenn es zur **aktuellen** Adresse gehört — während der Entprellung steht „Bild wird geprüft…", nie die Warnung der vorherigen Eingabe.
+
+**Warnung über shadcns `Alert` (Variante `destructive`)**, nicht selbst gebaut — ein erster Entwurf hatte einen eigenen Warnkasten, der gegen die „shadcn first"-Regel verstieß. `Alert` bringt `role="alert"` mit; `aria-live` am Wrapper ist deshalb entfallen, sonst würde „Bild wird geprüft…" bei jeder Eingabe vorgelesen. Titel „Unter dieser Adresse ist kein Bild.", darunter Folge und Anleitung („lange drücken, am Computer Rechtsklick → Bildadresse kopieren"), beide in `text-foreground`, 14px.
+
+**Am Bildschirm abgenommen und dabei korrigiert:** Der Titel stand zuerst in Warnrot (`--destructive`, gemessen `rgb(230,26,43)` auf `rgb(246,248,249)`) und erreichte nur **4.34:1** — knapp unter der 4.5:1-Vorgabe. Jetzt steht er in der Textfarbe (**18.21:1**); Symbol und Rahmen bleiben rot und tragen das Warnsignal. *Beobachtung ohne Bug-Status, vorbestehend:* Die bestehenden Feld-Fehlermeldungen im Creator („Nur HTTPS-URLs sind erlaubt.") nutzen dieselbe Farbe und liegen damit ebenfalls bei 4.34:1 — nicht in diesem Refinement geändert.
+
+**Vorschau-Bild:** `max-w-full max-h-48 object-contain`, leeres `alt` (dekorativ — die Adresse steht im Feld darüber). Ein 3000 px breites Bild bleibt innerhalb der Feldbreite (E2E-Test).
+
+**Bewusst nicht:** kein Timeout für hängende Server (die Warnung ist nur Hinweis, und ein Browser bricht irgendwann selbst ab), keine Prüfung in der Modul-Liste, keine Änderung am Player.
+
+### Tests
+- **8 Unit-Tests** (`image-url-preview.test.tsx`) mit steuerbarer `Image`-Attrappe — jsdom lädt keine Bilder. Gegenprobe: Schutz gegen veraltete Ergebnisse entfernt → **genau der zuständige Test** fällt.
+- **11 E2E-Tests je Engine** (inkl. Kontrast-Wächter, nach der Korrektur ergänzt; die Gegenprobe unten lief vor dessen Ergänzung mit 10) (`tests/proj-8-bildvorschau.spec.ts`), Bildanfragen per `page.route` an einen erfundenen Host: PNG, 3000 px breites SVG und eine HTML-Seite, die die gemeldete Magnific-Adresse nachbildet. Gegenprobe gegen den echten Vorgängerstand (beide Einbauorte zurückgesetzt, neu gebaut): **7 von 10 fallen je Engine** mit echten Assertions; grün bleiben genau die drei Wächter, die auch ohne Feature bestehen müssen (leeres Feld/`http://`, Audio-Modul, Modul-Liste).
+- Bestehende Tests mit `https://example.com/...`-Bildern lösen jetzt eine echte Anfrage aus und zeigen die Warnung (example.com liefert HTML). Sie prüfen nichts, was davon betroffen ist, und bleiben unverändert.
+
+### Ein Fehlschlag, der kein Produktfehler war
+Die Regression über PROJ-4/5/6/8 (beide Engines) ergab **278 passed / 3 skipped / 1 unexpected**. Der Fehlschlag — PROJ-4 „shows all modules of a station…" auf Mobile Safari — war auch isoliert **3 von 3** rot und zeigte „Application error". Per Init-Skript abgefangen: `ChunkLoadError: Failed to load chunk /_next/static/chunks/625da0edc759610b.js` — die Datei existierte nicht mehr, der Server lieferte HTTP 500. `.next/BUILD_ID` war um 22:09 neu geschrieben worden, mein Build lag davor: **Eine parallel laufende Sitzung hatte unter dem laufenden `next start` neu gebaut.** Nach Server-Neustart **3 von 3** grün.
+
+**Für künftige Läufe:** Arbeiten zwei Sitzungen im selben Verzeichnis, darf keine `npm run build` ausführen, während die andere gegen `next start` testet — `.next` ist geteilt. Playwright meldet diesen Fall auf WebKit **nicht** als `pageerror` und nicht als Konsolenfehler; sichtbar wurde er erst über einen eigenen `window.onerror`-Hook.
+
+**Suiten:** Unit **301/301** (vorher 293). E2E neue Suite **22/22** über beide Engines, PROJ-4/5/6/8 wie oben. Build sauber, Lint 0 Fehler (8 Warnungen, keine in geänderten Dateien), `tsc` ohne neue Fehler.
