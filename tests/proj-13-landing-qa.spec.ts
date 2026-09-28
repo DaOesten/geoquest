@@ -288,13 +288,16 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
     expect(overflow, "horizontaler Scrollbalken").toBeLessThanOrEqual(0);
   });
 
+  // Selektor seit 2026-09-28 auf das Bild AUSSERHALB der Sektionen begrenzt:
+  // Das Erklärvideo (Refinement 10) trägt ebenfalls ein dekoratives Bild
+  // (unscharfer Rand), und `main img[alt=""]` fand beide.
   test("der Hero trägt ein Hintergrundbild hinter dem Text", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/about");
 
-    const bg = page.locator('main img[alt=""]');
+    const bg = page.locator('main img[alt=""]:not(section img)');
     await expect(bg, "Hintergrundbild fehlt").toHaveCount(1);
     // Dekoration: Ein Screenreader soll es nicht vorlesen.
     await expect(bg).toHaveAttribute("aria-hidden", "true");
@@ -330,7 +333,7 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/about");
 
-    const bg = page.locator('main img[alt=""]');
+    const bg = page.locator('main img[alt=""]:not(section img)');
     await expect(bg).toHaveCount(1);
 
     const b = (await bg.boundingBox())!;
@@ -349,7 +352,7 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
     // Vom Bild aus suchen statt von der Headline: Die Verschachtelung darf
     // sich aendern, der Verlauf bleibt ein Geschwister des Bildes.
     const found = await page.evaluate(() => {
-      const img = document.querySelector<HTMLImageElement>('main img[alt=""]')!;
+      const img = document.querySelector<HTMLImageElement>('main img[alt=""]:not(section img)')!;
       const wrapper = img.parentElement!;
       return [...wrapper.children].some((el) =>
         /gradient/.test(getComputedStyle(el).backgroundImage)
@@ -367,7 +370,7 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
     await page.goto("/about");
 
     const endsEarly = await page.evaluate(() => {
-      const img = document.querySelector<HTMLImageElement>('main img[alt=""]')!;
+      const img = document.querySelector<HTMLImageElement>('main img[alt=""]:not(section img)')!;
       const layer = [...img.parentElement!.children].find((el) =>
         /gradient/.test(getComputedStyle(el).backgroundImage)
       )!;
@@ -395,7 +398,7 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/about");
     const pos = await page.evaluate(() => {
-      const img = document.querySelector<HTMLImageElement>('main img[alt=""]')!;
+      const img = document.querySelector<HTMLImageElement>('main img[alt=""]:not(section img)')!;
       return getComputedStyle(img).objectPosition;
     });
     expect(pos).toMatch(/100%|right/);
@@ -405,7 +408,7 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
     for (const path of ["/anleitung", "/impressum", "/datenschutz"]) {
       await page.goto(path);
       await expect(
-        page.locator('main img[alt=""]'),
+        page.locator('main img[alt=""]:not(section img)'),
         `${path} trägt ein Hintergrundbild`
       ).toHaveCount(0);
     }

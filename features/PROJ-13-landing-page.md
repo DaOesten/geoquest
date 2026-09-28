@@ -58,7 +58,7 @@ Das Feature besteht aus **zwei zusammengehörenden statischen Seiten**, die geme
 _Neu gefasst in Refinement 4 (2026-09-07). Die vollständige Copy steht im Abschnitt „Refinement 4" am Ende dieser Spec._
 
 1. **Hero** — ohne Eyebrow; „Die reale Welt wird zum Spielfeld.", zwei gleichrangige Sätze (Erstellen und Spielen), „Kostenlos. Ohne Abo. Ohne Account.", zwei CTAs (`Quest erstellen` → `/create`, `Mit KI erstellen` → `/anleitung`)
-2. **So funktioniert Geo Quest.** _(neu, Refinement 10, 2026-09-28; Kicker „In 50 Sekunden")_ — Erklärvideo, Poster-Frame mit Klick-zum-Abspielen, 4:5-Format, am Desktop neben dem Text. _Überschrift im Frontend von „So spielt sich…" geändert: Das Video zeigt Erstellen, Teilen und Spielen, nicht nur das Spiel._
+2. **So funktioniert Geo Quest.** _(neu, Refinement 10, 2026-09-28; Kicker „In 50 Sekunden")_ — Erklärvideo, Poster-Frame mit Klick-zum-Abspielen, 4:5-Format; ab `sm` in einer Kinoformat-Karte über die volle Breite mit unscharfem Rand (2026-09-28 nachgezogen, die Fassung „Text links, Video rechts" gefiel nicht). _Überschrift im Frontend von „So spielt sich…" geändert: Das Video zeigt Erstellen, Teilen und Spielen, nicht nur das Spiel._
 3. **Jeder Ort kann ein Level sein.** — Karte mit Teal-Rahmen: fünf Orte als Chip-Reihe, Erklärung wie eine Quest entsteht, Merkzeile „Die Welt ist deine Spielkarte."
 4. **Nicht nur spielen. Selber machen.** — Karte mit Lime-Rahmen: Game-Designer-Gedanke, kein Vorwissen nötig
 5. **Eine Quest erstellen? Ganz einfach.** — drei nummerierte Schritte
@@ -243,7 +243,9 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] Angenommen ein Besucher klickt/tippt auf das Poster-Frame, wenn das Video startet, dann läuft es mit Ton (falls vorhanden) im 4:5-Seitenverhältnis der Quelldatei — kein Zuschnitt auf ein breiteres Format _(Start über den Knopf „Video ansehen" im Poster, nicht über die ganze Fläche — siehe Implementation Notes)_
 - [x] Angenommen die Videodatei lässt sich nicht laden oder abspielen, wenn die Sektion rendert, dann bleibt das Poster-Bild sichtbar und die Sektion wirkt nicht kaputt oder leer
 - [x] Angenommen ein Besucher öffnet `/about` auf einem Mobilgerät (360–430px), wenn er die Video-Sektion erreicht, dann ist sie vollständig ohne horizontales Scrollen sichtbar und das Play-Symbol ist mindestens 44px groß
-- [x] Angenommen ein Besucher öffnet `/about` am Desktop (ab 1024px), wenn er die Video-Sektion betrachtet, dann füllt das hochformatige Video nicht die volle Content-Breite, sondern steht als eigenständiges Element (ähnlich einem Phone-Mockup), ohne dass links/rechts unproportional viel Leerraum entsteht
+- [x] ~~Angenommen ein Besucher öffnet `/about` am Desktop (ab 1024px), wenn er die Video-Sektion betrachtet, dann füllt das hochformatige Video nicht die volle Content-Breite, sondern steht als eigenständiges Element (ähnlich einem Phone-Mockup), ohne dass links/rechts unproportional viel Leerraum entsteht~~ → **Ersetzt am 2026-09-28** (Betreiber: „Die Aufteilung gefällt mir nicht: Schrift links, Video rechts")
+- [x] Angenommen ein Besucher öffnet `/about` ab 640px, wenn er die Video-Sektion betrachtet, dann steht die Überschrift linksbündig darüber und das Video in einer Karte über die volle Inhaltsbreite (16:10 bis `lg`, ab `lg` 16:9): das 4:5-Video unbeschnitten in der Mitte, die Seiten gefüllt mit einer unscharfen, dekorativen Kopie des Posters
+- [x] Angenommen ein Besucher öffnet `/about` unter 640px, wenn er die Video-Sektion betrachtet, dann füllt das Video die Karte allein — kein unscharfer Rand
 - [x] Angenommen ein Screenreader-Nutzer erreicht die Sektion, wenn er sie vorgelesen bekommt, dann hört er eine Überschrift (~~„So spielt sich Geo Quest."~~ **„So funktioniert Geo Quest."**) als Orientierungspunkt, wie bei jeder anderen Sektion der Seite
 - [x] Angenommen die ausgelieferte Videodatei wird gemessen, wenn ihre Größe geprüft wird, dann liegt sie deutlich unter den ursprünglichen 16 MB der Quelldatei — die PRD-Ladezeitvorgabe (< 2s) darf durch die neue Sektion nicht gefährdet werden, insbesondere weil das Video erst auf Klick nachlädt und nicht beim Seitenaufruf
 - [x] Angenommen ein Besucher zählt die Sektionen von `/about`, wenn er von oben nach unten scrollt, dann sind es jetzt **acht** statt sieben, mit der Video-Sektion an Position 2 (direkt nach dem Hero, vor „Jeder Ort kann ein Level sein.")
@@ -405,6 +407,7 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 | Gameplay-Video wird als neue Sektion 2 eingebunden, nicht in den Hero | Der Hero wurde in Refinement 9 gerade erst auf ein ruhiges Hintergrundbild umgebaut — ein weiteres bewegtes Element dort wäre ein erneuter Eingriff in denselben, mehrfach nachjustierten Bereich. Die Sektion direkt danach lässt den Besucher zuerst die Kernaussage lesen und sie dann sofort in Bewegung sehen | 2026-09-28 |
 | 4:5-Seitenverhältnis der Quelldatei bleibt erhalten, kein Zuschnitt auf 16:9 | Ein Breitformat-Krop riskiert, das im Hochformat gefilmte Motiv (vermutlich Handy in der Hand) an den Rändern zu beschneiden. Auf Mobile ist 4:5 ohnehin die natürliche Form, am Desktop wirkt ein Hochformat-Video als eigenständiges Element neben Text | 2026-09-28 |
 | Poster-Frame + Klick-zum-Abspielen statt Autoplay | Folgt derselben „keine Ambient-Loops"-Regel wie das Konfetti-Refinement in PROJ-3; hält die Seite ruhig und die Ladezeit niedrig, da das Video nicht vorlädt. 52 Sekunden Inhalt sind eine aktive Entscheidung des Besuchers | 2026-09-28 |
+| Kinoformat-Karte mit unscharfem Rand statt „Text links, Video rechts" | Betreiber lehnte die zweispaltige Fassung ab. Aus drei Vorschlägen (zentriert gestapelt, Kinoformat, linksbündig) gewählt. Das Video bleibt unbeschnitten 4:5; die Ränder füllt dieselbe, bereits geladene Poster-Datei — kein zusätzlicher Download. Abdunklung 25 % statt zunächst 55 % (bei 55 % verschluckte sie den türkisen Schimmer, und die Videokante wirkte wie eine Stufe), dazu ein weicher Schatten um das Video, damit die Kante gewollt aussieht | 2026-09-28 |
 | Kompression/Zuschnitt der Videodatei liegt beim Betreiber, nicht im Scope dieses Refinements | Die Spec beschreibt die Einbindung (Poster, Lazy-Load, Format-Vorgaben), nicht die Bildbearbeitung selbst — der Betreiber liefert die web-optimierte Datei nach | 2026-09-28 |
 
 ### Technical Decisions
@@ -2752,3 +2755,18 @@ Die Beschriftung **brach im Knopf auf zwei Zeilen um** — die Tech-Schrift mit 
 - Die **Tonspur** (Stereo vorhanden) wurde nicht abgehört — ob Untertitel nötig sind, hängt davon ab, ob sie Sprache oder nur Musik enthält (Open Question)
 - Echtes Abspielen auf einem iPhone (WebKit-Emulation spielt ab, `playsInline` ist gesetzt)
 - Die ungenutzte Quelldatei `video-geoquest-4x5-game-social.mp4` (16 MB) liegt weiter unversioniert in `public/assets/` — nicht committet, Entscheidung beim Betreiber
+
+### Nachtrag: Kinoformat statt zwei Spalten (2026-09-28)
+Betreiber: *„Die Aufteilung gefällt mir nicht: Schrift links, Video rechts."* Drei Varianten vorgelegt (zentriert gestapelt, Kinoformat mit Unschärfe-Rand, linksbündig), gewählt: **Kinoformat**.
+
+- Überschrift und Satz linksbündig über der Karte, wie bei den übrigen Sektionen
+- Karte über die volle Inhaltsbreite, `sm:aspect-[16/10] lg:aspect-[16/9]`; das Video steht mit `h-full w-auto aspect-[4/5]` unbeschnitten in der Mitte
+- Die Ränder füllt das **Poster selbst**, `blur-2xl scale-110` (`scale` verdeckt den ausfransenden Blur-Rand), darüber 25 % Abdunklung. Das kostet keinen weiteren Download, weil es dieselbe Datei ist. Als `<img alt="" aria-hidden>` ausgezeichnet, weil es rein dekorativ ist
+- Unter `sm` bleiben Rand und Abdunklung aus (`hidden sm:block`), dort füllt das Video die Breite ohnehin
+- Gemessen auf 1440×900: Karte 1100×619, die ganze Sektion passt in eine Bildschirmhöhe
+
+**Am Bildschirm nachjustiert:** Mit 55 % Abdunklung waren die Ränder fast schwarz, und die Videokante wirkte wie eine versehentliche Stufe. Mit 25 % kommt der türkise Schimmer durch; ein weicher Schatten um das Video lässt die Kante wie eine Leinwand vor ihrem Schein wirken.
+
+**Ein Testfehler, kein Produktfehler:** Zwei Hero-Tests suchten das Hero-Bild über `main img[alt=""]` und erwarteten genau ein Bild. Das Unschärfe-Bild ist korrekt dekorativ ausgezeichnet und wurde deshalb mitgezählt. Alle sechs Vorkommen dieses Selektors sind jetzt auf `:not(section img)` begrenzt; vier davon (`querySelector`) bestanden vorher nur, weil das Hero-Bild im DOM zufällig zuerst steht.
+
+**Tests:** Der Desktop-Test zur zweispaltigen Fassung ist gezogen, nicht gelöscht: Kinoformat auf 768 und 1440 (volle Breite, Seitenverhältnis, Video mittig und in voller Kartenhöhe, Rand als dekoratives, unscharfes Poster), dazu ein Handy-Test (kein Rand). **PROJ-13 174 passed / 20 skipped / 0 failed** über beide Engines, Lint ohne Befund in geänderten Dateien.

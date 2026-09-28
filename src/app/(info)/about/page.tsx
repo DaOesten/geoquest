@@ -291,13 +291,13 @@ export default function AboutPage() {
           erst die Aussage, dann sofort, wie es aussieht. Überschrift
           „funktioniert" statt „spielt sich": Das Video zeigt Erstellen,
           Teilen und Spielen, nicht nur das Spiel. Hochformat bleibt
-          Hochformat — am Desktop steht es neben dem Text statt über die
-          volle Breite. */}
-      <section className="mt-12 sm:mt-16 grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-center lg:gap-12">
+          Hochformat — ab `sm` in einer Kinoformat-Karte mit unscharfem
+          Rand. Die Fassung „Text links, Video rechts" gefiel nicht. */}
+      <section className="mt-12 sm:mt-16">
         <div>
           <h2 className={SECTION_LABEL}>In 50 Sekunden</h2>
           <h3 className={SECTION_TITLE}>So funktioniert Geo Quest.</h3>
-          <p className="mt-4 max-w-[46ch] font-body text-sm sm:text-base lg:text-[17px] leading-relaxed text-gq-grey">
+          <p className="mt-4 mb-6 max-w-[58ch] font-body text-sm sm:text-base lg:text-[17px] leading-relaxed text-gq-grey">
             Quest erstellen, als Datei weitergeben, draußen losspielen — der
             ganze Weg einmal durchgespielt.
           </p>

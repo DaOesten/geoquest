@@ -157,18 +157,42 @@ test.describe("Format & Layout", () => {
     });
   }
 
-  test("Desktop: Video steht neben dem Text, nicht über die volle Breite", async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/about");
-    const video = (await page.locator("main video").boundingBox())!;
-    const title = (await page
-      .getByRole("heading", { name: "So funktioniert Geo Quest." })
-      .boundingBox())!;
-    const section = (await page.locator("main section").first().boundingBox())!;
+  // Gezogen am 2026-09-28: Die erste Fassung (Text links, Video rechts)
+  // gefiel nicht. Seitdem Kinoformat-Karte mit unscharfem Rand.
+  for (const [w, h, ratio] of [
+    [768, 1024, 16 / 10],
+    [1440, 900, 16 / 9],
+  ] as const) {
+    test(`${w}px: Kinoformat — volle Breite, Video mittig, unscharfer Rand`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: h });
+      await page.goto("/about");
+      const section = (await page.locator("main section").first().boundingBox())!;
+      const card = (await page.locator("main figure > div").first().boundingBox())!;
+      const video = (await page.locator("main video").boundingBox())!;
 
-    expect(video.width).toBeLessThanOrEqual(380);
-    expect(video.width).toBeLessThan(section.width / 2);
-    expect(video.x).toBeGreaterThan(title.x + title.width / 2);
+      expect(Math.abs(card.width - section.width)).toBeLessThanOrEqual(1);
+      expect(card.width / card.height).toBeCloseTo(ratio, 1);
+      expect(Math.abs(video.height - card.height)).toBeLessThanOrEqual(2);
+      const offset = video.x + video.width / 2 - (card.x + card.width / 2);
+      expect(Math.abs(offset), "Video nicht mittig").toBeLessThanOrEqual(1);
+
+      const backdrop = page.locator("main figure img");
+      await expect(backdrop).toBeVisible();
+      await expect(backdrop).toHaveAttribute("alt", "");
+      await expect(backdrop).toHaveAttribute("aria-hidden", "true");
+      await expect(backdrop).toHaveAttribute("src", POSTER);
+      const filter = await backdrop.evaluate((e) => getComputedStyle(e).filter);
+      expect(filter).toMatch(/blur/);
+    });
+  }
+
+  test("Handy: kein Rand, das Video füllt die Karte allein", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/about");
+    await expect(page.locator("main figure img")).toBeHidden();
+    const card = (await page.locator("main figure > div").first().boundingBox())!;
+    const video = (await page.locator("main video").boundingBox())!;
+    expect(Math.abs(video.width - (card.width - 2))).toBeLessThanOrEqual(1);
   });
 });
 
