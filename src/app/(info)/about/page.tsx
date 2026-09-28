@@ -8,6 +8,7 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
+import { AboutVideo } from "@/components/about-video";
 import { InfoPageShell } from "@/components/info-page-shell";
 import { ANLEITUNG_VERFUEGBAR } from "@/lib/app-nav";
 import {
@@ -286,14 +287,37 @@ export default function AboutPage() {
          nicht verhandelbar ist — ohne sie verfehlt Teal die Kontrastvorgabe. */
       heroBackground={{ src: "/assets/hero_new.png" }}
     >
-      {/* 2 — Orte als Chip-Reihe, in einer Karte wie Sektion 3. Ab hier heißt
+      {/* 2 — Erklärvideo (Refinement 10, 2026-09-28). Direkt nach dem Hero:
+          erst die Aussage, dann sofort, wie es aussieht. Überschrift
+          „funktioniert" statt „spielt sich": Das Video zeigt Erstellen,
+          Teilen und Spielen, nicht nur das Spiel. Hochformat bleibt
+          Hochformat — am Desktop steht es neben dem Text statt über die
+          volle Breite. */}
+      <section className="mt-12 sm:mt-16 grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-center lg:gap-12">
+        <div>
+          <h2 className={SECTION_LABEL}>In 50 Sekunden</h2>
+          <h3 className={SECTION_TITLE}>So funktioniert Geo Quest.</h3>
+          <p className="mt-4 max-w-[46ch] font-body text-sm sm:text-base lg:text-[17px] leading-relaxed text-gq-grey">
+            Quest erstellen, als Datei weitergeben, draußen losspielen — der
+            ganze Weg einmal durchgespielt.
+          </p>
+        </div>
+        <AboutVideo
+          src="/assets/video-geoquest-4x5-game-web.mp4"
+          poster="/assets/video-geoquest-4x5-game-poster.jpg"
+          playLabel="Video ansehen: So funktioniert Geo Quest (52 Sekunden)"
+          durationLabel="0:52"
+        />
+      </section>
+
+      {/* 3 — Orte als Chip-Reihe, in einer Karte wie Sektion 4. Ab hier heißt
           es „Quest": Der Hero oben hat den Besucher mit „GPS-Rallye" in seiner
           Suchsprache abgeholt, von jetzt an gilt die Sprache der App.
 
           Teal statt Lime: Die beiden Karten sollen sich unterscheiden, und das
           Design System lässt nur ein Lime-Element pro Screen zu — das bleibt
           die Game-Designer-Karte darunter. */}
-      <section className="mt-12 sm:mt-16">
+      <section className="mt-12 sm:mt-20">
         <div className="rounded-card border border-gq-teal/40 bg-gq-dark-teal/70 p-6 sm:p-8 lg:p-10 shadow-card">
           <h2 className={SECTION_LABEL}>Wo gespielt wird</h2>
           <h3 className={SECTION_TITLE}>Jeder Ort kann ein Level sein.</h3>
@@ -318,7 +342,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 3 — Die zweite Karte, in Lime: das eine Hervorhebungs-Element der
+      {/* 4 — Die zweite Karte, in Lime: das eine Hervorhebungs-Element der
           Seite laut Design System. */}
       <section className="mt-12 sm:mt-20">
         <div className="rounded-card border border-gq-lime/40 bg-gq-dark-teal/70 p-6 sm:p-8 lg:p-10 shadow-card">
@@ -344,7 +368,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 4 — Drei Schritte. */}
+      {/* 5 — Drei Schritte. */}
       <section className="mt-12 sm:mt-20">
         <h2 className={SECTION_LABEL}>So geht es</h2>
         <h3 className={SECTION_TITLE}>Eine Quest erstellen? Ganz einfach.</h3>
@@ -372,7 +396,7 @@ export default function AboutPage() {
         </ol>
       </section>
 
-      {/* 5 — Zielgruppen. */}
+      {/* 6 — Zielgruppen. */}
       <section className="mt-12 sm:mt-20">
         <h2 className={SECTION_LABEL}>Für wen</h2>
         <h3 className={SECTION_TITLE}>Für wen ist Geo Quest?</h3>
@@ -395,7 +419,7 @@ export default function AboutPage() {
         </dl>
       </section>
 
-      {/* 6 — FAQ. Mirrors the JSON-LD below so structured data matches visible
+      {/* 7 — FAQ. Mirrors the JSON-LD below so structured data matches visible
           content. Collapsed by default: Radix keeps the answers in the DOM
           (hidden only via attribute), so crawlers and AI systems still read
           them in full. */}
@@ -430,7 +454,7 @@ export default function AboutPage() {
         }}
       />
 
-      {/* 7 — Abschluss-CTA */}
+      {/* 8 — Abschluss-CTA */}
       <section className="mt-12 sm:mt-20 rounded-card border border-gq-teal/40 bg-gq-dark-teal/70 p-6 sm:p-10 text-center shadow-card">
         <h2 className="font-display italic text-[clamp(1.5rem,4vw,2.4rem)] uppercase leading-[1] text-gq-white">
           Deine Umgebung. <span className="text-gq-teal">Dein Abenteuer.</span>

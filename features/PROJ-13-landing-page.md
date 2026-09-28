@@ -1,13 +1,13 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
 ## Status: In Progress
-_Refinement 9 (Hero-Bild wird Hintergrund) ist deployt (Tag `v1.40.0-PROJ-13`, 2026-09-26). **Refinement 10 (Gameplay-Video als neue Sektion 2) ist am 2026-09-28 gespect, aber noch nicht gebaut** — wartet auf die vom Betreiber komprimierte Videodatei. Siehe Abschnitt „Refinement 10" am Ende dieser Spec._
+_Refinement 9 (Hero-Bild wird Hintergrund) ist deployt (Tag `v1.40.0-PROJ-13`, 2026-09-26). **Refinement 10 (Erklärvideo als neue Sektion 2) ist am 2026-09-28 gespect und im Frontend umgesetzt** — QA steht aus. Siehe Abschnitte „Refinement 10" und „Implementation Notes (Frontend — Refinement 10)" am Ende dieser Spec._
 
 _Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und dort verifiziert (Tag `v1.26.0-PROJ-13`). Refinement 6 (Ko-fi-Icon in der Kopfzeile, Tooltip, JSON-LD-Altersnachzug) ist **am 2026-09-10 nach Production deployt und dort verifiziert** (Tag `v1.27.0-PROJ-13`)._
 
 _**Refinement 7 (2026-09-20): Das Logo-Lockup kehrt auf den Desktop zurück.** Betreiber-Befund: „ich kann auf /about auf dem desktop das Logo nicht mehr sehen." **Frontend umgesetzt am 2026-09-21** — `lg:hidden` entfernt; CTA auf allen elf Viewports über dem Falz nachgemessen, knappster Fall 1366×768 mit 45px. Siehe Implementation Notes._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-28 (Refinement 10 gespect — Gameplay-Video, noch nicht gebaut)
+**Last Updated:** 2026-09-28 (Refinement 10 im Frontend umgesetzt — Erklärvideo)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -58,7 +58,7 @@ Das Feature besteht aus **zwei zusammengehörenden statischen Seiten**, die geme
 _Neu gefasst in Refinement 4 (2026-09-07). Die vollständige Copy steht im Abschnitt „Refinement 4" am Ende dieser Spec._
 
 1. **Hero** — ohne Eyebrow; „Die reale Welt wird zum Spielfeld.", zwei gleichrangige Sätze (Erstellen und Spielen), „Kostenlos. Ohne Abo. Ohne Account.", zwei CTAs (`Quest erstellen` → `/create`, `Mit KI erstellen` → `/anleitung`)
-2. **So spielt sich Geo Quest.** _(neu, Refinement 10, 2026-09-28)_ — Gameplay-Video, Poster-Frame mit Klick-zum-Abspielen, 4:5-Format
+2. **So funktioniert Geo Quest.** _(neu, Refinement 10, 2026-09-28; Kicker „In 50 Sekunden")_ — Erklärvideo, Poster-Frame mit Klick-zum-Abspielen, 4:5-Format, am Desktop neben dem Text. _Überschrift im Frontend von „So spielt sich…" geändert: Das Video zeigt Erstellen, Teilen und Spielen, nicht nur das Spiel._
 3. **Jeder Ort kann ein Level sein.** — Karte mit Teal-Rahmen: fünf Orte als Chip-Reihe, Erklärung wie eine Quest entsteht, Merkzeile „Die Welt ist deine Spielkarte."
 4. **Nicht nur spielen. Selber machen.** — Karte mit Lime-Rahmen: Game-Designer-Gedanke, kein Vorwissen nötig
 5. **Eine Quest erstellen? Ganz einfach.** — drei nummerierte Schritte
@@ -239,15 +239,15 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] Angenommen das Lockup ist auf dem Desktop zurück, wenn seine Größe gemessen wird, dann trägt es dieselbe Größe wie ab `sm` (280px) — es gibt keinen eigenen Desktop-Breakpoint für die Marke
 
 ### Gameplay-Video als neue Sektion 2 (Refinement 10, 2026-09-28)
-- [ ] Angenommen ein Besucher scrollt vom Hero weiter, wenn er die nächste Sektion erreicht, dann sieht er ein Video-Element mit Poster-Frame und einem sichtbaren Play-Symbol — das Video lädt nicht automatisch und spielt nicht automatisch ab
-- [ ] Angenommen ein Besucher klickt/tippt auf das Poster-Frame, wenn das Video startet, dann läuft es mit Ton (falls vorhanden) im 4:5-Seitenverhältnis der Quelldatei — kein Zuschnitt auf ein breiteres Format
-- [ ] Angenommen die Videodatei lässt sich nicht laden oder abspielen, wenn die Sektion rendert, dann bleibt das Poster-Bild sichtbar und die Sektion wirkt nicht kaputt oder leer
-- [ ] Angenommen ein Besucher öffnet `/about` auf einem Mobilgerät (360–430px), wenn er die Video-Sektion erreicht, dann ist sie vollständig ohne horizontales Scrollen sichtbar und das Play-Symbol ist mindestens 44px groß
-- [ ] Angenommen ein Besucher öffnet `/about` am Desktop (ab 1024px), wenn er die Video-Sektion betrachtet, dann füllt das hochformatige Video nicht die volle Content-Breite, sondern steht als eigenständiges Element (ähnlich einem Phone-Mockup), ohne dass links/rechts unproportional viel Leerraum entsteht
-- [ ] Angenommen ein Screenreader-Nutzer erreicht die Sektion, wenn er sie vorgelesen bekommt, dann hört er eine Überschrift („So spielt sich Geo Quest.") als Orientierungspunkt, wie bei jeder anderen Sektion der Seite
-- [ ] Angenommen die ausgelieferte Videodatei wird gemessen, wenn ihre Größe geprüft wird, dann liegt sie deutlich unter den ursprünglichen 16 MB der Quelldatei — die PRD-Ladezeitvorgabe (< 2s) darf durch die neue Sektion nicht gefährdet werden, insbesondere weil das Video erst auf Klick nachlädt und nicht beim Seitenaufruf
-- [ ] Angenommen ein Besucher zählt die Sektionen von `/about`, wenn er von oben nach unten scrollt, dann sind es jetzt **acht** statt sieben, mit der Video-Sektion an Position 2 (direkt nach dem Hero, vor „Jeder Ort kann ein Level sein.")
-- [ ] Angenommen ein KI-System oder Crawler wertet `/about` aus, wenn es das Video-Element erreicht, dann trägt das `<video>`-Element keinen irreführenden Alternativtext-Ersatz — die Sektionsüberschrift trägt den beschreibenden Inhalt, das Video selbst ist ergänzend, nicht die einzige Informationsquelle
+- [x] Angenommen ein Besucher scrollt vom Hero weiter, wenn er die nächste Sektion erreicht, dann sieht er ein Video-Element mit Poster-Frame und einem sichtbaren Play-Symbol — das Video lädt nicht automatisch und spielt nicht automatisch ab
+- [x] Angenommen ein Besucher klickt/tippt auf das Poster-Frame, wenn das Video startet, dann läuft es mit Ton (falls vorhanden) im 4:5-Seitenverhältnis der Quelldatei — kein Zuschnitt auf ein breiteres Format _(Start über den Knopf „Video ansehen" im Poster, nicht über die ganze Fläche — siehe Implementation Notes)_
+- [x] Angenommen die Videodatei lässt sich nicht laden oder abspielen, wenn die Sektion rendert, dann bleibt das Poster-Bild sichtbar und die Sektion wirkt nicht kaputt oder leer
+- [x] Angenommen ein Besucher öffnet `/about` auf einem Mobilgerät (360–430px), wenn er die Video-Sektion erreicht, dann ist sie vollständig ohne horizontales Scrollen sichtbar und das Play-Symbol ist mindestens 44px groß
+- [x] Angenommen ein Besucher öffnet `/about` am Desktop (ab 1024px), wenn er die Video-Sektion betrachtet, dann füllt das hochformatige Video nicht die volle Content-Breite, sondern steht als eigenständiges Element (ähnlich einem Phone-Mockup), ohne dass links/rechts unproportional viel Leerraum entsteht
+- [x] Angenommen ein Screenreader-Nutzer erreicht die Sektion, wenn er sie vorgelesen bekommt, dann hört er eine Überschrift (~~„So spielt sich Geo Quest."~~ **„So funktioniert Geo Quest."**) als Orientierungspunkt, wie bei jeder anderen Sektion der Seite
+- [x] Angenommen die ausgelieferte Videodatei wird gemessen, wenn ihre Größe geprüft wird, dann liegt sie deutlich unter den ursprünglichen 16 MB der Quelldatei — die PRD-Ladezeitvorgabe (< 2s) darf durch die neue Sektion nicht gefährdet werden, insbesondere weil das Video erst auf Klick nachlädt und nicht beim Seitenaufruf
+- [x] Angenommen ein Besucher zählt die Sektionen von `/about`, wenn er von oben nach unten scrollt, dann sind es jetzt **acht** statt sieben, mit der Video-Sektion an Position 2 (direkt nach dem Hero, vor „Jeder Ort kann ein Level sein.")
+- [x] Angenommen ein KI-System oder Crawler wertet `/about` aus, wenn es das Video-Element erreicht, dann trägt das `<video>`-Element keinen irreführenden Alternativtext-Ersatz — die Sektionsüberschrift trägt den beschreibenden Inhalt, das Video selbst ist ergänzend, nicht die einzige Informationsquelle
 
 ### Hero-Bild wird Hintergrund (Refinement 9, 2026-09-21)
 - [x] Angenommen ein Besucher öffnet `/about` auf **irgendeiner** Breite, wenn der Hero lädt, dann liegt `urbanquest.png` als Hintergrund **hinter** Logo, Headline, Lead, Preiszeile und CTA — nicht mehr als eigenes Element daneben oder darunter
@@ -321,9 +321,10 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] ~~Wann und wohin genau zeigt der Ko-fi-Link?~~ → Geklärt am 2026-09-09 (Refinement 6): Ziel ist https://ko-fi.com/technolomagie. „Zur App" bleibt als Aktions-Button erhalten — es ist der Conversion-Weg der Seite; Ko-fi bekommt links daneben einen Icon-Button ohne Text, nur auf `/about` und `/anleitung`. Die ausgeschriebene Beschriftung „Support me" trägt das Burger-Menu (PROJ-1)
 - [x] ~~Bekommt der Icon-Button auf dem Desktop einen sichtbaren Tooltip?~~ → Ja, umgesetzt am 2026-09-10: Tooltip „Unterstütze mich" bei Hover und Tastatur-Fokus, als eigene Client-Komponente `support-link.tsx`, damit die Shell serverseitig bleibt. Das `aria-label` bleibt daneben bestehen — auf Touch ist der Tooltip unsichtbar
 - [ ] Sollen `/impressum` und `/datenschutz` das Icon nachträglich auch bekommen? Zunächst bewusst nicht (2026-09-09)
-- [ ] Welche Zielgröße/Auflösung hat die vom Betreiber komprimierte Videodatei am Ende tatsächlich? Empfehlung war max. 720px Breite, unter 3 MB — zu verifizieren, sobald die Datei geliefert ist (2026-09-28)
-- [ ] Braucht das Video Untertitel/eine Textalternative für gesprochene Inhalte, falls welche vorkommen? Bisher nicht geklärt, da der Inhalt des Videos noch nicht im Detail bekannt ist (2026-09-28)
-- [ ] Soll das Video in einem Lightbox/Overlay abgespielt werden oder inline in der Sektion bleiben? Aktuell angenommen: inline, kein Overlay — einfachste Umsetzung, zu bestätigen in `/frontend` (2026-09-28)
+- [x] ~~Welche Zielgröße/Auflösung hat die vom Betreiber komprimierte Videodatei am Ende tatsächlich?~~ → `video-geoquest-4x5-game-web.mp4`: **720×900, 2,8 MB**, H.264/AAC, 52 s — erfüllt beide Vorgaben (2026-09-28)
+- [ ] Braucht das Video Untertitel? Gesichtet: Die Aussagen stehen als **Bildschirmtext** im Video (Kapitel „01 Erstellen", „02 Teilen", „03 Spielen", Beschriftungen), gesprochener Text wurde nicht geprüft — die Tonspur (Stereo) konnte hier nicht abgehört werden. Enthält sie nur Musik, sind keine Untertitel nötig; das bestätigt der Betreiber (2026-09-28)
+- [x] ~~Lightbox/Overlay oder inline?~~ → **Inline**, ohne Overlay; native Bedienelemente nach dem Start (2026-09-28)
+- [ ] Soll die Quelldatei `video-geoquest-4x5-game-social.mp4` (16 MB) im Repo bleiben? Sie wird nirgends referenziert, würde aber unter `public/` mit ausgeliefert. Bewusst nicht committet — Entscheidung beim Betreiber (2026-09-28)
 - [x] ~~Trägt der Desktop-Header die Marke ausreichend, sodass das Hero-Lockup ab `lg` entfallen kann?~~ → **Nein, die Annahme war von Anfang an falsch** (geklärt 2026-09-20, Refinement 7). Der Header führte nie eine Bildmarke — „Zur App" ist ein Button in Tech-Schrift, die Navigation waren Textlinks. Seit PROJ-14 `HEADER_NAV_LINKS` geleert hat, ist die Zeile zusätzlich leer. Das Lockup kehrt ab `lg` zurück
 - [x] ~~Soll das Logo-Lockup ein freigestelltes PNG mit Alpha bekommen?~~ → **Ja, entschieden am 2026-09-20.** Als eigenes Refinement an **PROJ-1** geführt, weil das Lockup zum Startscreen gehört und `/about` es mitbenutzt — es ist dieselbe Datei, ein Austausch wirkt an beiden Stellen. Gemessen: Platte rgb(5–6,7–8,9–10) gegen Hintergrund rgb(11,15,18); Grund flach (Eckspanne 0,57 gegen 17,9 beim Pin), Histogramm-Tal bei Luminanz 25–48. Erprobt LO=13/HI=30 plus ein Flecken-Filter gegen **3884 Korn-Flecken** der Quelldatei — damit Rahmen-Abweichung **0** statt 144. Details und Messtabellen in PROJ-1
 - [x] ~~Braucht `/about` zusätzlich einen Footer mit Impressum/Datenschutz für Desktop-Besucher?~~ → Ja, entschieden am 2026-09-05: Footer auf allen Info-Seiten mit Kontakt und Rechtslinks; die Links verlassen dafür den Desktop-Header
@@ -2714,3 +2715,40 @@ Der tatsächliche Inhalt des Videos (was darin gezeigt wird) war zum Zeitpunkt d
 
 ### Offen
 **BUG-15 (Low)** bleibt: 23 von 9016 Pixeln (0,26%) hinter „ZUM SPIELFELD" auf 320×568 unter der Kontrastvorgabe, wenn pro Einzelpixel gemessen wird. Nach der abgestimmten Methode (lokaler Mittelwert) besteht die Stelle mit 5,59:1, und die Headline ist am Bildschirm klar lesbar. Ein Einzeiler (Verlauf auf `xs` etwas stärker) schließt es.
+
+## Implementation Notes (Frontend — Refinement 10, 2026-09-28)
+
+**Dateien:** neue Komponente `src/components/about-video.tsx` (Client), Sektion in `src/app/(info)/about/page.tsx`, neues Skript `scripts/make-video-poster.swift`, neues Asset `public/assets/video-geoquest-4x5-game-poster.jpg` (720×900, 72 KB), gelieferte Datei `public/assets/video-geoquest-4x5-game-web.mp4` (720×900, 2,8 MB). Kein neues Paket, keine neue Route. `/about` bleibt statisch (`○`); die Komponente ist die einzige Client-Insel der Sektion.
+
+### Was das Video tatsächlich ist — und was daraus folgte
+Gesichtet über einen Kontaktbogen aus 18 Frames: **kein reines Gameplay-Video, sondern ein Produkt-Erklärvideo** — Titelkarte, „01 Erstellen", „02 Teilen", „03 Spielen", „Kostenlos", Abschlusskarte mit Domain. Zwei Abweichungen von der Spec:
+
+1. **Überschrift „So funktioniert Geo Quest." statt „So spielt sich Geo Quest."** — die alte traf den Inhalt nur zu einem Drittel. Kicker „In 50 Sekunden", ein Satz Einordnung daneben.
+2. **Poster aus 39 s** (GPS-Pfeil mit Live-Entfernung). Frame 0 ist schwarz — ohne eigenes Poster sähe der Besucher mit `preload="none"` eine leere Fläche. Titelkarte (~9 s) und Einstieg (~3 s, „Die reale Welt wird zum …") schieden aus, weil sie Logo und Headline doppeln, die direkt darüber im Hero stehen. Das Poster erzeugt ein eingechecktes Swift-Skript (AVFoundation, kein `ffmpeg` nötig), nach dem Muster der übrigen Asset-Skripte.
+
+### Umsetzung
+- `<video preload="none" poster playsInline>`, **kein** `autoplay`; native `controls` erst nach dem Start — vorher stünde ein zweiter, kleinerer Play-Knopf neben dem eigenen
+- Eigener Startknopf „▶ Video ansehen 0:52" als Teal-Pill, **unten mittig statt zentriert**: Die Bildmitte trägt den GPS-Pfeil, also genau das Motiv, das neugierig machen soll. `aria-label` nennt Titel und Länge
+- **Fallback:** Schlägt Laden oder `play()` fehl, verschwindet der Knopf, das Poster bleibt stehen, darunter ein `role="status"`-Hinweis „Das Video lässt sich gerade nicht abspielen."
+- **Layout:** mobil gestapelt (Text, dann Video in voller Spaltenbreite, max. 380px); ab `lg` zweispaltig `1fr | 380px`, Video rechts wie ein Phone-Mockup
+- Die Orte-Karte war bisher die erste Sektion und hatte deshalb `sm:mt-16`; jetzt zweite, daher `sm:mt-20` wie alle übrigen
+- **Service Worker geprüft:** Videos laden per Range-Request, was ein `fetch`-abfangender Worker (vor allem auf iOS) brechen kann. `sw.js` fasst ausschließlich Seitennavigationen an — das Video geht unberührt ans Netz
+
+### Am Bildschirm gefunden, nicht in den Zahlen
+Die Beschriftung **brach im Knopf auf zwei Zeilen um** — die Tech-Schrift mit Buchstabenabstand ist breiter als sie aussieht. Behoben mit `whitespace-nowrap`.
+
+**Der erste Wächter dafür war wertlos:** Er prüfte die Knopfhöhe ≤ 48px und bestand auch gegen die kaputte Fassung — `h-12` ist fest, der Umbruch passiert *innerhalb* der 48px. Aufgefallen nur durch die Gegenprobe gegen den noch laufenden alten Build. Der Test misst jetzt die **Zeilenzahl des Textknotens** (`Range.getClientRects()`): gegen die alte Fassung `[2]` auf allen 10 Kombinationen, gegen die neue `[1]`.
+
+### Tests
+- **Neu: `tests/proj-13-about-video.spec.ts`**, 13 Tests je Engine: Platzierung nach dem Hero, **0 MP4-Requests vor dem Klick**, `preload/autoplay/paused/controls/poster`, Knopf ≥ 44px, echtes Abspielen per Klick und per Tastatur (`currentTime > 0` auf **beiden** Engines), Fallback bei 404, 4:5 + kein Überlauf + einzeilige Beschriftung auf fünf Viewports (320–1440), Desktop-Nebeneinander, ausgelieferte Größen (Video < 3 MB, Poster < 200 KB)
+- **Drei bestehende Tests gezogen, nicht gelöscht:** Sektionszählung (6 → 7 `<section>`, neue erste Überschrift), Darstellungs-Rhythmus (kennt jetzt die Form „Video"), und — nicht offensichtlich — zwei FAQ-Tests, die `main section button` pauschal nahmen: Der Tastatur-Test hätte mit `.first()` den Video-Knopf statt der ersten Frage erwischt, der Zähltest 6 statt 5 gezählt. Beide jetzt auf `button[aria-expanded]` (die Accordion-Trigger) begrenzt
+- **Gegenprobe:** `preload="auto"` → genau der zuständige Test fällt, auf beiden Engines, die übrigen 24 bleiben grün. Original danach wiederhergestellt
+
+**Suiten gegen den Production-Build (eigener Server auf Port 3101 — auf 3100 lief ein fremder, der unangetastet blieb):** PROJ-13 gesamt **170 passed / 20 skipped / 0 failed** über beide Engines (die 20 Skips sind die vorbestehenden, an `ANLEITUNG_VERFUEGBAR` hängenden Tests; die neue Datei hat 0 Skips). Unit **301/301**. Build sauber, Lint 0 Fehler (keine Warnung in geänderten Dateien), `tsc` nur die 2 vorbestehenden Fehler in `quest-storage.test.ts` (PROJ-6).
+
+**Ein eigener Messfehler:** Das Screenshot-Skript lag im Scratchpad und fand `playwright` nicht (Modulauflösung relativ zur Datei); ausgeführt aus dem Projektverzeichnis.
+
+### Nicht abgedeckt
+- Die **Tonspur** (Stereo vorhanden) wurde nicht abgehört — ob Untertitel nötig sind, hängt davon ab, ob sie Sprache oder nur Musik enthält (Open Question)
+- Echtes Abspielen auf einem iPhone (WebKit-Emulation spielt ab, `playsInline` ist gesetzt)
+- Die ungenutzte Quelldatei `video-geoquest-4x5-game-social.mp4` (16 MB) liegt weiter unversioniert in `public/assets/` — nicht committet, Entscheidung beim Betreiber

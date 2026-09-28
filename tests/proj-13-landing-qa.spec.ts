@@ -102,7 +102,9 @@ test.describe("Tastatur & Semantik", () => {
   test("die FAQ lässt sich vollständig per Tastatur bedienen", async ({ page }) => {
     await page.goto("/about");
 
-    const first = page.locator("main section button").first();
+    // Nur Accordion-Trigger — seit Refinement 10 ist der erste Button in
+    // einer Sektion der Video-Startknopf.
+    const first = page.locator("main section button[aria-expanded]").first();
     await expect(first).toHaveAttribute("aria-expanded", "false");
 
     await first.focus();
@@ -142,6 +144,7 @@ test.describe("Darstellungs-Rhythmus", () => {
 
     const forms = await page.locator("main section").evaluateAll((secs) =>
       secs.map((s) => {
+        if (s.querySelector("video")) return "Video";
         if (s.querySelector("[data-state]")) return "Accordion";
         if (s.querySelector("dl")) return "Karten";
         if (s.querySelector("ol li")) return "Schritte";

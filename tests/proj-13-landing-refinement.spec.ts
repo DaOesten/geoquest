@@ -111,14 +111,15 @@ test.describe("Hero", () => {
 });
 
 test.describe("Sektionsfolge", () => {
-  test("genau sieben Sektionen in der festgelegten Reihenfolge", async ({ page }) => {
+  test("genau acht Sektionen in der festgelegten Reihenfolge", async ({ page }) => {
     await page.goto("/about");
 
-    // Hero lebt im Shell-Titelblock (h1), die übrigen sechs sind <section>.
+    // Hero lebt im Shell-Titelblock (h1), die übrigen sieben sind <section>.
     // Seit 2026-09-08 ohne „Draußen spielen. Wie ein Game." — die Erklärung
     // steht jetzt im Hero, der Hook lag ohnehin schon in der Headline.
+    // Seit 2026-09-28 (Refinement 10) mit dem Erklärvideo an Position 2.
     const sections = page.locator("main section");
-    await expect(sections).toHaveCount(6);
+    await expect(sections).toHaveCount(7);
 
     // Nur die Sektions-Titel, nicht die FAQ-Trigger (die ebenfalls h3 sind).
     // `allInnerTexts` liefert den gerenderten Text, und der Display-Schnitt
@@ -128,6 +129,7 @@ test.describe("Sektionsfolge", () => {
       .allInnerTexts();
 
     expect(headings.map((h) => h.trim())).toEqual([
+      "SO FUNKTIONIERT GEO QUEST.",
       "JEDER ORT KANN EIN LEVEL SEIN.",
       "NICHT NUR SPIELEN. SELBER MACHEN.",
       "EINE QUEST ERSTELLEN? GANZ EINFACH.",
@@ -226,7 +228,9 @@ test.describe("FAQ nach dem Refinement", () => {
   test("fünf Fragen — die vier bisherigen plus die neue", async ({ page }) => {
     await page.goto("/about");
 
-    const questions = page.locator("main section h3 button, main section button");
+    // Auf die Accordion-Trigger begrenzt statt „jeder Button in einer
+    // Sektion" — seit Refinement 10 steht dort auch der Video-Startknopf.
+    const questions = page.locator("main section button[aria-expanded]");
     await expect(
       page.getByRole("button", { name: /Was kann ich in eine Quest einbauen/ })
     ).toBeVisible();
