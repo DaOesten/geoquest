@@ -6,6 +6,8 @@
 
 > **Mitbetroffen vom Refinement in PROJ-5 (2026-09-21) — noch nicht umgesetzt:** Das Löschen einer Quest ist ab sofort **auch** im Play-Modus möglich (`/play`), nicht mehr nur hier. PROJ-6 bleibt unverändert und behält seinen eigenen Lösch-Weg; es kommt eine zweite Stelle hinzu, keine Ablösung. Technisch teilen sich beide Screens dieselben Funktionen (`deleteQuest()` + `deleteProgress()`) und denselben `gq_quests`-Speicher — eine im Play-Modus gelöschte Quest ist deshalb auch im Creator verschwunden. Das ist gewollt und in PROJ-5 begründet (es gibt keine getrennte Play-Kopie). Kein Acceptance Criterion dieser Spec ändert sich. Siehe PROJ-5, Abschnitt „Refinement 2026-09-21: Quests im Play-Modus löschen".
 
+> **Mitbetroffen vom Refinement in PROJ-8 (2026-09-28) — noch nicht umgesetzt:** Die Intro- und Outro-Bildfelder im Quest-Dialog (`quest-form-dialog.tsx`) bekommen dieselbe Bildvorschau mit Warnung wie das Bild-Modul. Anlass: Eine eingetragene Seiten-URL (keine Bilddatei) wurde angenommen, das Bild fehlte im Player, und der Ersteller konnte das vorher nicht sehen. Speichern bleibt auch mit Warnung möglich. Die Acceptance Criteria stehen gesammelt in PROJ-8, Block „Bildvorschau"; der Status von PROJ-6 wird dafür nicht zurückgesetzt.
+
 ## Dependencies
 - Requires: PROJ-1 (App Shell & Mode Switch) — für Routing (`/create`) und UI-Rahmen
 - Requires: PROJ-2 (Quest Data Model & JSON Import) — für Quest-Schema, den `gq_quests`-Storage-Layer und den bestehenden Import-Button

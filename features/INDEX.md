@@ -18,12 +18,12 @@
 |----|---------|----------|--------------|--------|------|---------|
 | PROJ-1 | App Shell & Mode Switch | P0 | None | Deployed | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
-| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
+| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | In Progress | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
 | PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
 | PROJ-7 | Creator — Stationen-Editor | P0 | PROJ-6 | Deployed | [Spec](PROJ-7-creator-stationen-editor.md) | 2026-08-23 |
-| PROJ-8 | Creator — Modul-Editor | P0 | PROJ-7 | Deployed | [Spec](PROJ-8-creator-modul-editor.md) | 2026-08-23 |
+| PROJ-8 | Creator — Modul-Editor | P0 | PROJ-7 | In Progress | [Spec](PROJ-8-creator-modul-editor.md) | 2026-08-23 |
 | PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Deployed | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
@@ -1504,3 +1504,36 @@ Die Config hat **keinen `webServer`-Block** — sie erwartet, dass auf Port 3100
 **BUG-16 (Medium, PROJ-9) bleibt offen** — dokumentiert, regressionsgesichert, nicht blockierend laut QA-Empfehlung.
 
 **Damit sind PROJ-9 und PROJ-12 vollständig abgeschlossen.**
+
+## Offenes Refinement: Genaue Richtung und stabile Entfernung (2026-09-28)
+**PROJ-3** geht von Deployed zurück auf In Progress. Betreiber-Befund aus Handy-Tests auf iPhone und Android: *„der Kompass im Navigationsmodus zeigt nicht immer in genau die richtige Richtung"* und *„die Entfernungsanzeige war bei 30 m und einen Schritt später bei 10 m"*.
+
+**Drei Ursachen im Code bestätigt:**
+1. **Android zeigt mit beliebigem Versatz.** Chrome liefert über `deviceorientation` seit Version 50 ein **relatives** Heading (`absolute: false`) — „Norden" ist die Richtung, in die das Handy beim Laden zeigte. Das absolute Heading kommt nur über `deviceorientationabsolute`, das der Hook nicht abhört (`use-device-orientation.ts:187`). Der Pfeil stimmt also nur zufällig.
+2. **Der Kalibrierungs-Hinweis hängt an den falschen Signalen.** Android: dauerhaft sichtbar, weil `absolute === false` als „unkalibriert" gelesen wird. iOS: nie sichtbar, fest auf `false`, obwohl `webkitCompassAccuracy` den echten Zustand meldet. **Die Spec selbst hatte das festgeschrieben** — zwei Kriterien vom 2026-09-20 sind als überholt markiert statt gelöscht.
+3. **GPS wird ungefiltert übernommen.** `accuracy` liegt vor, wird aber nicht genutzt. Ein 20-m-Sprung ist normales Messrauschen — der Fehler ist, dass Anzeige **und Ankunftserkennung** jeden Einzelwert glauben. Ein Ausreißer in den Radius kann eine Station zu früh auslösen.
+
+**Warum die Suite grün war:** Die Kompass-Tests feuern synthetische `deviceorientation`-Events mit `alpha` — sie prüfen genau den auf Android falschen Pfad als richtig. `tests/proj-3-ruhige-kompassnadel.spec.ts:206/231` kodieren den Kalibrierungs-Irrtum als gewünschtes Verhalten und sind zu **ziehen, nicht zu löschen**.
+
+**Entschieden (Betreiber):** ungenaue Messungen (Richtwert > 30 m) verwerfen mit Rückfall auf die beste verfügbare nach ~5 s, Entfernung glätten, Ankunft erst nach **zwei aufeinanderfolgenden** Messungen im Radius (kostet 1–3 s, verhindert Falsch-Ankünfte). Ohne Rückfrage mitentschieden, weil aus den Befunden zwingend: Android nutzt `deviceorientationabsolute`, ein relatives Heading ist **nie** Kompass (sonst Rückfall auf Bewegungsrichtung), der Kalibrierungs-Hinweis hängt an `webkitCompassAccuracy`. Verworfen: nur die Anzeige glätten (Ankunft bliebe am Rohwert), Genauigkeit „±15 m" anzeigen (für die Zielgruppe eine Zahl ohne Handlungsanweisung). Nicht im Umfang: Missweisung (3–5°), Querformat.
+
+Spec ist aktualisiert (User Story 7, 11 Acceptance Criteria in einem eigenen Block, 2 überholte Kriterien markiert, Edge Case 4 präzisiert, Edge Case 22 korrigiert, Edge Cases 29–34, 11 Technical Requirements, 5 Produkt- und 3 technische Entscheidungen, 2 geschlossene und 4 neue Open Questions, 3 Out-of-Scope-Einträge, eigener Abschnitt „Refinement 2026-09-28").
+
+**Nicht per Test prüfbar:** das Android-Heading am echten Gerät (keine Umgebung emuliert `deviceorientationabsolute` oder `accuracy`). Abnahme per Unit-Test mit synthetischen Folgen, dann Gerätetest des Betreibers mit einer Kompass-App daneben.
+
+## Offenes Refinement: Bildvorschau im Creator (2026-09-28)
+**PROJ-8** geht von Deployed zurück auf In Progress. **PROJ-6** ist mitbetroffen (Intro-/Outro-Bildfelder im Quest-Dialog), wird aber nicht zurückgesetzt — Vermerk in der Spec.
+
+Betreiber-Befund: *„Bilder aus dem Internet, die im Create mode per URL eingebunden wurden, werden im Play mode nicht angezeigt — weder im Intro/Outro, noch als Modul."*
+
+**Kein Player-Fehler.** Der Datenweg ist nachverfolgt und intakt (Speichern, Bereinigung, Import, Anzeige als `<img>`; keine CSP, Service Worker greift nur bei Navigationen). Die gelieferte Beispiel-URL ist eine **HTML-Detailseite** bei Magnific/Freepik (`…_24467363.htm`), keine Bilddatei — `https://` erfüllt, also angenommen, aber für ein `<img>` nie darstellbar. Das Modul zeigt dann „Bild konnte nicht geladen werden", Intro/Outro blenden die Fläche still aus.
+
+**Die Lücke liegt im Creator:** Er zeigte nie eine Vorschau, der Ersteller konnte den Fehler erst beim Spielen bemerken.
+
+**Entschieden (Betreiber):** Live-Vorschau unter jedem Bild-URL-Feld (Modul **und** Intro/Outro), bei Nicht-Laden eine Warnung mit Anleitung („lange drücken → Bildadresse kopieren"), **Speichern bleibt möglich**. Player unverändert — nur der Ersteller kann eine falsche Adresse reparieren. Verworfen: Speichern sperren (blockiert auch bei kurz nicht erreichbarem Server), nur Hinweistext (fängt den Fehler nicht ab).
+
+**Für `/frontend`:** Prüfung durch Laden **als Bild**, nicht per `fetch()` — `fetch` scheitert an CORS bei Servern, die das Bild als `<img>` problemlos ausliefern. Dieselben Ladebedingungen wie im Player, dann gilt „lädt in der Vorschau" = „lädt beim Spielen". Eine gemeinsame Komponente für beide Einbauorte. E2E-prüfbar über `page.route` (PNG vs. HTML).
+
+Spec ist aktualisiert (User Story 10, 9 Acceptance Criteria im Block „Bildvorschau", Edge Case 6 präzisiert, Edge Cases 11–16, 10 Technical Requirements, 4 Produkt- und 3 technische Entscheidungen, 3 neue Open Questions, 6 Out-of-Scope-Einträge, eigener Abschnitt „Refinement 2026-09-28").
+
+**Sofort-Workaround für bestehende Quests:** Auf der Bildseite lange auf das Bild drücken bzw. Rechtsklick → „Bildadresse kopieren" und diese Adresse eintragen. Bei Magnific/Freepik ist die direkte Adresse oft schwer zu bekommen, und die kostenlose Lizenz verlangt meist eine Namensnennung — Bilder von Wikimedia Commons sind der einfachere Weg.

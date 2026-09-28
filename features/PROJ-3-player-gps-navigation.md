@@ -1,8 +1,10 @@
 # PROJ-3: Player — GPS-Navigation
 
-## Status: Deployed
+## Status: In Progress
 **Created:** 2026-08-23
-**Last Updated:** 2026-09-26
+**Last Updated:** 2026-09-28
+
+> **Refinement (2026-09-28) — Genaue Richtung und stabile Entfernung:** Betreiber-Befund aus Handy-Tests auf iPhone und Android: *„der Kompass im Navigationsmodus zeigt nicht immer in genau die richtige Richtung"* und *„die Entfernungsanzeige war bei 30 m und einen Schritt später bei 10 m"*. Drei Ursachen im Code bestätigt: (1) **Android nutzt ein relatives Bezugssystem** — Chrome liefert über `deviceorientation` seit Version 50 `absolute: false`, „Norden" ist dort die Richtung, in die das Handy beim Laden zeigte; die echte Himmelsrichtung kommt nur über `deviceorientationabsolute`, das der Hook nicht abhört. (2) **Der Kalibrierungs-Hinweis hängt an den falschen Signalen** — auf Android erscheint er immer (weil `absolute === false` als „unkalibriert" gelesen wird), auf iOS nie (fest `false`, obwohl `webkitCompassAccuracy` den echten Zustand meldet). (3) **Jede GPS-Position wird ungefiltert übernommen** — Anzeige **und Ankunftserkennung** hängen am Rohwert, ein einzelner Ausreißer kann eine Station auslösen. Siehe Acceptance Criteria „Genaue Richtung und stabile Entfernung", Edge Cases 29–34, Technical Requirements, Decision Log und Abschnitt „Refinement 2026-09-28".
 
 > **Refinement (2026-09-06) — umgesetzt, deployt und QA-geprüft:** Zwei stille Ausfallmodi ergänzt — GPS-Fix bleibt trotz erteilter Permission aus, und der Richtungspfeil hat keine Richtung. Siehe Abschnitte "Permission-Flow", "Richtungsanzeige ohne Heading", Edge Cases 9–12 und die Implementation Notes vom 2026-09-06.
 
@@ -28,6 +30,7 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 4. Als Spieler möchte ich eine Übersicht aller Stationen sehen, damit ich meinen Fortschritt verfolgen und die nächste Station ansteuern kann.
 5. Als Spieler möchte ich eine Quest unterbrechen und später weiterspielen können, damit ich nicht alles auf einmal machen muss.
 6. Als Spieler möchte ich beim Weiterspielen einer unterbrochenen Quest erfahren, wenn mein GPS nicht bereit ist, damit ich weiß, warum die Navigation nichts anzeigt, und es beheben kann — statt vor einem Pfeil zu stehen, der sich nicht bewegt.
+7. Als Spieler möchte ich, dass Pfeil und Entfernung auf iPhone **und** Android dieselbe, verlässliche Auskunft geben und die Station erst auslöst, wenn ich wirklich da bin, damit ich dem Pfeil vertrauen kann und nicht zwanzig Meter vor dem Ziel „angekommen" bin.
 
 ## Out of Scope
 - Modul-Rendering an Stationen (Text, Bild, Audio, Video, Tasks) — PROJ-4
@@ -40,6 +43,9 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 - Multiplayer / Echtzeit-Position anderer Spieler
 - "Station überspringen"-Funktion
 - Routing / Wegbeschreibung (nur Luftlinie)
+- Korrektur der magnetischen Missweisung (3–5° in Deutschland) — kleiner als das Sensorrauschen, braucht ein Deklinationsmodell (Edge Case 34, 2026-09-28)
+- Anzeige der GPS-Genauigkeit für den Spieler (z. B. „±15 m") — erwogen und verworfen, siehe Decision Log 2026-09-28
+- Querformat-Korrektur des Kompass-Headings (`screen.orientation`) — die Navigation wird im Hochformat gehalten
 
 ## Acceptance Criteria
 
@@ -89,8 +95,21 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 - [x] Angenommen die Heading-Quelle wechselt tatsächlich (Kompass fällt dauerhaft aus oder wird verfügbar), wenn der Wechsel eintritt, dann dreht sich der Pfeil weich auf die neue Richtung, statt schlagartig zu springen
 - [x] Angenommen der Spieler nähert sich dem Ziel auf wenige Meter, wenn die GPS-Position innerhalb ihrer Genauigkeit schwankt, dann springt der Pfeil nicht wild — die Zielpeilung ist gegen Positionsrauschen gedämpft
 - [x] Angenommen der Pfeil ist richtungslos (Edge Case 11), wenn keine Heading-Quelle vorliegt, dann gilt die Dämpfung nicht und der bestehende Suchzustand bleibt unverändert sichtbar
-- [x] Angenommen das Gerät meldet ein nicht-absolutes Heading, wenn der Navigations-Screen offen ist, dann erscheint der Kalibrierungs-Hinweis "Bewege dein Handy in einer 8" — sichtbar und dem Pfeil zugeordnet
-- [x] Angenommen der Kalibrierungs-Hinweis wird angezeigt, wenn das Gerät danach ein absolutes Heading liefert, dann verschwindet er wieder, ohne dass der Spieler etwas tun muss
+- [x] ~~Angenommen das Gerät meldet ein nicht-absolutes Heading, wenn der Navigations-Screen offen ist, dann erscheint der Kalibrierungs-Hinweis "Bewege dein Handy in einer 8" — sichtbar und dem Pfeil zugeordnet~~ — **Überholt 2026-09-28:** Die Prämisse war falsch. `absolute === false` heißt nicht „unkalibriert", sondern „relatives Bezugssystem" (Android-Chrome standardmäßig). Ersetzt durch den Block „Genaue Richtung und stabile Entfernung".
+- [x] ~~Angenommen der Kalibrierungs-Hinweis wird angezeigt, wenn das Gerät danach ein absolutes Heading liefert, dann verschwindet er wieder, ohne dass der Spieler etwas tun muss~~ — **Überholt 2026-09-28**, aus demselben Grund.
+
+**Genaue Richtung und stabile Entfernung (Refinement 2026-09-28):**
+- [ ] Angenommen der Spieler navigiert auf Android-Chrome, wenn der Pfeil gezeichnet wird, dann richtet er sich nach dem **geografischen** Kompass-Heading (`deviceorientationabsolute`) aus — nicht nach einem relativen Winkel, dessen Nullpunkt vom Zeitpunkt des Seitenladens abhängt
+- [ ] Angenommen der Browser liefert ausschließlich ein relatives Heading (`absolute === false`, kein `deviceorientationabsolute`), wenn der Navigations-Screen offen ist, dann wird dieser Wert **nie** als Kompass verwendet — die Pfeilrichtung fällt auf die GPS-Bewegungsrichtung zurück, mit dem bestehenden Hinweis „Laufe ein paar Schritte"
+- [ ] Angenommen der Spieler hält iPhone und Android-Handy nebeneinander, wenn beide dieselbe Station ansteuern, dann zeigen beide Pfeile in dieselbe Richtung (im Rahmen der Sensorgenauigkeit)
+- [ ] Angenommen iOS meldet eine schlechte Kompassgenauigkeit (`webkitCompassAccuracy` negativ oder größer als die festgelegte Schwelle), wenn der Navigations-Screen offen ist, dann erscheint der Kalibrierungs-Hinweis „Bewege dein Handy in einer 8"
+- [ ] Angenommen auf Android liegt ein absolutes Heading vor, wenn der Navigations-Screen offen ist, dann erscheint der Kalibrierungs-Hinweis **nicht** dauerhaft — er ist an ein echtes Genauigkeits-Signal gebunden, nicht an das Bezugssystem
+- [ ] Angenommen eine GPS-Position meldet eine Ungenauigkeit über der festgelegten Schwelle (Richtwert 30 m), wenn bereits eine genauere Position vorliegt, dann wird sie verworfen — Entfernung, Pfeil und Ankunft bleiben beim letzten brauchbaren Wert
+- [ ] Angenommen über mehrere Sekunden kommt keine Position unter der Schwelle an (drinnen, enge Altstadt), wenn der Spieler navigiert, dann nutzt die App die beste verfügbare Position, statt dauerhaft „Suche GPS-Signal…" zu zeigen
+- [ ] Angenommen der Spieler geht gleichmäßig auf die Station zu, wenn die Entfernung sich aktualisiert, dann nimmt sie in plausiblen Schritten ab — ein einzelner Ausreißer lässt die Anzeige nicht um ein Vielfaches des gelaufenen Wegs springen
+- [ ] Angenommen genau eine Messung liegt innerhalb des Ankunftsradius, wenn die nächste wieder außerhalb liegt, dann wird die Station **nicht** ausgelöst — die Ankunft braucht zwei aufeinanderfolgende brauchbare Messungen im Radius
+- [ ] Angenommen der Spieler steht tatsächlich im Radius, wenn zwei Messungen in Folge dort liegen, dann löst die Ankunft ohne weiteres Zutun aus (Verzögerung gegenüber heute höchstens ca. 1–3 s)
+- [ ] Angenommen der Spieler startet die Navigation bereits im Radius (Edge Case 3), wenn die ersten Messungen eintreffen, dann löst die Ankunft weiterhin von selbst aus — nur eben nach der zweiten statt der ersten Messung
 
 **Ankunft:**
 - [ ] Angenommen der Spieler befindet sich innerhalb des Ankunftsradius einer Station, wenn die Position erkannt wird, dann vibriert das Gerät und ein "Angekommen!"-Hinweis erscheint
@@ -131,6 +150,7 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 2. **Kein Kompass / Device Orientation nicht unterstützt:** Fallback auf GPS-Bewegungsrichtung. Pfeil funktioniert nur in Bewegung. Hinweis: "Laufe ein paar Schritte, damit der Pfeil die Richtung findet."
 3. **Spieler ist bereits am Stationsort:** Sofortige Ankunftserkennung beim Start der Navigation (kein Laufen nötig)
 4. **GPS-Drift bei Stillstand:** Spieler steht knapp außerhalb des Radius, GPS springt rein und raus → Ankunft wird beim ersten Eintritt in den Radius ausgelöst, danach nicht erneut (einmalig)
+    *Präzisiert 2026-09-28:* „Eintritt" heißt ab jetzt **zwei aufeinanderfolgende brauchbare Messungen** im Radius, nicht eine. Die Einmaligkeit danach bleibt unverändert. Ein einzelner Sprung in den Radius war genau der Fall, der eine Station zu früh auslösen konnte (Edge Case 31).
 5. **Sehr große Entfernung (>10 km):** Entfernung wird normal in Metern angezeigt (z.B. "12.400 m"), kein Wechsel auf km
 6. **Spieler öffnet Quest an anderem Ort als vorgesehen:** Navigation funktioniert trotzdem (zeigt Richtung + Entfernung), egal wie weit entfernt
 7. **Browser-Tab wird in den Hintergrund gelegt:** GPS-Tracking pausiert (Browser-Verhalten), bei Rückkehr in den Vordergrund wird Position neu bestimmt und Navigation fortgesetzt
@@ -152,6 +172,8 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 
     *Korrektur zur ersten Fassung dieses Refinements (2026-09-20):* Dort stand, der Hinweis werde "nie gerendert". Das war falsch — er wird seit jeher gerendert, nur zu klein. Der Befund bleibt derselbe, die Ursache ist eine andere.
 
+    *Korrektur (2026-09-28):* Die Gleichung „`absolute === false` = unkalibriertes Magnetometer" ist falsch. `absolute === false` bedeutet, dass `alpha` sich auf ein **beliebiges** Bezugssystem bezieht — auf Android-Chrome standardmäßig die Ausrichtung beim Seitenladen. Das ist kein Kalibrierungsproblem, und eine Acht in der Luft ändert daran nichts. Die Folge war doppelt falsch: Der Wert wurde trotzdem als Kompass verwendet (Pfeil mit beliebigem Versatz), und der Hinweis stand auf Android dauerhaft da, mit einer Handlungsanweisung, die nicht hilft. Siehe Edge Case 29.
+
 23. **Ungültiger Sensorwert (`NaN`, `Infinity`) — BUG-12, 2026-09-20:** Ein `deviceorientation`-Event mit einem nicht-endlichen Heading vergiftet jede Glättung, die gegen einen gespeicherten Vorwert rechnet: `NaN` ist absorbierend, also bleibt die Ref für den Rest der Session `NaN` und der Pfeil friert auf seiner letzten Rotation ein — ohne Fehlermeldung und ohne Erholung, auch wenn gültige Werte folgen. Ein solcher Wert ist kein Lebenszeichen des Kompasses und darf auch die Karenzzeit nicht verlängern, sonst verdrängt der tote Zustand zusätzlich die noch funktionierende GPS-Bewegungsrichtung. Die Erkennung ist eine reine Eingangsprüfung (`Number.isFinite`), die `NaN`, `Infinity` und `-Infinity` gemeinsam abdeckt.
 
 24. **Wiedereinstieg überspringt den GPS-Start (Refinement 2026-09-26):** `quest-player.tsx` startet bei gespeichertem Fortschritt direkt auf der Stationsliste und ruft `geo.requestPermission()` nie auf — dieser Aufruf hängt am "Standort erlauben"-Button des übersprungenen Permission-Screens. Der einzige Rückfallpfad ist der Auto-Start im Hook, und der prüft `navigator.permissions.query({ name: "geolocation" })`. **iOS Safari führt Geolocation nicht im Permissions-API**: Der Aufruf rejected, `.catch(() => {})` verschluckt es, kein `watchPosition` startet. `position` bleibt für die ganze Session `null`. Das ist die Ursache des gemeldeten Befunds und betrifft ausgerechnet die Plattform der Zielgruppe. Gleiche Fehlerklasse wie Edge Case 10 (Kompass), nur für GPS — und beim damaligen Fix nicht mitgezogen.
@@ -159,6 +181,12 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 26. **`searching` ist kein Fehlerzustand und darf nicht wie einer aussehen:** Zwischen Start des Watch und erstem Fix vergehen laut PRD bis zu 5 s (Hook: 15 s bis `no-fix`). In diesem Fenster ist nichts kaputt. Der Screen muss den Suchzustand vom Fehlzustand unterscheiden, sonst erzieht er den Spieler dazu, einen Hinweis wegzutippen, der sich von selbst erledigt hätte. Der Permission-Screen trennt das bereits (`isSearching`, pulsierendes Icon, **kein** Knopf) — dieselbe Trennung gilt hier.
 27. **Zwei unabhängige `useDeviceOrientation()`-Instanzen:** Der Hook wird zweimal aufgerufen — `quest-player.tsx:61` und `navigation-screen.tsx:41`. `permission` ist React-State **pro Instanz**. Die iOS-Sensorfreigabe wirkt dagegen browserweit: Ruft eine Instanz `requestPermission()` erfolgreich auf, setzt nur sie ihr `permission` auf `"granted"` und hängt ihren Listener an — die andere bleibt auf `"prompt"`, ohne Listener. Zwei Wahrheiten über einen Sensor. Beim Ausbau des Kompass-Pfads ist das die wahrscheinlichste Fehlerquelle: Ein Knopf, der sichtbar reagiert, aber den Pfeil nicht dreht, weil die drehende Instanz nichts von der Freigabe erfahren hat.
 28. **Fix kommt, während der Zustands-Screen steht:** Der Spieler tippt "Erneut versuchen", geht nach draußen, und 20 s später liefert der Watch seinen ersten Fix. Der Screen muss dann von selbst in die laufende Navigation wechseln — ein zweiter Tap wäre eine Aufforderung ohne Anlass, und der Spieler steht womöglich schon in Sichtweite der Station. Umgekehrt darf ein einzelner ausbleibender Fix nach erfolgreicher Navigation **nicht** in diesen Zustand zurückfallen; dafür ist der bestehende 30s-Signalverlust zuständig (Edge Case 4), der den letzten bekannten Stand stehen lässt.
+29. **Android-Chrome liefert ein relatives Heading (Refinement 2026-09-28):** Seit Chrome 50 ist `deviceorientation` auf Android relativ (`absolute: false`); `alpha = 0` ist die Richtung, in die das Gerät beim Start des Sensors zeigte. Das absolute, auf Norden bezogene Heading kommt über das eigene Ereignis `deviceorientationabsolute`. Der Hook hört nur `deviceorientation` ab und rechnet `(360 - alpha) % 360` — der Pfeil trägt damit einen Versatz, der bei jedem Öffnen anders ist und bis zu 180° betragen kann. Das erklärt „nicht immer in genau die richtige Richtung" auf Android vollständig: Hat der Spieler die Seite zufällig nach Norden gehalten geöffnet, stimmt es; sonst nicht.
+30. **Kalibrierungs-Signal plattformverkehrt:** Android zeigt den Hinweis dauerhaft (Edge Case 29 als „unkalibriert" missverstanden), iOS nie (`setNeedsCalibration(false)` fest im `webkitCompassHeading`-Zweig). iOS stellt mit `webkitCompassAccuracy` die tatsächliche Abweichung in Grad bereit (negativ = ungültig). Der Hinweis gehört an dieses Signal. Auf Android gibt es kein gleichwertiges Web-Signal — dort erscheint der Hinweis nicht dauerhaft; die Glättung aus dem Refinement 2026-09-20 fängt das verbleibende Rauschen.
+31. **GPS-Ausreißer (Befund „30 m, einen Schritt später 10 m"):** `watchPosition` liefert jede Messung mit einer `accuracy` (Radius in Metern). Handy-GPS liegt im Freien meist bei 5–20 m, zwischen Häusern, unter Bäumen und in den ersten Sekunden nach dem Start deutlich darüber; der erste Wert ist oft eine WLAN- oder Funkzellen-Schätzung. Der Navigations-Screen rechnet mit jeder Position unabhängig von `accuracy`. Ein 20-m-Sprung liegt damit vollständig im normalen Messrauschen — der Fehler ist nicht das Rauschen, sondern dass die App es ungefiltert anzeigt und **darauf die Ankunft auslöst** (`navigation-screen.tsx:132`).
+32. **Kein genauer Fix erreichbar:** Drinnen, in engen Gassen oder unter dichtem Laub kann `accuracy` minutenlang über der Schwelle bleiben. Ein harter Filter würde dort keine einzige Position durchlassen, und der Spieler sähe dauerhaft „Suche GPS-Signal…" — schlechter als heute. Deshalb ein Rückfall: Nach einigen Sekunden ohne brauchbare Messung gilt die beste verfügbare. Die Ankunft bleibt auch dann an zwei aufeinanderfolgende Messungen im Radius gebunden.
+33. **Kleiner Radius, große Ungenauigkeit:** Eine Station mit 10 m Radius bei 25 m `accuracy` — die Messungen streuen breiter als der Radius. Zwei Treffer in Folge sind dann seltener, die Ankunft dauert länger. Das ist gewollt (lieber 3 s später als 20 m zu früh), darf aber nicht dazu führen, dass die Station unerreichbar wird. Am Gerät zu beobachten; ggf. wird die Bestätigungsregel bei kleinen Radien gelockert (Open Question).
+34. **Missweisung (magnetischer vs. geografischer Norden):** `webkitCompassHeading` misst zum magnetischen Nordpol, die Zielpeilung (`bearing()`) zum geografischen. In Deutschland liegen 2026 rund 3–5° dazwischen. Das ist spürbar kleiner als die übrigen Befunde und kleiner als das normale Sensorrauschen in Städten; es wird in diesem Refinement **nicht** korrigiert (Out of Scope, Open Question). `deviceorientationabsolute` auf Android ist je nach Gerät bereits auf geografischen Norden bezogen.
 
 ## Technical Requirements
 - GPS-Position: `navigator.geolocation.watchPosition()` mit `enableHighAccuracy: true`
@@ -216,17 +244,35 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 - Kein neues Paket, keine neue Route. Die Zustände existieren, die Texte existieren, die Komponente existiert — dieses Refinement verdrahtet sie an der Stelle, an der sie fehlen
 - **Abnahme:** Playwright kann Geolocation-Permissions setzen und Positionen liefern, also ist diese Fehlerklasse E2E-prüfbar — anders als die Kompass-Mathematik. Der Wiedereinstieg ist als Test darstellbar, indem `gq_progress_{id}` mit `visitedStations.length > 0` geseedet und die Geolocation-Permission entzogen wird. Der iOS-spezifische Pfad aus Edge Case 24 (Permissions-API ohne Geolocation-Eintrag) ist zusätzlich per Unit-Test am Hook zu prüfen, weil er sich aus einem rejectenden `query()` ergibt
 
+**Genaue Richtung und stabile Entfernung (Refinement 2026-09-28):**
+
+- **Absolutes Heading auf Android:** Der Hook hört zusätzlich `deviceorientationabsolute` ab. Liefert dieses Ereignis Werte, sind sie die Kompassquelle; ein relatives `deviceorientation` (`absolute === false`) wird dann ignoriert. Ein `deviceorientation` mit `absolute === true` (einige Browser) ist ebenfalls gültig
+- **Relatives Heading ist nie Kompass:** Liefert der Browser nur relative Werte, meldet der Hook „kein Kompass" — mit derselben Wirkung wie ein fehlendes Magnetometer (Edge Case 12): GPS-Bewegungsrichtung plus „Laufe ein paar Schritte". Ein relativer Wert darf weder die Glättung noch die Karenzzeit (`compassFresh`) speisen
+- **iOS-Pfad bleibt:** `webkitCompassHeading` ist bereits absolut. Die Unterscheidung „absolut/relativ" darf ihn nicht verwerfen, nur weil das iOS-Event `absolute` nicht oder als `false` meldet — gemessen am Gerät zu verifizieren, Unit-Test über synthetische Events
+- **Kalibrierung an echte Genauigkeit binden:** iOS: `webkitCompassAccuracy` < 0 oder > Schwelle (Richtwert 25°) → Hinweis. Android: kein dauerhafter Hinweis mehr aus `absolute === false`. Der Hinweis bleibt 16px Body-Schrift (Refinement 2026-09-20)
+- **Positionsfilter nach `accuracy`:** Messungen über der Schwelle (Richtwert 30 m) werden verworfen, solange eine brauchbare Position vorliegt oder die Rückfallfrist (Richtwert 5 s) nicht abgelaufen ist. Danach gilt die beste verfügbare Messung. Der Filter gehört in eine Stelle, die Anzeige, Peilung **und** Ankunft gemeinsam speist — nicht in die Darstellung, sonst rechnet die Ankunft weiter mit Rohwerten
+- **Geglättete Entfernung:** Die angezeigte Entfernung wird aus einer geglätteten Position berechnet (Gewichtung nach `accuracy` — genauere Messungen zählen mehr). Die bestehende Peilungsdämpfung (`use-arrow-rotation.ts`) nutzt dann dieselbe geglättete Position statt der rohen. Die Glättung darf echte Bewegung nicht verschleppen: Beim normalen Gehtempo (~1,4 m/s) muss die Anzeige innerhalb weniger Sekunden folgen
+- **Ankunft mit Bestätigung:** Auslösen erst bei zwei **aufeinanderfolgenden** brauchbaren Messungen mit Entfernung ≤ Radius. Eine Messung außerhalb setzt den Zähler zurück. Die bestehende Einmaligkeit (Edge Case 4) bleibt unverändert
+- **Signalverlust unverändert:** Verworfene Messungen zählen für den 30s-Signalverlust als „Lebenszeichen" — das Gerät liefert ja Daten, nur ungenaue. Sonst würde der Filter drinnen einen Signalverlust vortäuschen
+- **Zustands-Screen unverändert:** Der Zustand `searching`/`no-fix` (Refinement 2026-09-26) hängt weiterhin daran, ob überhaupt eine Position kommt, nicht an ihrer Genauigkeit — die Rückfallfrist sorgt dafür, dass eine ungenaue Position rechtzeitig als Position gilt
+- **Abnahme:** Filter, Glättung und Ankunftsbestätigung sind reine Logik und per Unit-Test mit synthetischen Positionsfolgen prüfbar (inkl. einzelnem Ausreißer in den Radius und wieder heraus). Playwright kann Positionen liefern, aber keine `accuracy` setzen — E2E prüft nur, dass eine Ankunft weiterhin auslöst. Den Android-Absolut-Pfad kann keine Testumgebung emulieren: Unit-Test über synthetische `deviceorientationabsolute`-Events, Augenschein am Gerät
+- Kein neues Paket, keine neue Route
+
 ## Open Questions
-- [ ] Ab welcher GPS-Genauigkeit (accuracy in Metern) soll eine Warnung angezeigt werden? (z.B. accuracy > 50m = "Signal ungenau")
+- [x] Ab welcher GPS-Genauigkeit (accuracy in Metern) soll eine Warnung angezeigt werden? (z.B. accuracy > 50m = "Signal ungenau") → Keine Warnung für den Spieler. Stattdessen werden ungenaue Messungen ab ~30 m verworfen, mit Rückfall nach ~5 s (2026-09-28)
 - [ ] Soll die Entfernung bei > 1000m als "1,2 km" statt "1200 m" angezeigt werden?
 - [ ] Soll die Stationsliste auch die Entfernung zur jeweiligen Station anzeigen (wenn GPS aktiv)?
 - [ ] Soll der richtungslose Pfeil langsam rotieren (Suchanimation) oder statisch ausgegraut bleiben? — Umsetzungsdetail für `/frontend`
 - [ ] Wie stark darf die Glättung sein, ohne dass sich die Nadel träge anfühlt? Richtwert aus der Diskussion: ~0,2–0,3s Nachlauf. Am Gerät zu entscheiden (2026-09-20)
 - [ ] Wie lang ist die Karenzzeit, bevor von Kompass auf GPS-Bewegungsrichtung umgeschaltet wird? Muss länger sein als übliche Sensor-Aussetzer und kürzer als ein echter Ausfall (2026-09-20)
 - [ ] Welche Dämpfung der Zielpeilung wirkt am besten — geglättete Position, geglättete Peilung oder `accuracy`-Gewichtung? Am Gerät zu entscheiden (2026-09-20)
-- [ ] Bleibt der Kalibrierungs-Hinweis dauerhaft stehen, solange `absolute === false`, oder blendet er nach einigen Sekunden aus? Auf Android meldet mancher Browser dauerhaft `absolute === false`, ohne dass eine Kalibrierung hilft (2026-09-20)
-- [ ] Soll die Ankunftserkennung bei sehr schlechter `accuracy` (> Stationsradius) unterdrückt werden, um Falsch-Ankünfte zu vermeiden? Hängt mit der offenen Genauigkeits-Frage oben zusammen.
+- [x] Bleibt der Kalibrierungs-Hinweis dauerhaft stehen, solange `absolute === false`, oder blendet er nach einigen Sekunden aus? Auf Android meldet mancher Browser dauerhaft `absolute === false`, ohne dass eine Kalibrierung hilft (2026-09-20) → Die Frage stand auf einer falschen Prämisse: `absolute === false` ist kein Kalibrierungs-Signal, sondern ein relatives Bezugssystem. Der Hinweis hängt künftig an `webkitCompassAccuracy` (iOS); auf Android nicht mehr am Bezugssystem (2026-09-28)
+- [x] Soll die Ankunftserkennung bei sehr schlechter `accuracy` (> Stationsradius) unterdrückt werden, um Falsch-Ankünfte zu vermeiden? → Ja, in abgeschwächter Form: Messungen über ~30 m werden verworfen (mit Rückfall), und die Ankunft braucht zwei aufeinanderfolgende Messungen im Radius (2026-09-28)
 - [ ] Verhält sich **Android-Chrome** wie Desktop-Chrome (`requestPermission` vorhanden, liefert `denied`)? Lokal nicht messbar — kein Android-Gerät und kein lauffähiges Chromium-Binary. Der beschlossene `denied`-Rückfall macht die Antwort für die Korrektheit unkritisch, sie bliebe aber für die Testabdeckung interessant.
+- [ ] Welche Schwellen passen am Gerät — `accuracy`-Filter (Richtwert 30 m), Rückfallfrist (Richtwert 5 s), iOS-Kalibrierung (Richtwert 25°)? Richtwerte aus der Analyse, Feinabstimmung im Gelände (2026-09-28)
+- [ ] Reicht „zwei Messungen in Folge" auch bei kleinen Radien (10 m) und schlechtem Empfang, oder wird die Station dann zu schwer erreichbar (Edge Case 33)? Erst am Gerät zu beurteilen (2026-09-28)
+- [ ] Liefert `deviceorientationabsolute` auf den Android-Testgeräten des Betreibers Werte, und stimmen sie mit einer Kompass-App überein? Keine Testumgebung kann das emulieren (2026-09-28)
+- [ ] Soll die Missweisung (3–5°) später korrigiert werden? Nur sinnvoll, falls nach diesem Refinement am iPhone eine systematische Abweichung übrig bleibt (Edge Case 34, 2026-09-28)
 - [ ] Soll der Zustands-Screen nach längerer erfolgloser Suche einen Weg zurück zur Stationsliste **hervorheben**, oder genügt der Zurück-Pfeil in der Kopfzeile? Erst am Gerät zu beurteilen, wenn man tatsächlich drinnen sitzt und wartet (2026-09-26)
 - [ ] Braucht `searching` im Navigations-Screen eine Zeitgrenze, nach der er von selbst auf `no-fix` wechselt, oder genügt das 15s-Timeout des Hooks? Der Hook setzt `no-fix` bereits — offen ist nur, ob sich das im Screen anders anfühlen soll als beim Quest-Start (2026-09-26)
 - [ ] Soll die Stationsliste bereits erkennbar machen, dass GPS fehlt, bevor der Spieler auf den Pfeil tippt? Würde den Fehlschlag vorwegnehmen, kostet aber eine weitere Anzeigestelle für denselben Sachverhalt — und die Liste ist auch ohne GPS voll nutzbar (2026-09-26)
@@ -276,6 +322,11 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 | Kopfzeile bleibt, kein Vollbild ohne Ausweg | Der Zustand erscheint mitten im Spiel, nicht beim Einrichten. Der Spieler muss erkennen können, zu welcher Station er wollte, und jederzeit zurück zur Liste kommen — etwa weil er drinnen sitzt und stattdessen eine abgeschlossene Station nachliest. Ein Vollbild ohne Zurück hätte ihn festgesetzt, bis GPS kommt. | 2026-09-26 |
 | Kein Wiederholen-Knopf bei `insecure-context` und `unavailable` | Beides kann der Spieler nicht beheben — fehlendes HTTPS ist ein Betreiber-Fehler, ein fehlendes GPS-Modul ein Geräte-Fakt. Ein Knopf, der garantiert nichts ändert, ist eine Sackgasse; genau das war der Kern von BUG-6 (2026-09-07). Der Permission-Screen setzt diese Regel bereits um, die Wiederverwendung erbt sie. | 2026-09-26 |
 | iOS-Kompassfreigabe wird mitgenommen | Gleiche Ursache (übersprungener Permission-Screen), gleiche Datei, gleicher Prüf-Durchlauf. Der bestehende „Kompass aktivieren"-Button hängt heute an `position` und erscheint deshalb ausgerechnet dann nicht, wenn auch GPS fehlt — zwei Freigaben, die sich gegenseitig verstecken. Edge Case 10 hat den Kompass-Wiedereinstieg 2026-09-06 gelöst, den GPS-Wiedereinstieg aber nicht mitgezogen; das wird hier nachgeholt. | 2026-09-26 |
+| Ungenaue GPS-Messungen filtern, Entfernung glätten, Ankunft bestätigen | Betreiber-Entscheidung nach dem Befund „30 m, einen Schritt später 10 m". Nur die Anzeige zu glätten hätte die Zahl beruhigt, aber die Ankunft weiter am Rohwert gelassen — ein Ausreißer hätte die Station weiter zu früh ausgelöst. Nur die Genauigkeit anzuzeigen („±15 m") wäre ehrlich, für 8–16-Jährige aber eine zusätzliche Zahl ohne Handlungsanweisung und löst die Sprünge nicht. Preis der gewählten Variante: Die Ankunft kommt 1–3 s später — lieber das als 20 m zu früh. | 2026-09-28 |
+| Rückfall auf die beste verfügbare Position nach einigen Sekunden | Ein harter Filter würde drinnen und in engen Gassen keine einzige Messung durchlassen und die Navigation genau dort lahmlegen, wo GPS ohnehin schwach ist. Eine ungenaue Position ist besser als gar keine — Hauptsache, die Ankunft bleibt bestätigungspflichtig. | 2026-09-28 |
+| Relatives Heading wird nie als Kompass verwendet | Ein relativer Winkel sieht aus wie ein Kompass, zeigt aber mit beliebigem Versatz — schlimmer als gar kein Kompass, weil der Spieler ihm vertraut. Die GPS-Bewegungsrichtung ist ehrlich: Sie braucht Laufen, sagt das auch, und stimmt dann. | 2026-09-28 |
+| Kalibrierungs-Hinweis nur bei echtem Genauigkeits-Signal | Ein Hinweis, der auf Android immer und auf iOS nie erscheint, sagt nichts über den Zustand des Sensors. Ein dauerhaft sichtbarer Rat, der nicht hilft, erzieht den Spieler, Hinweise zu übersehen. | 2026-09-28 |
+| Missweisung wird nicht korrigiert | 3–5° liegen unter dem Sensorrauschen, das der Spieler in der Stadt ohnehin hat, und bräuchten ein Deklinationsmodell. Erst wenn nach der Android-Korrektur eine systematische Abweichung übrig bleibt, lohnt es sich. | 2026-09-28 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -307,8 +358,51 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 | „Läuft ein Watch?" kommt als eigenes Signal aus dem Hook, nicht als Ableitung aus `position`/`signal` | Zwischen Watch-Start und erstem Fix sind beide Werte von „nie gestartet" nicht unterscheidbar (`position: null`, `signal: "waiting"`). Eine Ableitung würde in diesem Fenster entweder unnötig neu starten oder den Start verpassen — beides Fehler, die nur zeitabhängig auftreten und deshalb schlecht zu finden sind. | 2026-09-26 |
 | Die doppelte `useDeviceOrientation()`-Instanz wird aufgelöst, nicht umgangen | Zwei Instanzen halten zwei `permission`-States für einen browserweiten Sensor (Edge Case 27). Nach erfolgreicher iOS-Freigabe weiß nur die aufrufende Instanz davon und hängt nur sie ihren Listener an. Der Zustand nach unten durchzureichen folgt dem Muster, das `geoState` im selben Screen bereits vormacht — die Alternative wäre ein Abgleich zwischen zwei Quellen, also dieselbe Fehlerklasse wie BUG-6. | 2026-09-26 |
 | Diese Fehlerklasse ist E2E-prüfbar — anders als die Kompass-Mathematik | Playwright kann Geolocation-Permissions entziehen und Positionen liefern; der Wiedereinstieg lässt sich über geseedeten `gq_progress_{id}` herstellen. Damit ist der gemeldete Befund als Regressionstest darstellbar, statt nur per Unit-Test um ihn herum zu prüfen. Der iOS-Pfad aus Edge Case 24 (rejectendes `query()`) braucht zusätzlich einen Unit-Test am Hook, weil Playwright das Permissions-API nicht selektiv entfernen kann. | 2026-09-26 |
+| `deviceorientationabsolute` zusätzlich abhören statt `deviceorientation` ersetzen | iOS Safari kennt `deviceorientationabsolute` nicht und liefert das absolute Heading über `webkitCompassHeading` im normalen Event. Ein Ersatz würde iOS brechen; beide Ereignisse abzuhören und das absolute zu bevorzugen, deckt beide Plattformen mit einer Regel ab. | 2026-09-28 |
+| Positionsfilter an einer gemeinsamen Stelle für Anzeige, Peilung und Ankunft | Würde nur die Anzeige gefiltert, sähe der Spieler eine ruhige Zahl, während die Ankunft weiter mit Rohwerten rechnet — zwei Wahrheiten über dieselbe Position, dieselbe Fehlerklasse wie BUG-6. | 2026-09-28 |
+| Verworfene Messungen gelten für den Signalverlust als Lebenszeichen | Der 30s-Signalverlust soll „das Gerät liefert nichts mehr" erkennen, nicht „das Gerät liefert Ungenaues". Ohne diese Trennung würde der Filter drinnen einen Signalverlust vortäuschen und die Navigation stoppen, obwohl Daten kommen. | 2026-09-28 |
 
 ---
+
+## Refinement 2026-09-28: Genaue Richtung und stabile Entfernung
+
+Betreiber-Befund aus Handy-Tests auf iPhone und Android, zwei Beobachtungen: Der Pfeil zeigt „nicht immer in genau die richtige Richtung", und die Entfernung sprang von 30 m auf 10 m innerhalb eines Schritts. Frage des Betreibers: *„Sind da bekannte Probleme auf dem Handy?"* — Ja, und drei davon stecken im Code.
+
+### Ursachen, im Code bestätigt
+
+| Befund | Stelle | Wirkung |
+|---|---|---|
+| Nur `deviceorientation` abgehört, `deviceorientationabsolute` nicht | `use-device-orientation.ts:187` | Android-Chrome liefert `absolute: false` — Pfeil mit beliebigem, bei jedem Öffnen anderem Versatz |
+| Relatives `alpha` wird als Kompass verwendet | `use-device-orientation.ts:176-178` | derselbe Versatz landet in Glättung und Pfeil |
+| `needsCalibration = (absolute === false)` | `use-device-orientation.ts:178` | Android: Hinweis dauerhaft, obwohl Kalibrieren nicht hilft |
+| `needsCalibration = false` fest im iOS-Zweig | `use-device-orientation.ts:175` | iOS: Hinweis nie, obwohl `webkitCompassAccuracy` den echten Zustand kennt |
+| Position ohne Blick auf `accuracy` | `navigation-screen.tsx:105` | jede Messung sofort in der Anzeige — 20-m-Sprünge sind normales Messrauschen |
+| Ankunft auf einer einzelnen Rohmessung | `navigation-screen.tsx:132` | ein Ausreißer in den Radius löst die Station aus |
+
+`useGeolocation` fordert bereits `enableHighAccuracy: true` und `maximumAge: 0` an und reicht `accuracy` durch — die Information liegt vor, sie wird nur nicht genutzt.
+
+### Plattform-Einordnung
+
+- **iPhone:** `webkitCompassHeading` ist absolut und richtig, die Abweichungen dort sind klein (Missweisung 3–5°, Metall, magnetische Hüllen). Der Befund auf dem iPhone dürfte überwiegend aus der Positionsseite stammen: Die Peilung rechnet mit der rohen Position, nah am Ziel schlägt deren Rauschen stark auf die Richtung durch (Edge Case 21).
+- **Android:** Der Pfeil ist strukturell falsch, nicht ungenau. Welche Richtung er zeigt, hängt davon ab, wohin das Handy beim Öffnen des Navigations-Screens zeigte.
+
+### Warum die Suite grün war
+
+Playwright emuliert weder Magnetometer noch `accuracy`. Die Tests aus dem Refinement 2026-09-20 senden synthetische `deviceorientation`-Events mit `alpha` — und prüfen damit genau den Pfad, der auf Android falsch ist, als richtig. Die Kompass-Tests belegen die Glättungsmathematik, nicht das Bezugssystem.
+
+### Entschiedener Umfang
+
+- Android: absolutes Heading über `deviceorientationabsolute`; relative Werte nie als Kompass
+- Kalibrierungs-Hinweis an echte Genauigkeit gebunden (iOS: `webkitCompassAccuracy`)
+- GPS: Filter nach `accuracy` mit Rückfall, geglättete Entfernung, Ankunft erst nach zwei Messungen in Folge
+- Nicht im Umfang: Missweisung, Genauigkeitsanzeige für Spieler, Querformat
+
+### Für `/frontend` vorab benannt
+
+- Die bestehenden Tests, die `deviceorientation` mit `alpha` und ohne `absolute: true` feuern und einen drehenden Pfeil erwarten, werden durch diese Änderung **absichtlich falsch** — sie kodieren den Android-Fehler als gewünschtes Verhalten. Sie sind zu **ziehen, nicht zu löschen**: entweder auf `deviceorientationabsolute` bzw. `absolute: true` umstellen, oder auf die Erwartung „Rückfall auf Bewegungsrichtung"
+- Der neue Wächter, der bisher fehlt: Ein relatives Event (`absolute: false`) darf den Pfeil **nicht** drehen
+- Die Ankunftsbestätigung ändert das Verhalten bestehender E2E-Tests, die eine einzige Position in den Radius setzen und sofort „Ziel erreicht!" erwarten. Auch diese sind zu ziehen (zweite Position senden), nicht zu löschen
+- Die Rückfallfrist darf den Zustands-Screen aus dem Refinement 2026-09-26 nicht verlängern: Der Übergang aus `searching` in die Navigation hängt am Eintreffen einer Position, nicht an ihrer Güte
 
 ## Refinement 2026-09-26: GPS-Zustand beim Wiedereinstieg
 

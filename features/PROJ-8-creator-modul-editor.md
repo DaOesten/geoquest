@@ -1,8 +1,10 @@
 # PROJ-8: Creator — Modul-Editor
 
-## Status: Deployed
+## Status: In Progress
 **Created:** 2026-08-28
-**Last Updated:** 2026-08-28
+**Last Updated:** 2026-09-28
+
+> **Refinement (2026-09-28) — Bildvorschau mit Warnung:** Betreiber-Befund: *„Bilder aus dem Internet, die im Create mode per URL eingebunden wurden, werden im Play mode nicht angezeigt — weder im Intro/Outro, noch als Modul in einer Station."* Die gelieferte Beispiel-URL (`https://www.magnific.com/de/vektoren-kostenlos/…_24467363.htm#…`) ist **keine Bilddatei, sondern die Detailseite** einer Stockbild-Plattform. Ein `<img>` kann sie nicht darstellen. Der Player verhält sich korrekt; der Fehler ist, dass der Creator jede `https://`-Adresse annimmt und der Ersteller erst beim Spielen merkt, dass sie nicht funktioniert. Lösung: Live-Vorschau unter jedem Bild-URL-Feld, mit Warnung und Anleitung, wenn die Adresse nicht als Bild lädt — Speichern bleibt möglich. Gilt für das Bild-Modul (diese Spec) **und** die Intro-/Outro-Bildfelder im Quest-Dialog (PROJ-6, mitbetroffen). Siehe User Story 10, Acceptance Criteria „Bildvorschau", Edge Cases 11–16, Technical Requirements, Decision Log und Abschnitt „Refinement 2026-09-28".
 
 ## Dependencies
 - Requires: PROJ-2 (Quest Data Model & JSON Import) — für das Modul-Schema (Text/Bild/Audio/Video/Task, inkl. `correctIndices`)
@@ -23,6 +25,7 @@ Der Modul-Editor ist der Ort, an dem der Ersteller die eigentlichen Inhalte eine
 7. Als Ersteller möchte ich ein Modul löschen können, damit ich Fehler oder nicht mehr benötigte Inhalte entfernen kann.
 8. Als Ersteller möchte ich sehen, welche Module noch unvollständig sind (z.B. fehlender Inhalt, keine markierte richtige Antwort), damit ich weiß, was ich noch fertigstellen muss.
 9. Als Ersteller möchte ich ein Modul auch unvollständig speichern können, damit ich meinen Zwischenstand nicht verliere, wenn ich später weiterarbeiten will.
+10. Als Ersteller möchte ich schon beim Eintragen einer Bild-URL sehen, ob das Bild angezeigt wird, und erklärt bekommen, welche Adresse ich stattdessen brauche, damit ich keine Quest weitergebe, in der die Spieler vor leeren Stellen stehen.
 
 ## Out of Scope
 - Rich-Text-Formatierung (fett, kursiv) in Text-Modulen — konsistent mit PROJ-2/PROJ-4 (Plain Text mit Zeilenumbrüchen/Listen, keine XSS-Fläche durch echtes HTML)
@@ -33,6 +36,12 @@ Der Modul-Editor ist der Ort, an dem der Ersteller die eigentlichen Inhalte eine
 - JSON-Export der fertigen Module — PROJ-9
 - Undo nach dem Löschen eines Moduls (bewusst Bestätigungsdialog statt Undo-Toast, konsistent mit PROJ-7 Stationslöschung)
 - Validierung/Blockieren beim Speichern eines unvollständigen Moduls (bewusst als Entwurf erlaubt, siehe Decision Log)
+- Speichern sperren, wenn ein Bild nicht lädt — die Vorschau warnt nur (Decision Log 2026-09-28)
+- Vorschau/Ladeprüfung für Audio und Video — gemeldet war nur Bild; beide Player-Elemente zeigen ohnehin eigene Fehlerzustände (2026-09-28)
+- Automatisches Umwandeln einer Seiten-URL in die Bild-URL (z. B. Auslesen von `og:image`) — bräuchte einen Server-Abruf fremder Seiten, PRD „Kein Backend" (2026-09-28)
+- Prüfung von Bildrechten/Lizenzen — der Creator kann sie nicht erkennen; nur ein Hinweistext (2026-09-28)
+- Bild-Ladeprüfung beim Veröffentlichen (PROJ-9) — asynchron und netzabhängig, die Warnung am Feld genügt (2026-09-28)
+- Änderungen am Player: Intro/Outro blenden ein nicht ladbares Bild weiter still aus, das Bild-Modul zeigt weiter „Bild konnte nicht geladen werden" (PROJ-4/PROJ-5 unverändert, 2026-09-28)
 - Maximale Modulanzahl als UI-Sperre (bestehende Schema-Grenze von 20 Modulen/Station aus PROJ-2 bleibt die einzige durchgesetzte Regel, greift beim Export/Import)
 - Import einzelner Module aus anderen Quests ("Modul kopieren")
 
@@ -60,6 +69,17 @@ Der Modul-Editor ist der Ort, an dem der Ersteller die eigentlichen Inhalte eine
 **Bild-/Audio-/Video-Modul-Editor:**
 - [ ] Angenommen das Sheet für Bild/Audio/Video ist offen, wenn der Nutzer eine URL einträgt, dann wird beim Speichern geprüft, dass sie mit `https://` beginnt; bei Verstoß erscheint eine Fehlermeldung direkt am Feld, das Sheet bleibt offen
 - [ ] Angenommen das Sheet für Bild/Audio/Video ist offen, wenn der Nutzer optional eine Caption einträgt, dann wird diese beim Speichern übernommen
+
+**Bildvorschau (Refinement 2026-09-28) — gilt für das Bild-Modul und für die Intro-/Outro-Bildfelder im Quest-Dialog (PROJ-6):**
+- [ ] Angenommen der Ersteller trägt eine `https://`-URL in ein Bild-Feld ein, wenn die Adresse als Bild lädt, dann erscheint direkt unter dem Feld eine Vorschau des Bildes
+- [ ] Angenommen die eingetragene Adresse lädt **nicht** als Bild (Webseite, Tippfehler, gesperrter Server), wenn die Prüfung abgeschlossen ist, dann erscheint an der Stelle der Vorschau eine Warnung: dass das Bild so im Spiel nicht angezeigt wird, und wie man die richtige Adresse bekommt („Rechtsklick bzw. lange drücken auf das Bild → Bildadresse kopieren")
+- [ ] Angenommen die Warnung ist sichtbar, wenn der Ersteller auf „Speichern" tippt, dann wird trotzdem gespeichert — die Warnung sperrt nicht
+- [ ] Angenommen der Ersteller ändert die URL, wenn er tippt, dann wird die Vorschau für die neue Adresse neu geprüft — eine veraltete Vorschau oder Warnung bleibt nicht stehen
+- [ ] Angenommen das Feld ist leer oder die Adresse beginnt nicht mit `https://`, wenn der Ersteller es ansieht, dann erscheint keine Vorschau und keine Lade-Warnung — es greift nur die bestehende `https://`-Prüfung beim Speichern
+- [ ] Angenommen ein bestehendes Bild-Modul oder eine bestehende Quest mit Intro-/Outro-Bild wird zum Bearbeiten geöffnet, wenn das Sheet bzw. der Dialog erscheint, dann wird die gespeicherte Adresse sofort geprüft — auch vorhandene kaputte Bilder werden so sichtbar
+- [ ] Angenommen die Prüfung läuft noch, wenn der Ersteller hinsieht, dann ist ein Ladezustand erkennbar — weder eine leere Fläche noch eine vorschnelle Warnung
+- [ ] Angenommen ein Bild-Modul hat eine Adresse, die nicht als Bild lädt, wenn die Modul-Liste angezeigt wird, dann trägt es **keinen** zusätzlichen Warnhinweis — die Ladeprüfung läuft nur im geöffneten Sheet (siehe Decision Log)
+- [ ] Angenommen die Vorschau wird angezeigt, wenn der Ersteller den Dialog im Light Theme sieht, dann erfüllt die Warnung den Kontrast von mindestens 4.5:1 und die Vorschau sprengt die Breite nicht (auch bei sehr großen oder sehr schmalen Bildern)
 
 **Code-Eingabe-Task-Editor:**
 - [ ] Angenommen das Code-Task-Sheet ist offen, wenn der Nutzer Frage und Antwort einträgt, dann werden beide beim Speichern übernommen
@@ -99,10 +119,17 @@ Der Modul-Editor ist der Ort, an dem der Ersteller die eigentlichen Inhalte eine
 4. **Multiple-Choice: keine Option als korrekt markiert:** Wird als unvollständiges Modul gespeichert (Entwurfsprinzip) und in der Liste mit Warnhinweis "Keine Antwort markiert" angezeigt.
 5. **Sortierung: zwei identische Item-Texte:** Wird ohne Sonderbehandlung akzeptiert — Duplikate sind technisch gültig, auch wenn sie das Rätsel im Player mehrdeutig machen könnten; Verantwortung liegt beim Ersteller.
 6. **Media-URL wird nach dem Speichern ungültig (z.B. Bild wird offline genommen):** Kein Editor-seitiges Problem — PROJ-4s bestehender `onError`-Fallback im Player greift, PROJ-8 prüft nur das URL-Format (`https://`-Präfix) beim Speichern, keine Erreichbarkeitsprüfung.
+    *Präzisiert 2026-09-28:* „Keine Erreichbarkeitsprüfung" gilt nicht mehr für Bilder. Beim Eintragen und beim erneuten Öffnen wird geprüft, ob die Adresse als Bild lädt (Vorschau/Warnung). Fällt ein Bild **nach** dem Speichern weg, gilt weiterhin der Player-Fallback — der Creator prüft nicht im Hintergrund nach.
 7. **Drag & Drop der Modul-Liste vs. Drag & Drop innerhalb der Sortierungs-Aufgabe:** Kein Konflikt — Modul-Listen-Drag passiert auf der Übersichtsseite, Item-Drag passiert isoliert im geöffneten Sortierungs-Sheet.
 8. **Zwischenstand-Garantie:** Wie in PROJ-6/PROJ-7 etabliert — jedes gespeicherte Modul (auch unvollständig) wird sofort in `gq_quests` persistiert, kein Datenverlust bei Navigation weg von der Seite.
 9. **Wechsel des Modultyps nach dem Anlegen:** Nicht möglich — ein bestehendes Modul behält seinen Typ; um den Typ zu ändern, muss der Ersteller das Modul löschen und neu anlegen (kein Typ-Umschalter im Bearbeiten-Sheet).
 10. **Navigation zu `/create/[id]/station/[stationId]` mit ungültiger oder gelöschter `stationId`:** Zeigt einen "Station nicht gefunden"-Zustand mit Link zurück zur Stationsliste — analog zum bestehenden Verhalten bei ungültiger `id` auf `/create/[id]`.
+11. **Seiten-URL statt Bild-URL (Anlass des Refinements 2026-09-28):** Stockbild-Plattformen (Magnific/Freepik, Pixabay, Unsplash, Pinterest) und die Google-Bildersuche zeigen Bilder auf einer Detailseite. Kopiert der Ersteller die Adresse aus der Adresszeile, bekommt er diese Seite (`…/lass-uns-textsymbol…_24467363.htm`), nicht die Bilddatei. Das `https://`-Format ist erfüllt, das Bild lädt nie. Häufigster realer Fall; die Warnung muss genau diesen Weg erklären.
+12. **Server verweigert das Einbetten (Hotlink-Schutz):** Manche Server liefern Bilder nur an ihre eigene Website aus. Die Vorschau im Creator läuft im selben Browser, mit derselben Origin und derselben `Referrer-Policy` wie der Player — was dort lädt, lädt auch beim Spielen, was dort scheitert, scheitert auch beim Spielen. Die Vorschau ist damit ein verlässlicher Stellvertreter, keine Schätzung.
+13. **Langsamer oder kurz nicht erreichbarer Server:** Die Prüfung kann fehlschlagen, obwohl das Bild später lädt. Deshalb warnt sie nur und sperrt das Speichern nicht (Decision Log). Der Ersteller kann weiterarbeiten und das Bild später erneut prüfen, indem er das Sheet wieder öffnet.
+14. **Adresse ist ein Bild, aber riesig (mehrere MB):** Die Vorschau lädt es trotzdem; sie ist auf die Feldbreite begrenzt. Eine Größenwarnung ist nicht Teil dieses Refinements.
+15. **Bild lädt im Creator, aber der Spieler ist offline oder hat schlechten Empfang:** Nicht Sache des Creators — PRD „Multimedia-Module brauchen Internetverbindung". Der Player-Fallback greift wie bisher.
+16. **Privatsphäre:** Die Vorschau ruft die fremde Adresse schon beim Eintragen ab — der Bild-Server sieht dabei die IP des Erstellers und die Origin der App (`Referrer-Policy: origin-when-cross-origin`). Beim Spielen passiert dasselbe für jeden Spieler, es ist also kein neuer Datenfluss, nur ein früherer. Prüfen, ob die Datenschutzerklärung (PROJ-13) die Einbindung externer Medien bereits abdeckt (Open Question).
 
 ## Technical Requirements
 - Datenmodell: Nutzt das bestehende PROJ-2-Modul-Union-Schema (`text`/`image`/`audio`/`video`/`task` mit `taskType`) ohne strukturelle Änderung
@@ -116,8 +143,22 @@ Der Modul-Editor ist der Ort, an dem der Ersteller die eigentlichen Inhalte eine
 - Sheet/Dialog-Portal-Rendering: Muss das bestehende Light-Theme-Fix-Muster aus PROJ-6/PROJ-7 übernehmen (`data-theme="light"` + `text-foreground` auf der Portal-Root)
 - Routing: Neue dynamische Route `/create/[id]/station/[stationId]/page.tsx`
 
+**Bildvorschau (Refinement 2026-09-28):**
+- **Eine** gemeinsame Vorschau-Komponente für beide Einbauorte (Bild-Modul-Sheet in `module-editor-sheets.tsx`, Intro-/Outro-Felder in `quest-form-dialog.tsx`) — nicht zweimal nachgebaut, sonst laufen Wortlaut und Verhalten auseinander
+- Die Prüfung ist ein schlichtes Laden als Bild im Browser (`onLoad`/`onError` bzw. `new Image()`), **kein** `fetch()`: Ein `fetch` scheitert an CORS bei Servern, die das Bild als `<img>` problemlos ausliefern, und würde gültige Bilder als kaputt melden
+- Vorschau und Player müssen dieselben Ladebedingungen haben (gleiche Origin, gleiche `Referrer-Policy` aus `next.config.ts`, kein `crossOrigin`-Attribut) — nur dann ist „lädt in der Vorschau" gleichbedeutend mit „lädt beim Spielen"
+- Neu prüfen bei jeder URL-Änderung, entprellt (Richtwert 400–500 ms), damit nicht jeder Tastendruck eine Anfrage an einen fremden Server auslöst. Eine ältere, noch laufende Prüfung darf das Ergebnis einer neueren nicht überschreiben
+- Geprüft wird nur eine Adresse mit `https://`-Präfix; leere oder ungültige Felder zeigen weder Vorschau noch Lade-Warnung
+- Das Ergebnis wird **nicht** gespeichert — es ist ein Anzeige-Zustand des geöffneten Formulars, kein Quest-Feld. Das Datenmodell (PROJ-2) bleibt unverändert
+- Warnung als Text-Hinweis am Feld, nicht als Toast (verschwindet sonst, bevor er gelesen ist) und nicht als Blocker. Farbe und Kontrast nach Design System im Light Theme der Creator-Sheets
+- Vorschau-Bild: `max-width: 100%`, begrenzte Höhe, `object-fit: contain`, leeres `alt` (dekorativ, die URL steht im Feld darüber)
+- Kein neues Paket, keine neue Route
+- **Abnahme:** E2E-prüfbar — Playwright kann Bildanfragen per `page.route` mit einem echten PNG oder mit HTML beantworten. Wächter: Eine HTML-Seite als Bild-URL erzeugt die Warnung und lässt das Speichern zu; ein PNG erzeugt die Vorschau ohne Warnung; eine schnell geänderte URL zeigt das Ergebnis der letzten Eingabe
+
 ## Open Questions
-_Keine offenen Fragen._
+- [ ] Deckt die Datenschutzerklärung (PROJ-13) die Einbindung externer Medien-URLs bereits ab, oder braucht sie einen Satz dazu? Die Vorschau erzeugt keinen neuen Datenfluss, zieht ihn aber in den Creator vor (Edge Case 16, 2026-09-28)
+- [ ] Wie genau lautet der Anleitungstext der Warnung — kurz („Das ist kein Bild. Kopiere die Bildadresse: lange auf das Bild drücken → Bildadresse kopieren") oder mit Beispiel? Am Bildschirm in `/frontend` festzulegen (2026-09-28)
+- [ ] Soll die Warnung einen Hinweis auf Bildrechte enthalten (Namensnennung bei kostenlosen Stockbildern)? Betrifft vor allem Lehrkräfte, die Quests weitergeben (2026-09-28)
 
 ## Decision Log
 
@@ -137,6 +178,10 @@ _Keine offenen Fragen._
 | Bestätigungsdialog beim Löschen eines Moduls (kein Undo-Toast) | PRD verlangt generell Bestätigungsdialoge bei kritischen/destruktiven Aktionen; konsistent mit dem bereits etablierten Muster aus PROJ-6/PROJ-7 | 2026-08-28 |
 | Kein Typ-Wechsel bei bestehendem Modul | Die 5 Modultypen (bzw. 3 Task-Unterarten) haben strukturell unterschiedliche Felder — ein Wechsel würde entweder Datenverlust oder komplexe Migrationslogik bedeuten; Löschen+Neuanlegen ist einfacher und für den seltenen Fall ausreichend | 2026-08-28 |
 | Keine UI-Sperre bei Erreichen von 20 Modulen | Die Schema-Grenze aus PROJ-2 bleibt die einzige durchgesetzte Regel (greift bei Import/Export), konsistent mit der gleichen Entscheidung für Stationen in PROJ-7 | 2026-08-28 |
+| Bildvorschau mit Warnung, Speichern bleibt möglich | Betreiber-Entscheidung nach dem Befund, dass eingebundene Bilder im Player fehlen. Die Ursache war eine Seiten-URL statt einer Bild-URL — ein Fehler, den der Ersteller erst beim Spielen bemerken konnte. Eine Sperre wäre strenger, würde aber auch bei einem kurz nicht erreichbaren Server blockieren und widerspräche dem Entwurfsprinzip dieser Spec. Ein reiner Hinweistext hätte den Fehler nicht abgefangen. | 2026-09-28 |
+| Die Warnung gehört an den Creator, nicht an den Player | Nur der Ersteller kann eine falsche Adresse reparieren. Der Spieler steht draußen vor einer Station und kann nichts tun; ein Hinweis bei ihm wäre Rauschen. Intro/Outro blenden deshalb weiter still aus, das Modul behält seinen bestehenden Fallback. | 2026-09-28 |
+| Gilt auch für Intro-/Outro-Bilder (PROJ-6) | Der Befund betraf Intro, Outro und Modul gleichermaßen. Eine Vorschau nur im Modul hätte zwei der drei gemeldeten Stellen offen gelassen. | 2026-09-28 |
+| Keine Lade-Warnung in der Modul-Liste | Eine Liste mit bis zu 20 Modulen würde beim Öffnen gleichzeitig Anfragen an fremde Server stellen, nur um Warnhinweise zu setzen. Die bestehenden Listen-Warnungen prüfen Vollständigkeit, nicht Erreichbarkeit — diese Trennung bleibt. Wer ein Modul öffnet, sieht den Zustand. | 2026-09-28 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -150,6 +195,32 @@ _Keine offenen Fragen._
 | Wiederverwendung von `@dnd-kit/core` + `@dnd-kit/sortable` (bereits aus PROJ-7 installiert) für Modul-Liste UND Sortierungs-Item-Liste | Keine neue Dependency nötig, gleiches Interaktionsmuster (PointerSensor/TouchSensor mit Aktivierungsdistanz) wie die Stationsliste in PROJ-7 | 2026-08-28 |
 | Vollständigkeits-Warnhinweis als reine Anzeige-Funktion (`getModuleWarning(module)`), kein Zod-Schema-Zweitpfad | Die Prüfung ist informativ, nicht blockierend (Entwurfsprinzip) — eine einfache, direkt lesbare Prüf-Funktion pro Modultyp ist verständlicher als ein zweites, gelockertes Zod-Schema nur für Warnhinweise | 2026-08-28 |
 | Multiple-Choice-Editor hält `correctIndices` als lokales `Set<number>`, das beim Entfernen einer Option automatisch neu indiziert wird | Verhindert, dass ein gelöschtes Options-Index-Loch stehen bleibt oder auf eine falsche Option zeigt — die Neuindizierung passiert rein im lokalen Sheet-State, bevor überhaupt gespeichert wird | 2026-08-28 |
+| Ladeprüfung als Bild, nicht per `fetch()` | `fetch` unterliegt CORS und scheitert bei vielen Servern, die dasselbe Bild als `<img>` anstandslos ausliefern. Die Vorschau würde dann gültige Bilder als kaputt melden — genau das Gegenteil ihres Zwecks. Laden als Bild prüft exakt das, was der Player tut. | 2026-09-28 |
+| Eine gemeinsame Vorschau-Komponente für Modul und Quest-Dialog | Zwei Einbauorte, ein Verhalten, ein Wortlaut. Eine zweite Fassung würde bei der nächsten Textkorrektur auseinanderlaufen — dieselbe Begründung wie beim wiederverwendeten Permission-Wortlaut in PROJ-3. | 2026-09-28 |
+| Prüfergebnis wird nicht gespeichert | Ob ein Bild lädt, ist ein Zustand des Netzes zum Prüfzeitpunkt, keine Eigenschaft der Quest. Im Datenmodell würde es veralten und beim Export an andere Geräte ein falsches Versprechen weitergeben. | 2026-09-28 |
+
+## Refinement 2026-09-28: Bildvorschau mit Warnung
+
+**Befund:** Per URL eingebundene Bilder erscheinen im Player nicht — weder im Intro/Outro noch als Modul.
+
+**Der Datenweg ist intakt, im Code nachverfolgt:**
+
+| Stelle | Ergebnis |
+|---|---|
+| `quest-form-dialog.tsx:121-125` | Intro-/Outro-URL wird mit `mediaType: "image"` gespeichert |
+| `quest-storage.ts:358` (`sanitizeDraftModule`) | Modul-URL nur getrimmt und von Tags befreit — bleibt erhalten |
+| `quest-import.ts` (`sanitizeQuest`) | URLs werden nicht angefasst |
+| `intro-screen.tsx:70`, `image-module.tsx` | schlichtes `<img src>` |
+| `next.config.ts` | bewusst **keine** Content-Security-Policy |
+| `public/sw.js` | greift nur bei `mode === "navigate"`, nicht bei Bildern |
+
+**Ursache:** Die gelieferte Adresse `https://www.magnific.com/de/vektoren-kostenlos/lass-uns-textsymbol-auf-weissem-hintergrund-gehen_24467363.htm#…` ist eine **HTML-Detailseite**, keine Bilddatei. Das `https://`-Format ist erfüllt, also nimmt der Creator sie an; ein `<img>` kann sie nie darstellen. Im Modul erscheint dann „Bild konnte nicht geladen werden", im Intro/Outro wird die Fläche still ausgeblendet (`onError` → `display: none`) — für den Ersteller sieht es aus, als sei das Bild „verschwunden".
+
+**Warum es bisher nicht auffiel:** Der Creator hat nie eine Vorschau gezeigt. Edge Case 6 schloss eine Erreichbarkeitsprüfung ausdrücklich aus — damals mit Blick auf Bilder, die *später* offline gehen, nicht auf Adressen, die *nie* funktioniert haben.
+
+**Entschieden:** Vorschau unter jedem Bild-URL-Feld (Modul **und** Intro/Outro), Warnung mit Anleitung bei Nicht-Laden, Speichern bleibt möglich, Player unverändert.
+
+**Für `/frontend`:** Die Intro-/Outro-Felder liegen in `quest-form-dialog.tsx` (PROJ-6), das Bild-Modul in `module-editor-sheets.tsx`. Beide binden dieselbe neue Komponente ein. Die bestehenden Tests zum `https://`-Präfix bleiben unverändert gültig — die Vorschau ergänzt die Formatprüfung, sie ersetzt sie nicht. Bildanfragen in Tests per `page.route` beantworten, sonst hängen die Tests an fremden Servern.
 
 ---
 <!-- Sections below are added by subsequent skills -->
