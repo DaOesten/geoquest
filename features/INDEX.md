@@ -18,7 +18,7 @@
 |----|---------|----------|--------------|--------|------|---------|
 | PROJ-1 | App Shell & Mode Switch | P0 | None | Deployed | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
-| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | In Progress | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
+| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Approved | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
 | PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
@@ -1630,3 +1630,14 @@ Spec ist aktualisiert (6 Acceptance Criteria, 1 Produkt- und 1 technische Entsch
 **Tests:** Unit **325/325** (+20, 3 gezogen); neue E2E-Suite 10 je Engine, 3× **60/60**; 23 bestehende E2E-Tests gezogen (Ankunft mit zweiter Messung, Kalibrierung über `webkitCompassAccuracy`). **Gegenprobe gegen den echten Vorgängerstand: 24 von 26 fallen**, grün bleibt nur der Wächter „erste Messung wird übernommen". **Gesamtregression beide Engines 1277 passed / 1 unexpected** (Service-Worker-Flakiness, seriell 9/9). QA lief im isolierten Worktree auf Port 3200.
 
 **Nicht abgedeckt:** das echte Android-Gerät mit Kompass-App daneben, echtes GPS-Rauschen im Gelände, Firefox.
+
+## QA abgeschlossen: PROJ-3 Genaue Richtung und stabile Entfernung (2026-09-29)
+**PROJ-3** ist QA-geprüft: **11/11 Acceptance Criteria erfüllt (eines mit Einschränkung am Wortlaut), 1 Medium-Bug (BUG-20), keine Critical/High. Production-Ready.** Status auf Approved.
+
+**Neu geprüft:** iPhone und Android zeigen bei gleicher Blickrichtung denselben Pfeil (< 1,5° Abweichung); die Rückfallfrist in Echtzeit; die Empfangszeit-Korrektur der Frontend-Phase per Unit-Test (Gegenprobe mit `pos.timestamp` → genau dieser Test fällt); verworfene Messungen halten das Signal am Leben; `NaN`/`Infinity` auf dem neuen Android-Weg frieren den Pfeil nicht ein.
+
+**BUG-20 (Medium, Regress dieses Refinements):** Die Glättung verzögert die **Bewegungsrichtung** — `headingFromPositions` verlangt ≥ 2 m zwischen aufeinanderfolgenden Positionen, die geglätteten rücken anfangs weniger vor. Vorgänger und neuer Stand nebeneinander gemessen: 2,5 m je Sekunde bei 10 m Genauigkeit → Richtung **sofort** vs. **nach 4 s**. Vorbestehend und schwerer: Bei normalem Gehtempo (1,4 m/s) findet die Bewegungsrichtung **in beiden Ständen nie** eine Richtung. Betrifft nur Geräte ohne absoluten Kompass. Behebung: Richtung aus den ungeglätteten `recentFixes` über eine Strecke ≥ 5 m. `test.fail`-Wächter vorhanden.
+
+**Edge Case 33 quantifiziert (Beobachtung):** Simulation bei einer 10-m-Station und 15 m Genauigkeit — Wartezeit bis zur Ankunft **2,5 s → 8,8 s** im Mittel (bei 25 m Genauigkeit **42 s**); Falsch-Ankunft aus 20 m **99 % → 31 %**. Der Wortlaut „höchstens ca. 1–3 s" gilt nur für Radien ≥ 20 m. Abnahme bleibt der Gerätetest mit einer 10-m-Station.
+
+**Tests:** Unit **334/334** (+9 im Hook), neue QA-Suite 5 je Engine 3× **30/30**, **Gesamtregression beide Engines 1294 passed / 0 failed / 0 flaky**, Lint 0 Fehler. Vorgängerstand auf eigenem Port gebaut, um BUG-20 als Regress statt als Vermutung zu belegen.

@@ -1,6 +1,6 @@
 # PROJ-3: Player — GPS-Navigation
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-08-23
 **Last Updated:** 2026-09-28
 
@@ -1968,3 +1968,84 @@ Nach der zweiten Korrektur scheiterte „zwei Messungen in Folge lösen aus" auf
 - **Das echte Android-Gerät:** ob `deviceorientationabsolute` auf den Testgeräten des Betreibers Werte liefert und mit einer Kompass-App übereinstimmt (Open Question). Keine Testumgebung emuliert einen Magnetometer
 - **Echtes GPS-Rauschen:** ob 30 m / 5 s / 16 m²/s sich im Gelände richtig anfühlen, und ob kleine Radien (10 m) mit zwei Bestätigungen gut erreichbar bleiben (Edge Case 33)
 - Firefox
+
+---
+
+## QA Test Results — Genaue Richtung und stabile Entfernung (2026-09-29)
+
+**Tested:** 2026-09-29 · **Build:** Production aus isoliertem Worktree auf `6d1a766`, Port 3200; Vorgängerstand `6d1a766~1` parallel auf Port 3201 · **Engines:** Chrome 154, Mobile Safari (WebKit) · **Tester:** QA Engineer (AI)
+
+**Ergebnis: 11/11 Acceptance Criteria erfüllt (eines mit Einschränkung am Wortlaut), 1 Medium-Bug (BUG-20), keine Critical/High. Production-Ready.**
+
+### Acceptance Criteria Status
+| AC | Ergebnis | Beleg |
+|---|---|---|
+| Android nutzt `deviceorientationabsolute` | ✅ | E2E: Pfeil richtet sich danach aus, auch wenn parallel relative Werte mit anderem Nullpunkt eintreffen |
+| Relatives Heading nie als Kompass, Rückfall auf Bewegungsrichtung | ✅ | E2E: relativer Wert dreht den Pfeil nicht; beim Gehen übernimmt die Bewegungsrichtung (QA-Test) — siehe aber BUG-20 |
+| iPhone und Android zeigen dieselbe Richtung | ✅ | **QA-Test neu:** gleiche Blickrichtung über `webkitCompassHeading` bzw. `deviceorientationabsolute` → Rotationen weichen < 1,5° ab |
+| iOS-Kalibrierung über `webkitCompassAccuracy` | ✅ | Unit + E2E (40° → Hinweis, 10° → weg, −1 → Hinweis) |
+| Android: kein Dauerhinweis | ✅ | E2E: relatives Heading löst keinen Hinweis aus |
+| Grobe Messung wird verworfen | ✅ | Unit (Hook) + E2E |
+| Rückfall auf beste verfügbare Messung | ✅ | **Unit mit kontrollierter Zeit** + **E2E in Echtzeit** (nach 1,5 s verworfen, nach > 5 s übernommen) |
+| Entfernung ohne Sprünge | ✅ | Unit „30 m → 10 m" + E2E Ausreißer gedämpft |
+| Einzelner Ausreißer in den Radius löst nicht aus | ✅ | E2E |
+| Ankunft nach zwei Messungen, „Verzögerung höchstens ca. 1–3 s" | ⚠️ | Mechanik ✅; **der Klammer-Wortlaut hält bei kleinen Radien nicht** — siehe Beobachtung Edge Case 33 |
+| Start im Radius löst weiterhin aus (Edge Case 3) | ✅ | E2E |
+
+### Über die Spec hinaus geprüft
+- **Empfangszeit statt Gerätezeitstempel** (Korrektur der Frontend-Phase) per Unit-Test belegt: eine Minute alter `pos.timestamp` → grobe Messung 1 s später **verworfen**. Gegenprobe mit `pos.timestamp` → **genau dieser** Test fällt
+- **Verworfene Messungen halten das Signal am Leben:** 40 s nur grobe Messungen im Wechsel mit genauen → `signal` bleibt `active`; ohne jede Messung nach 30 s weiterhin `lost`
+- **Gebündelte Messungen:** zwei im selben Render → beide in `recentFixes` (`[1, 2]`); Liste auf 5 begrenzt, fortlaufend nummeriert
+- **Neuer Watch setzt die Glättung zurück**
+- **BUG-12 auf dem neuen Android-Weg:** `NaN`/`Infinity` in `deviceorientationabsolute` frieren den Pfeil nicht ein, kein `NaN` im CSS-`transform`
+
+### BUG-20 (Medium): Die Glättung verzögert die Bewegungsrichtung
+- **Ursache:** `headingFromPositions` verlangt ≥ 2 m zwischen zwei **aufeinanderfolgenden** Positionen. Seit der Glättung sind das die geglätteten Positionen, und die rücken anfangs weniger vor als die Rohmessungen
+- **Gemessen, Vorgänger und neuer Stand nebeneinander** (Schritte im Sekundentakt nach Norden, ohne Kompass):
+
+| Schritt | Genauigkeit | Vorgänger | Neu |
+|---|---|---|---|
+| 1,4 m | 10 m | nie | nie |
+| 2,5 m | 10 m | **sofort** | **nach 4 s** |
+| 2,5 m | 5 m | sofort | nach 2 s |
+| 2,5 m | 0 m | sofort | sofort |
+| 4 m | 10 m | sofort | sofort |
+
+- **Wirkung:** Wer ohne absoluten Kompass spielt (Geräte ohne Magnetometer; Android-Browser ohne `deviceorientationabsolute`), sieht die Richtung einige Sekunden später. **Regress dieses Refinements**, per Vergleich belegt
+- **Vorbestehend und schwerer:** Bei normalem Gehtempo (1,4 m/s, eine Messung pro Sekunde) findet die Bewegungsrichtung **in beiden Ständen nie** eine Richtung — die 2-m-Schwelle zwischen aufeinanderfolgenden Messungen ist für Gehen zu hoch. Seit Android bei fehlendem absoluten Heading auf diesen Weg fällt, wiegt das mehr
+- **Naheliegende Behebung:** Bewegungsrichtung aus den **ungeglätteten** `recentFixes` über eine Strecke bestimmen (älteste Messung, die ≥ 5 m zurückliegt), statt aus zwei aufeinanderfolgenden geglätteten Positionen. Das behöbe beides
+- **Wächter:** `test.fail` in `tests/proj-3-richtung-entfernung-qa.spec.ts` — wird grün, sobald behoben
+- **Nicht blockierend:** Die meisten Android-Browser liefern `deviceorientationabsolute`, iPhones `webkitCompassHeading`; der Rückfall betrifft eine Minderheit
+
+### Beobachtung ohne Bug-Status: Edge Case 33 quantifiziert
+Monte-Carlo-Simulation (20 000 Läufe, Spieler steht **genau auf** der Station, eine Messung pro Sekunde, `accuracy` als 68-%-Radius, **unabhängiges** Rauschen):
+
+| Radius | Genauigkeit | Wartezeit alt (Ø / 90 %) | neu (Ø / 90 %) |
+|---|---|---|---|
+| 10 m | 10 m | 1,5 s / 3 s | 3,6 s / 7 s |
+| 10 m | 15 m | 2,5 s / 5 s | **8,8 s / 19 s** |
+| 10 m | 25 m | 6 s / 13 s | **42 s / 93 s** |
+| 20 m | 15 m | 1,2 s / 2 s | 2,5 s / 4 s |
+
+**Falsch-Ankunft** aus 20 m vor einer 10-m-Station (Genauigkeit 15 m, eine Minute): **99 % → 31 %**. Der Gewinn ist groß, ein vollständiger Schutz ist es nicht. Der Klammer-Wortlaut „höchstens ca. 1–3 s" im Acceptance Criterion gilt nur für Radien ≥ 20 m bzw. guten Empfang. **Einschränkung des Modells:** Echte GPS-Fehler sind zeitlich korreliert (sie wandern), das verschiebt beide Zahlen — der Gerätetest bleibt die Abnahme. Empfehlung für die offene Frage: Im Gelände mit einer 10-m-Station prüfen; falls zu zäh, die Bestätigung bei kleinem Radius oder guter Genauigkeit auf eine Messung senken.
+
+### Security Audit
+- ✅ Ungültige Sensorwerte (`NaN`, `±Infinity`) auf beiden Orientierungs-Wegen verworfen, kein `NaN` im CSS
+- ✅ Keine neue Eingabefläche: Positionen und Sensorwerte kommen vom Gerät, nicht aus der Quest-Datei; Stationskoordinaten laufen weiter durch das bestehende Schema
+- ✅ Keine neuen externen Anfragen, keine Speicherung von Positionsdaten (Filterzustand nur im Speicher, `recentFixes` auf 5 begrenzt)
+
+### Tests
+- **Unit:** **334/334** (+9 QA-Tests im Hook: Filter, Rückfall, Empfangszeit, Signal-Lebenszeichen, Bündelung, Begrenzung, Glättung, Reset)
+- **E2E neu:** `tests/proj-3-richtung-entfernung-qa.spec.ts`, **5 Tests je Engine** (inkl. BUG-20-Wächter), 3× wiederholt **30/30**
+- **Gesamtregression beide Engines: 1294 passed / 56 skipped / 0 failed / 0 flaky** (8 min)
+- Lint 0 Fehler
+
+### Drei eigene Testfehler, offen benannt (Produkt jeweils richtig)
+1. **Falsches Signal gemessen:** Mein erster Bewegungsrichtungs-Test las den Hinweis „Laufe ein paar Schritte" — der erscheint aber **immer**, wenn kein Kompass da ist, auch mit vorhandener Bewegungsrichtung. Das richtige Merkmal ist, ob das SVG ein `rotate()` trägt
+2. **`reload` führt zurück in den Quest-Start**, nicht in die Stationsliste — AC-3 lief 30 s ins Leere. Jetzt frische Seite
+3. **Exakter Winkel trotz Glättung erwartet:** Die Mindestschwelle von 0,75° lässt die Nadel ~5° vor dem Ziel stehen, und ein nachfolgendes `expect.poll` lief in die 3-s-Karenzzeit, nach der der Pfeil korrekt richtungslos wird. Sah kurz nach einem neuen BUG-12 aus — schrittweise gemessen: der Pfeil erholt sich nach `NaN` sofort
+
+### Nicht abgedeckt
+- **Echtes Android-Gerät** mit Kompass-App daneben — die zentrale Abnahme dieses Refinements
+- **Echtes GPS-Rauschen** (zeitlich korreliert) — die Simulation nimmt unabhängiges Rauschen an
+- **Firefox** — Binary fehlt

@@ -267,3 +267,111 @@ describe("useGeolocation — watchActive-Signal (Refinement 2026-09-26)", () => 
     expect(result.current.watchActive).toBe(true);
   });
 });
+
+/**
+ * QA 2026-09-29 — Filter, Glättung und Ankunfts-Messliste (Refinement
+ * 2026-09-28) am Hook selbst. Die E2E-Suite prüft das Ergebnis am Bildschirm;
+ * hier liegt, was nur mit kontrollierter Zeit prüfbar ist: Rückfallfrist,
+ * 30s-Signalverlust bei lauter verworfenen Messungen, veraltete
+ * Gerätezeitstempel.
+ */
+describe("useGeolocation — Genauigkeitsfilter (QA 2026-09-29)", () => {
+  /** Meter nördlich eines Bezugspunkts. */
+  const north = (m: number) => 52.5 + m / 111_195;
+  function fix(metersNorth: number, accuracy: number, timestamp = Date.now()): GeolocationPosition {
+    return { coords: { latitude: north(metersNorth), longitude: 13.4, accuracy }, timestamp } as GeolocationPosition;
+  }
+  const metersOf = (lat: number) => (lat - 52.5) * 111_195;
+
+  function started() {
+    const hook = renderHook(() => useGeolocation());
+    act(() => hook.result.current.requestPermission());
+    return hook;
+  }
+
+  it("verwirft eine grobe Messung nach einer genauen — Position und Messliste bleiben", () => {
+    const { result } = started();
+    act(() => successCb!(fix(0, 5)));
+    act(() => successCb!(fix(200, 80)));
+    expect(metersOf(result.current.position!.lat)).toBeCloseTo(0, 3);
+    expect(result.current.recentFixes).toHaveLength(1);
+  });
+
+  it("übernimmt nach 5 s ohne genaue Messung die grobe (Rückfall)", () => {
+    const { result } = started();
+    act(() => successCb!(fix(0, 5)));
+    act(() => vi.advanceTimersByTime(4000));
+    act(() => successCb!(fix(200, 80)));
+    expect(result.current.recentFixes).toHaveLength(1);
+    act(() => vi.advanceTimersByTime(1100));
+    act(() => successCb!(fix(200, 80)));
+    expect(result.current.recentFixes).toHaveLength(2);
+  });
+
+  it("rechnet die Frist mit der Empfangszeit, nicht mit einem veralteten Gerätezeitstempel", () => {
+    // Die erste Messung trägt einen eine Minute alten Zeitstempel (vor dem
+    // Seitenaufruf gemessen). Mit dem Gerätezeitstempel wäre die Frist sofort
+    // abgelaufen und die grobe Messung eine Sekunde später übernommen worden.
+    const { result } = started();
+    act(() => successCb!(fix(0, 5, Date.now() - 60_000)));
+    act(() => vi.advanceTimersByTime(1000));
+    act(() => successCb!(fix(200, 80)));
+    expect(result.current.recentFixes).toHaveLength(1);
+  });
+
+  it("verworfene Messungen halten das Signal am Leben — kein vorgetäuschter Signalverlust", () => {
+    const { result } = started();
+    act(() => successCb!(fix(0, 5)));
+    // 40 s lang nur grobe Messungen, jeweils vor Ablauf der Rückfallfrist
+    // wieder eine genaue — die groben werden verworfen, sind aber Lebenszeichen.
+    for (let t = 0; t < 40; t += 4) {
+      act(() => vi.advanceTimersByTime(2000));
+      act(() => successCb!(fix(300, 90)));
+      act(() => vi.advanceTimersByTime(2000));
+      act(() => successCb!(fix(0, 5)));
+    }
+    expect(result.current.signal).toBe("active");
+  });
+
+  it("meldet weiterhin Signalverlust, wenn 30 s gar nichts mehr kommt", () => {
+    const { result } = started();
+    act(() => successCb!(fix(0, 5)));
+    act(() => vi.advanceTimersByTime(30_500));
+    expect(result.current.signal).toBe("lost");
+  });
+
+  it("verliert keine Messung, wenn zwei im selben Render eintreffen", () => {
+    const { result } = started();
+    act(() => {
+      successCb!(fix(0, 0));
+      successCb!(fix(1, 0));
+    });
+    expect(result.current.recentFixes.map((f) => f.seq)).toEqual([1, 2]);
+  });
+
+  it("hält höchstens die letzten 5 Messungen vor, fortlaufend nummeriert", () => {
+    const { result } = started();
+    for (let i = 0; i < 8; i++) act(() => successCb!(fix(i, 0)));
+    expect(result.current.recentFixes.map((f) => f.seq)).toEqual([4, 5, 6, 7, 8]);
+  });
+
+  it("glättet die angezeigte Position, die Messliste bleibt ungeglättet", () => {
+    const { result } = started();
+    act(() => successCb!(fix(0, 15)));
+    act(() => vi.advanceTimersByTime(1000));
+    act(() => successCb!(fix(20, 15)));
+    const shown = metersOf(result.current.position!.lat);
+    expect(shown).toBeGreaterThan(0);
+    expect(shown).toBeLessThan(20);
+    expect(metersOf(result.current.recentFixes[1].lat)).toBeCloseTo(20, 3);
+  });
+
+  it("setzt die Glättung bei einem neuen Watch zurück", () => {
+    const { result } = started();
+    act(() => successCb!(fix(0, 15)));
+    act(() => result.current.requestPermission());
+    act(() => vi.advanceTimersByTime(1000));
+    act(() => successCb!(fix(100, 15)));
+    expect(metersOf(result.current.position!.lat)).toBeCloseTo(100, 3);
+  });
+});
