@@ -255,7 +255,7 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 - **Ankunft mit Bestätigung:** Auslösen erst bei zwei **aufeinanderfolgenden** brauchbaren Messungen mit Entfernung ≤ Radius. Eine Messung außerhalb setzt den Zähler zurück. Die bestehende Einmaligkeit (Edge Case 4) bleibt unverändert
 - **Signalverlust unverändert:** Verworfene Messungen zählen für den 30s-Signalverlust als „Lebenszeichen" — das Gerät liefert ja Daten, nur ungenaue. Sonst würde der Filter drinnen einen Signalverlust vortäuschen
 - **Zustands-Screen unverändert:** Der Zustand `searching`/`no-fix` (Refinement 2026-09-26) hängt weiterhin daran, ob überhaupt eine Position kommt, nicht an ihrer Genauigkeit — die Rückfallfrist sorgt dafür, dass eine ungenaue Position rechtzeitig als Position gilt
-- **Abnahme:** Filter, Glättung und Ankunftsbestätigung sind reine Logik und per Unit-Test mit synthetischen Positionsfolgen prüfbar (inkl. einzelnem Ausreißer in den Radius und wieder heraus). Playwright kann Positionen liefern, aber keine `accuracy` setzen — E2E prüft nur, dass eine Ankunft weiterhin auslöst. Den Android-Absolut-Pfad kann keine Testumgebung emulieren: Unit-Test über synthetische `deviceorientationabsolute`-Events, Augenschein am Gerät
+- **Abnahme:** Filter, Glättung und Ankunftsbestätigung sind reine Logik und per Unit-Test mit synthetischen Positionsfolgen prüfbar (inkl. einzelnem Ausreißer in den Radius und wieder heraus). ~~Playwright kann Positionen liefern, aber keine `accuracy` setzen — E2E prüft nur, dass eine Ankunft weiterhin auslöst.~~ *Korrektur (Frontend, 2026-09-29): falsch — `setGeolocation({ …, accuracy })` wird auf beiden Engines bis in die Seite durchgereicht (gemessen). Filter und Glättung sind damit auch per E2E prüfbar.* Den Android-Absolut-Pfad kann keine Testumgebung emulieren: Unit-Test über synthetische `deviceorientationabsolute`-Events, Augenschein am Gerät
 - Kein neues Paket, keine neue Route
 
 ## Open Questions
@@ -1929,3 +1929,42 @@ Nachbarfeatures unbeschädigt: `/about` mit `FAQPage` und 1× Ko-fi, `/anleitung
 Das **echte iPhone**. Der iOS-Pfad (Safari führt Geolocation nicht im Permissions-API) ist per Unit-Test und vorgetäuschtem API belegt, aber keine Testumgebung kann Safaris tatsächliches Verhalten beweisen. Das ist zugleich der Pfad, auf dem der Befund gemeldet wurde.
 
 **Zu prüfen durch den Betreiber:** Quest auf dem iPhone mittendrin abbrechen, GPS ausschalten, später wieder öffnen und auf den Pfeil einer offenen Station tippen — es muss eine lesbare Erklärung mit Knopf erscheinen statt eines Strichs.
+
+---
+
+## Implementation Notes — Genaue Richtung und stabile Entfernung (2026-09-29)
+
+**Vier Produktivdateien, kein neues Paket, keine neue Komponente, keine neue Route.**
+
+| Datei | Änderung |
+|---|---|
+| `src/lib/geo-utils.ts` | `shouldAcceptFix()` (Filter mit Rückfall) und `smoothPosition()` (1-D-Kalman-Filter nach `accuracy`) als reine Funktionen |
+| `src/hooks/use-geolocation.ts` | Filter und Glättung im Watch-Callback; `position` ist jetzt **geglättet**, neu `recentFixes` (die letzten 5 übernommenen Rohmessungen) für die Ankunft |
+| `src/components/navigation-screen.tsx` | Ankunft erst nach **2 aufeinanderfolgenden** übernommenen Messungen im Radius |
+| `src/hooks/use-device-orientation.ts` | zusätzlich `deviceorientationabsolute`; relatives `alpha` nie als Kompass; Kalibrierung an `webkitCompassAccuracy` (iOS, Schwelle 25°), auf Android kein Dauerhinweis mehr |
+
+**Parameter:** Filterschwelle 30 m, Rückfallfrist 5 s, Prozessrauschen 16 m²/s (≈ 4 m/s), Neuansatz nach 60 s Pause, Kalibrierung ab 25°. Eine Messung mit `accuracy` 0 (Emulator) wird unverändert übernommen — der Filter hat keinen Grund, ihr zu misstrauen; dadurch blieben alle bestehenden Entfernungs-Assertions unberührt.
+
+**Filterregel präziser als in der Spec formuliert:** Verworfen wird nur, wenn die Messung ungenau ist **und** eine genauere vorliegt **und** die letzte genaue jünger als 5 s ist. Die allererste Messung kommt immer durch, eine ungenaue, die besser ist als die bisherige, ebenfalls. So kann der Filter die Navigation nie länger als die Frist stilllegen, und der Zustands-Screen aus dem Refinement 2026-09-26 wird nicht verlängert.
+
+**Die Ankunft rechnet gegen Rohmessungen, die Anzeige gegen die geglättete Position** — die Glättung läuft einer echten Ankunft ein paar Meter hinterher; den Ausreißer fängt stattdessen die Bestätigung.
+
+### Zwei echte Fehler in meiner Umsetzung, beide erst im Browser gefunden
+1. **Die Rückfallfrist rechnete mit dem Gerätezeitstempel (`pos.timestamp`).** Auf WebKit wurde dadurch eine grobe 80-m-Messung sofort übernommen: Die erste Position war vor dem Seitenaufruf gesetzt worden und trug einen mehrere Sekunden alten Zeitstempel — die Frist galt als längst abgelaufen. Auf echten Geräten ist das ebenso riskant (manche Android-Geräte melden verstellte Zeitstempel). **Jetzt rechnen Frist und Glättung mit der Empfangszeit.**
+2. **Die Zählung sah nur die jeweils letzte Messung.** Kommen zwei Messungen in einem React-Render gebündelt an, ging die erste verloren. **Jetzt liefert der Hook die letzten Messungen als Liste, und der Screen zählt jede noch nicht gezählte genau einmal, in Reihenfolge.**
+
+### Ein Testartefakt, gemessen statt vermutet
+Nach der zweiten Korrektur scheiterte „zwei Messungen in Folge lösen aus" auf Chrome weiterhin **3 von 3**. Jede Protokollierung per `console.log` oder `window`-Array ließ den Fehler verschwinden (Heisenbug). Erst ein nebenwirkungsfreies `data-`-Attribut zeigte die Ursache: Die Liste enthielt `1,2` statt `1,2,3`, der Bildschirm 4 m — die **5-m-Messung kam nie in der Seite an**. Chrome fasst zwei unmittelbar aufeinanderfolgende `setGeolocation`-Aufrufe zusammen, solange die Seite beschäftigt ist. Echtes GPS liefert im Sekundentakt; der Test wartet jetzt nach jeder Position, bis sie angezeigt wird (`stepTo`). Der React Compiler war als Erklärung erwogen und ist ausgeschlossen (nicht aktiv).
+
+### Tests
+- **Unit:** `geo-utils.test.ts` +12 (Filter 6, Glättung 6, darunter der gemeldete Fall „30 m → 10 m" als eigener Test); `use-device-orientation.test.ts` **3 gezogen** (sie kodierten „`absolute: false` = unkalibriert") und **8 neu** (Bezugssystem, iOS-Genauigkeit, Listener-Abbau). Unit gesamt **325/325**
+- **Gegenprobe Unit:** `smoothPosition` als Identität → **genau 2** Tests fallen (Ausreißer, Gewichtung); die 2 Wächter (Neuansatz, Gehtempo) bleiben grün
+- **E2E neu:** `tests/proj-3-richtung-entfernung.spec.ts`, **10 Tests je Engine**, 3× wiederholt **60/60**
+- **E2E gezogen, nicht gelöscht:** 19 Tests des Gratulationsscreens und 2 Navigationstests setzten **eine** Position in den Radius — jetzt mit zweiter Messung 1 m daneben; die 2 Kalibrierungs-Tests in `proj-3-ruhige-kompassnadel.spec.ts` lösen jetzt über `webkitCompassAccuracy` aus, dazu 1 neuer: kein Hinweis bei relativem Heading
+- **Gegenprobe E2E gegen den echten Vorgängerstand** (alle vier Produktivdateien auf `HEAD`, neu gebaut): **24 von 26** fallen; grün bleibt nur „übernimmt die erste Messung auch dann, wenn sie grob ist" — ein Wächter, der auch alt bestehen muss
+- **Gesamtregression beide Engines: 1277 passed / 56 skipped / 1 unexpected** — `proj-12-sw-nur-production.spec.ts` auf WebKit, seriell **9/9** grün (dokumentierte Service-Worker-Flakiness, Datei nicht berührt). Build sauber, Lint 0 Fehler, `tsc` nur die 2 vorbestehenden Fehler
+
+### Nicht abgedeckt
+- **Das echte Android-Gerät:** ob `deviceorientationabsolute` auf den Testgeräten des Betreibers Werte liefert und mit einer Kompass-App übereinstimmt (Open Question). Keine Testumgebung emuliert einen Magnetometer
+- **Echtes GPS-Rauschen:** ob 30 m / 5 s / 16 m²/s sich im Gelände richtig anfühlen, und ob kleine Radien (10 m) mit zwei Bestätigungen gut erreichbar bleiben (Edge Case 33)
+- Firefox

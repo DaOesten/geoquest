@@ -51,6 +51,10 @@ async function arriveAtFirstStation(page: Page, context: BrowserContext) {
   await page
     .getByRole("button", { name: new RegExp(`Navigation zu ${TEST_QUEST.stations[0].name}`) })
     .click();
+  // Zweite Messung im Radius, rund 1 m daneben (Refinement 2026-09-28): Die
+  // Ankunft braucht zwei aufeinanderfolgende Messungen, damit ein einzelner
+  // GPS-Ausreißer eine Station nicht zu früh auslöst.
+  await context.setGeolocation({ latitude: 53.61001, longitude: 10.04 });
   await expect(page.getByText("Ziel erreicht!")).toBeVisible({ timeout: 10_000 });
 }
 
@@ -133,6 +137,10 @@ test.describe("PROJ-3: Gratulationsscreen (Refinement 2026-09-19)", () => {
       await page
         .getByRole("button", { name: /Navigation zu Zweite Station/ })
         .click();
+      // Zweite Messung im Radius, rund 1 m daneben (Refinement 2026-09-28): Die
+      // Ankunft braucht zwei aufeinanderfolgende Messungen, damit ein einzelner
+      // GPS-Ausreißer eine Station nicht zu früh auslöst.
+      await context.setGeolocation({ latitude: 53.62001, longitude: 10.05 });
 
       await expect(page.getByText("Ziel erreicht!")).toBeVisible({ timeout: 10_000 });
       await expect(page.getByText("Zweite Station")).toBeVisible();

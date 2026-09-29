@@ -1615,3 +1615,18 @@ Out of Scope u. a.: Spotify/SoundCloud, OneDrive/iCloud, Ordner-Links, Video/Aud
 Spec ist aktualisiert (6 Acceptance Criteria, 1 Produkt- und 1 technische Entscheidung, Abschnitt „Refinement 11" mit Messtabelle).
 
 **Frontend umgesetzt am 2026-09-29.** Zwei Zeilen: Abstandshalter in `info-page-shell.tsx` entfernt, Video-Sektion auf `mt-12 sm:mt-20`. Hero-Kante → Video jetzt 48/80px, identisch mit Video → Karte. Neuer Wächter fällt gegen die Live-Seite mit exakt den dort gemessenen Altwerten (88/120px). Nachbarseiten live vorher und lokal nachher identisch vermessen. PROJ-13 190 passed / 0 failed, Suiten mit geteilter Shell 200 passed / 0 failed.
+
+## Frontend umgesetzt: PROJ-3 Genaue Richtung und stabile Entfernung (2026-09-29)
+**PROJ-3** bleibt auf In Progress bis zur QA. Vier Produktivdateien, kein neues Paket.
+
+**Android:** Der Hook hört zusätzlich `deviceorientationabsolute`; ein relatives `alpha` wird nie mehr als Kompass verwendet — fehlt ein absolutes Heading, übernimmt die Bewegungsrichtung mit „Laufe ein paar Schritte". **Kalibrierung:** iOS über `webkitCompassAccuracy` (ab 25°), auf Android kein Dauerhinweis mehr. **GPS:** Messungen über 30 m Unsicherheit werden verworfen, solange eine genauere da ist (Rückfall nach 5 s), die Anzeige ist nach `accuracy` geglättet, und die **Ankunft braucht zwei aufeinanderfolgende Messungen im Radius**.
+
+**Zwei echte Fehler in der eigenen Umsetzung, erst im Browser gefunden:** Die Rückfallfrist rechnete mit dem Gerätezeitstempel — eine vor dem Seitenaufruf gesetzte Position ließ die Frist sofort ablaufen (WebKit); jetzt Empfangszeit, was auch Android-Geräte mit verstellter Uhr abfängt. Und die Zählung sah bei gebündelten Renders nur die letzte Messung; jetzt liefert der Hook eine Liste.
+
+**Ein Testartefakt, per Heisenbug-freier Messung belegt:** Chrome fasst zwei unmittelbar aufeinanderfolgende `setGeolocation`-Aufrufe zusammen, solange die Seite beschäftigt ist — jede `console.log`-Instrumentierung verschob das Timing und ließ den Fehler verschwinden; erst ein `data`-Attribut zeigte die fehlende Messung. Der Test wartet jetzt nach jeder Position.
+
+**Korrektur der eigenen Spec:** Playwright **kann** `accuracy` setzen — Filter und Glättung sind damit auch per E2E prüfbar.
+
+**Tests:** Unit **325/325** (+20, 3 gezogen); neue E2E-Suite 10 je Engine, 3× **60/60**; 23 bestehende E2E-Tests gezogen (Ankunft mit zweiter Messung, Kalibrierung über `webkitCompassAccuracy`). **Gegenprobe gegen den echten Vorgängerstand: 24 von 26 fallen**, grün bleibt nur der Wächter „erste Messung wird übernommen". **Gesamtregression beide Engines 1277 passed / 1 unexpected** (Service-Worker-Flakiness, seriell 9/9). QA lief im isolierten Worktree auf Port 3200.
+
+**Nicht abgedeckt:** das echte Android-Gerät mit Kompass-App daneben, echtes GPS-Rauschen im Gelände, Firefox.

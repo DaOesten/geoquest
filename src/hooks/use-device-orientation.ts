@@ -97,6 +97,13 @@ const UPDATE_THRESHOLD_DEG = 0.75;
  */
 const COMPASS_GRACE_MS = 3000;
 
+/**
+ * Ab dieser gemeldeten Abweichung (Grad) gilt der iOS-Kompass als
+ * kalibrierungsbedürftig (Refinement 2026-09-28, Edge Case 30).
+ * `webkitCompassAccuracy` ist die Abweichung in Grad, negativ heißt ungültig.
+ */
+const IOS_CALIBRATION_THRESHOLD_DEG = 25;
+
 export function useDeviceOrientation(): UseDeviceOrientationReturn {
   const [permission, setPermission] = useState<OrientationPermission>(() => {
     if (typeof window === "undefined") return "prompt";
@@ -168,15 +175,44 @@ export function useDeviceOrientation(): UseDeviceOrientationReturn {
     );
   }, []);
 
+  /**
+   * Welche Sensorwerte taugen als Kompass? (Refinement 2026-09-28)
+   *
+   * - **iOS:** `webkitCompassHeading` ist absolut (auf Norden bezogen). Die
+   *   Kalibrierung meldet iOS über `webkitCompassAccuracy` — bis 2026-09-28
+   *   stand hier fest `false`, der Hinweis erschien auf dem iPhone nie.
+   * - **Android-Chrome:** `deviceorientation` ist dort seit Chrome 50
+   *   **relativ** (`absolute: false`) — `alpha = 0` ist die Richtung, in die
+   *   das Gerät beim Start zeigte, nicht Norden (Edge Case 29). Das absolute
+   *   Heading kommt über das eigene Ereignis `deviceorientationabsolute`.
+   * - **Relatives `alpha` ist nie Kompass.** Es sieht aus wie einer, zeigt aber
+   *   mit beliebigem Versatz — schlimmer als keiner, weil der Spieler ihm
+   *   vertraut. Es speist weder Glättung noch Karenzzeit; fehlt ein absolutes
+   *   Heading, übernimmt die GPS-Bewegungsrichtung.
+   *
+   * `absolute === false` bedeutet ein relatives Bezugssystem, **kein**
+   * unkalibriertes Magnetometer — bis 2026-09-28 stand der Hinweis „Bewege dein
+   * Handy in einer 8" deshalb auf Android dauerhaft da, ohne zu helfen.
+   */
   const handleOrientation = useCallback(
     (event: DeviceOrientationEvent) => {
-      if (event.webkitCompassHeading !== undefined) {
+      if (event.webkitCompassHeading !== undefined && event.webkitCompassHeading !== null) {
         applyHeading(event.webkitCompassHeading as number);
-        setNeedsCalibration(false);
-      } else if (event.alpha !== null) {
-        applyHeading((360 - event.alpha) % 360);
-        setNeedsCalibration(event.absolute === false);
+        const accuracy = event.webkitCompassAccuracy;
+        setNeedsCalibration(
+          typeof accuracy === "number" && (accuracy < 0 || accuracy > IOS_CALIBRATION_THRESHOLD_DEG)
+        );
+        return;
       }
+      if (event.alpha === null || event.alpha === undefined) return;
+
+      const isAbsolute = event.type === "deviceorientationabsolute" || event.absolute === true;
+      if (!isAbsolute) return;
+
+      applyHeading((360 - event.alpha) % 360);
+      // Android liefert kein Genauigkeitssignal ans Web — kein Hinweis statt
+      // eines dauerhaften, der nichts bewirkt. Das Rauschen fängt die Glättung.
+      setNeedsCalibration(false);
     },
     [applyHeading]
   );
@@ -185,6 +221,9 @@ export function useDeviceOrientation(): UseDeviceOrientationReturn {
     if (listenerAdded.current) return;
     listenerAdded.current = true;
     window.addEventListener("deviceorientation", handleOrientation, true);
+    // Zusätzlich, nicht statt: iOS Safari kennt dieses Ereignis nicht und
+    // liefert sein absolutes Heading im normalen `deviceorientation`.
+    window.addEventListener("deviceorientationabsolute", handleOrientation as EventListener, true);
   }, [handleOrientation]);
 
   const requestPermission = useCallback(async () => {
@@ -224,6 +263,7 @@ export function useDeviceOrientation(): UseDeviceOrientationReturn {
     return () => {
       if (listenerAdded.current) {
         window.removeEventListener("deviceorientation", handleOrientation, true);
+        window.removeEventListener("deviceorientationabsolute", handleOrientation as EventListener, true);
         listenerAdded.current = false;
       }
       if (staleTimer.current) {
@@ -247,5 +287,7 @@ export function useDeviceOrientation(): UseDeviceOrientationReturn {
 declare global {
   interface DeviceOrientationEvent {
     webkitCompassHeading?: number;
+    /** Abweichung des iOS-Kompasses in Grad; negativ = ungültig. */
+    webkitCompassAccuracy?: number;
   }
 }

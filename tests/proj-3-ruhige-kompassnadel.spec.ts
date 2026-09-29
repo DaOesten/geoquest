@@ -202,19 +202,30 @@ test.describe("PROJ-3: Ruhige Kompassnadel (Refinement 2026-09-20)", () => {
     });
   });
 
-  test.describe("Kalibrierungs-Hinweis (Edge Case 22)", () => {
-    test("erscheint bei nicht-absolutem Heading und ist lesbar groß", async ({
+  // Gezogen 2026-09-28: Beide Tests lösten den Hinweis bis dahin über ein
+  // `deviceorientation` mit `absolute: false` aus — also genau über den
+  // Android-Fall, in dem `absolute: false` ein relatives Bezugssystem meint,
+  // kein unkalibriertes Magnetometer (Edge Cases 29/30). Das echte Signal ist
+  // `webkitCompassAccuracy` auf iOS.
+  test.describe("Kalibrierungs-Hinweis (Edge Cases 22/30)", () => {
+    async function fireIOS(page: Page, heading: number, accuracy: number) {
+      await page.evaluate(
+        ([h, a]) => {
+          const event = new Event("deviceorientation");
+          Object.defineProperty(event, "webkitCompassHeading", { value: h, configurable: true });
+          Object.defineProperty(event, "webkitCompassAccuracy", { value: a, configurable: true });
+          window.dispatchEvent(event);
+        },
+        [heading, accuracy]
+      );
+    }
+
+    test("erscheint bei schlechter iOS-Kompassgenauigkeit und ist lesbar groß", async ({
       page,
       context,
     }) => {
       await startNavigation(page, context);
-
-      await page.evaluate(() => {
-        const event = new Event("deviceorientation");
-        Object.defineProperty(event, "alpha", { value: 90, configurable: true });
-        Object.defineProperty(event, "absolute", { value: false, configurable: true });
-        window.dispatchEvent(event);
-      });
+      await fireIOS(page, 90, 40);
 
       const hint = page.getByText(/Bewege dein Handy in einer 8/);
       await expect(hint).toBeVisible();
@@ -228,22 +239,25 @@ test.describe("PROJ-3: Ruhige Kompassnadel (Refinement 2026-09-20)", () => {
       expect(fontSize).toBeGreaterThanOrEqual(16);
     });
 
-    test("verschwindet wieder, sobald ein absolutes Heading kommt", async ({
-      page,
-      context,
-    }) => {
+    test("verschwindet wieder, sobald die Genauigkeit gut ist", async ({ page, context }) => {
       await startNavigation(page, context);
+      await fireIOS(page, 90, 40);
+      await expect(page.getByText(/Bewege dein Handy in einer 8/)).toBeVisible();
 
+      await fireIOS(page, 90, 10);
+      await expect(page.getByText(/Bewege dein Handy in einer 8/)).not.toBeVisible();
+    });
+
+    test("erscheint nicht bei einem relativen Heading (Android-Chrome)", async ({ page, context }) => {
+      await startNavigation(page, context);
       await page.evaluate(() => {
         const event = new Event("deviceorientation");
         Object.defineProperty(event, "alpha", { value: 90, configurable: true });
         Object.defineProperty(event, "absolute", { value: false, configurable: true });
         window.dispatchEvent(event);
       });
-      await expect(page.getByText(/Bewege dein Handy in einer 8/)).toBeVisible();
-
-      await fireHeading(page, 90);
-      await expect(page.getByText(/Bewege dein Handy in einer 8/)).not.toBeVisible();
+      await page.waitForTimeout(300);
+      await expect(page.getByText(/Bewege dein Handy in einer 8/)).toHaveCount(0);
     });
   });
 

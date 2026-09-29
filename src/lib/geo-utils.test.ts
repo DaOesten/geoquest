@@ -8,6 +8,10 @@ import {
   unwrapAngle,
   smoothAngle,
   angleDistance,
+  shouldAcceptFix,
+  smoothPosition,
+  GPS_ACCURACY_THRESHOLD_M,
+  GPS_FALLBACK_MS,
 } from "./geo-utils";
 
 describe("haversine", () => {
@@ -220,5 +224,96 @@ describe("angleDistance", () => {
         expect(angleDistance(a, b)).toBeLessThanOrEqual(180.0001);
       }
     }
+  });
+});
+
+/**
+ * Refinement 2026-09-28: Jede GPS-Messung landete ungefiltert in Anzeige und
+ * Ankunft — ein 20-m-Sprung im normalen Messrauschen ließ die Entfernung von
+ * 30 m auf 10 m fallen, obwohl der Spieler einen Schritt gemacht hatte.
+ */
+describe("shouldAcceptFix (Edge Cases 31/32)", () => {
+  const T0 = 1_000_000;
+
+  it("übernimmt jede genaue Messung", () => {
+    expect(shouldAcceptFix({ accuracy: 12, timestamp: T0 }, { accuracy: 5 }, T0)).toBe(true);
+    expect(shouldAcceptFix({ accuracy: GPS_ACCURACY_THRESHOLD_M, timestamp: T0 }, { accuracy: 5 }, T0)).toBe(true);
+  });
+
+  it("übernimmt die allererste Messung, auch wenn sie grob ist", () => {
+    // Die erste Position ist oft eine WLAN-Schätzung — besser als keine.
+    expect(shouldAcceptFix({ accuracy: 120, timestamp: T0 }, null, T0)).toBe(true);
+  });
+
+  it("verwirft eine ungenaue Messung, solange eine genauere vorliegt", () => {
+    expect(shouldAcceptFix({ accuracy: 60, timestamp: T0 + 1000 }, { accuracy: 8 }, T0)).toBe(false);
+  });
+
+  it("übernimmt eine ungenaue Messung, wenn sie besser ist als die bisherige", () => {
+    expect(shouldAcceptFix({ accuracy: 50, timestamp: T0 + 1000 }, { accuracy: 90 }, T0)).toBe(true);
+  });
+
+  it("fällt nach der Frist auf die beste verfügbare Messung zurück", () => {
+    const late = T0 + GPS_FALLBACK_MS;
+    expect(shouldAcceptFix({ accuracy: 60, timestamp: late - 1 }, { accuracy: 8 }, T0)).toBe(false);
+    expect(shouldAcceptFix({ accuracy: 60, timestamp: late }, { accuracy: 8 }, T0)).toBe(true);
+  });
+
+  it("übernimmt eine Messung ohne verwertbare Genauigkeit (NaN)", () => {
+    expect(shouldAcceptFix({ accuracy: NaN, timestamp: T0 }, { accuracy: 5 }, T0)).toBe(true);
+  });
+});
+
+describe("smoothPosition (Edge Case 31)", () => {
+  const LAT = 53.55;
+  const LNG = 10.0;
+  /** Meter nach Norden als Breitengrad-Differenz. */
+  const north = (m: number) => m / 111_195;
+  const fix = (metersNorth: number, accuracy: number, second: number) => ({
+    lat: LAT + north(metersNorth),
+    lng: LNG,
+    accuracy,
+    timestamp: second * 1000,
+  });
+  const metersNorthOf = (p: { lat: number }) => (p.lat - LAT) * 111_195;
+
+  it("übernimmt die erste Messung unverändert", () => {
+    const p = smoothPosition(null, fix(10, 15, 0));
+    expect(metersNorthOf(p)).toBeCloseTo(10, 6);
+  });
+
+  it("übernimmt Messungen mit Genauigkeit 0 unverändert (Emulator, Playwright)", () => {
+    let p = smoothPosition(null, fix(0, 0, 0));
+    p = smoothPosition(p, fix(500, 0, 1));
+    expect(metersNorthOf(p)).toBeCloseTo(500, 6);
+  });
+
+  it("dämpft einen einzelnen 20-m-Ausreißer — der gemeldete Befund „30 m → 10 m“", () => {
+    // Spieler steht still, das Gerät misst mit ±15 m. Eine Messung springt 20 m.
+    let p = smoothPosition(null, fix(0, 15, 0));
+    for (let s = 1; s <= 5; s++) p = smoothPosition(p, fix(0, 15, s));
+    p = smoothPosition(p, fix(20, 15, 6));
+    expect(Math.abs(metersNorthOf(p))).toBeLessThan(8);
+  });
+
+  it("folgt echter Bewegung im Gehtempo innerhalb weniger Meter", () => {
+    // 1,4 m/s nach Norden, Messung jede Sekunde mit ±10 m, ohne Rauschen.
+    let p = smoothPosition(null, fix(0, 10, 0));
+    for (let s = 1; s <= 20; s++) p = smoothPosition(p, fix(1.4 * s, 10, s));
+    expect(Math.abs(metersNorthOf(p) - 1.4 * 20)).toBeLessThan(6);
+  });
+
+  it("gewichtet eine genaue Messung stärker als eine ungenaue", () => {
+    const base = smoothPosition(smoothPosition(null, fix(0, 20, 0)), fix(0, 20, 1));
+    const precise = smoothPosition(base, fix(10, 3, 2));
+    const vague = smoothPosition(base, fix(10, 40, 2));
+    expect(metersNorthOf(precise)).toBeGreaterThan(metersNorthOf(vague));
+    expect(metersNorthOf(precise)).toBeGreaterThan(8);
+  });
+
+  it("setzt nach langer Pause neu an statt gegen eine veraltete Position zu glätten", () => {
+    let p = smoothPosition(null, fix(0, 15, 0));
+    p = smoothPosition(p, fix(300, 15, 120));
+    expect(metersNorthOf(p)).toBeCloseTo(300, 6);
   });
 });

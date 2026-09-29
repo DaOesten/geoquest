@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { GPS_ACCURACY_THRESHOLD_M, shouldAcceptFix, smoothPosition, type SmoothedPosition } from "@/lib/geo-utils";
 
 export type GeoPermissionState =
   | "prompt"
@@ -18,6 +19,16 @@ export interface GeoPosition {
   timestamp: number;
 }
 
+/**
+ * Eine übernommene Einzelmessung mit fortlaufender Nummer (Refinement
+ * 2026-09-28). Die Nummer macht jede Messung unterscheidbar, auch wenn sie an
+ * derselben Stelle liegt wie die vorige — die Ankunftsprüfung zählt Messungen,
+ * nicht Positionswechsel.
+ */
+export interface GeoFix extends GeoPosition {
+  seq: number;
+}
+
 export interface UseGeolocationOptions {
   onFirstPosition?: () => void;
 }
@@ -25,7 +36,25 @@ export interface UseGeolocationOptions {
 export interface UseGeolocationReturn {
   permission: GeoPermissionState;
   signal: GeoSignalState;
+  /**
+   * **Geglättete** Position für Anzeige, Peilung und Bewegungsrichtung
+   * (Refinement 2026-09-28, Edge Case 31). Ungenaue Messungen sind
+   * herausgefiltert, der Rest ist nach `accuracy` gewichtet — sonst springt
+   * die Entfernung mit jedem Ausreißer ("30 m, einen Schritt später 10 m").
+   */
   position: GeoPosition | null;
+  /**
+   * Die zuletzt **übernommenen** Einzelmessungen, ungeglättet, älteste zuerst
+   * (höchstens `RECENT_FIXES`). Für die Ankunftsprüfung: Sie zählt
+   * aufeinanderfolgende Messungen im Radius und würde gegen eine geglättete
+   * Position nachlaufen.
+   *
+   * Eine Liste statt nur der letzten Messung, weil React zwei kurz
+   * aufeinanderfolgende Updates in **einem** Render bündeln kann — der Zähler
+   * sähe dann nur die zweite und verlöre die erste (gemessen: zwei Messungen
+   * im Abstand von 1 ms, Chrome).
+   */
+  recentFixes: GeoFix[];
   /**
    * Läuft in **dieser Session** ein `watchPosition`? (Refinement 2026-09-26,
    * Edge Case 24)
@@ -48,6 +77,9 @@ export interface UseGeolocationReturn {
 
 const SIGNAL_TIMEOUT_MS = 30_000;
 
+/** So viele übernommene Messungen hält der Hook für die Ankunftsprüfung vor. */
+const RECENT_FIXES = 5;
+
 /**
  * Wie lange wir nach erteilter Permission auf den ersten Fix warten, bevor wir
  * dem Spieler sagen, dass er nach draußen gehen soll. Drinnen (Schule, Keller,
@@ -60,6 +92,12 @@ export function useGeolocation(options?: UseGeolocationOptions): UseGeolocationR
   const [permission, setPermission] = useState<GeoPermissionState>("prompt");
   const [signal, setSignal] = useState<GeoSignalState>("waiting");
   const [position, setPosition] = useState<GeoPosition | null>(null);
+  const [recentFixes, setRecentFixes] = useState<GeoFix[]>([]);
+  /** Filter- und Glättungszustand — Refs, weil der Watch-Callback stabil bleibt. */
+  const smoothedRef = useRef<SmoothedPosition | null>(null);
+  const acceptedRef = useRef<{ accuracy: number } | null>(null);
+  const lastGoodAtRef = useRef(0);
+  const fixSeq = useRef(0);
   const [watchActive, setWatchActive] = useState(false);
   const watchId = useRef<number | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -111,6 +149,11 @@ export function useGeolocation(options?: UseGeolocationOptions): UseGeolocationR
 
     hasFix.current = false;
     setSignal("searching");
+    // Neuer Watch, neue Messreihe: Die Rückfallfrist zählt ab jetzt, und die
+    // Glättung setzt nicht an einer Position aus einer früheren Sitzung an.
+    smoothedRef.current = null;
+    acceptedRef.current = null;
+    lastGoodAtRef.current = Date.now();
 
     // Läuft parallel zum watch: Wenn nach 15s kein Fix da ist, ist der Spieler
     // vermutlich drinnen. watchPosition meldet in dem Fall oft gar keinen Fehler.
@@ -123,12 +166,22 @@ export function useGeolocation(options?: UseGeolocationOptions): UseGeolocationR
 
     watchId.current = navigator.geolocation.watchPosition(
       (pos) => {
-        setPosition({
+        // Zeit des **Empfangs**, nicht `pos.timestamp`: Der Gerätezeitstempel
+        // kann deutlich älter sein (eine vor dem Seitenaufruf gemessene
+        // Position) oder auf manchen Android-Geräten schlicht falsch gehen.
+        // Rückfallfrist und Glättung rechneten damit sonst mit einer Zeit, die
+        // nichts mit „wie lange warten wir schon" zu tun hat.
+        const measurement = {
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
           accuracy: pos.coords.accuracy,
-          timestamp: pos.timestamp,
-        });
+          timestamp: Date.now(),
+        };
+
+        // Jede Messung ist ein Lebenszeichen — auch eine verworfene. Der
+        // 30s-Signalverlust soll "das Gerät liefert nichts mehr" erkennen,
+        // nicht "das Gerät liefert Ungenaues"; sonst täuschte der Filter
+        // drinnen einen Signalverlust vor (Refinement 2026-09-28).
         setSignal("active");
         setPermission("granted");
         hasFix.current = true;
@@ -137,6 +190,17 @@ export function useGeolocation(options?: UseGeolocationOptions): UseGeolocationR
           firstFixTimeoutRef.current = null;
         }
         resetTimeout();
+
+        if (!shouldAcceptFix(measurement, acceptedRef.current, lastGoodAtRef.current)) return;
+        acceptedRef.current = { accuracy: measurement.accuracy };
+        if (!(measurement.accuracy > GPS_ACCURACY_THRESHOLD_M)) lastGoodAtRef.current = measurement.timestamp;
+
+        const smoothed = smoothPosition(smoothedRef.current, measurement);
+        smoothedRef.current = smoothed;
+        setPosition({ lat: smoothed.lat, lng: smoothed.lng, accuracy: measurement.accuracy, timestamp: measurement.timestamp });
+        fixSeq.current += 1;
+        const entry: GeoFix = { ...measurement, seq: fixSeq.current };
+        setRecentFixes((list) => [...list, entry].slice(-RECENT_FIXES));
 
         if (!firstPositionFired.current) {
           firstPositionFired.current = true;
@@ -206,5 +270,5 @@ export function useGeolocation(options?: UseGeolocationOptions): UseGeolocationR
     return () => clearWatch();
   }, [clearWatch, startWatching]);
 
-  return { permission, signal, position, watchActive, requestPermission, retry };
+  return { permission, signal, position, recentFixes, watchActive, requestPermission, retry };
 }

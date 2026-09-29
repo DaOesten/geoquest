@@ -33,6 +33,14 @@ interface NavigationScreenProps {
   orientationState: UseDeviceOrientationReturn;
 }
 
+/**
+ * So viele aufeinanderfolgende Messungen müssen im Radius liegen, bevor die
+ * Station auslöst (Refinement 2026-09-28, Edge Case 31). Ein einzelner
+ * GPS-Ausreißer in den Radius hat die Station bis dahin zu früh ausgelöst —
+ * lieber 1–3 s später als 20 m zu früh.
+ */
+const ARRIVAL_CONFIRMATIONS = 2;
+
 const COLOR_MAP = {
   red: "text-destructive",
   yellow: "text-gq-lime",
@@ -51,12 +59,14 @@ export function NavigationScreen({
   orientationState: orientation,
 }: NavigationScreenProps) {
   const [arrived, setArrived] = useState(false);
+  /** Zähler aufeinanderfolgender Messungen im Radius, je Messungsnummer genau einmal gezählt. */
+  const [arrivalStreak, setArrivalStreak] = useState<{ seq: number; count: number } | null>(null);
   const [posHistory, setPosHistory] = useState<
     [{ lat: number; lng: number } | null, { lat: number; lng: number } | null]
   >([null, null]);
 
 
-  const { position, signal, permission, watchActive } = geoState;
+  const { position, recentFixes, signal, permission, watchActive } = geoState;
 
   /**
    * Watch nachstarten, wenn in dieser Session keiner läuft (Edge Case 24).
@@ -128,9 +138,27 @@ export function NavigationScreen({
 
   const directionUnknown = position !== null && headingSource === "none";
 
-  // Arrival detection — "adjust state during render" pattern
-  if (!arrived && distance !== null && distance <= station.radiusMeters) {
-    setArrived(true);
+  /**
+   * Ankunft — "adjust state during render" pattern.
+   *
+   * Gezählt wird gegen die **ungeglättete, übernommene Messung** (`fix`), nicht
+   * gegen die angezeigte Entfernung: Die geglättete Position läuft einer
+   * echten Ankunft ein paar Meter hinterher. Den Ausreißer fängt stattdessen
+   * die Bestätigung durch eine zweite Messung ab. Eine Messung außerhalb
+   * setzt den Zähler zurück; die Einmaligkeit danach (Edge Case 4) bleibt.
+   */
+  const lastSeq = recentFixes.length > 0 ? recentFixes[recentFixes.length - 1].seq : null;
+  if (!arrived && lastSeq !== null && lastSeq !== arrivalStreak?.seq) {
+    // Jede noch nicht gezählte Messung genau einmal, in Reihenfolge — auch
+    // wenn React mehrere davon in einem Render gebündelt hat.
+    let count = arrivalStreak?.count ?? 0;
+    for (const f of recentFixes) {
+      if (arrivalStreak && f.seq <= arrivalStreak.seq) continue;
+      const inside = haversine(f.lat, f.lng, station.lat, station.lng) <= station.radiusMeters;
+      count = inside ? count + 1 : 0;
+    }
+    setArrivalStreak({ seq: lastSeq, count });
+    if (count >= ARRIVAL_CONFIRMATIONS) setArrived(true);
   }
 
   // Vibration side effect on arrival (only on first visit)

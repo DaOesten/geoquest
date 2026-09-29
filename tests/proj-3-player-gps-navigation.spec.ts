@@ -245,6 +245,10 @@ test.describe("PROJ-3: Player — GPS-Navigation", () => {
       await openStationList(page, context, { latitude: 53.61, longitude: 10.04 });
 
       await page.getByRole("button", { name: /Navigation zu Erste Station starten/ }).click();
+      // Zweite Messung im Radius, rund 1 m daneben (Refinement 2026-09-28): Die
+      // Ankunft braucht zwei aufeinanderfolgende Messungen, damit ein einzelner
+      // GPS-Ausreißer eine Station nicht zu früh auslöst.
+      await context.setGeolocation({ latitude: 53.61001, longitude: 10.04 });
 
       await expect(page.getByText("Ziel erreicht!")).toBeVisible({ timeout: 10_000 });
       await expect(page.getByText("Erste Station")).toBeVisible();
@@ -257,6 +261,7 @@ test.describe("PROJ-3: Player — GPS-Navigation", () => {
       await openStationList(page, context);
 
       await page.getByRole("button", { name: /Navigation zu Erste Station starten/ }).click();
+      await context.setGeolocation({ latitude: 53.61001, longitude: 10.04 }); // zweite Messung, Refinement 2026-09-28
       await page.getByText("Station entdecken").click({ timeout: 10_000 });
 
       await expect(page.getByText("Station 1 Text")).toBeVisible();

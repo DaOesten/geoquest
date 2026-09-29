@@ -216,6 +216,14 @@ describe("Glättung des Kompass-Headings (Edge Case 19)", () => {
     window.dispatchEvent(event);
   }
 
+  /** Feuert ein iOS-Event mit Heading und gemeldeter Kompass-Abweichung (Grad). */
+  function fireIOS(heading: number, accuracy: number) {
+    const event = new Event("deviceorientation");
+    Object.defineProperty(event, "webkitCompassHeading", { value: heading, configurable: true });
+    Object.defineProperty(event, "webkitCompassAccuracy", { value: accuracy, configurable: true });
+    window.dispatchEvent(event);
+  }
+
   beforeEach(() => {
     // Nicht-iOS: der Listener hängt sich direkt im Effekt ein.
     setUserAgent(CHROME_UA);
@@ -307,7 +315,12 @@ describe("Glättung des Kompass-Headings (Edge Case 19)", () => {
     expect(result.current.heading).toBe(before);
   });
 
-  it("meldet Kalibrierungsbedarf bei nicht-absolutem Heading (Edge Case 22)", () => {
+  // Gezogen 2026-09-28: Bis dahin prüften diese beiden Tests, dass
+  // `absolute === false` den Kalibrierungs-Hinweis auslöst. Die Prämisse war
+  // falsch — `absolute === false` heißt „relatives Bezugssystem" (Android-Chrome
+  // standardmäßig), nicht „unkalibriert". Sie kodierten den Android-Fehler als
+  // gewünschtes Verhalten (Edge Cases 29/30).
+  it("nutzt ein relatives Heading nicht als Kompass und meldet dafür keinen Kalibrierungsbedarf", () => {
     const { result } = renderHook(() => useDeviceOrientation());
     act(() => {
       const event = new Event("deviceorientation") as DeviceOrientationEvent;
@@ -315,20 +328,17 @@ describe("Glättung des Kompass-Headings (Edge Case 19)", () => {
       Object.defineProperty(event, "absolute", { value: false, configurable: true });
       window.dispatchEvent(event);
     });
-    expect(result.current.needsCalibration).toBe(true);
+    expect(result.current.heading).toBeNull();
+    expect(result.current.compassFresh).toBe(false);
+    expect(result.current.needsCalibration).toBe(false);
   });
 
-  it("nimmt den Kalibrierungs-Hinweis zurück, sobald ein absolutes Heading kommt", () => {
+  it("nimmt den iOS-Kalibrierungs-Hinweis zurück, sobald die gemeldete Genauigkeit gut ist", () => {
     const { result } = renderHook(() => useDeviceOrientation());
-    act(() => {
-      const event = new Event("deviceorientation") as DeviceOrientationEvent;
-      Object.defineProperty(event, "alpha", { value: 90, configurable: true });
-      Object.defineProperty(event, "absolute", { value: false, configurable: true });
-      window.dispatchEvent(event);
-    });
+    act(() => fireIOS(90, 40));
     expect(result.current.needsCalibration).toBe(true);
 
-    act(() => fireHeading(90));
+    act(() => fireIOS(90, 10));
     expect(result.current.needsCalibration).toBe(false);
   });
 });
@@ -454,15 +464,16 @@ describe("Ungültige Sensorwerte (BUG-12, Edge Case 23)", () => {
     expect(Math.abs(((result.current.heading! - 160 + 540) % 360) - 180)).toBeLessThan(1);
   });
 
-  it("meldet Kalibrierungsbedarf auch dann, wenn der alpha-Wert unbrauchbar ist", () => {
-    // `setNeedsCalibration` liegt hinter `applyHeading` und damit außerhalb
-    // des Guards. Der Hinweis muss sich weiter nach `absolute` richten —
-    // gerade ein Gerät mit unbrauchbaren Werten braucht ihn.
+  it("ein unbrauchbarer relativer alpha-Wert löst weder Kompass noch Kalibrierungs-Hinweis aus", () => {
+    // Gezogen 2026-09-28: prüfte bis dahin, dass ein relatives `alpha` den
+    // Hinweis auslöst — dieselbe falsche Prämisse wie Edge Case 22.
     const { result } = renderHook(() => useDeviceOrientation());
     act(() => fireAlpha(NaN, false));
-    expect(result.current.needsCalibration).toBe(true);
+    expect(result.current.needsCalibration).toBe(false);
+    expect(result.current.compassFresh).toBe(false);
 
     act(() => fireAlpha(90, true));
+    expect(result.current.heading).toBeCloseTo(270, 6);
     expect(result.current.needsCalibration).toBe(false);
   });
 
@@ -473,5 +484,92 @@ describe("Ungültige Sensorwerte (BUG-12, Edge Case 23)", () => {
     act(() => fireHeading(0));
     expect(result.current.heading).toBe(0);
     expect(result.current.compassFresh).toBe(true);
+  });
+});
+
+/**
+ * Refinement 2026-09-28: Android-Chrome liefert über `deviceorientation` ein
+ * **relatives** Heading (`absolute: false`) — Norden war dort die Richtung, in
+ * die das Gerät beim Laden zeigte. Das absolute Heading kommt über
+ * `deviceorientationabsolute`, das bis dahin niemand abhörte (Edge Case 29).
+ * Auf iOS hing der Kalibrierungs-Hinweis fest an `false`, obwohl
+ * `webkitCompassAccuracy` den Zustand kennt (Edge Case 30).
+ */
+describe("Bezugssystem und Kalibrierung (Refinement 2026-09-28)", () => {
+  function fire(type: string, props: Record<string, unknown>) {
+    const event = new Event(type);
+    for (const [key, value] of Object.entries(props)) {
+      Object.defineProperty(event, key, { value, configurable: true });
+    }
+    window.dispatchEvent(event);
+  }
+
+  beforeEach(() => {
+    setUserAgent(CHROME_UA);
+    setRequestPermission(null);
+  });
+
+  it("übernimmt das Heading aus deviceorientationabsolute (Android)", () => {
+    const { result } = renderHook(() => useDeviceOrientation());
+    act(() => fire("deviceorientationabsolute", { alpha: 100, absolute: true }));
+    expect(result.current.heading).toBeCloseTo(260, 6);
+    expect(result.current.compassFresh).toBe(true);
+  });
+
+  it("folgt dem absoluten Heading, auch wenn parallel relative Werte eintreffen", () => {
+    // Genau so feuert Android-Chrome: beide Ereignisse, mit unterschiedlichem
+    // Nullpunkt. Ein relativer Wert darf den Pfeil nicht verziehen.
+    const { result } = renderHook(() => useDeviceOrientation());
+    act(() => fire("deviceorientationabsolute", { alpha: 200, absolute: true }));
+    for (let i = 0; i < 20; i++) {
+      act(() => fire("deviceorientation", { alpha: 10, absolute: false }));
+    }
+    expect(result.current.heading).toBeCloseTo(160, 6);
+    expect(result.current.rawHeading).toBeCloseTo(160, 6);
+  });
+
+  it("akzeptiert ein deviceorientation-Event, das sich selbst als absolut meldet", () => {
+    const { result } = renderHook(() => useDeviceOrientation());
+    act(() => fire("deviceorientation", { alpha: 30, absolute: true }));
+    expect(result.current.heading).toBeCloseTo(330, 6);
+  });
+
+  it("liefert ohne absolutes Heading keinen Kompass — Rückfall auf die Bewegungsrichtung", () => {
+    const { result } = renderHook(() => useDeviceOrientation());
+    for (let i = 0; i < 10; i++) {
+      act(() => fire("deviceorientation", { alpha: 45 + i, absolute: false }));
+    }
+    expect(result.current.heading).toBeNull();
+    expect(result.current.compassFresh).toBe(false);
+  });
+
+  it("meldet auf iOS Kalibrierungsbedarf bei schlechter oder ungültiger Genauigkeit", () => {
+    const { result } = renderHook(() => useDeviceOrientation());
+    act(() => fire("deviceorientation", { webkitCompassHeading: 90, webkitCompassAccuracy: 40 }));
+    expect(result.current.needsCalibration).toBe(true);
+    act(() => fire("deviceorientation", { webkitCompassHeading: 90, webkitCompassAccuracy: -1 }));
+    expect(result.current.needsCalibration).toBe(true);
+    act(() => fire("deviceorientation", { webkitCompassHeading: 90, webkitCompassAccuracy: 15 }));
+    expect(result.current.needsCalibration).toBe(false);
+  });
+
+  it("meldet auf iOS keinen Kalibrierungsbedarf, wenn keine Genauigkeit mitkommt", () => {
+    const { result } = renderHook(() => useDeviceOrientation());
+    act(() => fire("deviceorientation", { webkitCompassHeading: 90 }));
+    expect(result.current.needsCalibration).toBe(false);
+  });
+
+  it("meldet auf Android mit absolutem Heading keinen dauerhaften Kalibrierungsbedarf", () => {
+    const { result } = renderHook(() => useDeviceOrientation());
+    act(() => fire("deviceorientation", { alpha: 10, absolute: false }));
+    act(() => fire("deviceorientationabsolute", { alpha: 100, absolute: true }));
+    expect(result.current.needsCalibration).toBe(false);
+  });
+
+  it("hängt den Listener für deviceorientationabsolute beim Unmount wieder ab", () => {
+    const { result, unmount } = renderHook(() => useDeviceOrientation());
+    unmount();
+    act(() => fire("deviceorientationabsolute", { alpha: 100, absolute: true }));
+    expect(result.current.heading).toBeNull();
   });
 });
