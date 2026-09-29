@@ -30,6 +30,7 @@
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1 | Approved | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
+| PROJ-15 | Medien-Links — YouTube, Vimeo und Cloud-Speicher | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Planned | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
 
 <!-- Add features above this line -->
 
@@ -568,7 +569,7 @@ Alle **10 Endpunkte HTTP 200** (0,06–0,44 s), Security-Header inkl. HSTS. Nach
 
 **PROJ-3 ist abgeschlossen.** Offen bleibt allein die Bestätigung am echten iPhone: Quest mittendrin abbrechen, GPS ausschalten, später wieder öffnen und auf den Pfeil einer offenen Station tippen. Keine Testumgebung kann Safaris tatsächliches Verhalten beim Permissions-API beweisen — und genau dort wurde der Befund gemeldet.
 
-## Next Available ID: PROJ-15
+## Next Available ID: PROJ-16
 
 ## Offenes Refinement: BUG-6 — falsche iOS-Erkennung beim Kompass (2026-09-07)
 **PROJ-3** geht von Deployed zurück auf In Progress. BUG-6 stand als vermutliches Testumgebungs-Artefakt in den Notizen ("Playwright liefert unter Chrome keinen Fix, `position` bleibt null"). Auf echtem Chrome 152 reproduziert und instrumentiert — **diese Diagnose ist widerlegt**: Die Position liegt vor, die Distanz rendert mit `12514m`, der Nachbartest im selben Block besteht.
@@ -1566,3 +1567,20 @@ Spec ist aktualisiert (10 Acceptance Criteria in einem eigenen Block, 4 neue Pro
 Regression: Unit 305/305, Gesamtsuite beider Engines **1216 passed / 0 failed / 0 flaky**. Offen: Tonspur (Untertitel?), Firefox, echtes iPhone.
 
 **Deploy zurückgestellt (2026-09-29).** PROJ-13 ist Approved, aber noch **nicht gepusht**: `main` liegt vor `origin/main` auch mit `7671add` (PROJ-8, Frontend Bildvorschau), und PROJ-8 hat noch keine QA. Ein Push nähme es ungeprüft mit. Betreiber-Entscheidung: **warten, bis PROJ-8 QA hat**, dann beide gemeinsam deployen. Wer PROJ-8 nach der QA deployt, nimmt PROJ-13 automatisch mit — dann bitte das Erklärvideo auf `/about` in der Live-Verifikation mitprüfen (0 MP4-Requests vor dem Klick, Abspielen, Range 206). Mit live gehen die bekannten Bugs BUG-17 (Medium) und BUG-18 (Low).
+
+## Neues Feature: PROJ-15 — Medien-Links: YouTube, Vimeo und Cloud-Speicher (2026-09-29)
+**Planned, P0.** Entstanden aus dem PROJ-8-Refinement (Bildvorschau): Auf die Frage, ob Audio und Video ebenso geprüft werden, wollte der Betreiber YouTube- und Vimeo-Links **einbinden** statt nur warnen — und brachte für KI-Audio (ElevenLabs) Cloud-Speicher ins Spiel: *„Das ist sowohl für Video, Audio und Bild eine Möglichkeit."*
+
+**Gemeinsames Nutzerproblem:** Der Ersteller hat einen Link, der auf eine **Webseite** zeigt, nicht auf eine Datei — YouTube, Vimeo, Dropbox- und Google-Drive-Teilen-Links. Der Creator nimmt sie an, der Player kann sie nicht darstellen.
+
+**Zwei Mechanismen:**
+- **YouTube/Vimeo:** offizieller Plattform-Player, **erst nach einem Tippen** (Zwei-Klick). Vorher keine Anfrage an Google/Vimeo — hält das Versprechen „keinerlei Cookies" der Datenschutzerklärung und respektiert die junge Zielgruppe. YouTube über `youtube-nocookie.com`, Empfehlungen auf den Kanal beschränkt. Im Creator Erkannt-Hinweis, Player-Vorschau erst auf Knopfdruck.
+- **Dropbox/Google Drive:** Teilen-Link wird **beim Anzeigen** in einen Direktlink umgewandelt (Bild, Audio, Video, Intro-/Outro-Bild); gespeichert bleibt die Eingabe. Google Drive mit dauerhaftem Hinweis, dass Google das Einbinden oft blockiert. Kein Zwei-Klick nötig — deckt der bestehende Absatz „Medien in Quests" ab.
+
+**Mitgenommen:** Probe-Player für **alle** Audio-/Video-Adressen im Creator — schließt die Lücke, die das PROJ-8-Refinement für Audio/Video offen gelassen hatte (dort als Out of Scope mit Verweis vermerkt). Auf iOS kein falsches „kaputt", sondern „zum Prüfen abspielen".
+
+**Kein Datenmodell-Eingriff:** Alle Links sind gültige `https://`-URLs in den bestehenden Feldern. **Sicherheit:** Eingebettet bzw. umgewandelt wird nur, was die App selbst aus geprüften IDs auf den offiziellen Hosts zusammensetzt — importierte Quests können manipulierte Adressen enthalten.
+
+**Für `/architecture` vorab benannt:** Die Umwandlungsregeln (Dropbox `raw=1`, Google-Drive-Endpunkte) sind **gegen echte, öffentlich geteilte Testdateien** zu messen, nicht aus Dokumentation zu übernehmen — dafür liefert der Betreiber je eine Bild-, MP3- und MP4-Datei aus Dropbox und Google Drive. Die Bildvorschau aus PROJ-8 muss künftig die umgewandelte Adresse prüfen.
+
+Out of Scope u. a.: Spotify/SoundCloud, OneDrive/iCloud, Ordner-Links, Video/Audio in Intro/Outro, Vorschaubilder vor dem Tippen, gemerkte Einwilligung. 7 User Stories, 36 Acceptance Criteria in 8 Blöcken, 16 Edge Cases, 15 Produktentscheidungen, 5 offene Fragen (1 geschlossen: Hosting von KI-Audio → Cloud-Speicher).

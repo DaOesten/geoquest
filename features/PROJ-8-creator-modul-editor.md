@@ -37,7 +37,7 @@ Der Modul-Editor ist der Ort, an dem der Ersteller die eigentlichen Inhalte eine
 - Undo nach dem Löschen eines Moduls (bewusst Bestätigungsdialog statt Undo-Toast, konsistent mit PROJ-7 Stationslöschung)
 - Validierung/Blockieren beim Speichern eines unvollständigen Moduls (bewusst als Entwurf erlaubt, siehe Decision Log)
 - Speichern sperren, wenn ein Bild nicht lädt — die Vorschau warnt nur (Decision Log 2026-09-28)
-- Vorschau/Ladeprüfung für Audio und Video — gemeldet war nur Bild; beide Player-Elemente zeigen ohnehin eigene Fehlerzustände (2026-09-28)
+- Vorschau/Ladeprüfung für Audio und Video — gemeldet war nur Bild (2026-09-28). **Übernommen von PROJ-15** (2026-09-29): Probe-Player für alle Audio-/Video-Adressen, dazu YouTube/Vimeo-Einbettung und Cloud-Speicher-Links. Die `ImageUrlPreview` dieser Spec prüft dort künftig die umgewandelte Adresse
 - Automatisches Umwandeln einer Seiten-URL in die Bild-URL (z. B. Auslesen von `og:image`) — bräuchte einen Server-Abruf fremder Seiten, PRD „Kein Backend" (2026-09-28)
 - Prüfung von Bildrechten/Lizenzen — der Creator kann sie nicht erkennen; nur ein Hinweistext (2026-09-28)
 - Bild-Ladeprüfung beim Veröffentlichen (PROJ-9) — asynchron und netzabhängig, die Warnung am Feld genügt (2026-09-28)
