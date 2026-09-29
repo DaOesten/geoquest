@@ -584,7 +584,7 @@ Die Regression über PROJ-4/5/6/8 (beide Engines) ergab **278 passed / 3 skipped
 ### Bugs Found
 Keine in diesem Refinement.
 
-#### BUG-17 (Low, vorbestehend, nicht blockierend): Feld-Fehlermeldungen im Creator unter 4.5:1
+#### BUG-19 (Low, vorbestehend, nicht blockierend): Feld-Fehlermeldungen im Creator unter 4.5:1
 - **Fundort:** Beim Messen der Warnung aufgefallen. Die bestehenden Inline-Fehler (z. B. „Nur HTTPS-URLs sind erlaubt.", Pflichtfeld-Meldungen im Quest-Dialog) nutzen `text-destructive` = `rgb(230,26,43)` auf `rgb(246,248,249)` → **4.34:1**, PRD fordert 4.5:1
 - **Steps:** `/create` → Bild-Modul → `http://x.de/a.jpg` eintragen → Speichern → Kontrast der Fehlermeldung messen
 - **Nicht Teil dieses Refinements** (die neue Warnung wurde in der Frontend-Phase bereits auf `text-foreground` korrigiert). Betrifft alle Creator-Formulare; ein Token-Wechsel für `--destructive` im Light Theme (etwas dunkleres Rot) würde es app-weit schließen

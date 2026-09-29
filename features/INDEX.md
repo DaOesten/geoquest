@@ -1594,6 +1594,6 @@ Out of Scope u. a.: Spotify/SoundCloud, OneDrive/iCloud, Ordner-Links, Video/Aud
 
 **Gegenprobe:** Entprellung abgeschaltet → genau der Entprellungstest fällt, beide Engines. **Gesamtregression beide Engines: 1256 passed / 56 skipped / 0 failed / 0 flaky**, Unit 305/305, Lint 0 Fehler.
 
-**BUG-17 (Low, vorbestehend):** Die bestehenden Feld-Fehlermeldungen im Creator (`text-destructive` im Light Theme) erreichen nur **4.34:1**. Nicht Teil dieses Refinements; ein dunkleres `--destructive` im Light Theme würde es app-weit schließen.
+**BUG-19 (Low, vorbestehend):** Die bestehenden Feld-Fehlermeldungen im Creator (`text-destructive` im Light Theme) erreichen nur **4.34:1**. Nicht Teil dieses Refinements; ein dunkleres `--destructive` im Light Theme würde es app-weit schließen.
 
 **Isolierter Prüfstand, wichtig bei parallelen Sitzungen:** QA lief in einem eigenen Git-Worktree mit eigenem `.next` auf Port 3200 — die parallele PROJ-13-Sitzung konnte gleichzeitig bauen, ohne dem Server die Chunks zu nehmen. Turbopack verweigert ein Symlink-`node_modules`; ein APFS-Klon (`cp -Rc`) funktioniert. **Und:** Eine abgebrochene Shell-Pipeline ließ einen Playwright-Lauf 55 Minuten als Waise weiterlaufen und verfälschte alle Läufe danach — vor Stabilitätsaussagen `ps` auf verbliebene `playwright test`-Prozesse prüfen.
