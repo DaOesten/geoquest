@@ -1,6 +1,6 @@
 # PROJ-8: Creator — Modul-Editor
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-08-28
 **Last Updated:** 2026-09-29
 
@@ -609,3 +609,21 @@ Keine in diesem Refinement.
 
 ### Für künftige Läufe: isolierter Prüfstand
 Die parallele Sitzung (PROJ-13) baut im selben Verzeichnis — gestern hat das einem laufenden Server die Chunks weggenommen. Diesmal lief die QA in einem **eigenen Git-Worktree** im Scratchpad mit eigenem `.next` auf Port 3200 (`BASE_URL=http://localhost:3200`, die Prod-Config liest die Variable). **Turbopack verweigert ein per Symlink eingebundenes `node_modules`** („points out of the filesystem root"); ein APFS-Klon (`cp -Rc`) ist schnell und belegt kaum Platz.
+
+---
+
+## Deployment — Bildvorschau (2026-09-29)
+**Deployt am 2026-09-29** (Tag `v1.43.0-PROJ-8`, Push bis `35e65a8`) — gemeinsam mit PROJ-13 Refinement 10 (Erklärvideo), das auf diese QA gewartet hatte. Vercel deployte automatisch von `main`.
+
+**Pre-Deployment:** Build sauber, Lint 0 Fehler, QA Approved ohne Critical/High, keine Secrets (Scan über den Diff `origin/main..main`, 22 Dateien), `.env.local.example` unverändert (keine neuen Variablen). Die in der QA doppelt vergebene Bugnummer wurde vor dem Push korrigiert (BUG-17 → **BUG-19**, weil BUG-17 in PROJ-13 vergeben ist).
+
+**Live verifiziert** (Chrome 154 + Mobile Safari/WebKit, beide Domains `geoquest.technolomagie.de` und `geoquesty.vercel.app`):
+- **Auslieferung belegt an einem Marker, der fehlschlagen konnte:** `/assets/video-geoquest-4x5-game-poster.jpg` lieferte vor dem Push auf beiden Domains **404**, nach **58 s** 200
+- **22 Endpunkte HTTP 200** (je 11 pro Domain, 0,07–0,68 s), Security-Header aktiv (HSTS, `x-frame-options: DENY`, `nosniff`, `referrer-policy: origin-when-cross-origin`)
+- **PROJ-8 Bildvorschau:** echtes Bild (`/icons/icon-192.png`) → Vorschau; **die ursprünglich gemeldete Magnific-Adresse** → Warnung „Unter dieser Adresse ist kein Bild."; Speichern übernimmt die Adresse unverändert. WebKit 0 Konsolenfehler
+- **PROJ-13 Erklärvideo:** **0 MP4-Anfragen vor dem Klick**; nach „Video ansehen" Wiedergabe (`currentTime` > 0.5, `video.error` null), Antworten **206** mit Range (`bytes=0-` auf Chrome, `bytes=0-1`/`bytes=0-2807902` auf WebKit); 0 Konsolenfehler auf beiden Engines
+- **Eine Auffälligkeit geprüft:** Chrome meldete auf `/create/<id>/station/<id>` Konsolen-404. Ursache ist das **Server-HTML** dieser Route — Quests liegen nur im localStorage, der Server kennt die ID nicht, der Client rendert korrekt. Dasselbe vorbestehende Muster wie `/play/<id>` (seit 2026-09-07 dokumentiert); dazu das bekannte `/favicon.ico`
+
+**Mit live gegangen, bekannt:** BUG-19 (Low, vorbestehend — Feld-Fehlermeldungen 4.34:1).
+
+**Nicht abgedeckt:** Firefox; der Augenschein des Betreibers mit eigenen Bild-Adressen.

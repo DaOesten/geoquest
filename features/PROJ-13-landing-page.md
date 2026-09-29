@@ -1,6 +1,6 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Approved
+## Status: Deployed
 _Refinement 9 (Hero-Bild wird Hintergrund) ist deployt (Tag `v1.40.0-PROJ-13`, 2026-09-26). **Refinement 10 (Erklärvideo als neue Sektion 2) ist am 2026-09-28 gespect, gebaut und QA-geprüft** — 11/11 Acceptance Criteria, 1 Medium- und 1 Low-Bug (BUG-17, BUG-18), keine Critical/High. Approved. Siehe Abschnitte „Refinement 10" und „Implementation Notes (Frontend — Refinement 10)" am Ende dieser Spec._
 
 _Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und dort verifiziert (Tag `v1.26.0-PROJ-13`). Refinement 6 (Ko-fi-Icon in der Kopfzeile, Tooltip, JSON-LD-Altersnachzug) ist **am 2026-09-10 nach Production deployt und dort verifiziert** (Tag `v1.27.0-PROJ-13`)._
@@ -2829,3 +2829,18 @@ Die faststart-Gegenprobe ersetzte die MP4 in `public/` für etwa eine Sekunde, *
 - **Firefox** (Binary fehlt weiterhin)
 - Echtes iPhone: Range, faststart und `playsInline` sind belegt, das Abspielen auf dem Gerät nicht
 - Ohne JavaScript lässt sich das Video nicht starten (Startknopf braucht React, native Bedienelemente erscheinen erst nach dem Start). Kein Bug: Die Spec verlangt ohne JS nur lesbaren Inhalt, und das Poster steht
+
+
+---
+
+## Deployment — Refinement 10: Erklärvideo (2026-09-29)
+**Deployt am 2026-09-29** (Tag `v1.43.0-PROJ-13`) gemeinsam mit PROJ-8 (Bildvorschau), wie vom Betreiber entschieden („warten, bis PROJ-8 QA hat, dann beide gemeinsam deployen"). Der Deploy lief aus der PROJ-8-Sitzung; die hier geforderte Live-Prüfung des Videos ist durchgeführt.
+
+**Live verifiziert** (Chrome 154 + Mobile Safari/WebKit, beide Domains `geoquest.technolomagie.de` und `geoquesty.vercel.app`):
+- **Auslieferung belegt an einem Marker, der fehlschlagen konnte:** `/assets/video-geoquest-4x5-game-poster.jpg` lieferte vor dem Push auf beiden Domains **404**, nach **58 s** 200
+- **22 Endpunkte HTTP 200** (je 11 pro Domain, 0,07–0,68 s), Security-Header aktiv (HSTS, `x-frame-options: DENY`, `nosniff`, `referrer-policy: origin-when-cross-origin`)
+- **PROJ-8 Bildvorschau:** echtes Bild (`/icons/icon-192.png`) → Vorschau; **die ursprünglich gemeldete Magnific-Adresse** → Warnung „Unter dieser Adresse ist kein Bild."; Speichern übernimmt die Adresse unverändert. WebKit 0 Konsolenfehler
+- **PROJ-13 Erklärvideo:** **0 MP4-Anfragen vor dem Klick**; nach „Video ansehen" Wiedergabe (`currentTime` > 0.5, `video.error` null), Antworten **206** mit Range (`bytes=0-` auf Chrome, `bytes=0-1`/`bytes=0-2807902` auf WebKit); 0 Konsolenfehler auf beiden Engines
+- **Eine Auffälligkeit geprüft:** Chrome meldete auf `/create/<id>/station/<id>` Konsolen-404. Ursache ist das **Server-HTML** dieser Route — Quests liegen nur im localStorage, der Server kennt die ID nicht, der Client rendert korrekt. Dasselbe vorbestehende Muster wie `/play/<id>` (seit 2026-09-07 dokumentiert); dazu das bekannte `/favicon.ico`
+
+**Mit live gegangen, bekannt (Betreiber-Entscheidung):** BUG-17 (Medium — Pause während des Ladens wird als Abspielfehler gemeldet) und BUG-18 (Low — Fokus nach Start per Tastatur auf `<body>`). Beide mit `test.fail`-Wächtern.

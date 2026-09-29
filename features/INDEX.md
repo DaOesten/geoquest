@@ -23,12 +23,12 @@
 | PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
 | PROJ-7 | Creator — Stationen-Editor | P0 | PROJ-6 | Deployed | [Spec](PROJ-7-creator-stationen-editor.md) | 2026-08-23 |
-| PROJ-8 | Creator — Modul-Editor | P0 | PROJ-7 | Approved | [Spec](PROJ-8-creator-modul-editor.md) | 2026-08-23 |
+| PROJ-8 | Creator — Modul-Editor | P0 | PROJ-7 | Deployed | [Spec](PROJ-8-creator-modul-editor.md) | 2026-08-23 |
 | PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Deployed | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | Approved | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 | PROJ-15 | Medien-Links — YouTube, Vimeo und Cloud-Speicher | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Planned | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
 
@@ -1597,3 +1597,10 @@ Out of Scope u. a.: Spotify/SoundCloud, OneDrive/iCloud, Ordner-Links, Video/Aud
 **BUG-19 (Low, vorbestehend):** Die bestehenden Feld-Fehlermeldungen im Creator (`text-destructive` im Light Theme) erreichen nur **4.34:1**. Nicht Teil dieses Refinements; ein dunkleres `--destructive` im Light Theme würde es app-weit schließen.
 
 **Isolierter Prüfstand, wichtig bei parallelen Sitzungen:** QA lief in einem eigenen Git-Worktree mit eigenem `.next` auf Port 3200 — die parallele PROJ-13-Sitzung konnte gleichzeitig bauen, ohne dem Server die Chunks zu nehmen. Turbopack verweigert ein Symlink-`node_modules`; ein APFS-Klon (`cp -Rc`) funktioniert. **Und:** Eine abgebrochene Shell-Pipeline ließ einen Playwright-Lauf 55 Minuten als Waise weiterlaufen und verfälschte alle Läufe danach — vor Stabilitätsaussagen `ps` auf verbliebene `playwright test`-Prozesse prüfen.
+
+## Deployt: PROJ-8 Bildvorschau + PROJ-13 Erklärvideo (2026-09-29)
+**Gemeinsam nach Production deployt** (Tags `v1.43.0-PROJ-8` und `v1.43.0-PROJ-13`, Push bis `35e65a8`) — live auf https://geoquest.technolomagie.de und https://geoquesty.vercel.app, **nach 58 s**, belegt am Video-Poster, das vorher auf beiden Domains 404 lieferte. Beide Status auf Deployed. Damit ist die Zurückstellung des PROJ-13-Deploys aufgelöst.
+
+**Im Live-Browser, beide Engines, beide Domains:** Bildvorschau zeigt ein echtes Bild und warnt bei **der ursprünglich gemeldeten Magnific-Adresse**; Erklärvideo lädt **vor dem Klick 0 MP4**, spielt danach ab, Range-Antworten 206. 22 Endpunkte HTTP 200, Security-Header aktiv, WebKit 0 Konsolenfehler. Die Chrome-Konsolen-404 auf `/create/<id>/station/<id>` sind das vorbestehende Server-404 für localStorage-Routen, kein Befund.
+
+**Bugnummern bereinigt:** Die PROJ-8-QA hatte BUG-17 vergeben, der in PROJ-13 schon belegt war — jetzt **BUG-19**. Bekannt live: BUG-17/BUG-18 (PROJ-13), BUG-19 (PROJ-8, vorbestehend).
