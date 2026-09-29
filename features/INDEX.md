@@ -23,7 +23,7 @@
 | PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
 | PROJ-7 | Creator — Stationen-Editor | P0 | PROJ-6 | Deployed | [Spec](PROJ-7-creator-stationen-editor.md) | 2026-08-23 |
-| PROJ-8 | Creator — Modul-Editor | P0 | PROJ-7 | In Progress | [Spec](PROJ-8-creator-modul-editor.md) | 2026-08-23 |
+| PROJ-8 | Creator — Modul-Editor | P0 | PROJ-7 | Approved | [Spec](PROJ-8-creator-modul-editor.md) | 2026-08-23 |
 | PROJ-9 | Creator — JSON-Export | P0 | PROJ-6 | Deployed | [Spec](PROJ-9-creator-json-export.md) | 2026-08-23 |
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
@@ -1584,3 +1584,16 @@ Regression: Unit 305/305, Gesamtsuite beider Engines **1216 passed / 0 failed / 
 **Für `/architecture` vorab benannt:** Die Umwandlungsregeln (Dropbox `raw=1`, Google-Drive-Endpunkte) sind **gegen echte, öffentlich geteilte Testdateien** zu messen, nicht aus Dokumentation zu übernehmen — dafür liefert der Betreiber je eine Bild-, MP3- und MP4-Datei aus Dropbox und Google Drive. Die Bildvorschau aus PROJ-8 muss künftig die umgewandelte Adresse prüfen.
 
 Out of Scope u. a.: Spotify/SoundCloud, OneDrive/iCloud, Ordner-Links, Video/Audio in Intro/Outro, Vorschaubilder vor dem Tippen, gemerkte Einwilligung. 7 User Stories, 36 Acceptance Criteria in 8 Blöcken, 16 Edge Cases, 15 Produktentscheidungen, 5 offene Fragen (1 geschlossen: Hosting von KI-Audio → Cloud-Speicher).
+
+## QA abgeschlossen: PROJ-8 Bildvorschau (2026-09-29)
+**PROJ-8** ist QA-geprüft: **9/9 Acceptance Criteria erfüllt, keine Bugs in diesem Refinement, Production-Ready.** Status auf Approved. Damit ist auch der Deploy von PROJ-13 (Erklärvideo), der auf diese QA gewartet hat, nicht mehr blockiert — beide liegen auf `main`.
+
+**Neu geprüft, was die Frontend-Phase ausließ:** der Ladezustand (AC-7), ein 403-Server (Hotlink-Schutz), ein echter Wettlauf im Browser (langsame alte Antwort überschreibt die neue nicht), die Entprellung **an echten Anfragen** (≤ 2 beim zeichenweisen Tippen), Tastatur, Responsive auf drei Breiten in Modul-Sheet und Quest-Dialog, Kontrast im Quest-Dialog.
+
+**Die zentrale Designbehauptung ist gemessen:** Vorschau und Player senden denselben `Referer` (nur die Origin) — was in der Vorschau lädt, lädt beim Spielen. **Security ohne Befund:** Markup in der Adresse wird nicht ausgeführt, `javascript:`/`data:` lösen keine Anfrage aus.
+
+**Gegenprobe:** Entprellung abgeschaltet → genau der Entprellungstest fällt, beide Engines. **Gesamtregression beide Engines: 1256 passed / 56 skipped / 0 failed / 0 flaky**, Unit 305/305, Lint 0 Fehler.
+
+**BUG-17 (Low, vorbestehend):** Die bestehenden Feld-Fehlermeldungen im Creator (`text-destructive` im Light Theme) erreichen nur **4.34:1**. Nicht Teil dieses Refinements; ein dunkleres `--destructive` im Light Theme würde es app-weit schließen.
+
+**Isolierter Prüfstand, wichtig bei parallelen Sitzungen:** QA lief in einem eigenen Git-Worktree mit eigenem `.next` auf Port 3200 — die parallele PROJ-13-Sitzung konnte gleichzeitig bauen, ohne dem Server die Chunks zu nehmen. Turbopack verweigert ein Symlink-`node_modules`; ein APFS-Klon (`cp -Rc`) funktioniert. **Und:** Eine abgebrochene Shell-Pipeline ließ einen Playwright-Lauf 55 Minuten als Waise weiterlaufen und verfälschte alle Läufe danach — vor Stabilitätsaussagen `ps` auf verbliebene `playwright test`-Prozesse prüfen.

@@ -1,8 +1,8 @@
 # PROJ-8: Creator — Modul-Editor
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-08-28
-**Last Updated:** 2026-09-28
+**Last Updated:** 2026-09-29
 
 > **Refinement (2026-09-28) — Bildvorschau mit Warnung:** Betreiber-Befund: *„Bilder aus dem Internet, die im Create mode per URL eingebunden wurden, werden im Play mode nicht angezeigt — weder im Intro/Outro, noch als Modul in einer Station."* Die gelieferte Beispiel-URL (`https://www.magnific.com/de/vektoren-kostenlos/…_24467363.htm#…`) ist **keine Bilddatei, sondern die Detailseite** einer Stockbild-Plattform. Ein `<img>` kann sie nicht darstellen. Der Player verhält sich korrekt; der Fehler ist, dass der Creator jede `https://`-Adresse annimmt und der Ersteller erst beim Spielen merkt, dass sie nicht funktioniert. Lösung: Live-Vorschau unter jedem Bild-URL-Feld, mit Warnung und Anleitung, wenn die Adresse nicht als Bild lädt — Speichern bleibt möglich. Gilt für das Bild-Modul (diese Spec) **und** die Intro-/Outro-Bildfelder im Quest-Dialog (PROJ-6, mitbetroffen). Siehe User Story 10, Acceptance Criteria „Bildvorschau", Edge Cases 11–16, Technical Requirements, Decision Log und Abschnitt „Refinement 2026-09-28".
 
@@ -541,3 +541,71 @@ Die Regression über PROJ-4/5/6/8 (beide Engines) ergab **278 passed / 3 skipped
 **Für künftige Läufe:** Arbeiten zwei Sitzungen im selben Verzeichnis, darf keine `npm run build` ausführen, während die andere gegen `next start` testet — `.next` ist geteilt. Playwright meldet diesen Fall auf WebKit **nicht** als `pageerror` und nicht als Konsolenfehler; sichtbar wurde er erst über einen eigenen `window.onerror`-Hook.
 
 **Suiten:** Unit **301/301** (vorher 293). E2E neue Suite **22/22** über beide Engines, PROJ-4/5/6/8 wie oben. Build sauber, Lint 0 Fehler (8 Warnungen, keine in geänderten Dateien), `tsc` ohne neue Fehler.
+
+---
+
+## QA Test Results — Bildvorschau (2026-09-29)
+
+**Tested:** 2026-09-29 · **Build:** Production (`next start`) aus einem **isolierten Git-Worktree** auf Port 3200 · **Engines:** Chrome 154 (`channel: 'chrome'`), Mobile Safari (WebKit, iPhone 13) · **Tester:** QA Engineer (AI)
+
+**Ergebnis: 9/9 Acceptance Criteria erfüllt, keine Bugs in diesem Refinement, 1 vorbestehender Low-Befund. Production-Ready.**
+
+### Acceptance Criteria Status
+| AC | Ergebnis | Beleg |
+|---|---|---|
+| 1 Vorschau bei Bild-Adresse | ✅ | Frontend-Suite + QA (PNG, SVG) |
+| 2 Warnung mit Anleitung bei Nicht-Bild | ✅ | HTML-Seite **und** 403-Antwort (Edge Case 12) erzeugen die Warnung |
+| 3 Speichern trotz Warnung | ✅ | Adresse unverändert in `gq_quests` |
+| 4 Neu prüfen bei Änderung | ✅ | inkl. **echtem Wettlauf im Browser**: langsame alte Antwort (2,5 s) überschreibt die neue nicht |
+| 5 Leer / ohne `https://` → nichts | ✅ | zusätzlich `javascript:`, `data:`, `HTTPS://` (Großschreibung) → keine Prüfung |
+| 6 Bestehende Adresse sofort geprüft | ✅ | Bild-Modul und Intro-Bild im Quest-Dialog |
+| 7 Ladezustand erkennbar | ✅ | **neu geprüft** — „Bild wird geprüft…" bei verzögerter Antwort, keine vorschnelle Warnung |
+| 8 Keine Warnung in der Modul-Liste | ✅ | |
+| 9 Kontrast ≥ 4.5:1, kein Sprengen der Breite | ✅ | Modul-Sheet **und** Quest-Dialog gemessen (Titel 18.21:1); 3000 px breites und 3000 px hohes Bild begrenzt (Höhe ≤ 194 px); 375/768/1440 px ohne Überlauf |
+
+### Über die Spec hinaus geprüft
+- **„Gleiche Ladebedingungen wie im Player" gemessen statt behauptet:** Vorschau und Player-Bildmodul senden denselben `Referer` — nur die Origin, nie der Pfad `/create/…` (`origin-when-cross-origin` greift). Damit ist die zentrale Designbehauptung belegt: Was in der Vorschau lädt, lädt beim Spielen
+- **Entprellung an echten Anfragen gemessen:** zeichenweises Eintippen einer Adresse (40 ms je Zeichen) erzeugt **höchstens 2** Anfragen an den fremden Server
+- **Tastatur:** Vorschau und Warnung fügen keinen Tab-Stopp ein (URL → Bildunterschrift)
+- **Sheet während laufender Prüfung schließen:** 0 `pageerror`
+- **Regression PROJ-4:** Im Player zeigt eine Seiten-URL weiterhin „Bild konnte nicht geladen werden"; die Creator-Komponente taucht dort nicht auf
+- **Dark Theme:** entfällt — `create/layout.tsx`, das Modul-Sheet und der Quest-Dialog setzen `data-theme="light"` fest; es gibt im Creator keinen Umschalter
+
+### Security Audit
+- ✅ **Markup in der Adresse** (`"><img src=x onerror=…><script>…`) → 0 Dialoge, `window.__pwn` bleibt `null`, kein `img[src=x]`, höchstens ein zusätzliches (das Vorschau-)Bild. React setzt die Adresse als Attributwert
+- ✅ **Schema-Missbrauch:** `javascript:`, `data:` und abweichende Schreibweisen lösen keine Anfrage aus
+- ✅ **Kein neuer Datenfluss:** Die Vorschau sendet dieselbe Origin-only-Referer wie der Player; keine Quest-Inhalte, keine IDs im Referer
+- ✅ Keine Speicherung des Prüfergebnisses, keine Änderung am Datenmodell
+
+### Gegenproben
+- **Entprellung abgeschaltet** (`IMAGE_CHECK_DEBOUNCE_MS = 0`, neu gebaut): **genau der Entprellungstest** fällt, auf beiden Engines, die übrigen 28 bleiben grün. Produktcode danach per `cmp` byte-identisch
+- Aus der Frontend-Phase übernommen und nicht wiederholt: echter Vorgängerstand → 7 von 10 fallen je Engine; Schutz gegen veraltete Ergebnisse entfernt → genau der zuständige Unit-Test fällt
+
+### Bugs Found
+Keine in diesem Refinement.
+
+#### BUG-17 (Low, vorbestehend, nicht blockierend): Feld-Fehlermeldungen im Creator unter 4.5:1
+- **Fundort:** Beim Messen der Warnung aufgefallen. Die bestehenden Inline-Fehler (z. B. „Nur HTTPS-URLs sind erlaubt.", Pflichtfeld-Meldungen im Quest-Dialog) nutzen `text-destructive` = `rgb(230,26,43)` auf `rgb(246,248,249)` → **4.34:1**, PRD fordert 4.5:1
+- **Steps:** `/create` → Bild-Modul → `http://x.de/a.jpg` eintragen → Speichern → Kontrast der Fehlermeldung messen
+- **Nicht Teil dieses Refinements** (die neue Warnung wurde in der Frontend-Phase bereits auf `text-foreground` korrigiert). Betrifft alle Creator-Formulare; ein Token-Wechsel für `--destructive` im Light Theme (etwas dunkleres Rot) würde es app-weit schließen
+- **Priority:** Nice to have / eigenes kleines Refinement
+
+### Automatisierte Tests
+- **Unit:** 305/305 (inkl. 8 für `ImageUrlPreview`)
+- **Neue QA-Suite** `tests/proj-8-bildvorschau-qa.spec.ts`: **15 Tests je Engine**, **3× wiederholt 90/90** ohne Flakiness
+- **Gesamtregression, beide Engines: 1256 passed / 56 skipped / 0 failed / 0 flaky** (7,5 min)
+- Lint 0 Fehler; `tsc` nur die 2 bekannten vorbestehenden Fehler in `quest-storage.test.ts` (PROJ-6)
+
+### Nicht abgedeckt
+- **Firefox** — Binary fehlt weiterhin auf dieser Maschine
+- **Echte fremde Server** (Magnific, Wikimedia) — bewusst nur über `page.route`; Augenschein bleibt dem Betreiber
+
+### Fünf eigene Fehler in Tests und Umgebung, offen benannt (Produkt jeweils richtig)
+1. **Browser-Cache:** Der Referer-Test fand im Player keine Anfrage, weil Chrome das Bild aus der Creator-Vorschau im Speicher hatte — eigene Adresse für den Player
+2. **Eigene Route falsch:** `ok.png?im=player` endet nicht auf `.png`, bekam HTML und das Bild wurde durch den Fehlerzustand ersetzt („not attached")
+3. **Lazy Loading:** Das Player-Bildmodul lädt mit `loading="lazy"` — `toBeVisible()` ist erfüllt, bevor die Anfrage rausgeht. Jetzt `waitForRequest`
+4. **Verzögerte Route + verworfene Anfrage:** `route.fulfill` auf eine vom Browser verworfene Anfrage wirft; unbehandelt legte das den Worker lahm und der Lauf hing **10 Minuten** bis zum globalen Timeout. Jetzt abgefangen
+5. **Verwaister Testlauf:** Eine abgebrochene Shell-Pipeline ließ `playwright test` **55 Minuten** als Waise (PPID 1) weiterlaufen — parallel zu allen späteren Läufen, deren Zeitüberschreitungen dadurch wertlos waren. Außerdem hat macOS kein `timeout`-Kommando (Exit 127, Lauf startete gar nicht)
+
+### Für künftige Läufe: isolierter Prüfstand
+Die parallele Sitzung (PROJ-13) baut im selben Verzeichnis — gestern hat das einem laufenden Server die Chunks weggenommen. Diesmal lief die QA in einem **eigenen Git-Worktree** im Scratchpad mit eigenem `.next` auf Port 3200 (`BASE_URL=http://localhost:3200`, die Prod-Config liest die Variable). **Turbopack verweigert ein per Symlink eingebundenes `node_modules`** („points out of the filesystem root"); ein APFS-Klon (`cp -Rc`) ist schnell und belegt kaum Platz.
