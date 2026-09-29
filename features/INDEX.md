@@ -1613,3 +1613,5 @@ Out of Scope u. a.: Spotify/SoundCloud, OneDrive/iCloud, Ordner-Links, Video/Aud
 **Entschieden:** Kante zu Kante überall dasselbe Maß — von der Unterkante der Hero-Bildkarte bis zur Video-Sektion 80px (Handy 48px), wie zwischen allen anderen Sektionen. Bezugskante ist die Karte, nicht der CTA; ihr Innenabstand bleibt symmetrisch. Umsetzung: Abstandshalter in `info-page-shell.tsx` entfällt (betrifft nur `/about`, die einzige Seite mit Hero-Bild), die Video-Sektion bekommt `mt-12 sm:mt-20` wie alle anderen.
 
 Spec ist aktualisiert (6 Acceptance Criteria, 1 Produkt- und 1 technische Entscheidung, Abschnitt „Refinement 11" mit Messtabelle).
+
+**Frontend umgesetzt am 2026-09-29.** Zwei Zeilen: Abstandshalter in `info-page-shell.tsx` entfernt, Video-Sektion auf `mt-12 sm:mt-20`. Hero-Kante → Video jetzt 48/80px, identisch mit Video → Karte. Neuer Wächter fällt gegen die Live-Seite mit exakt den dort gemessenen Altwerten (88/120px). Nachbarseiten live vorher und lokal nachher identisch vermessen. PROJ-13 190 passed / 0 failed, Suiten mit geteilter Shell 200 passed / 0 failed.

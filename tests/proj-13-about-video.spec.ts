@@ -295,3 +295,32 @@ test.describe("QA: offene Befunde", () => {
       .toBe("VIDEO");
   });
 });
+
+/**
+ * Refinement 11 (2026-09-29): Kante zu Kante gilt überall dasselbe Maß.
+ * Vorher stapelten sich unter dem Hero drei Abstände (176px gegen 80px).
+ */
+test.describe("Sektionsabstand nach dem Hero", () => {
+  for (const [w, h, gap] of [
+    [390, 844, 48],
+    [768, 1024, 80],
+    [1440, 900, 80],
+  ] as const) {
+    test(`${w}px: Hero-Kante → Video = Video → Karte = ${gap}px`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: h });
+      await page.goto("/about");
+      const m = await page.evaluate(() => {
+        const heroCard = document.querySelector('main img[alt=""]:not(section img)')!
+          .parentElement!.getBoundingClientRect();
+        const [video, next] = document.querySelectorAll("main section");
+        return {
+          heroToVideo: video.getBoundingClientRect().top - heroCard.bottom,
+          videoToNext:
+            next.getBoundingClientRect().top - video.getBoundingClientRect().bottom,
+        };
+      });
+      expect(Math.round(m.heroToVideo)).toBe(gap);
+      expect(Math.round(m.videoToNext)).toBe(gap);
+    });
+  }
+});

@@ -355,8 +355,6 @@ export function InfoPageShell({
           </div>
           </div>
         </div>
-        {heroBackground && <div className="h-10 sm:h-14" />}
-
         {/* Sections set scroll-margin so anchored headings clear the sticky header. */}
         <div className={`${CONTAINER} pb-16 sm:pb-24 [&_section]:scroll-mt-20`}>
           {children}

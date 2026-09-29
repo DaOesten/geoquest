@@ -1,7 +1,7 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
 ## Status: In Progress
-_**Refinement 11 (2026-09-29): Abstand Hero → Video-Sektion.** Betreiber nach dem Deploy: zwischen CTA und Video-Überschrift ist deutlich mehr Abstand als zwischen Video und erster Karte. Gemessen live: 176px gegen 80px (mobil 112 gegen 48). Entschieden: Kante zu Kante überall dasselbe Maß. Noch nicht gebaut._
+_**Refinement 11 (2026-09-29): Abstand Hero → Video-Sektion.** Betreiber nach dem Deploy: zwischen CTA und Video-Überschrift ist deutlich mehr Abstand als zwischen Video und erster Karte. Gemessen live: 176px gegen 80px (mobil 112 gegen 48). Entschieden: Kante zu Kante überall dasselbe Maß. **Frontend umgesetzt am 2026-09-29**, QA steht aus._
 
 _Refinement 9 (Hero-Bild wird Hintergrund) ist deployt (Tag `v1.40.0-PROJ-13`, 2026-09-26). **Refinement 10 (Erklärvideo als neue Sektion 2) ist am 2026-09-28 gespect, gebaut und QA-geprüft** — 11/11 Acceptance Criteria, 1 Medium- und 1 Low-Bug (BUG-17, BUG-18), keine Critical/High. Approved. Siehe Abschnitte „Refinement 10" und „Implementation Notes (Frontend — Refinement 10)" am Ende dieser Spec._
 
@@ -9,7 +9,7 @@ _Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und d
 
 _**Refinement 7 (2026-09-20): Das Logo-Lockup kehrt auf den Desktop zurück.** Betreiber-Befund: „ich kann auf /about auf dem desktop das Logo nicht mehr sehen." **Frontend umgesetzt am 2026-09-21** — `lg:hidden` entfernt; CTA auf allen elf Viewports über dem Falz nachgemessen, knappster Fall 1366×768 mit 45px. Siehe Implementation Notes._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-29 (Refinement 11 gespect — Abstand Hero → Video)
+**Last Updated:** 2026-09-29 (Refinement 11 im Frontend umgesetzt — Abstand Hero → Video)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -254,12 +254,12 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] Angenommen ein KI-System oder Crawler wertet `/about` aus, wenn es das Video-Element erreicht, dann trägt das `<video>`-Element keinen irreführenden Alternativtext-Ersatz — die Sektionsüberschrift trägt den beschreibenden Inhalt, das Video selbst ist ergänzend, nicht die einzige Informationsquelle
 
 ### Abstand Hero → erste Sektion (Refinement 11, 2026-09-29)
-- [ ] Angenommen ein Besucher öffnet `/about` ab 640px, wenn der Abstand von der Unterkante der Hero-Bildkarte bis zur Oberkante der Video-Sektion (Kicker „In 50 Sekunden") gemessen wird, dann beträgt er **80px** — derselbe Wert wie zwischen Video und der Karte „Jeder Ort kann ein Level sein."
-- [ ] Angenommen ein Besucher öffnet `/about` unter 640px, wenn derselbe Abstand gemessen wird, dann beträgt er **48px** — derselbe Wert wie zwischen den übrigen Sektionen auf dem Handy
-- [ ] Angenommen der Abstand wird vom CTA „Quest erstellen" aus gemessen, dann sinkt er von 176px auf **136px** (Desktop) bzw. von 112px auf **72px** (Handy); der Rest ist der unveränderte Innenabstand der Hero-Karte unter dem CTA
-- [ ] Angenommen ein Besucher betrachtet die Hero-Karte, wenn er den Raum über der Headline und unter dem CTA vergleicht, dann ist ihr Innenabstand weiterhin oben und unten gleich (Desktop je 56px) — die Karte wirkt nicht unten abgeschnitten
-- [ ] Angenommen der primäre CTA lag vor diesem Refinement auf allen Referenz-Viewports über dem Falz (BUG-7), wenn der Abstand verkleinert ist, dann gilt das unverändert — der Eingriff liegt unterhalb des Hero
-- [ ] Angenommen ein Besucher öffnet `/anleitung`, `/impressum` oder `/datenschutz`, wenn die Seiten laden, dann sind sie **unverändert** — sie tragen kein Hero-Bild, und nur für diesen Fall rendert die Shell den betroffenen Abstandshalter
+- [x] Angenommen ein Besucher öffnet `/about` ab 640px, wenn der Abstand von der Unterkante der Hero-Bildkarte bis zur Oberkante der Video-Sektion (Kicker „In 50 Sekunden") gemessen wird, dann beträgt er **80px** — derselbe Wert wie zwischen Video und der Karte „Jeder Ort kann ein Level sein."
+- [x] Angenommen ein Besucher öffnet `/about` unter 640px, wenn derselbe Abstand gemessen wird, dann beträgt er **48px** — derselbe Wert wie zwischen den übrigen Sektionen auf dem Handy
+- [x] Angenommen der Abstand wird vom CTA „Quest erstellen" aus gemessen, dann sinkt er von 176px auf **136px** (Desktop) bzw. von 112px auf **72px** (Handy); der Rest ist der unveränderte Innenabstand der Hero-Karte unter dem CTA
+- [x] Angenommen ein Besucher betrachtet die Hero-Karte, wenn er den Raum über der Headline und unter dem CTA vergleicht, dann ist ihr Innenabstand weiterhin oben und unten gleich (Desktop je 56px) — die Karte wirkt nicht unten abgeschnitten
+- [x] Angenommen der primäre CTA lag vor diesem Refinement auf allen Referenz-Viewports über dem Falz (BUG-7), wenn der Abstand verkleinert ist, dann gilt das unverändert — der Eingriff liegt unterhalb des Hero
+- [x] Angenommen ein Besucher öffnet `/anleitung`, `/impressum` oder `/datenschutz`, wenn die Seiten laden, dann sind sie **unverändert** — sie tragen kein Hero-Bild, und nur für diesen Fall rendert die Shell den betroffenen Abstandshalter
 
 ### Hero-Bild wird Hintergrund (Refinement 9, 2026-09-21)
 - [x] Angenommen ein Besucher öffnet `/about` auf **irgendeiner** Breite, wenn der Hero lädt, dann liegt `urbanquest.png` als Hintergrund **hinter** Logo, Headline, Lead, Preiszeile und CTA — nicht mehr als eigenes Element daneben oder darunter
@@ -2882,3 +2882,17 @@ Die faststart-Gegenprobe ersetzte die MP4 in `public/` für etwa eine Sekunde, *
 - Neuer Wächter: Hero-Kante → erste Sektion == Video → zweite Sektion, auf Handy und Desktop — genau diese Gleichheit fehlte als Zusicherung
 - BUG-7-Wächter muss grün bleiben (Eingriff liegt unter dem Hero, sollte ihn nicht berühren)
 - Gegenprobe gegen `/anleitung` (ohne Hero-Bild): Abstand unter der Trennlinie unverändert
+
+## Implementation Notes (Frontend — Refinement 11, 2026-09-29)
+
+**Zwei Zeilen:** Der Abstandshalter nach dem Hero-Bild in `info-page-shell.tsx` (`h-10 sm:h-14`) ist entfernt, die Video-Sektion in `about/page.tsx` trägt jetzt `mt-12 sm:mt-20` wie alle übrigen Sektionen. Kein neues Paket, keine neue Komponente, `/about` bleibt statisch.
+
+**Ergebnis:** Hero-Kante → Video **48px** (Handy) bzw. **80px** (768/1440), identisch mit Video → Karte. Vom CTA aus gemessen 72 bzw. 136px statt 112 bzw. 176px. Innenabstand der Hero-Karte unverändert.
+
+**Neuer Wächter** in `tests/proj-13-about-video.spec.ts` („Sektionsabstand nach dem Hero", 3 Viewports je Engine) prüft, dass beide Abstände gleich sind. **Gegenprobe ohne Umbau:** Gegen die Live-Seite (noch alte Fassung) fällt er auf allen 6 Kombinationen, mit exakt den dort gemessenen Werten (88 statt 48, 120 statt 80).
+
+**Nachbarseiten unverändert, gemessen statt angenommen:** `/anleitung`, `/impressum`, `/datenschutz` auf 390 und 1440px — Headline-Position, Beginn des Inhalts und Seitenhöhe live vorher und lokal nachher **identisch**. Der entfernte Abstandshalter wurde nur bei `heroBackground` gerendert, das ausschließlich `/about` setzt.
+
+**Suiten gegen den Production-Build (eigener Server Port 3101):** PROJ-13 **190 passed / 20 skipped / 0 failed** über beide Engines (die beiden BUG-17/18-Wächter schlagen wie vorgesehen fehl), dazu die Suiten, die `InfoPageShell` mitbenutzen (Info-Seiten, Ko-fi, PROJ-14, Safe Area): **200 passed / 2 skipped / 0 failed**. Build und Lint sauber. Am Bildschirm im Vorher/Nachher-Vergleich abgenommen.
+
+**Zu beachten:** Der Build enthielt uncommittete PROJ-3-Arbeit einer anderen Sitzung (Arbeitsverzeichnis). Sie berührt keine Info-Seite; die Messwerte oben sind davon unabhängig.

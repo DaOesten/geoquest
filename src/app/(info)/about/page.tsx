@@ -292,8 +292,9 @@ export default function AboutPage() {
           „funktioniert" statt „spielt sich": Das Video zeigt Erstellen,
           Teilen und Spielen, nicht nur das Spiel. Hochformat bleibt
           Hochformat — ab `sm` in einer Kinoformat-Karte mit unscharfem
-          Rand. Die Fassung „Text links, Video rechts" gefiel nicht. */}
-      <section className="mt-12 sm:mt-16">
+          Rand. Die Fassung „Text links, Video rechts" gefiel nicht.
+          Abstand wie jede andere Sektion, Kante zu Kante gemessen. */}
+      <section className="mt-12 sm:mt-20">
         <div>
           <h2 className={SECTION_LABEL}>In 50 Sekunden</h2>
           <h3 className={SECTION_TITLE}>So funktioniert Geo Quest.</h3>
