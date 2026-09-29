@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 | PROJ-15 | Medien-Links — YouTube, Vimeo und Cloud-Speicher | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Planned | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
 
@@ -1604,3 +1604,12 @@ Out of Scope u. a.: Spotify/SoundCloud, OneDrive/iCloud, Ordner-Links, Video/Aud
 **Im Live-Browser, beide Engines, beide Domains:** Bildvorschau zeigt ein echtes Bild und warnt bei **der ursprünglich gemeldeten Magnific-Adresse**; Erklärvideo lädt **vor dem Klick 0 MP4**, spielt danach ab, Range-Antworten 206. 22 Endpunkte HTTP 200, Security-Header aktiv, WebKit 0 Konsolenfehler. Die Chrome-Konsolen-404 auf `/create/<id>/station/<id>` sind das vorbestehende Server-404 für localStorage-Routen, kein Befund.
 
 **Bugnummern bereinigt:** Die PROJ-8-QA hatte BUG-17 vergeben, der in PROJ-13 schon belegt war — jetzt **BUG-19**. Bekannt live: BUG-17/BUG-18 (PROJ-13), BUG-19 (PROJ-8, vorbestehend).
+
+## Offenes Refinement 11: Abstand Hero → Video-Sektion auf `/about` (2026-09-29)
+**PROJ-13** geht von Deployed zurück auf In Progress. Betreiber nach dem Deploy des Erklärvideos: zwischen CTA und Video-Überschrift ist deutlich mehr Abstand als zwischen Video und erster Karte.
+
+**Live gemessen:** CTA → Video-Kicker **176px** gegen Video → Karte **80px** (Handy 112 gegen 48). Ursache sind drei gestapelte Abstände: 56px Innenabstand der Hero-Karte, 56px Abstandshalter der Shell nach einem Hero mit Bild, 64px Außenabstand der Sektion. Der Stapel war schon vor dem Video da, fiel aber nicht auf, weil vorher eine umrandete Karte folgte.
+
+**Entschieden:** Kante zu Kante überall dasselbe Maß — von der Unterkante der Hero-Bildkarte bis zur Video-Sektion 80px (Handy 48px), wie zwischen allen anderen Sektionen. Bezugskante ist die Karte, nicht der CTA; ihr Innenabstand bleibt symmetrisch. Umsetzung: Abstandshalter in `info-page-shell.tsx` entfällt (betrifft nur `/about`, die einzige Seite mit Hero-Bild), die Video-Sektion bekommt `mt-12 sm:mt-20` wie alle anderen.
+
+Spec ist aktualisiert (6 Acceptance Criteria, 1 Produkt- und 1 technische Entscheidung, Abschnitt „Refinement 11" mit Messtabelle).

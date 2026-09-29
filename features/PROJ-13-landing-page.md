@@ -1,13 +1,15 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Deployed
+## Status: In Progress
+_**Refinement 11 (2026-09-29): Abstand Hero → Video-Sektion.** Betreiber nach dem Deploy: zwischen CTA und Video-Überschrift ist deutlich mehr Abstand als zwischen Video und erster Karte. Gemessen live: 176px gegen 80px (mobil 112 gegen 48). Entschieden: Kante zu Kante überall dasselbe Maß. Noch nicht gebaut._
+
 _Refinement 9 (Hero-Bild wird Hintergrund) ist deployt (Tag `v1.40.0-PROJ-13`, 2026-09-26). **Refinement 10 (Erklärvideo als neue Sektion 2) ist am 2026-09-28 gespect, gebaut und QA-geprüft** — 11/11 Acceptance Criteria, 1 Medium- und 1 Low-Bug (BUG-17, BUG-18), keine Critical/High. Approved. Siehe Abschnitte „Refinement 10" und „Implementation Notes (Frontend — Refinement 10)" am Ende dieser Spec._
 
 _Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und dort verifiziert (Tag `v1.26.0-PROJ-13`). Refinement 6 (Ko-fi-Icon in der Kopfzeile, Tooltip, JSON-LD-Altersnachzug) ist **am 2026-09-10 nach Production deployt und dort verifiziert** (Tag `v1.27.0-PROJ-13`)._
 
 _**Refinement 7 (2026-09-20): Das Logo-Lockup kehrt auf den Desktop zurück.** Betreiber-Befund: „ich kann auf /about auf dem desktop das Logo nicht mehr sehen." **Frontend umgesetzt am 2026-09-21** — `lg:hidden` entfernt; CTA auf allen elf Viewports über dem Falz nachgemessen, knappster Fall 1366×768 mit 45px. Siehe Implementation Notes._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-28 (Refinement 10 QA-geprüft — Erklärvideo)
+**Last Updated:** 2026-09-29 (Refinement 11 gespect — Abstand Hero → Video)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -251,6 +253,14 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] Angenommen ein Besucher zählt die Sektionen von `/about`, wenn er von oben nach unten scrollt, dann sind es jetzt **acht** statt sieben, mit der Video-Sektion an Position 2 (direkt nach dem Hero, vor „Jeder Ort kann ein Level sein.")
 - [x] Angenommen ein KI-System oder Crawler wertet `/about` aus, wenn es das Video-Element erreicht, dann trägt das `<video>`-Element keinen irreführenden Alternativtext-Ersatz — die Sektionsüberschrift trägt den beschreibenden Inhalt, das Video selbst ist ergänzend, nicht die einzige Informationsquelle
 
+### Abstand Hero → erste Sektion (Refinement 11, 2026-09-29)
+- [ ] Angenommen ein Besucher öffnet `/about` ab 640px, wenn der Abstand von der Unterkante der Hero-Bildkarte bis zur Oberkante der Video-Sektion (Kicker „In 50 Sekunden") gemessen wird, dann beträgt er **80px** — derselbe Wert wie zwischen Video und der Karte „Jeder Ort kann ein Level sein."
+- [ ] Angenommen ein Besucher öffnet `/about` unter 640px, wenn derselbe Abstand gemessen wird, dann beträgt er **48px** — derselbe Wert wie zwischen den übrigen Sektionen auf dem Handy
+- [ ] Angenommen der Abstand wird vom CTA „Quest erstellen" aus gemessen, dann sinkt er von 176px auf **136px** (Desktop) bzw. von 112px auf **72px** (Handy); der Rest ist der unveränderte Innenabstand der Hero-Karte unter dem CTA
+- [ ] Angenommen ein Besucher betrachtet die Hero-Karte, wenn er den Raum über der Headline und unter dem CTA vergleicht, dann ist ihr Innenabstand weiterhin oben und unten gleich (Desktop je 56px) — die Karte wirkt nicht unten abgeschnitten
+- [ ] Angenommen der primäre CTA lag vor diesem Refinement auf allen Referenz-Viewports über dem Falz (BUG-7), wenn der Abstand verkleinert ist, dann gilt das unverändert — der Eingriff liegt unterhalb des Hero
+- [ ] Angenommen ein Besucher öffnet `/anleitung`, `/impressum` oder `/datenschutz`, wenn die Seiten laden, dann sind sie **unverändert** — sie tragen kein Hero-Bild, und nur für diesen Fall rendert die Shell den betroffenen Abstandshalter
+
 ### Hero-Bild wird Hintergrund (Refinement 9, 2026-09-21)
 - [x] Angenommen ein Besucher öffnet `/about` auf **irgendeiner** Breite, wenn der Hero lädt, dann liegt `urbanquest.png` als Hintergrund **hinter** Logo, Headline, Lead, Preiszeile und CTA — nicht mehr als eigenes Element daneben oder darunter
 - [x] Angenommen der Besucher liest den Hero-Text, wenn der Kontrast gemessen wird, dann erfüllt **jedes** Textelement die PRD-Vorgabe von 4.5:1 — einschließlich der **Teal**-Elemente („ZUM SPIELFELD" und die Kostenlos-Zeile), die ohne Abdunklung auf 3.75:1 fielen
@@ -408,12 +418,14 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 | 4:5-Seitenverhältnis der Quelldatei bleibt erhalten, kein Zuschnitt auf 16:9 | Ein Breitformat-Krop riskiert, das im Hochformat gefilmte Motiv (vermutlich Handy in der Hand) an den Rändern zu beschneiden. Auf Mobile ist 4:5 ohnehin die natürliche Form, am Desktop wirkt ein Hochformat-Video als eigenständiges Element neben Text | 2026-09-28 |
 | Poster-Frame + Klick-zum-Abspielen statt Autoplay | Folgt derselben „keine Ambient-Loops"-Regel wie das Konfetti-Refinement in PROJ-3; hält die Seite ruhig und die Ladezeit niedrig, da das Video nicht vorlädt. 52 Sekunden Inhalt sind eine aktive Entscheidung des Besuchers | 2026-09-28 |
 | Kinoformat-Karte mit unscharfem Rand statt „Text links, Video rechts" | Betreiber lehnte die zweispaltige Fassung ab. Aus drei Vorschlägen (zentriert gestapelt, Kinoformat, linksbündig) gewählt. Das Video bleibt unbeschnitten 4:5; die Ränder füllt dieselbe, bereits geladene Poster-Datei — kein zusätzlicher Download. Abdunklung 25 % statt zunächst 55 % (bei 55 % verschluckte sie den türkisen Schimmer, und die Videokante wirkte wie eine Stufe), dazu ein weicher Schatten um das Video, damit die Kante gewollt aussieht | 2026-09-28 |
+| Sektionsabstand wird Kante zu Kante gemessen, auch zwischen Hero und erster Sektion | Betreiber-Befund 2026-09-29: CTA → Video-Überschrift wirkte deutlich größer als Video → Karte (gemessen 176 gegen 80px). Bezugskante ist die **Unterkante der Hero-Bildkarte**, nicht der CTA: Die Karte hat eine sichtbare Kante, und ihr Innenabstand ist oben und unten symmetrisch. Verworfen: vom CTA aus 80px — dafür müsste der Innenabstand unter dem CTA fast ganz weg, die Karte wirkte unten abgeschnitten | 2026-09-29 |
 | Kompression/Zuschnitt der Videodatei liegt beim Betreiber, nicht im Scope dieses Refinements | Die Spec beschreibt die Einbindung (Poster, Lazy-Load, Format-Vorgaben), nicht die Bildbearbeitung selbst — der Betreiber liefert die web-optimierte Datei nach | 2026-09-28 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Abstandshalter nach dem Hero-Bild (`info-page-shell.tsx`, `h-10 sm:h-14`) entfällt; die erste Sektion trägt den Abstand selbst mit `mt-12 sm:mt-20` wie alle anderen | Der Befund war ein Stapel aus drei Abständen (56 Innenabstand + 56 Abstandshalter + 64 `sm:mt-16`). Mit einer einzigen Quelle für den Sektionsabstand kann er nicht wieder auseinanderlaufen. Der Abstandshalter wird nur bei `heroBackground` gerendert, das ausschließlich `/about` setzt — die anderen Info-Seiten sind nicht betroffen. Der Innenabstand der Hero-Karte bleibt | 2026-09-29 |
 | Zwei statische Seiten (`/about`, `/anleitung`) statt einer langen Seite | Bedienen zwei verschiedene Nutzer-Momente; getrennt kommt der Ersteller ohne Marketing-Scroll direkt zur Prompt-Vorlage. Bleiben trotzdem eine Spec, weil sie zusammen gebaut und deployed werden | 2026-09-04 |
 | Serverseitig gerenderte Seiten ohne Client-State | Beide Seiten sind reiner Inhalt ohne Zugriff auf Browser-Speicher; das erlaubt echte Meta-Tags für das Teilen und die schnellste Ladezeit | 2026-09-04 |
 | Nur der Kopieren-Button ist eine Client-Komponente | Kleinstmöglicher interaktiver Teil; der Prompt-Text selbst bleibt serverseitig gerendert und damit auch ohne JavaScript lesbar | 2026-09-04 |
@@ -2844,3 +2856,29 @@ Die faststart-Gegenprobe ersetzte die MP4 in `public/` für etwa eine Sekunde, *
 - **Eine Auffälligkeit geprüft:** Chrome meldete auf `/create/<id>/station/<id>` Konsolen-404. Ursache ist das **Server-HTML** dieser Route — Quests liegen nur im localStorage, der Server kennt die ID nicht, der Client rendert korrekt. Dasselbe vorbestehende Muster wie `/play/<id>` (seit 2026-09-07 dokumentiert); dazu das bekannte `/favicon.ico`
 
 **Mit live gegangen, bekannt (Betreiber-Entscheidung):** BUG-17 (Medium — Pause während des Ladens wird als Abspielfehler gemeldet) und BUG-18 (Low — Fokus nach Start per Tastatur auf `<body>`). Beide mit `test.fail`-Wächtern.
+
+## Refinement 11 (2026-09-29) — Abstand Hero → Video-Sektion
+
+**Anlass:** Betreiber nach dem Deploy von Refinement 10: *„Da ist ganz schön viel Abstand zwischen dem CTA Button und dem Video, also Überschrift für das Video. Mehr als zwischen Video und der ersten Card."*
+
+### Gemessen auf der Live-Seite (WebKit)
+| Breite | CTA → Video-Kicker | Hero-Kante → Video-Kicker | Video → erste Karte |
+|---|---|---|---|
+| 390px | 112px | 88px | 48px |
+| 768px | 176px | 120px | 80px |
+| 1440px | 176px | 120px | 80px |
+
+**Ursache: drei gestapelte Abstände** (Desktop): 56px Innenabstand der Hero-Karte unter dem CTA (`sm:pb-14`), 56px Abstandshalter der Shell nach einem Hero mit Bild (`info-page-shell.tsx:358`, `h-10 sm:h-14`), 64px Außenabstand der Video-Sektion (`sm:mt-16`). Zwischen allen übrigen Sektionen gilt einheitlich `mt-12 sm:mt-20` (48/80px).
+
+**Warum es jetzt auffällt:** Der Stapel existierte schon vor dem Video — vorher folgte aber die umrandete Orte-Karte, deren Rahmen die Lücke optisch schloss. Jetzt folgt eine kleine Kicker-Zeile ohne Rahmen, und der Raum wird als Leere gelesen.
+
+### Entschieden
+- **Kante zu Kante überall dasselbe Maß:** von der Unterkante der Hero-Bildkarte bis zur Video-Sektion 80px (Desktop) / 48px (Handy)
+- **Bezugskante ist die Karte, nicht der CTA.** Der Innenabstand der Hero-Karte bleibt symmetrisch; vom CTA aus gemessen sinkt der Abstand auf 136px bzw. 72px
+- **Umsetzung:** Abstandshalter in der Shell entfällt, die Video-Sektion bekommt `mt-12 sm:mt-20` wie alle anderen. Eine Quelle statt drei
+
+### Für `/frontend`
+- Zwei Stellen: `src/components/info-page-shell.tsx:358` (Abstandshalter entfernen) und die Video-Sektion in `src/app/(info)/about/page.tsx` (`mt-12 sm:mt-16` → `mt-12 sm:mt-20`)
+- Neuer Wächter: Hero-Kante → erste Sektion == Video → zweite Sektion, auf Handy und Desktop — genau diese Gleichheit fehlte als Zusicherung
+- BUG-7-Wächter muss grün bleiben (Eingriff liegt unter dem Hero, sollte ihn nicht berühren)
+- Gegenprobe gegen `/anleitung` (ohne Hero-Bild): Abstand unter der Trennlinie unverändert
