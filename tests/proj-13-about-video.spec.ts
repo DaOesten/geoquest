@@ -324,3 +324,48 @@ test.describe("Sektionsabstand nach dem Hero", () => {
     });
   }
 });
+
+/**
+ * QA Refinement 11 (2026-09-29) — über den Frontend-Wächter hinaus: ein
+ * einziger Rhythmus für die ganze Seite, symmetrische Hero-Karte, und die
+ * Umbruchgrenze von `sm` ohne Zwischenzustand.
+ */
+test.describe("QA: Sektionsrhythmus", () => {
+  for (const [w, h, gap, cta, pad] of [
+    [320, 568, 48, 72, 24],
+    [639, 900, 48, 72, 24],
+    [640, 900, 80, 136, 56],
+    [1366, 768, 80, 136, 56],
+  ] as const) {
+    test(`${w}px: alle Abstände ${gap}px, CTA → Video ${cta}px, Hero-Karte symmetrisch`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: w, height: h });
+      await page.goto("/about");
+      const m = await page.evaluate(() => {
+        const R = (e: Element) => e.getBoundingClientRect();
+        const bg = document.querySelector('main img[alt=""]:not(section img)')!;
+        const card = R(bg.parentElement!);
+        const cta = [...document.querySelectorAll("main a")].find((a) =>
+          /Quest erstellen/i.test(a.textContent ?? "")
+        )!;
+        const top = bg.parentElement!.querySelector("img:not([aria-hidden])") ??
+          bg.parentElement!.querySelector("h1")!;
+        const secs = [...document.querySelectorAll("main section")];
+        return {
+          gaps: [
+            R(secs[0]).top - card.bottom,
+            ...secs.slice(1).map((s, i) => R(s).top - R(secs[i]).bottom),
+          ].map(Math.round),
+          ctaToVideo: Math.round(R(secs[0]).top - R(cta).bottom),
+          padTop: Math.round(R(top).top - card.top),
+          padBottom: Math.round(card.bottom - R(cta).bottom),
+        };
+      });
+      expect(new Set(m.gaps), `Abstände: ${m.gaps.join(", ")}`).toEqual(new Set([gap]));
+      expect(m.ctaToVideo).toBe(cta);
+      expect(m.padTop).toBe(pad);
+      expect(m.padBottom).toBe(pad);
+    });
+  }
+});

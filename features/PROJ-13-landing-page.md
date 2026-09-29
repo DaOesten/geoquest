@@ -1,7 +1,7 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: In Progress
-_**Refinement 11 (2026-09-29): Abstand Hero → Video-Sektion.** Betreiber nach dem Deploy: zwischen CTA und Video-Überschrift ist deutlich mehr Abstand als zwischen Video und erster Karte. Gemessen live: 176px gegen 80px (mobil 112 gegen 48). Entschieden: Kante zu Kante überall dasselbe Maß. **Frontend umgesetzt am 2026-09-29**, QA steht aus._
+## Status: Approved
+_**Refinement 11 (2026-09-29): Abstand Hero → Video-Sektion.** Betreiber nach dem Deploy: zwischen CTA und Video-Überschrift ist deutlich mehr Abstand als zwischen Video und erster Karte. Gemessen live: 176px gegen 80px (mobil 112 gegen 48). Entschieden: Kante zu Kante überall dasselbe Maß. **Frontend umgesetzt und QA-geprüft am 2026-09-29** — 6/6 Acceptance Criteria, keine Bugs. Approved._
 
 _Refinement 9 (Hero-Bild wird Hintergrund) ist deployt (Tag `v1.40.0-PROJ-13`, 2026-09-26). **Refinement 10 (Erklärvideo als neue Sektion 2) ist am 2026-09-28 gespect, gebaut und QA-geprüft** — 11/11 Acceptance Criteria, 1 Medium- und 1 Low-Bug (BUG-17, BUG-18), keine Critical/High. Approved. Siehe Abschnitte „Refinement 10" und „Implementation Notes (Frontend — Refinement 10)" am Ende dieser Spec._
 
@@ -9,7 +9,7 @@ _Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und d
 
 _**Refinement 7 (2026-09-20): Das Logo-Lockup kehrt auf den Desktop zurück.** Betreiber-Befund: „ich kann auf /about auf dem desktop das Logo nicht mehr sehen." **Frontend umgesetzt am 2026-09-21** — `lg:hidden` entfernt; CTA auf allen elf Viewports über dem Falz nachgemessen, knappster Fall 1366×768 mit 45px. Siehe Implementation Notes._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-29 (Refinement 11 im Frontend umgesetzt — Abstand Hero → Video)
+**Last Updated:** 2026-09-29 (Refinement 11 QA-geprüft — Abstand Hero → Video)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -2896,3 +2896,40 @@ Die faststart-Gegenprobe ersetzte die MP4 in `public/` für etwa eine Sekunde, *
 **Suiten gegen den Production-Build (eigener Server Port 3101):** PROJ-13 **190 passed / 20 skipped / 0 failed** über beide Engines (die beiden BUG-17/18-Wächter schlagen wie vorgesehen fehl), dazu die Suiten, die `InfoPageShell` mitbenutzen (Info-Seiten, Ko-fi, PROJ-14, Safe Area): **200 passed / 2 skipped / 0 failed**. Build und Lint sauber. Am Bildschirm im Vorher/Nachher-Vergleich abgenommen.
 
 **Zu beachten:** Der Build enthielt uncommittete PROJ-3-Arbeit einer anderen Sitzung (Arbeitsverzeichnis). Sie berührt keine Info-Seite; die Messwerte oben sind davon unabhängig.
+
+## QA Test Results — Refinement 11: Abstand Hero → Video (2026-09-29)
+
+**Ergebnis: 6/6 Acceptance Criteria erfüllt, keine Bugs. Production-Ready.**
+
+Geprüft gegen einen Production-Build aus einem **separaten Git-Worktree auf `HEAD`**: Im Arbeitsverzeichnis lag uncommittete PROJ-3-Arbeit einer anderen Sitzung (Produktcode und Tests), die sonst mitgebaut und mitgetestet worden wäre. Chrome 152 und Mobile Safari (WebKit), elf Breiten von 320 bis 1920px inklusive der `sm`-Grenze 639/640px. Beide Engines Wert für Wert identisch.
+
+| # | Kriterium | Ergebnis |
+|---|---|---|
+| 1 | ab 640px Hero-Kante → Video 80px, gleich Video → Karte | ✅ 80px |
+| 2 | unter 640px 48px | ✅ 48px |
+| 3 | vom CTA aus 136 / 72px | ✅ exakt |
+| 4 | Hero-Karte innen symmetrisch | ✅ oben = unten, 56px (Desktop) / 24px (Handy) |
+| 5 | BUG-7 unverändert | ✅ CTA-Luft identisch zur vorigen QA (knappster Fall 29px bei 1024×768 / 1366×768) |
+| 6 | Nachbarseiten unverändert | ✅ `/anleitung`, `/impressum`, `/datenschutz` auf 390/1440px: Headline, Inhaltsbeginn und Seitenhöhe live vorher und QA-Build nachher **identisch** |
+
+**Über die Spec hinaus:** Nicht nur die ersten beiden, sondern **alle sieben** Übergänge der Seite (Hero → Video → … → Abschluss-CTA) messen jetzt gleich — ein einziger Rhythmus. Der Wechsel bei 639/640px springt sauber von 48 auf 80px ohne Zwischenzustand. Kein horizontaler Überlauf auf allen elf Breiten.
+
+**Neue Tests:** 4 je Engine in `tests/proj-13-about-video.spec.ts` („QA: Sektionsrhythmus": alle Abstände gleich, CTA-Abstand, Symmetrie der Hero-Karte, Grenzfall 639/640). **Gegenprobe gegen die Live-Seite** (alte Fassung): alle 8 fallen, die Meldung zeigt den einen Ausreißer direkt — `120, 80, 80, 80, 80, 80, 80`. Die Datei hat jetzt **27 Tests je Engine**, 54/54 wie erwartet.
+
+**Security:** reine Layout-Änderung ohne Eingaben, Datenflüsse oder neue Assets — keine Angriffsfläche.
+
+**Regression:** Unit **305/305**. Gesamtsuite beider Engines aus dem Worktree: **1236 passed / 26 failed / 56 skipped** — die 26 sind ausnahmslos ein Umgebungsartefakt (siehe unten) und bestehen gegen identischen Info-Seiten-Code auf einem zweiten Server vollständig (**164 passed / 0 failed**).
+
+### Umgebungsbefund: lokale Bildoptimierung hängt bei frischem Cache (kein Produktfehler)
+Alle 26 Fehlschläge: Mobile Safari, Info-Seiten, Breiten ab 768px, jeweils **Timeout beim ersten `page.goto`** — das `load`-Ereignis kam nie.
+
+- **Eingegrenzt:** Das iPhone-13-Profil hat Pixeldichte 3; auf großen Fenstern fordert `next/image` dann Stufen **größer als das Quellbild** an (Logo 1039px → `w=1080`, Hero 1672px → `w=3840`). Genau diese Anfragen beantwortet der lokale `next start` im Worktree **auch per `curl` nicht** (> 30 s), während `w=828` in 2 ms kommt. Ohne iPhone-Profil lädt dieselbe Seite sofort
+- **Nur lokal, nur bei kaltem Cache:** Live auf Vercel kommt dieselbe Anfrage in 0,11 s (Vercels eigener Optimierer). Der Server aus dem Hauptverzeichnis hat 27 Bild-Cache-Einträge aus früheren Läufen und antwortet in 29 ms — der Worktree hatte einen leeren Cache
+- **Nicht deterministisch:** Nach einem Neustart mit kaltem Cache kam `hero w=3840` einmal in 0,18 s, dafür hing danach `logo w=1080`. Die genaue Ursache in Next.js 16 / sharp ist nicht geklärt
+- **Relevanz:** Jeder frische Clone oder CI-Lauf mit leerem `.next/cache/images` kann genau diese Tests in Timeouts laufen lassen, die wie Layout-Fehler aussehen. Bei Timeouts auf Mobile Safari ab 768px zuerst den Bild-Optimierer per `curl` prüfen
+
+### Zwei eigene Fehlannahmen, offen benannt
+1. **„Last-Artefakt"** — erster Gedanke bei 26 Timeouts. Widerlegt, weil sie auch seriell mit einem Worker hingen.
+2. **„Ein einmal hängengebliebener Cache-Schlüssel"** — nach der ersten `curl`-Messung plausibel. Widerlegt: Nach Neustart mit kaltem Cache scheiterten exakt dieselben 26 Tests wieder, nur an einer anderen Bildanfrage.
+
+Dazu ein Werkzeugbefund: Turbopack verweigert den Build mit per Symlink verlinktem `node_modules` außerhalb des Projektstamms — ein APFS-Klon (`cp -cR`, ~5 s) funktioniert.

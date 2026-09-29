@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | Approved | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 | PROJ-15 | Medien-Links — YouTube, Vimeo und Cloud-Speicher | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Planned | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
 
@@ -1615,6 +1615,10 @@ Out of Scope u. a.: Spotify/SoundCloud, OneDrive/iCloud, Ordner-Links, Video/Aud
 Spec ist aktualisiert (6 Acceptance Criteria, 1 Produkt- und 1 technische Entscheidung, Abschnitt „Refinement 11" mit Messtabelle).
 
 **Frontend umgesetzt am 2026-09-29.** Zwei Zeilen: Abstandshalter in `info-page-shell.tsx` entfernt, Video-Sektion auf `mt-12 sm:mt-20`. Hero-Kante → Video jetzt 48/80px, identisch mit Video → Karte. Neuer Wächter fällt gegen die Live-Seite mit exakt den dort gemessenen Altwerten (88/120px). Nachbarseiten live vorher und lokal nachher identisch vermessen. PROJ-13 190 passed / 0 failed, Suiten mit geteilter Shell 200 passed / 0 failed.
+
+**QA am 2026-09-29 abgeschlossen: 6/6 Acceptance Criteria, keine Bugs, Production-Ready.** Geprüft aus einem separaten Git-Worktree auf `HEAD`, weil im Arbeitsverzeichnis fremde, uncommittete PROJ-3-Arbeit lag. Beide Engines, elf Breiten inkl. `sm`-Grenze 639/640: **alle sieben** Sektionsübergänge der Seite messen jetzt gleich (48 bzw. 80px), Hero-Karte symmetrisch, BUG-7 unverändert, Nachbarseiten live vorher und nachher identisch. 4 neue Rhythmus-Tests je Engine, Gegenprobe gegen live zeigt den einen Ausreißer (`120, 80, 80, …`).
+
+**Wichtig für künftige Läufe: 26 Timeouts waren ein Umgebungsartefakt.** Mit iPhone-Profil (Pixeldichte 3) auf großen Fenstern fordert `next/image` Stufen größer als das Quellbild an; der lokale `next start` beantwortet manche davon bei **leerem Bild-Cache** nicht (> 30 s, auch per `curl`), live auf Vercel in 0,11 s. Betroffen sind Mobile-Safari-Tests der Info-Seiten ab 768px — genau das Bild eines frischen Clones oder CI-Laufs. Gegen einen Server mit warmem Cache bestehen dieselben Tests vollständig (164/0). **Bei Timeouts auf Mobile Safari ab 768px zuerst den Bild-Optimierer per `curl` prüfen.**
 
 ## Frontend umgesetzt: PROJ-3 Genaue Richtung und stabile Entfernung (2026-09-29)
 **PROJ-3** bleibt auf In Progress bis zur QA. Vier Produktivdateien, kein neues Paket.
