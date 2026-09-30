@@ -18,7 +18,7 @@
 |----|---------|----------|--------------|--------|------|---------|
 | PROJ-1 | App Shell & Mode Switch | P0 | None | Deployed | [Spec](PROJ-1-app-shell-mode-switch.md) | 2026-08-23 |
 | PROJ-2 | Quest Data Model & JSON Import | P0 | PROJ-1 | Deployed | [Spec](PROJ-2-quest-data-model-json-import.md) | 2026-08-23 |
-| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Approved | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
+| PROJ-3 | Player — GPS-Navigation | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-3-player-gps-navigation.md) | 2026-08-23 |
 | PROJ-4 | Player — Modul-Rendering | P0 | PROJ-2, PROJ-3 | Deployed | [Spec](PROJ-4-player-modul-rendering.md) | 2026-08-23 |
 | PROJ-5 | Player — Fortschritt & Abschluss | P0 | PROJ-3, PROJ-4 | Deployed | [Spec](PROJ-5-player-fortschritt-abschluss.md) | 2026-08-23 |
 | PROJ-6 | Creator — Quest-Verwaltung | P0 | PROJ-1, PROJ-2 | Deployed | [Spec](PROJ-6-creator-quest-verwaltung.md) | 2026-08-23 |
@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | Approved | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 | PROJ-15 | Medien-Links — YouTube, Vimeo und Cloud-Speicher | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Planned | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
 
@@ -1645,3 +1645,10 @@ Spec ist aktualisiert (6 Acceptance Criteria, 1 Produkt- und 1 technische Entsch
 **Edge Case 33 quantifiziert (Beobachtung):** Simulation bei einer 10-m-Station und 15 m Genauigkeit — Wartezeit bis zur Ankunft **2,5 s → 8,8 s** im Mittel (bei 25 m Genauigkeit **42 s**); Falsch-Ankunft aus 20 m **99 % → 31 %**. Der Wortlaut „höchstens ca. 1–3 s" gilt nur für Radien ≥ 20 m. Abnahme bleibt der Gerätetest mit einer 10-m-Station.
 
 **Tests:** Unit **334/334** (+9 im Hook), neue QA-Suite 5 je Engine 3× **30/30**, **Gesamtregression beide Engines 1294 passed / 0 failed / 0 flaky**, Lint 0 Fehler. Vorgängerstand auf eigenem Port gebaut, um BUG-20 als Regress statt als Vermutung zu belegen.
+
+## Deployt: PROJ-13 Refinement 11 + PROJ-3 „Genaue Richtung und stabile Entfernung" (2026-09-30)
+Beide in einem Push (`285cd08..33a2284`), Tags `v1.44.0-PROJ-13` und `v1.44.0-PROJ-3` — live auf https://geoquesty.vercel.app bzw. https://geoquest.technolomagie.de. Beide QA-geprüft; **der gemeinsame Stand wurde vor dem Push eigens geprüft**, weil jede QA nur ihren eigenen Commit kannte: Unit 334/334, Gesamtsuite beider Engines 1301 passed / 1 failed (lastabhängiger Service-Worker-Test, seriell 18/18).
+
+Live nach ~50 s, nachgewiesen an Merkmalen, die umschlagen konnten: der entfernte Abstandshalter verschwand aus dem Live-HTML, `deviceorientationabsolute` (vorher in keiner Datei) steht im ausgelieferten Chunk. **Die Feature-Suiten beider Features liefen direkt gegen die Live-Seite: 84 passed / 0 failed.** Nachbarseiten vor und nach dem Deploy identisch, 12 Endpunkte HTTP 200, Security-Header aktiv.
+
+Mit live gegangen, bekannt und dokumentiert: BUG-17 (Medium) und BUG-18 (Low) beim Erklärvideo, BUG-20 (Medium) in PROJ-3.

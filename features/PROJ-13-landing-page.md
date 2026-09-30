@@ -1,6 +1,6 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Approved
+## Status: Deployed
 _**Refinement 11 (2026-09-29): Abstand Hero → Video-Sektion.** Betreiber nach dem Deploy: zwischen CTA und Video-Überschrift ist deutlich mehr Abstand als zwischen Video und erster Karte. Gemessen live: 176px gegen 80px (mobil 112 gegen 48). Entschieden: Kante zu Kante überall dasselbe Maß. **Frontend umgesetzt und QA-geprüft am 2026-09-29** — 6/6 Acceptance Criteria, keine Bugs. Approved._
 
 _Refinement 9 (Hero-Bild wird Hintergrund) ist deployt (Tag `v1.40.0-PROJ-13`, 2026-09-26). **Refinement 10 (Erklärvideo als neue Sektion 2) ist am 2026-09-28 gespect, gebaut und QA-geprüft** — 11/11 Acceptance Criteria, 1 Medium- und 1 Low-Bug (BUG-17, BUG-18), keine Critical/High. Approved. Siehe Abschnitte „Refinement 10" und „Implementation Notes (Frontend — Refinement 10)" am Ende dieser Spec._
@@ -2933,3 +2933,15 @@ Alle 26 Fehlschläge: Mobile Safari, Info-Seiten, Breiten ab 768px, jeweils **Ti
 2. **„Ein einmal hängengebliebener Cache-Schlüssel"** — nach der ersten `curl`-Messung plausibel. Widerlegt: Nach Neustart mit kaltem Cache scheiterten exakt dieselben 26 Tests wieder, nur an einer anderen Bildanfrage.
 
 Dazu ein Werkzeugbefund: Turbopack verweigert den Build mit per Symlink verlinktem `node_modules` außerhalb des Projektstamms — ein APFS-Klon (`cp -cR`, ~5 s) funktioniert.
+
+## Deployment — Refinement 11: Abstand Hero → Video (2026-09-30)
+
+**Live auf https://geoquesty.vercel.app/about** (dieselbe Bereitstellung bedient https://geoquest.technolomagie.de), Tag `v1.44.0-PROJ-13`. Gemeinsam mit PROJ-3 („Genaue Richtung und stabile Entfernung") in einem Push (`285cd08..33a2284`) — beide QA-geprüft.
+
+**Vorab auf dem gemeinsamen Stand geprüft**, weil beide QAs nur ihren eigenen Commit getestet hatten: Build und Lint sauber, keine Secrets im Push-Diff, Unit **334/334**, Gesamtsuite beider Engines **1301 passed / 1 failed** — der eine war der dokumentiert lastabhängige Service-Worker-Test, seriell 3× wiederholt **18/18 grün**.
+
+**Live nach ~50 s.** Nachgewiesen über ein Merkmal, das tatsächlich umschlagen konnte: der entfernte Abstandshalter stand vorher im Live-HTML (1 Treffer) und verschwand mit dem Deploy (0).
+
+**Live verifiziert:** Die Feature-Suite `tests/proj-13-about-video.spec.ts` lief direkt gegen die Live-Seite, zusammen mit den PROJ-3-Suiten **84 passed / 0 failed** (die `test.fail`-Wächter für BUG-17/18 schlagen wie vorgesehen an). Darin enthalten: alle Sektionsabstände einheitlich 48/80px, Hero-Karte symmetrisch, 0 MP4-Requests vor dem Klick, Abspielen, Fallback. Nachbarseiten `/anleitung`, `/impressum`, `/datenschutz` vor und nach dem Deploy **identisch** vermessen. Alle 12 Endpunkte HTTP 200, Video mit Range `206`, HSTS/`x-frame-options`/`nosniff` aktiv.
+
+**Weiter offen:** BUG-17 (Medium), BUG-18 (Low), Untertitel-Frage zur Tonspur.

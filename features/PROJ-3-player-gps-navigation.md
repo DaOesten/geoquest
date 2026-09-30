@@ -1,6 +1,6 @@
 # PROJ-3: Player — GPS-Navigation
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-08-23
 **Last Updated:** 2026-09-28
 
@@ -2049,3 +2049,15 @@ Monte-Carlo-Simulation (20 000 Läufe, Spieler steht **genau auf** der Station, 
 - **Echtes Android-Gerät** mit Kompass-App daneben — die zentrale Abnahme dieses Refinements
 - **Echtes GPS-Rauschen** (zeitlich korreliert) — die Simulation nimmt unabhängiges Rauschen an
 - **Firefox** — Binary fehlt
+
+## Deployment — Genaue Richtung und stabile Entfernung (2026-09-30)
+
+**Live auf https://geoquesty.vercel.app** (dieselbe Bereitstellung bedient https://geoquest.technolomagie.de), Tag `v1.44.0-PROJ-3`. Gemeinsam mit PROJ-13 (Refinement 11) in einem Push (`285cd08..33a2284`) — beide QA-geprüft.
+
+**Vorab auf dem gemeinsamen Stand geprüft** (die QA lief auf `6d1a766`, ausgeliefert wird `33a2284`): Build und Lint sauber, keine Secrets im Push-Diff, Unit **334/334**, Gesamtsuite beider Engines **1301 passed / 1 failed** — der eine war der lastabhängige Service-Worker-Test (PROJ-12), seriell 3× **18/18 grün**.
+
+**Auslieferung am Bundle belegt:** `deviceorientationabsolute` kommt im Code vor dem Deploy in keiner Datei vor und steht jetzt im live ausgelieferten Chunk `c7bc84425eec5947.js` (von `/play/<id>` referenziert — der Navigations-Screen wird lazy geladen).
+
+**Live verifiziert:** `tests/proj-3-richtung-entfernung.spec.ts` und `tests/proj-3-richtung-entfernung-qa.spec.ts` liefen direkt gegen die Live-Seite, zusammen mit der PROJ-13-Suite **84 passed / 0 failed**; der BUG-20-Wächter schlägt wie vorgesehen an. Alle 12 Endpunkte HTTP 200, Security-Header aktiv.
+
+**Weiter offen:** BUG-20 (Medium), die Bestätigung am echten Android- und iOS-Gerät.
