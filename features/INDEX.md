@@ -30,7 +30,7 @@
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
-| PROJ-15 | Medien-Links — YouTube, Vimeo und Cloud-Speicher | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Planned | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
+| PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Planned | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
 
 <!-- Add features above this line -->
 
@@ -1584,6 +1584,8 @@ Regression: Unit 305/305, Gesamtsuite beider Engines **1216 passed / 0 failed / 
 **Für `/architecture` vorab benannt:** Die Umwandlungsregeln (Dropbox `raw=1`, Google-Drive-Endpunkte) sind **gegen echte, öffentlich geteilte Testdateien** zu messen, nicht aus Dokumentation zu übernehmen — dafür liefert der Betreiber je eine Bild-, MP3- und MP4-Datei aus Dropbox und Google Drive. Die Bildvorschau aus PROJ-8 muss künftig die umgewandelte Adresse prüfen.
 
 Out of Scope u. a.: Spotify/SoundCloud, OneDrive/iCloud, Ordner-Links, Video/Audio in Intro/Outro, Vorschaubilder vor dem Tippen, gemerkte Einwilligung. 7 User Stories, 36 Acceptance Criteria in 8 Blöcken, 16 Edge Cases, 15 Produktentscheidungen, 5 offene Fragen (1 geschlossen: Hosting von KI-Audio → Cloud-Speicher).
+
+**Erweitert am 2026-09-30 um Wikimedia (Commons und Wikipedia).** Derselbe Fehler wie bei Dropbox und Magnific: Die kopierte Adresse ist eine Webseite, keine Datei — und die Spec empfahl Commons bereits als einfachsten Weg zu freien Bildern. Entschieden (Betreiber): Erkannt werden Commons-Dateiseiten **und** Links aus dem Wikipedia-Bildbetrachter (`…#/media/Datei:…`), dem häufigsten Kopierweg. Bilder laden in **Web-Größe** statt als 5–30-MB-Original — auch bereits eingetragene `upload.wikimedia.org`-Direktlinks (gewollte Verhaltensänderung, macht bestehende Quests nur schneller). Für Audio/Video wird eine **iPhone-taugliche Umcodierung** bevorzugt (Commons speichert oft Ogg/WebM); fehlt sie, zeigt der Creator einen Format-Hinweis unabhängig von der Probe — sonst meldet der Desktop „läuft", während das iPhone stumm bleibt. Lizenz: **Hinweis** im Creator, Urheber und Lizenz in die Bildunterschrift zu übernehmen, keine API. Kein Zwei-Klick. Neu in der Spec: User Story 8, 12 Acceptance Criteria in zwei Blöcken, Edge Cases 17–22, 3 Technical Requirements, 6 Produktentscheidungen, 3 Open Questions (Adressformen und Umcodierungen gegen echte Dateien messen, lokalisierte Namensräume, Zielbreite).
 
 ## QA abgeschlossen: PROJ-8 Bildvorschau (2026-09-29)
 **PROJ-8** ist QA-geprüft: **9/9 Acceptance Criteria erfüllt, keine Bugs in diesem Refinement, Production-Ready.** Status auf Approved. Damit ist auch der Deploy von PROJ-13 (Erklärvideo), der auf diese QA gewartet hat, nicht mehr blockiert — beide liegen auf `main`.
