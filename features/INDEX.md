@@ -1652,3 +1652,8 @@ Beide in einem Push (`285cd08..33a2284`), Tags `v1.44.0-PROJ-13` und `v1.44.0-PR
 Live nach ~50 s, nachgewiesen an Merkmalen, die umschlagen konnten: der entfernte Abstandshalter verschwand aus dem Live-HTML, `deviceorientationabsolute` (vorher in keiner Datei) steht im ausgelieferten Chunk. **Die Feature-Suiten beider Features liefen direkt gegen die Live-Seite: 84 passed / 0 failed.** Nachbarseiten vor und nach dem Deploy identisch, 12 Endpunkte HTTP 200, Security-Header aktiv.
 
 Mit live gegangen, bekannt und dokumentiert: BUG-17 (Medium) und BUG-18 (Low) beim Erklärvideo, BUG-20 (Medium) in PROJ-3.
+
+## BUG-20 als „kein Fehler“ geschlossen (PROJ-3, 2026-09-30)
+Die QA hatte gemeldet, dass der Pfeil **ohne Kompass** seit der Glättung erst nach 4 s statt sofort eine Richtung findet. Die Messung lief mit **rauschfreien** Positionen. Eine Simulation mit realistischem GPS-Rauschen zeigt: Die frühere Schnelligkeit war kein Vorteil, sie zeigte draußen oft falsche Richtungen, auch im Stehen. Der vorgeschlagene Fix hätte das verstärkt (Scheinrichtung im Stand 27–98 % der Zeit). Betreiber-Entscheidung: **kein Fehler, kein Code-Eingriff.**
+
+Der `test.fail`-Wächter ist **umgedreht, nicht gelöscht**. Er hält jetzt fest, dass der Pfeil bei 10 m Genauigkeit nach 5 m Weg bewusst keine Richtung behauptet (gegen live 6/6, beide Engines). Offen als mögliche Verbesserung, nicht als Bug: Bei langsamem, gleichmäßigem Gehen mit sehr gutem Empfang findet der Pfeil ohne Kompass mitunter gar keine Richtung (vorbestehend). PROJ-3 bleibt Deployed; im Produktcode ändert sich nichts.

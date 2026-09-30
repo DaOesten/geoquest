@@ -2,7 +2,7 @@
 
 ## Status: Deployed
 **Created:** 2026-08-23
-**Last Updated:** 2026-09-28
+**Last Updated:** 2026-09-30 (BUG-20 als „kein Fehler“ geschlossen)
 
 > **Refinement (2026-09-28) — Genaue Richtung und stabile Entfernung:** Betreiber-Befund aus Handy-Tests auf iPhone und Android: *„der Kompass im Navigationsmodus zeigt nicht immer in genau die richtige Richtung"* und *„die Entfernungsanzeige war bei 30 m und einen Schritt später bei 10 m"*. Drei Ursachen im Code bestätigt: (1) **Android nutzt ein relatives Bezugssystem** — Chrome liefert über `deviceorientation` seit Version 50 `absolute: false`, „Norden" ist dort die Richtung, in die das Handy beim Laden zeigte; die echte Himmelsrichtung kommt nur über `deviceorientationabsolute`, das der Hook nicht abhört. (2) **Der Kalibrierungs-Hinweis hängt an den falschen Signalen** — auf Android erscheint er immer (weil `absolute === false` als „unkalibriert" gelesen wird), auf iOS nie (fest `false`, obwohl `webkitCompassAccuracy` den echten Zustand meldet). (3) **Jede GPS-Position wird ungefiltert übernommen** — Anzeige **und Ankunftserkennung** hängen am Rohwert, ein einzelner Ausreißer kann eine Station auslösen. Siehe Acceptance Criteria „Genaue Richtung und stabile Entfernung", Edge Cases 29–34, Technical Requirements, Decision Log und Abschnitt „Refinement 2026-09-28".
 
@@ -260,6 +260,7 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 
 ## Open Questions
 - [x] Ab welcher GPS-Genauigkeit (accuracy in Metern) soll eine Warnung angezeigt werden? (z.B. accuracy > 50m = "Signal ungenau") → Keine Warnung für den Spieler. Stattdessen werden ungenaue Messungen ab ~30 m verworfen, mit Rückfall nach ~5 s (2026-09-28)
+- [ ] Soll die Bewegungsrichtung (Pfeil **ohne** Kompass) aus mehreren Messungen gemittelt werden? Behebt die Schwäche, dass bei langsamem, gleichmäßigem Gehen mit gutem Empfang mitunter nie eine Richtung erscheint. Simuliert: Richtung nach 4–9 s, Median-Fehler 10–21°, Scheinrichtung im Stand 15–26 %. Eine Verbesserung, kein Bug-Fix; vom Betreiber vorerst nicht beauftragt (2026-09-30)
 - [ ] Soll die Entfernung bei > 1000m als "1,2 km" statt "1200 m" angezeigt werden?
 - [ ] Soll die Stationsliste auch die Entfernung zur jeweiligen Station anzeigen (wenn GPS aktiv)?
 - [ ] Soll der richtungslose Pfeil langsam rotieren (Suchanimation) oder statisch ausgegraut bleiben? — Umsetzungsdetail für `/frontend`
@@ -284,6 +285,7 @@ Die GPS-Navigation bildet das Kern-Spielerlebnis: Der Spieler wird per Richtungs
 ### Product Decisions
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| BUG-20 als „kein Fehler“ geschlossen, Bewegungsrichtung bleibt, wie sie ist | Der gemeldete Rückschritt („Richtung nach 4 s statt sofort“) stammt aus einer Messung mit rauschfreien Positionen. Mit realistischem GPS-Rauschen war die frühere Schnelligkeit kein Vorteil: Sie zeigte oft falsche Richtungen, auch im Stehen. Der vorgeschlagene Fix hätte das verstärkt. Ein Pfeil, der ein paar Sekunden wartet, schadet weniger als einer, der falsch zeigt; Kinder laufen einem falschen Pfeil hinterher. Betrifft nur Geräte ohne absoluten Kompass. Verworfen: „sofort“ (Scheinrichtungen) und Mittelung über mehrere Messungen (vorerst nicht beauftragt, als Open Question geführt) | 2026-09-30 |
 | Richtungspfeil statt Karte | Kinder sollen Umgebung erkunden, nicht aufs Handy starren. Keine Map-API-Kosten. | 2026-08-23 |
 | Flow: GPS → Intro → Stationsliste → Navigation | GPS zuerst, damit Signal beim Intro-Lesen bereits lockt. Stationsliste als Hub. | 2026-08-23 |
 | Stationsnamen immer sichtbar (auch gesperrt) | Erzeugt Neugier auf kommende Stationen, gibt Überblick über die Quest | 2026-08-23 |
@@ -1975,7 +1977,7 @@ Nach der zweiten Korrektur scheiterte „zwei Messungen in Folge lösen aus" auf
 
 **Tested:** 2026-09-29 · **Build:** Production aus isoliertem Worktree auf `6d1a766`, Port 3200; Vorgängerstand `6d1a766~1` parallel auf Port 3201 · **Engines:** Chrome 154, Mobile Safari (WebKit) · **Tester:** QA Engineer (AI)
 
-**Ergebnis: 11/11 Acceptance Criteria erfüllt (eines mit Einschränkung am Wortlaut), 1 Medium-Bug (BUG-20), keine Critical/High. Production-Ready.**
+**Ergebnis: 11/11 Acceptance Criteria erfüllt (eines mit Einschränkung am Wortlaut), 1 Medium-Bug (BUG-20, am 2026-09-30 als „kein Fehler“ geschlossen), keine Critical/High. Production-Ready.**
 
 ### Acceptance Criteria Status
 | AC | Ergebnis | Beleg |
@@ -1999,7 +2001,18 @@ Nach der zweiten Korrektur scheiterte „zwei Messungen in Folge lösen aus" auf
 - **Neuer Watch setzt die Glättung zurück**
 - **BUG-12 auf dem neuen Android-Weg:** `NaN`/`Infinity` in `deviceorientationabsolute` frieren den Pfeil nicht ein, kein `NaN` im CSS-`transform`
 
-### BUG-20 (Medium): Die Glättung verzögert die Bewegungsrichtung
+### ~~BUG-20 (Medium): Die Glättung verzögert die Bewegungsrichtung~~ → geschlossen als „kein Fehler“ (2026-09-30)
+
+> **Auflösung (Betreiber-Entscheidung 2026-09-30):** Der Befund war ein **Laborbefund**. Die Messung unten lief mit **rauschfreien** Positionen, echtes GPS wackelt aber immer. Eine Simulation mit realistischem Rauschen (Glättung aus dem Code nachgebaut, 400 Läufe je Fall, unabhängiges und zeitlich korreliertes Rauschen, Genauigkeit 5 und 10 m) zeigt:
+> - Die frühere „sofortige“ Richtung war draußen oft **falsch**. Sie hielt das Wackeln für Bewegung und zeigte auch im **Stehen** eine Richtung.
+> - Der vorgeschlagene Fix (ungeglättete Messungen, ≥ 5 m) wäre eine **Verschlechterung**: Scheinrichtung im Stand in **27–98 %** der Zeit, beim Gehen im Median **14–77°** daneben.
+> - Der heutige Stand findet unter realem Rauschen meist nach einigen Sekunden eine Richtung.
+>
+> Bei 10 m Genauigkeit liegen 5 m Weg im Messrauschen. Dort eine Richtung zu behaupten, hieße sie auch im Stehen zu behaupten. Der Wächter ist deshalb **umgedreht, nicht gelöscht**: Er hält jetzt fest, dass der Pfeil in dieser Lage bewusst **keine** Richtung zeigt (gegen live 6/6 auf beiden Engines).
+>
+> **Echt bleibt eine vorbestehende Schwäche**, die die QA nebenbei gefunden hat: Bei langsamem, gleichmäßigem Gehen mit sehr gutem Empfang findet der Pfeil **ohne Kompass** mitunter gar keine Richtung. Das ist eine mögliche Verbesserung, kein Bug; siehe Open Questions. Betroffen sind nur Geräte ohne absoluten Kompass.
+
+*Ursprünglicher Befund der QA vom 2026-09-29, unverändert:*
 - **Ursache:** `headingFromPositions` verlangt ≥ 2 m zwischen zwei **aufeinanderfolgenden** Positionen. Seit der Glättung sind das die geglätteten Positionen, und die rücken anfangs weniger vor als die Rohmessungen
 - **Gemessen, Vorgänger und neuer Stand nebeneinander** (Schritte im Sekundentakt nach Norden, ohne Kompass):
 
@@ -2060,4 +2073,4 @@ Monte-Carlo-Simulation (20 000 Läufe, Spieler steht **genau auf** der Station, 
 
 **Live verifiziert:** `tests/proj-3-richtung-entfernung.spec.ts` und `tests/proj-3-richtung-entfernung-qa.spec.ts` liefen direkt gegen die Live-Seite, zusammen mit der PROJ-13-Suite **84 passed / 0 failed**; der BUG-20-Wächter schlägt wie vorgesehen an. Alle 12 Endpunkte HTTP 200, Security-Header aktiv.
 
-**Weiter offen:** BUG-20 (Medium), die Bestätigung am echten Android- und iOS-Gerät.
+**Weiter offen:** die Bestätigung am echten Android- und iOS-Gerät. *(BUG-20 am 2026-09-30 als „kein Fehler“ geschlossen.)*

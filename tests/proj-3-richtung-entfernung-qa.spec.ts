@@ -143,18 +143,17 @@ test.describe("PROJ-3 QA: Richtung und Entfernung (2026-09-29)", () => {
   });
 
   /**
-   * BUG-20 (Medium): Die Glättung verzögert die Bewegungsrichtung.
-   * `headingFromPositions` verlangt ≥ 2 m zwischen zwei aufeinanderfolgenden
-   * Positionen — die geglätteten Positionen rücken anfangs weniger vor als die
-   * Rohmessungen. Gemessen bei 2,5 m je Sekunde und 10 m Genauigkeit: Richtung
-   * nach 4 s statt sofort (Vorgängerstand: sofort). Wird grün, sobald behoben.
+   * Ehemals BUG-20, am 2026-09-30 als „kein Fehler“ geschlossen. 5 m Weg
+   * liegen bei 10 m Genauigkeit im Messrauschen. Eine Richtung schon hier
+   * zu behaupten, hieße sie auch im Stehen zu behaupten (Scheinrichtung).
+   * Der Pfeil bleibt deshalb bewusst richtungslos, bis genug Weg zusammenkommt.
    */
-  test.fail("BUG-20: bei 2,5 m je Messung und 10 m Genauigkeit steht die Richtung nach 2 Messungen", async ({ page, context }) => {
+  test("bei 2,5 m je Messung und 10 m Genauigkeit behauptet der Pfeil nach 2 Messungen noch keine Richtung", async ({ page, context }) => {
     await start(page, context, 300, 10);
     for (let i = 1; i <= 2; i++) {
       await context.setGeolocation({ latitude: south(300 - 2.5 * i), longitude: ST.lng, accuracy: 10 });
       await page.waitForTimeout(1000);
     }
-    expect(await rotation(page)).not.toBeNull();
+    expect(await rotation(page)).toBeNull();
   });
 });
