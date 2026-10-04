@@ -30,7 +30,7 @@
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
-| PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | In Progress | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
+| PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Approved | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
 
 <!-- Add features above this line -->
 
@@ -1602,6 +1602,14 @@ Out of Scope u. a.: Spotify/SoundCloud, OneDrive/iCloud, Ordner-Links, Video/Aud
 **Tests:** Unit **418/418** (+84, davon 80 für die Auflösung). Neue E2E-Suite **48/48** auf beiden Engines, inkl. Netzwerk-Mitschnitt „keine Anfrage an YouTube/Google/Vimeo vor dem Tippen". **Gegenprobe gegen den echten Vorgängerstand: 42 von 48 fallen**; grün bleiben genau die drei Wächter, die in beiden Ständen bestehen müssen. Beim Sichttest lud die Creator-Vorschau versehentlich das **echte** Wikimedia-Bild — die ganze Kette ist damit in WebKit auch live belegt.
 
 **Gesamtregression 1322 passed / 28 unexpected — keiner davon durch PROJ-15.** 27 sind Mobile-Safari-Timeouts auf Info-Seiten ab 768 px: gemessen liefert der lokale Bild-Optimierer die 3840-px-WebP-Stufe des Hero-Bilds mit Browser-`Accept`-Header auch nach 60 s nicht (mit `*/*` in 2 ms). Das ist das am 2026-09-29 dokumentierte Artefakt, `/about`, Shell, Config und Assets sind unverändert. Der 28. (Service Worker) lief bei der Wiederholung grün. **Wichtig für künftige Läufe:** Den Bild-Cache per `curl` vorzuwärmen hilft **nicht** — er wärmt nur die PNG-Variante; der Browser fragt WebP an.
+
+**QA am 2026-10-04 abgeschlossen: 49/50 Acceptance Criteria, 1 Medium-Bug (BUG-21), keine Critical/High — Approved.**
+
+**Mit echtem Netz geprüft**, nicht nur gegen Attrappen, in Chrome und WebKit identisch: YouTube und Vimeo spielen im eingeschränkten iframe wirklich ab (echtes `<video>`, keine Referer-Fehlermeldung); Wikimedia-Ogg spielt die **MP3-Fassung**, Wikimedia-Video die **480p-WebM** statt des 3-GB-Originals; das Google-Drive-Bild des Betreibers lädt in 1280×2276. Ein vollständiger Durchlauf bis zum Outro ohne Tippen erzeugt **0 Anfragen und 0 Cookies** von YouTube/Google/Vimeo.
+
+**BUG-21 (Medium, Rückschritt):** Direkte Wikimedia-Links über `Special:FilePath`/`Spezial:Dateipfad`/`Special:Redirect` werden als „keine einzelne Datei" abgewiesen und laden im Player nicht mehr — vor PROJ-15 luden sie (gemessen: 480×640). Ursache: der `/` im Titel lässt die Dateinamen-Prüfung greifen. Kleiner Eingriff in `media-link.ts`; **Empfehlung: vor dem Deploy beheben**, weil bestehende Quests betroffen sein können. `test.fail`-Wächter vorhanden.
+
+22 neue QA-Tests je Engine (44/44). **Gegenprobe gegen den Vorgängerstand: 40 von 44 fallen**, grün bleiben nur die Wächter für XSS und unveränderte Speicherung. Regression der betroffenen Features **459/0**, Unit 418/418. Security ohne Befund (XSS in Adresse und Bildunterschrift, `javascript:`, Lookalike-Hosts, Pfadzeichen). Firefox weiterhin nicht verfügbar.
 
 ## QA abgeschlossen: PROJ-8 Bildvorschau (2026-09-29)
 **PROJ-8** ist QA-geprüft: **9/9 Acceptance Criteria erfüllt, keine Bugs in diesem Refinement, Production-Ready.** Status auf Approved. Damit ist auch der Deploy von PROJ-13 (Erklärvideo), der auf diese QA gewartet hat, nicht mehr blockiert — beide liegen auf `main`.

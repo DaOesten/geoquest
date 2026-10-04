@@ -1,6 +1,6 @@
 # PROJ-15: Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-09-28
 **Last Updated:** 2026-10-04
 
@@ -392,7 +392,150 @@ Keine neuen Pakete. Genutzt wird, was da ist: `Alert` (shadcn) für Hinweise und
 Echtes Abspielen von YouTube/Vimeo (Augenschein), Dropbox mit echten Dateien (Betreiber, Produktivsystem), Wikimedia-360p-MOV auf einem echten iPhone, Firefox.
 
 ## QA Test Results
-_To be added by /qa_
+
+**Tested:** 2026-10-04
+**App URL:** Production-Build (`next start`) in isoliertem Worktree auf Port 3200, Commit `dadadaa`
+**Tester:** QA Engineer (AI)
+**Browser:** Desktop Chrome 152, WebKit (iPhone-13-Profil). Firefox nicht verfügbar (Binary fehlt, wie seit Projektbeginn dokumentiert)
+
+### Zusammenfassung
+- **Acceptance Criteria:** 49 / 50 erfüllt
+- **Bugs:** 1 neu — **BUG-21 (Medium, Rückschritt)**; keine Critical/High
+- **Security:** ohne Befund
+- **Production Ready:** JA (kein Critical/High) — Empfehlung: BUG-21 vor dem Deploy beheben, weil er bestehende Quests betreffen kann und der Fix klein ist
+
+### Mit echtem Netz geprüft (nicht nur gegen Attrappen)
+Die Frontend-Suite beantwortet jeden fremden Host per `page.route`. Was dort nicht beweisbar war, ist hier gegen die echten Anbieter gemessen — in Chrome **und** WebKit identisch:
+
+| Prüfung | Ergebnis |
+|---|---|
+| YouTube im eingeschränkten iframe (`youtube-nocookie`, Sandbox, nur Herkunft als Referer) | lädt, Titel „Big Buck Bunny…", echtes `<video>`-Element, **keine** Referer-Fehlermeldung |
+| Vimeo mit `dnt=1` | lädt, Player-Bedienelemente vorhanden |
+| Wikimedia-Ogg-Audio | `currentSrc` endet auf `.ogg.mp3` — die **MP3-Fassung** wird gespielt, Dauer 11 s |
+| Wikimedia-Video (Original 3 GB) | beide Engines wählen **480p-WebM**, `readyState` 4 (Chrome); das Original wird nicht angefasst |
+| Google-Drive-Bild des Betreibers | lädt über den Bild-Server, 1280×2276 |
+
+### Acceptance Criteria Status
+
+#### Plattform-Videos — Erkennung (5/5)
+- [x] Alle YouTube-Formen inkl. Shorts/Embed/mobil/nocookie mit richtiger ID (Unit)
+- [x] Vimeo inkl. Hash nicht gelisteter Videos in beiden Schreibweisen (Unit + E2E)
+- [x] Startzeit `t=90`, `1m30s`, `start=` (Unit + E2E)
+- [x] Playlist: nur das einzelne Video
+- [x] Plattform-Link im Bild-/Audio-Feld → Warnung
+
+#### Plattform-Videos — Player / Zwei-Klick (7/7)
+- [x] Platzhalter ohne **jede** Anfrage an YouTube/Google/Vimeo (Netzwerk-Mitschnitt)
+- [x] Tippen lädt den Player an derselben Stelle
+- [x] Video läuft in der Station, Vollbild erlaubt (`allowfullscreen`), App bleibt offen — echter Player geladen; das tatsächliche Abspielen mit Ton bleibt Augenschein
+- [x] Zwei Videos: nur das angetippte lädt
+- [x] Empfehlungen auf den Kanal beschränkt (`rel=0` in der gebauten Adresse; Wirkung Augenschein)
+- [x] Bildunterschrift unter Platzhalter bzw. Player
+- [x] 16:9 ohne Sprung beim Laden, Tap-Ziel ≥ 44 px, Tastatur; **Kontrast gemessen ≥ 4.5:1** (QA-Test)
+
+#### Plattform-Videos — Creator (4/4)
+- [x] „YouTube-/Vimeo-Video erkannt" mit Zwei-Klick-Zusatz
+- [x] Plattform-Vorschau erst nach „Vorschau laden", vorher keine Anfrage
+- [x] Neue Adresse entfernt die geladene Vorschau
+- [x] Kanal/Playlist/Suche → Warnung
+
+#### Cloud-Speicher — Umwandlung (6/6)
+- [x] Dropbox alt und neu (`rlkey` bleibt, Tracking entfällt) — gegen Attrappe; echte Dropbox-Datei steht aus (Betreiber, Produktivsystem)
+- [x] Google-Drive-Bild über den Bild-Server — **mit echter Datei bestätigt**
+- [x] Google-Drive-Audio/-Video: kein Ladeversuch, Fehlerzustand, **0 Anfragen an Google**
+- [x] Gespeichert bleibt die Eingabe (QA-Test: Dropbox-Link landet unverändert im Speicher)
+- [x] Intro **und Outro** (QA-Test) werden umgewandelt
+- [x] Unbekannte Adressen unverändert
+
+#### Cloud-Speicher — Creator (5/5)
+- [x] „Dropbox-Datei erkannt", Vorschau/Probe mit umgewandelter Adresse
+- [x] „Google-Drive-Bild erkannt"
+- [x] Drive-Audio/-Video: sofortige Warnung mit Rat zu Dropbox, kein Probe-Player
+- [x] Ordner → Warnung
+- [x] Nicht freigegebene Datei → Lade-Warnung nennt „Jeder mit dem Link" — für Bild **und** Audio (QA-Test)
+
+#### Wikimedia — Erkennung und Umwandlung (7/7)
+- [x] Commons-Dateiseite, mobil, `Datei:`
+- [x] Wikipedia-Bildbetrachter → genau diese Datei aus dem Herkunfts-Wiki
+- [x] Umlaute, Leerzeichen, Prozent-Kodierung
+- [x] Bilder in Web-Größe, auch vorhandene `upload.wikimedia.org`-Links
+- [x] Audio/Video: iPhone-taugliche Fassung bevorzugt — **mit echtem Netz bestätigt** (MP3 bzw. 480p-WebM)
+- [x] Gespeichert bleibt die Eingabe
+- [x] Intro/Outro wie im Modul
+
+#### Wikimedia — Creator (4/5)
+- [x] „Wikimedia-Datei erkannt"; Vorschau mit aufgelöster Adresse (beim Sichttest lud versehentlich das echte Bild)
+- [x] Lizenz-Hinweis: Bildunterschrift bzw. Intro-/Outro-Text
+- [x] iPhone-Format-Hinweis auch bei gelingender Probe (QA-Test)
+- [ ] **BUG-21:** Warnung „keine einzelne Datei" erscheint auch bei `Special:FilePath`-/`Spezial:Dateipfad`-/`Special:Redirect`-Links — das **sind** einzelne Dateien
+- [x] Nicht vorhandene Datei → normale Lade-Warnung (QA-Test)
+
+#### Probe-Player (5/5)
+- [x] Kleiner Player mit aufgelöster Adresse
+- [x] Nicht ladbar → Warnung mit Anleitung
+- [x] iOS-Fall: nach 6 s neutraler Hinweis, **nie** eine Warnung
+- [x] Speichern trotz Warnung
+- [x] Adresswechsel ersetzt den laufenden Probe-Player (QA-Test: alte Quelle verschwindet)
+
+#### Datenschutz (3/3)
+- [x] `/datenschutz` erklärt Zwei-Klick, Anbieter, `youtube-nocookie.com`
+- [x] **Vollständiger Durchlauf bis zum Outro ohne Tippen: 0 Anfragen und 0 Cookies** von YouTube/Google/Vimeo (QA-Test)
+- [x] Cloud-/Wikimedia-Dateien ohne zusätzlichen Klick
+
+#### Sicherheit (3/3)
+- [x] Manipulierte Adressen weder eingebettet noch umgewandelt
+- [x] iframe-Sandbox ohne `allow-top-navigation`
+- [x] Jede gebaute Adresse auf einem offiziellen Host (Unit)
+
+### Edge Cases
+- [x] EC 1–6, 8, 12–16 wie in der Frontend-Suite; EC 7 (Station verlassen beendet das Video, zurück steht der Platzhalter) neu als QA-Test
+- [x] EC 17 (lokale Wikipedia-Datei): Auflösung über das Herkunfts-Wiki, Unit-belegt
+- [x] EC 18 (lokalisierte Präfixe), 19, 20, 22: Unit-belegt
+- [x] EC 21: Wikimedia-Video lädt die 480p-Fassung statt des 3-GB-Originals (echtes Netz)
+- [ ] EC 9/10/11 (Dropbox-Limits, Drive-Änderungen): nicht testbar, wie spezifiziert
+
+### Security Audit
+- [x] XSS: Markup in Bildunterschrift **und** Adresse (Player und Creator) wird nicht ausgeführt — 0 Dialoge, 0 injizierte Elemente, `window.__pwn` bleibt leer
+- [x] `javascript:`-Adresse: keine Hinweise, kein Player, keine Anfrage
+- [x] Host-Prüfung am geparsten Host; Lookalike-Domains → unbekannt
+- [x] Pfadzeichen/Steuerzeichen in Dateinamen werden verworfen (`../`, `%0A`)
+- [x] iframe: Sandbox ohne Navigation der App; Embed-Adresse nur aus geprüfter ID
+- [x] Keine neuen Abhängigkeiten, keine Secrets, keine gespeicherten Daten
+
+### Responsive
+- [x] 320 / 375 / 768 / 1440 px: Platzhalter 16:9, kein horizontaler Überlauf; Creator-Warnungen ohne Überlauf, „Vorschau laden" ≥ 44 px
+
+### Bugs Found
+
+#### BUG-21: Direkte Wikimedia-Links über `Special:FilePath` laden nicht mehr
+- **Severity:** Medium (Rückschritt gegenüber dem Stand vor PROJ-15)
+- **Steps to Reproduce:**
+  1. Bild-Modul mit `https://commons.wikimedia.org/wiki/Special:FilePath/Cologne_Cathedral.jpg` (oder `…/Spezial:Dateipfad/…`, `…/w/index.php?title=Special:Redirect/file/…`)
+  2. Creator: Erwartet „Wikimedia-Datei erkannt" + Vorschau. Tatsächlich: Warnung „Diese Seite ist keine einzelne Datei."
+  3. Player: Erwartet das Bild. Tatsächlich: „Bild konnte nicht geladen werden"
+- **Gemessen mit echtem Netz:** dieselbe Adresse lädt als einfaches `<img>` (Verhalten vor PROJ-15) in 480×640. Bestehende Quests mit solchen Links zeigen nach dem Deploy kein Bild mehr.
+- **Ursache:** `splitFileTitle` sieht den Titel `Special:FilePath/Cologne_Cathedral.jpg`, Präfix `Special`, Name mit `/` → `checkFileName` verwirft ihn → `wikimedia-not-a-file`, keine Quellen.
+- **Naheliegende Behebung:** Spezialseiten `Special:FilePath`/`Spezial:Dateipfad`/`Special:Redirect/file` erkennen und den Dateinamen dahinter wie eine Dateiseite behandeln (bekommt dann auch die Web-Größe). Mindestens: sie unverändert durchreichen statt zu verwerfen.
+- **Wächter:** `test.fail` in `tests/proj-15-medien-links-qa.spec.ts` — wird grün, sobald behoben
+- **Priority:** Vor dem Deploy beheben (kleiner Eingriff, betrifft möglicherweise vorhandene Quests)
+
+### Beobachtungen ohne Bug-Status
+- `music.youtube.com` wird nicht erkannt und als Videodatei versucht (scheitert mit dem normalen Fehlerzustand). Nicht in der Spec gefordert; YouTube-Music-Links in Quests sind unwahrscheinlich.
+- `dl.dropboxusercontent.com`-Links bleiben unverändert — richtig, sie sind bereits Direktlinks.
+- WebKit erreicht „Vorschau laden" per Tastatur mit Alt+Tab statt Tab — Safari-Plattformverhalten, im Test berücksichtigt.
+
+### Tests
+- **Neu:** `tests/proj-15-medien-links-qa.spec.ts`, **22 Tests je Engine, 44/44** (inkl. BUG-21-Wächter als `test.fail`)
+- **Gegenprobe gegen den echten Vorgängerstand** (`f41188a`, eigener Build): **40 von 44 fallen**. Grün bleiben genau zwei Wächter, die in beiden Ständen bestehen müssen — XSS wird nicht ausgeführt, die Eingabe wird unverändert gespeichert (je Engine). Der BUG-21-Wächter fällt dort korrekt, weil der Link vor PROJ-15 lud — der Rückschritt ist damit auch automatisiert belegt
+- **Regression der betroffenen Features** (PROJ-4, 5, 6, 8, 13-Info, 15): **459 passed / 0 unexpected / 0 flaky** über beide Engines; die zwei BUG-15-Zeilen sind die erwarteten `test.fail`-Wächter
+- **Unit:** 418/418
+- **Gesamtsuite** (aus der Frontend-Phase, byte-identischer Stand): 1322 passed; die 28 Ausreißer sind als Umgebungsartefakte belegt (lokaler Bild-Optimierer, Service-Worker-Flakiness)
+
+### Eigene Fehler in den QA-Tests, offen benannt (Produkt jeweils richtig)
+1. Die Sammel-Route beantwortete `.mp3` als WAV, **bevor** die Regel für die nicht freigegebene Dropbox-Datei griff — Reihenfolge der Bedingungen
+2. Das Outro wollte ich über einen gespeicherten Bildschirmzustand erreichen; es folgt aber erst auf das Abschließen der letzten Station
+3. WebKit springt mit Tab nicht auf Knöpfe (Safari-Standard) — Alt+Tab
+
 
 ## Deployment
 _To be added by /deploy_
