@@ -1,6 +1,6 @@
 # PROJ-15: Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-09-28
 **Last Updated:** 2026-10-04
 
@@ -399,7 +399,7 @@ Echtes Abspielen von YouTube/Vimeo (Augenschein), Dropbox mit echten Dateien (Be
 **Browser:** Desktop Chrome 152, WebKit (iPhone-13-Profil). Firefox nicht verfügbar (Binary fehlt, wie seit Projektbeginn dokumentiert)
 
 ### Zusammenfassung
-- **Acceptance Criteria:** 49 / 50 erfüllt
+- **Acceptance Criteria:** 50 / 50 erfüllt (49/50 in der ersten Runde; BUG-21 behoben und nachgeprüft)
 - **Bugs:** 1 neu — **BUG-21 (Medium, Rückschritt), am 2026-10-04 behoben**; keine Critical/High
 - **Security:** ohne Befund
 - **Production Ready:** JA (kein Critical/High) — Empfehlung: BUG-21 vor dem Deploy beheben, weil er bestehende Quests betreffen kann und der Fix klein ist
@@ -526,6 +526,17 @@ Die Frontend-Suite beantwortet jeden fremden Host per `page.route`. Was dort nic
 - **Mit echtem Netz, Chrome und WebKit:** `Special:FilePath`-Link lädt wieder (480×640, nicht hochskaliert); `Spezial:Dateipfad` auf das 18-MB-Foto lädt jetzt in Web-Größe (1280 px) — bestehende Quests gewinnen also, statt nur den alten Zustand zurückzubekommen
 - **Sicherheitstest präzisiert:** Er verlangte bei Pfadzeichen im Dateinamen „lädt nichts". Mit dem Rückfall lädt eine solche Adresse wieder exakt die Eingabe — wie jede unbekannte Adresse, wie es das Sicherheitskriterium vorsieht. Geprüft wird jetzt, was der Test belegen soll: **keine selbst gebaute Adresse** aus einem solchen Namen
 - **Tests:** 9 neue Unit-Tests (427/427). Gegenprobe mit der fehlerhaften Fassung: **genau 8 fallen**, der Test „Spezialseite ohne Dateinamen" besteht in beiden Fassungen, wie er soll. E2E: der `test.fail`-Wächter ist jetzt ein normaler Test, dazu ein Creator-Test („Wikimedia-Datei erkannt" statt Warnung). **PROJ-15 + PROJ-8-Bildvorschau 146/146** über beide Engines; Lint 0 Fehler, Build sauber
+
+#### QA der Behebung (2026-10-04): BUG-21 bestätigt behoben, keine neuen Bugs
+- **Mit echtem Netz, Chrome und WebKit, 8 Formen:** `Special:FilePath`, kleingeschrieben, `Spezial:Dateipfad` (de), `Spezial:Weiterleitung/file/`, `index.php?title=Special:Redirect/file/`, mobil mit `File:`-Präfix und eigener `width`, eine **nur auf de.wikipedia** liegende Datei — **alle laden, 0 Fehlerzustände**. Audio über `Special:FilePath` spielt die MP3-Fassung
+- **Besser als vor PROJ-15:** `Spezial:Dateipfad` auf **Commons** liefert als rohe Adresse 404 (gemessen) — durch die Auflösung lädt es jetzt. Und `Spezial:Dateipfad` auf das 18-MB-Foto lädt in 1280 px
+- **Gegenprobe gegen den Stand vor dem Fix** (`a7df82a`, eigener Build): **alle 4 BUG-21-Tests fallen** (Player und Creator, je Engine)
+- **Regression:** Unit 427/427; E2E PROJ-15 (beide Dateien), PROJ-8-Bildvorschau (beide), PROJ-4-Module, PROJ-5-Abschluss **248/248**, 0 flaky
+- **Code-Review des Diffs, drei Punkte geprüft, keiner ein Bug:**
+  1. Der Rückfall liefert `url.href` statt der wörtlichen Eingabe — `URL` schreibt den Host klein und kodiert Sonderzeichen. Zum Laden gleichwertig; nicht wörtlich „unverändert", aber ohne Wirkung für den Nutzer
+  2. Ein **ungültiger** Bildbetrachter-Link, der auf `.jpg` endet, fällt jetzt in den Rückfall statt die Warnung „keine einzelne Datei" zu bekommen. Die Bildvorschau meldet dann die normale Lade-Warnung — der Ersteller wird weiterhin gewarnt, nur mit dem allgemeineren Text
+  3. Pfadzeichen (`..%2F`) in einer Spezialseite: kein gebauter Pfad; der Rückfall reicht die Eingabe durch wie vor PROJ-15 — `%2F` wird vom Browser nicht als Pfadtrenner aufgelöst
+- **Security unverändert ohne Befund**
 
 ### Beobachtungen ohne Bug-Status
 - `music.youtube.com` wird nicht erkannt und als Videodatei versucht (scheitert mit dem normalen Fehlerzustand). Nicht in der Spec gefordert; YouTube-Music-Links in Quests sind unwahrscheinlich.
