@@ -232,6 +232,38 @@ describe("resolveMediaUrl — Wikimedia Bilder", () => {
   });
 });
 
+describe("resolveMediaUrl — Wikimedia Spezialseiten (BUG-21)", () => {
+  it.each([
+    ["https://commons.wikimedia.org/wiki/Special:FilePath/Cologne_Cathedral.jpg", "https://commons.wikimedia.org"],
+    ["https://commons.wikimedia.org/wiki/Special:FilePath/File:Cologne_Cathedral.jpg?width=800", "https://commons.wikimedia.org"],
+    ["https://commons.wikimedia.org/wiki/special:filepath/Cologne_Cathedral.jpg", "https://commons.wikimedia.org"],
+    ["https://de.wikipedia.org/wiki/Spezial:Dateipfad/Cologne_Cathedral.jpg", "https://de.wikipedia.org"],
+    ["https://de.wikipedia.org/wiki/Spezial:Weiterleitung/file/Cologne_Cathedral.jpg", "https://de.wikipedia.org"],
+    ["https://commons.wikimedia.org/w/index.php?title=Special:Redirect/file/Cologne_Cathedral.jpg", "https://commons.wikimedia.org"],
+  ])("%s ist eine Datei und lädt in Web-Größe", (url, wiki) => {
+    expect(srcs(url, "image")).toEqual([`${wiki}/wiki/Special:FilePath/File:Cologne_Cathedral.jpg?width=1280`]);
+    expect(codes(url, "image")).toEqual(["wikimedia-recognized"]);
+  });
+
+  it("Spezialseite auf eine Ogg-Datei bekommt die MP3-Fassung", () => {
+    expect(srcs("https://commons.wikimedia.org/wiki/Special:FilePath/Toco_Toucan_call_(Ramphastos_toco).ogg", "audio")[0]).toMatch(
+      /\/transcoded\/a\/a8\/.*\.ogg\.mp3$/
+    );
+  });
+
+  it("unbekannte (z.B. lokalisierte) Spezialseite mit Medien-Endung bleibt unverändert wie vor PROJ-15", () => {
+    const url = "https://fr.wikipedia.org/wiki/Sp%C3%A9cial:Chemin_de_fichier/Cologne_Cathedral.jpg";
+    const r = resolveMediaUrl(url, "image");
+    expect(r.sources.map((s) => s.src)).toEqual([url]);
+    expect(r.notices).toEqual([]);
+  });
+
+  it("Spezialseite ohne Dateinamen oder mit Pfadtricks wird nicht umgewandelt", () => {
+    expect(codes("https://commons.wikimedia.org/wiki/Special:FilePath/", "image")).toEqual(["wikimedia-not-a-file"]);
+    // Pfadtricks: siehe „Sicherheit" — höchstens die unveränderte Eingabe, nie eine gebaute Adresse
+  });
+});
+
 describe("resolveMediaUrl — Wikimedia Audio und Video", () => {
   it("Ogg-Audio: zuerst die MP3-Fassung (Pfad aus MD5), dann das Original", () => {
     const r = resolveMediaUrl("https://commons.wikimedia.org/wiki/File:Toco_Toucan_call_(Ramphastos_toco).ogg", "audio");
@@ -301,9 +333,17 @@ describe("resolveMediaUrl — Sicherheit", () => {
   });
 
   it("baut keine Adresse aus Dateinamen mit Pfad- oder Steuerzeichen", () => {
-    expect(srcs("https://www.dropbox.com/s/abc123xyz/..%2F..%2Fadmin", "audio")).toEqual([]);
-    expect(srcs("https://commons.wikimedia.org/wiki/File:a%2F..%2Fb.jpg", "image")).toEqual([]);
-    expect(srcs("https://de.wikipedia.org/wiki/X#/media/Datei:a%0Ab.jpg", "image")).toEqual([]);
+    // Erlaubt ist nur: nichts laden, oder exakt die Eingabe wie vor PROJ-15
+    // (unbekannte Adresse). Nie eine selbst gebaute Adresse mit diesem Namen.
+    for (const [url, field] of [
+      ["https://www.dropbox.com/s/abc123xyz/..%2F..%2Fadmin", "audio"],
+      ["https://commons.wikimedia.org/wiki/File:a%2F..%2Fb.jpg", "image"],
+      ["https://de.wikipedia.org/wiki/X#/media/Datei:a%0Ab.jpg", "image"],
+      ["https://commons.wikimedia.org/wiki/Special:FilePath/a%2F..%2Fb.jpg", "image"],
+    ] as const) {
+      const built = srcs(url, field).filter((s) => s !== url);
+      expect(built).toEqual([]);
+    }
   });
 
   it("lässt keine Zeichen aus der Eingabe in die Embed-Adresse durch", () => {

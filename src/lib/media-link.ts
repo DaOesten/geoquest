@@ -302,11 +302,35 @@ function resolveWikimedia(url: URL, host: string, field: MediaField): ResolvedMe
 
   const title = wikiTitle(url);
   const fromMediaViewer = url.hash.startsWith("#/media/");
+
+  // BUG-21: Spezialseiten wie Special:FilePath sind Direktlinks auf eine Datei
+  const special = title ? specialPageFile(title) : null;
+  if (special) return wikimediaFile({ wiki, repos, prefix: "File", name: special }, field);
+
   const split = title ? splitFileTitle(title) : null;
   if (!split || (!fromMediaViewer && !MEDIA_EXTENSION.test(split.name))) {
+    // Unbekannte Form, die auf eine Mediendatei endet (z.B. eine lokalisierte
+    // Spezialseite): unverändert lassen wie vor PROJ-15, statt sie abzuweisen.
+    // Abgewiesen wird nur, was sicher keine Datei ist.
+    if (title && MEDIA_EXTENSION.test(title)) return asDirect(url.href);
     return nothingPlayable("wikimedia", warning("wikimedia-not-a-file"));
   }
   return wikimediaFile({ wiki, repos, ...split }, field);
+}
+
+/**
+ * Dateiname aus einer Spezialseite, die direkt auf eine Datei weiterleitet
+ * (BUG-21). Gemessen 2026-10-04: Groß-/Kleinschreibung egal, englisch und
+ * deutsch, der Dateiname darf selbst einen Präfix tragen (`File:…`).
+ */
+function specialPageFile(title: string): string | null {
+  const match =
+    /^(?:special|spezial):(?:filepath|dateipfad)\/(.+)$/i.exec(title) ??
+    /^(?:special|spezial):(?:redirect|weiterleitung)\/file\/(.+)$/i.exec(title);
+  if (!match) return null;
+  const inner = match[1].replace(/^[\p{L} _-]{1,30}:/u, "");
+  const name = checkFileName(inner);
+  return name ? normalizeWikiName(name) : null;
 }
 
 function wikiTitle(url: URL): string | null {

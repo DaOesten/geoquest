@@ -1,6 +1,6 @@
 # PROJ-15: Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia
 
-## Status: Approved
+## Status: In Progress
 **Created:** 2026-09-28
 **Last Updated:** 2026-10-04
 
@@ -400,7 +400,7 @@ Echtes Abspielen von YouTube/Vimeo (Augenschein), Dropbox mit echten Dateien (Be
 
 ### Zusammenfassung
 - **Acceptance Criteria:** 49 / 50 erfüllt
-- **Bugs:** 1 neu — **BUG-21 (Medium, Rückschritt)**; keine Critical/High
+- **Bugs:** 1 neu — **BUG-21 (Medium, Rückschritt), am 2026-10-04 behoben**; keine Critical/High
 - **Security:** ohne Befund
 - **Production Ready:** JA (kein Critical/High) — Empfehlung: BUG-21 vor dem Deploy beheben, weil er bestehende Quests betreffen kann und der Fix klein ist
 
@@ -467,7 +467,7 @@ Die Frontend-Suite beantwortet jeden fremden Host per `page.route`. Was dort nic
 - [x] „Wikimedia-Datei erkannt"; Vorschau mit aufgelöster Adresse (beim Sichttest lud versehentlich das echte Bild)
 - [x] Lizenz-Hinweis: Bildunterschrift bzw. Intro-/Outro-Text
 - [x] iPhone-Format-Hinweis auch bei gelingender Probe (QA-Test)
-- [ ] **BUG-21:** Warnung „keine einzelne Datei" erscheint auch bei `Special:FilePath`-/`Spezial:Dateipfad`-/`Special:Redirect`-Links — das **sind** einzelne Dateien
+- [x] ~~**BUG-21:** Warnung „keine einzelne Datei" erscheint auch bei `Special:FilePath`-/`Spezial:Dateipfad`-/`Special:Redirect`-Links — das **sind** einzelne Dateien~~ — behoben 2026-10-04
 - [x] Nicht vorhandene Datei → normale Lade-Warnung (QA-Test)
 
 #### Probe-Player (5/5)
@@ -518,6 +518,14 @@ Die Frontend-Suite beantwortet jeden fremden Host per `page.route`. Was dort nic
 - **Naheliegende Behebung:** Spezialseiten `Special:FilePath`/`Spezial:Dateipfad`/`Special:Redirect/file` erkennen und den Dateinamen dahinter wie eine Dateiseite behandeln (bekommt dann auch die Web-Größe). Mindestens: sie unverändert durchreichen statt zu verwerfen.
 - **Wächter:** `test.fail` in `tests/proj-15-medien-links-qa.spec.ts` — wird grün, sobald behoben
 - **Priority:** Vor dem Deploy beheben (kleiner Eingriff, betrifft möglicherweise vorhandene Quests)
+
+#### BUG-21 behoben (2026-10-04)
+- **Eingriff:** `media-link.ts` erkennt Spezialseiten, die direkt auf eine Datei weiterleiten — `Special:`/`Spezial:` + `FilePath`/`Dateipfad` bzw. `Redirect`/`Weiterleitung` + `/file/`, unabhängig von Groß-/Kleinschreibung, auch mit `File:`-Präfix im Dateinamen und über `/w/index.php?title=`. Sie werden wie eine Dateiseite behandelt: Bild in Web-Größe, Audio/Video mit Fassungen
+- **Rückfall statt Abweisung:** Eine unbekannte Wikimedia-Form, die auf eine Medien-Endung endet (z.B. eine lokalisierte Spezialseite), bleibt jetzt **unverändert wie vor PROJ-15**. Abgewiesen mit „keine einzelne Datei" wird nur noch, was sicher keine Datei ist. Gemessen: französische Spezialseiten heißen anders und existieren in dieser Form nicht (404) — der Rückfall schützt vor genau dieser Fehlerklasse, statt eine Namensliste zu pflegen
+- **Gemessen vor dem Bau:** `special:filepath` (klein), `Spezial:Dateipfad`, `Spezial:Weiterleitung/file/`, `Special:FilePath/File:…` → alle 200 `image/jpeg`
+- **Mit echtem Netz, Chrome und WebKit:** `Special:FilePath`-Link lädt wieder (480×640, nicht hochskaliert); `Spezial:Dateipfad` auf das 18-MB-Foto lädt jetzt in Web-Größe (1280 px) — bestehende Quests gewinnen also, statt nur den alten Zustand zurückzubekommen
+- **Sicherheitstest präzisiert:** Er verlangte bei Pfadzeichen im Dateinamen „lädt nichts". Mit dem Rückfall lädt eine solche Adresse wieder exakt die Eingabe — wie jede unbekannte Adresse, wie es das Sicherheitskriterium vorsieht. Geprüft wird jetzt, was der Test belegen soll: **keine selbst gebaute Adresse** aus einem solchen Namen
+- **Tests:** 9 neue Unit-Tests (427/427). Gegenprobe mit der fehlerhaften Fassung: **genau 8 fallen**, der Test „Spezialseite ohne Dateinamen" besteht in beiden Fassungen, wie er soll. E2E: der `test.fail`-Wächter ist jetzt ein normaler Test, dazu ein Creator-Test („Wikimedia-Datei erkannt" statt Warnung). **PROJ-15 + PROJ-8-Bildvorschau 146/146** über beide Engines; Lint 0 Fehler, Build sauber
 
 ### Beobachtungen ohne Bug-Status
 - `music.youtube.com` wird nicht erkannt und als Videodatei versucht (scheitert mit dem normalen Fehlerzustand). Nicht in der Spec gefordert; YouTube-Music-Links in Quests sind unwahrscheinlich.

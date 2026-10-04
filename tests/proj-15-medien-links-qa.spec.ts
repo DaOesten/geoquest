@@ -213,12 +213,11 @@ test.describe("PROJ-15 QA: Player", () => {
   });
 
   /**
-   * BUG-21 (Medium, Rückschritt): `Special:FilePath`-Links sind Direktlinks auf
-   * eine Datei und luden vor PROJ-15 problemlos (gemessen mit echtem Netz:
-   * 480×640). Jetzt verwirft die Auflösung den Titel wegen des `/` und meldet
-   * „keine einzelne Datei". Wird grün, sobald behoben.
+   * BUG-21 (Medium, behoben 2026-10-04): `Special:FilePath`-Links sind
+   * Direktlinks auf eine Datei und luden vor PROJ-15 problemlos. Die erste
+   * Fassung der Auflösung verwarf den Titel wegen des `/`.
    */
-  test.fail("BUG-21: Special:FilePath-Link lädt im Player weiterhin das Bild", async ({ page }) => {
+  test("BUG-21: Special:FilePath-Link lädt im Player weiterhin das Bild", async ({ page }) => {
     await openPlayerStation(page, [
       { type: "image", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Cologne_Cathedral.jpg", caption: "FP" },
     ]);
@@ -303,6 +302,17 @@ test.describe("PROJ-15 QA: Creator", () => {
     await page.locator("#media-url").fill("https://commons.wikimedia.org/wiki/File:Beispiel.png");
     await expect(page.locator('[data-notice="wikimedia-iphone-format"]')).toContainText("iPhones");
     await expect(page.locator('[data-notice="wikimedia-recognized"]')).toBeVisible();
+  });
+
+  test("BUG-21: Special:FilePath-Link gilt im Creator als Wikimedia-Datei, nicht als Warnung", async ({ page }) => {
+    await openNewModuleSheet(page, "Bild");
+    await page.locator("#media-url").fill("https://de.wikipedia.org/wiki/Spezial:Dateipfad/Cologne_Cathedral.jpg");
+    await expect(page.locator('[data-notice="wikimedia-recognized"]')).toBeVisible();
+    await expect(page.locator('[data-notice="wikimedia-not-a-file"]')).toHaveCount(0);
+    await expect(page.getByTestId("image-url-preview").locator("img")).toHaveAttribute(
+      "src",
+      "https://de.wikipedia.org/wiki/Special:FilePath/File:Cologne_Cathedral.jpg?width=1280"
+    );
   });
 
   test("Tastatur: „Vorschau laden“ ist erreichbar und per Enter auslösbar", async ({ page, browserName }) => {

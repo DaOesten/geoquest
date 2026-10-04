@@ -30,7 +30,7 @@
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
-| PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Approved | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
+| PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | In Progress | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
 
 <!-- Add features above this line -->
 
@@ -1610,6 +1610,8 @@ Out of Scope u. a.: Spotify/SoundCloud, OneDrive/iCloud, Ordner-Links, Video/Aud
 **BUG-21 (Medium, Rückschritt):** Direkte Wikimedia-Links über `Special:FilePath`/`Spezial:Dateipfad`/`Special:Redirect` werden als „keine einzelne Datei" abgewiesen und laden im Player nicht mehr — vor PROJ-15 luden sie (gemessen: 480×640). Ursache: der `/` im Titel lässt die Dateinamen-Prüfung greifen. Kleiner Eingriff in `media-link.ts`; **Empfehlung: vor dem Deploy beheben**, weil bestehende Quests betroffen sein können. `test.fail`-Wächter vorhanden.
 
 22 neue QA-Tests je Engine (44/44). **Gegenprobe gegen den Vorgängerstand: 40 von 44 fallen**, grün bleiben nur die Wächter für XSS und unveränderte Speicherung. Regression der betroffenen Features **459/0**, Unit 418/418. Security ohne Befund (XSS in Adresse und Bildunterschrift, `javascript:`, Lookalike-Hosts, Pfadzeichen). Firefox weiterhin nicht verfügbar.
+
+**BUG-21 behoben am 2026-10-04 — Status In Progress bis zur QA der Behebung.** Spezialseiten (`Special:FilePath`, `Spezial:Dateipfad`, `Special:Redirect/file`, auch kleingeschrieben und über `index.php`) gelten als Datei und laden in Web-Größe. Unbekannte Wikimedia-Formen mit Medien-Endung bleiben unverändert wie vor PROJ-15, statt abgewiesen zu werden. Mit echtem Netz in beiden Engines bestätigt; ein `Spezial:Dateipfad`-Link auf ein 18-MB-Foto lädt jetzt in 1280 px. Unit 427/427 (Gegenprobe: genau die 8 neuen fallen), E2E PROJ-15 + Bildvorschau 146/146.
 
 ## QA abgeschlossen: PROJ-8 Bildvorschau (2026-09-29)
 **PROJ-8** ist QA-geprüft: **9/9 Acceptance Criteria erfüllt, keine Bugs in diesem Refinement, Production-Ready.** Status auf Approved. Damit ist auch der Deploy von PROJ-13 (Erklärvideo), der auf diese QA gewartet hat, nicht mehr blockiert — beide liegen auf `main`.
