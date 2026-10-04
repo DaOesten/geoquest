@@ -30,7 +30,7 @@
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
-| PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Approved | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
+| PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Deployed | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
 
 <!-- Add features above this line -->
 
@@ -1614,6 +1614,10 @@ Out of Scope u. a.: Spotify/SoundCloud, OneDrive/iCloud, Ordner-Links, Video/Aud
 **BUG-21 behoben am 2026-10-04 — Status In Progress bis zur QA der Behebung.** Spezialseiten (`Special:FilePath`, `Spezial:Dateipfad`, `Special:Redirect/file`, auch kleingeschrieben und über `index.php`) gelten als Datei und laden in Web-Größe. Unbekannte Wikimedia-Formen mit Medien-Endung bleiben unverändert wie vor PROJ-15, statt abgewiesen zu werden. Mit echtem Netz in beiden Engines bestätigt; ein `Spezial:Dateipfad`-Link auf ein 18-MB-Foto lädt jetzt in 1280 px. Unit 427/427 (Gegenprobe: genau die 8 neuen fallen), E2E PROJ-15 + Bildvorschau 146/146.
 
 **QA der Behebung am 2026-10-04: BUG-21 bestätigt behoben, keine neuen Bugs — Approved, 50/50 Acceptance Criteria.** Mit echtem Netz in Chrome und WebKit laden alle 8 geprüften Spezialseiten-Formen, darunter eine nur auf de.wikipedia liegende Datei; `Spezial:Dateipfad` auf Commons lädt jetzt sogar, obwohl es als rohe Adresse 404 liefert. Gegenprobe: alle 4 BUG-21-Tests fallen gegen den Stand vor dem Fix. Unit 427/427, E2E der betroffenen Features 248/248.
+
+**Am 2026-10-04 nach Production deployt** (Tag `v1.45.0-PROJ-15`) — live auf https://geoquest.technolomagie.de nach 55 s, belegt am neuen Datenschutz-Absatz. Beide PROJ-15-Suiten gegen Production **94/94**. Mit echten Anbietern in beiden Engines: 0 Plattform-Anfragen vor dem Tippen, YouTube und Vimeo laden danach, Drive-Bild, Wikipedia-Bildbetrachter (18 MB → 1280 px) und `Special:FilePath` (BUG-21) laden, Ogg spielt als MP3. 10 Endpunkte 200, Security-Header aktiv. **PROJ-15 ist abgeschlossen.** Offen für den Betreiber: Dropbox mit echten Dateien, Wikimedia-Video auf dem iPhone.
+
+**Für künftige Läufe:** Suiten gegen Production mit `--workers=2` hingen zweimal bei 0 % CPU; seriell je Engine (`--project=… --workers=1`) laufen sie zuverlässig durch.
 
 ## QA abgeschlossen: PROJ-8 Bildvorschau (2026-09-29)
 **PROJ-8** ist QA-geprüft: **9/9 Acceptance Criteria erfüllt, keine Bugs in diesem Refinement, Production-Ready.** Status auf Approved. Damit ist auch der Deploy von PROJ-13 (Erklärvideo), der auf diese QA gewartet hat, nicht mehr blockiert — beide liegen auf `main`.

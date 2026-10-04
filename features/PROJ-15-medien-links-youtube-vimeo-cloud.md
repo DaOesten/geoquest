@@ -1,6 +1,6 @@
 # PROJ-15: Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-09-28
 **Last Updated:** 2026-10-04
 
@@ -557,4 +557,30 @@ Die Frontend-Suite beantwortet jeden fremden Host per `page.route`. Was dort nic
 
 
 ## Deployment
-_To be added by /deploy_
+
+**Deployed:** 2026-10-04 · **Tag:** `v1.45.0-PROJ-15` · **Push:** `57102e9..b3e0632`
+**Live:** https://geoquest.technolomagie.de und https://geoquesty.vercel.app (dieselbe Vercel-Bereitstellung)
+
+**Vorabprüfung:** QA Approved (50/50, BUG-21 behoben und nachgeprüft), Lint 0 Fehler, keine Secrets versioniert. Produktcode an HEAD byte-identisch zum QA-geprüften Build. Mitgenommen wurde `7480c40` aus einer parallelen Sitzung (PROJ-3: BUG-20 als „kein Fehler" geschlossen) — nur Doku und eine Testerwartung, kein Produktcode; die geänderte Testerwartung lief in der Gesamtregression grün.
+
+**Live nach 55 s**, belegt an einem Merkmal, das umschlagen konnte: Der Absatz „Videos von YouTube und Vimeo" stand vorher auf keiner der beiden Domains in `/datenschutz`.
+
+**Beide PROJ-15-Suiten direkt gegen Production: 94/94** (Chrome 47/47, WebKit 47/47).
+
+**Mit echten Anbietern in Production, Chrome und WebKit identisch:**
+- **0 Anfragen** an YouTube/Vimeo vor dem Tippen; danach laden beide Player mit echtem `<video>`
+- Google-Drive-Bild 1280×2276, Wikipedia-Bildbetrachter 1280×2014 (Original 18 MB), `Special:FilePath` 480×640 (BUG-21 live behoben)
+- Wikimedia-Ogg spielt die MP3-Fassung
+- WebKit **0 Konsolenfehler**
+
+**Alle 10 Endpunkte HTTP 200** (0,08–0,46 s), Security-Header aktiv (HSTS, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy: origin-when-cross-origin` — die Policy, die YouTube braucht).
+
+**Zwei Auffälligkeiten geprüft statt weggewunken:**
+1. Chrome meldete zwei Konsolen-404 — sie stammen aus `/play/<id>`, das serverseitig 404 liefert, weil Quests nur im localStorage liegen (vorbestehend seit 2026-09-07). Ein ruhiger Besuch von `/`, `/play`, `/create`, `/datenschutz` ergibt **0 Antworten ≥ 400**
+2. Der erste Lauf der Suiten gegen Production **hing** bei 0 % CPU (zwei Worker, beide Engines parallel). Seriell je Engine laufen dieselben Tests in je 1,1–1,2 min vollständig grün — ein Problem der Testumgebung, nicht des Produkts. Dasselbe Hängen war in der Frontend-Phase schon einmal aufgetreten
+
+**Offen für den Betreiber:**
+- **Dropbox mit echten Dateien** (Bild, MP3, MP4) — Teilen-Link einfügen, Hinweis „Dropbox-Datei erkannt", Probe bzw. Vorschau prüfen
+- **Wikimedia-Video auf einem echten iPhone** (spielt iOS die WebM- oder die 360p-MOV-Fassung?)
+- Echtes Abspielen von YouTube/Vimeo mit Ton am Handy
+
