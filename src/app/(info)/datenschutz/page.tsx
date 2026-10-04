@@ -162,7 +162,27 @@ export default function DatenschutzPage() {
             Internetadressen einbinden. Diese werden beim Abspielen direkt vom
             jeweiligen Anbieter geladen, der dabei die IP-Adresse deines Geräts
             erfährt. Welche Adressen das sind, bestimmt allein derjenige, der die
-            Quest erstellt hat.
+            Quest erstellt hat. Das gilt auch für Dateien aus Dropbox, Google
+            Drive und Wikimedia.
+          </p>
+        </div>
+
+        <div>
+          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-primary">
+            Videos von YouTube und Vimeo
+          </h2>
+          <p className="mt-3 font-body text-sm lg:text-base leading-relaxed text-muted-foreground">
+            Enthält eine Quest ein Video von YouTube oder Vimeo, siehst du
+            zunächst nur einen Platzhalter. Solange du nicht darauf tippst, wird
+            nichts von diesen Anbietern geladen und keine Verbindung zu ihnen
+            aufgebaut. Erst mit dem Tippen lädt der Player des Anbieters: bei
+            YouTube von Google (Google Ireland Limited, mit möglicher Übermittlung
+            in die USA), bei Vimeo von Vimeo.com, Inc. (USA). Dabei erfährt der
+            Anbieter mindestens deine IP-Adresse und kann eigene Cookies setzen.
+            YouTube binden wir im erweiterten Datenschutzmodus über{" "}
+            <span className="whitespace-nowrap">youtube-nocookie.com</span> ein,
+            Vimeo mit der Einstellung „Do not track“. Die Einwilligung gilt nur
+            für dieses eine Video und wird nicht gespeichert.
           </p>
         </div>
 

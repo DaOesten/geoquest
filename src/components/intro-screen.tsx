@@ -1,6 +1,7 @@
 "use client";
 
 import type { Quest } from "@/lib/quest-schema";
+import { QuestFrameMedia } from "./quest-frame-media";
 
 interface IntroScreenProps {
   quest: Quest;
@@ -64,34 +65,8 @@ export function IntroScreen({ quest, onStart }: IntroScreenProps) {
           </div>
         </div>
 
-        {/* Media */}
-        {intro.mediaUrl && intro.mediaType === "image" && (
-          <div className="relative rounded-card overflow-hidden border border-border/50 mb-6 shadow-card">
-            <img
-              src={intro.mediaUrl}
-              alt=""
-              className="w-full h-52 object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).parentElement!.style.display = "none";
-              }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-gq-black/60 via-transparent to-transparent" />
-          </div>
-        )}
-
-        {intro.mediaUrl && intro.mediaType === "audio" && (
-          <audio controls className="w-full mb-6" preload="none">
-            <source src={intro.mediaUrl} />
-          </audio>
-        )}
-
-        {intro.mediaUrl && intro.mediaType === "video" && (
-          <div className="rounded-card overflow-hidden border border-border/50 mb-6 shadow-card">
-            <video controls className="w-full" preload="none" playsInline>
-              <source src={intro.mediaUrl} />
-            </video>
-          </div>
-        )}
+        {/* Media — Auflösung von Cloud-/Wikimedia-/Plattform-Links (PROJ-15) */}
+        <QuestFrameMedia mediaUrl={intro.mediaUrl} mediaType={intro.mediaType} className="mb-6" />
 
         {/* Quest description */}
         <div>

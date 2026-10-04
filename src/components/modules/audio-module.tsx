@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Play, Pause, Volume2 } from "lucide-react";
+import { resolveMediaUrl } from "@/lib/media-link";
 
 interface AudioModuleProps {
   url: string;
@@ -21,6 +22,8 @@ export function AudioModule({ url, caption }: AudioModuleProps) {
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [error, setError] = useState(false);
+  // PROJ-15: z.B. MP3-Fassung einer Wikimedia-Ogg-Datei vor dem Original
+  const sources = useMemo(() => resolveMediaUrl(url, "audio").sources, [url]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -45,7 +48,7 @@ export function AudioModule({ url, caption }: AudioModuleProps) {
     };
   }, []);
 
-  if (error) {
+  if (error || sources.length === 0) {
     return (
       <div className="w-full rounded-card bg-gq-dark-teal border border-border/40 p-4 flex items-center gap-3">
         <Volume2 className="w-5 h-5 text-gq-grey shrink-0" />
@@ -82,7 +85,18 @@ export function AudioModule({ url, caption }: AudioModuleProps) {
 
   return (
     <div>
-      <audio ref={audioRef} src={url} preload="metadata" />
+      {/* Bei Quellen-Elementen meldet nicht <audio> den Fehler, sondern die
+          einzelne Quelle. Scheitert die letzte, scheiterten alle. */}
+      <audio ref={audioRef} preload="metadata">
+        {sources.map((source, i) => (
+          <source
+            key={source.src}
+            src={source.src}
+            type={source.type}
+            onError={i === sources.length - 1 ? () => setError(true) : undefined}
+          />
+        ))}
+      </audio>
       <div className="w-full rounded-card bg-gq-dark-teal border border-border/40 shadow-card p-4 flex items-center gap-3.5">
         <button
           onClick={togglePlay}

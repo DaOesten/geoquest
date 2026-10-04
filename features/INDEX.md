@@ -30,7 +30,7 @@
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
-| PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Architected | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
+| PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | In Progress | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
 
 <!-- Add features above this line -->
 
@@ -1594,6 +1594,14 @@ Out of Scope u. a.: Spotify/SoundCloud, OneDrive/iCloud, Ordner-Links, Video/Aud
 **Wikimedia vollständig vermessen:** `Special:FilePath` mit Breitenangabe skaliert ein 18-MB-Foto auf 846 KB, vergrößert nichts, wandelt SVG in PNG, erhält GIF-Animationen; jedes Wiki versteht seinen lokalen Präfix (`Fichier:`, `Archivo:` → damit **alle Sprachen** für Bilder), und lokal gespeicherte Dateien findet nur das Herkunfts-Wiki (über Commons 404). Selbst 95-KB-Ogg-Vogelrufe haben eine MP3-Fassung; Videos haben WebM-Fassungen und eine 360p-MOV. Ihr Pfad ist aus einer MD5 des Dateinamens berechenbar (4/4 bestätigt) — keine Wikimedia-API nötig.
 
 **Offen für den Betreiber:** Dropbox mit echten Dateien im Produktivsystem (bewusst nicht vorab gemessen) und ob das iPhone die 360p-MOV abspielt.
+
+**Frontend umgesetzt am 2026-10-04 — Status In Progress.** Kein neues Paket, kein Datenmodell-Eingriff. Kern ist `src/lib/media-link.ts`: **eine** Auflösung für Creator und Player, die eine Liste von Quellen liefert. Player: Zwei-Klick-Platzhalter für YouTube/Vimeo, Bild/Audio/Video/Intro/Outro laden aufgelöste Adressen. Creator: Hinweise und Warnungen unter jedem Medienfeld, Bildvorschau mit aufgelöster Adresse, Probe-Player für Audio/Video, Plattform-Vorschau erst auf Knopfdruck. `/datenschutz` mit eigenem Absatz zu YouTube und Vimeo.
+
+**Abweichung vom Design, zum Besseren:** Für die MP3-/Video-Fassungen braucht es keine Präfix-Liste — der Dateiname ist immer alles nach dem ersten Doppelpunkt; damit funktioniert jede Sprache auch für Audio/Video.
+
+**Tests:** Unit **418/418** (+84, davon 80 für die Auflösung). Neue E2E-Suite **48/48** auf beiden Engines, inkl. Netzwerk-Mitschnitt „keine Anfrage an YouTube/Google/Vimeo vor dem Tippen". **Gegenprobe gegen den echten Vorgängerstand: 42 von 48 fallen**; grün bleiben genau die drei Wächter, die in beiden Ständen bestehen müssen. Beim Sichttest lud die Creator-Vorschau versehentlich das **echte** Wikimedia-Bild — die ganze Kette ist damit in WebKit auch live belegt.
+
+**Gesamtregression 1322 passed / 28 unexpected — keiner davon durch PROJ-15.** 27 sind Mobile-Safari-Timeouts auf Info-Seiten ab 768 px: gemessen liefert der lokale Bild-Optimierer die 3840-px-WebP-Stufe des Hero-Bilds mit Browser-`Accept`-Header auch nach 60 s nicht (mit `*/*` in 2 ms). Das ist das am 2026-09-29 dokumentierte Artefakt, `/about`, Shell, Config und Assets sind unverändert. Der 28. (Service Worker) lief bei der Wiederholung grün. **Wichtig für künftige Läufe:** Den Bild-Cache per `curl` vorzuwärmen hilft **nicht** — er wärmt nur die PNG-Variante; der Browser fragt WebP an.
 
 ## QA abgeschlossen: PROJ-8 Bildvorschau (2026-09-29)
 **PROJ-8** ist QA-geprüft: **9/9 Acceptance Criteria erfüllt, keine Bugs in diesem Refinement, Production-Ready.** Status auf Approved. Damit ist auch der Deploy von PROJ-13 (Erklärvideo), der auf diese QA gewartet hat, nicht mehr blockiert — beide liegen auf `main`.

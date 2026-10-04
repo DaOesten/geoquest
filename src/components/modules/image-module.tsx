@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ImageOff } from "lucide-react";
+import { resolveMediaUrl } from "@/lib/media-link";
 
 interface ImageModuleProps {
   url: string;
@@ -10,8 +11,10 @@ interface ImageModuleProps {
 
 export function ImageModule({ url, caption }: ImageModuleProps) {
   const [error, setError] = useState(false);
+  // PROJ-15: Dropbox-, Drive- und Wikimedia-Links werden zur Datei aufgelöst
+  const src = useMemo(() => resolveMediaUrl(url, "image").sources[0]?.src, [url]);
 
-  if (error) {
+  if (error || !src) {
     return (
       <div className="w-full aspect-video rounded-card bg-gq-dark-teal border border-border/40 shadow-card flex flex-col items-center justify-center gap-2">
         <ImageOff className="w-8 h-8 text-gq-grey" />
@@ -23,7 +26,7 @@ export function ImageModule({ url, caption }: ImageModuleProps) {
   return (
     <div>
       <img
-        src={url}
+        src={src}
         alt={caption ?? ""}
         loading="lazy"
         onError={() => setError(true)}

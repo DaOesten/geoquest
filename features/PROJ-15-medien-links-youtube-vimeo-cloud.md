@@ -1,6 +1,6 @@
 # PROJ-15: Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-09-28
 **Last Updated:** 2026-10-04
 
@@ -177,7 +177,7 @@ Im Creator bekommt jede Audio- und Video-Adresse — ob Cloud-Link oder direkte 
 - [ ] Funktioniert der Dropbox-Weg (Teilen-Link mit `raw=1`, `rlkey` erhalten) für Bild, MP3 und MP4 beim Einbetten in Chrome und Safari? Vom Betreiber nach dem Deploy mit echten Dateien zu prüfen (2026-10-04)
 - [ ] Spielt das iPhone die 360p-Fassung (`.mov`, MPEG-4) von Wikimedia-Videos ab? Wenn nicht, gilt der iPhone-Format-Hinweis für **alle** Wikimedia-Videos. Gerätetest des Betreibers (2026-10-04)
 - [ ] Soll die Anleitung (`/anleitung`, PROJ-14, derzeit „Coming soon") beim Freischalten erklären, wie man einen Dropbox-Link teilt und auf Traffic-Grenzen bei großen Gruppen hinweisen? (2026-09-29)
-- [ ] Wie lautet der genaue Platzhalter-Text im Player? Richtung: „Video von YouTube abspielen — beim Laden werden Daten an Google übertragen." In `/frontend` am Bildschirm festzulegen (2026-09-28)
+- [x] Wie lautet der genaue Platzhalter-Text im Player? → „Video von YouTube abspielen" / „Beim Laden werden Daten an Google übertragen." (2026-10-04)
 - [ ] Reicht die Beschränkung der YouTube-Empfehlungen auf den eigenen Kanal im Praxistest mit Kindern? (2026-09-28)
 - [x] Welche Adressformen liefern Wikimedia-Dateien zuverlässig, welche Umcodierungen gibt es? → Gemessen 2026-10-04 an echten Dateien, Ergebnis im Tech Design (Messung)
 - [x] Welche lokalisierten Namensräume werden erkannt? → Für Bilder **alle**: Jedes Wiki versteht seinen eigenen Präfix, die App reicht ihn unverändert an das Herkunfts-Wiki weiter (gemessen: `Fichier:`, `Archivo:`, `Plik:` → 200). Für die MP3-/Video-Fassungen braucht die App den reinen Dateinamen und erkennt dafür eine feste Liste von Präfixen; unbekannte Präfixe spielen das Original (2026-10-04)
@@ -346,6 +346,50 @@ Keine neuen Pakete. Genutzt wird, was da ist: `Alert` (shadcn) für Hinweise und
 - **Googles Bild-Server ist kein dokumentierter Weg.** Ändert Google ihn, erscheint die normale Lade-Warnung; der Player zeigt seinen Fehlerzustand. Behebung wäre eine Zeile in der Auflösung — alle bestehenden Quests profitieren, weil die Eingabe gespeichert ist, nicht die Umwandlung.
 - **Dropbox ungemessen** — bis zum Produktivtest des Betreibers eine begründete Annahme.
 - **iPhone und MPEG-4-Video** ungeklärt (Open Question); fällt der Test negativ aus, bekommt jedes Wikimedia-Video den iPhone-Hinweis — eine Regel in der Auflösung, kein Umbau.
+
+## Implementation Notes (Frontend)
+*Umgesetzt 2026-10-04. Kein neues Paket, keine neue Route, kein Datenmodell-Eingriff.*
+
+### Neue Dateien
+- `src/lib/media-link.ts` — die zentrale Auflösung `resolveMediaUrl(url, field)`: liefert Anbieter, eine **Liste** von Quellen, ggf. die Plattform-Embed-Adresse und Hinweis-Codes. Rein, ohne Netz
+- `src/lib/md5.ts` — MD5 für den Wikimedia-Ablagepfad
+- `src/components/platform-video.tsx` — Zwei-Klick-Platzhalter (Player) und der eingeschränkte iframe (`PlatformFrame`, auch im Creator)
+- `src/components/quest-frame-media.tsx` — Medium von Intro/Outro über die Auflösung (ersetzt zwei fast gleiche Blöcke in `intro-screen.tsx`/`outro-screen.tsx`)
+- `src/components/media-url-feedback.tsx` — Creator-Rückmeldung unter jedem Medien-URL-Feld: Hinweise/Warnungen, Bildvorschau, Probe-Player (Audio/Video), Plattform-Vorschau
+
+### Geänderte Dateien
+- `modules/image-module.tsx`, `audio-module.tsx`, `video-module.tsx` — laden die aufgelöste Adresse. Audio und Video nutzen jetzt `<source>`-Listen; der Fehlerzustand hängt an der **letzten** Quelle (bei Quellen-Elementen meldet nicht das Medienelement den Fehler, sondern die Quelle)
+- `image-url-preview.tsx` — prüft die aufgelöste Adresse; bei Dropbox/Drive nennt die Warnung zusätzlich die Freigabe „Jeder mit dem Link“
+- `module-editor-sheets.tsx`, `quest-form-dialog.tsx` — `ImageUrlPreview` durch `MediaUrlFeedback` ersetzt (Bild **und** Audio/Video; Intro/Outro mit Lizenz-Hinweis „in den Intro- bzw. Outro-Text")
+- `(info)/datenschutz/page.tsx` — neuer Absatz „Videos von YouTube und Vimeo", Satz zu Dropbox/Drive/Wikimedia im Absatz „Medien in Quests"
+
+### Abweichungen und Präzisierungen gegenüber dem Tech Design
+- **Lokalisierte Präfixe brauchen keine Liste — auch nicht für Audio/Video.** Das Design sah für die MP3-/Video-Fassungen eine feste Präfix-Liste vor. Unnötig: Ein Datei-Titel trägt immer genau einen Namensraum-Präfix, der Dateiname ist alles nach dem ersten Doppelpunkt. Jede Sprache funktioniert damit auch für Audio/Video
+- **Wikipedia-Pfad ohne `#/media/`** wird als Datei nur erkannt, wenn der Name auf eine Medien-Endung endet (`.jpg`, `.ogg`, `.webm` …). Sonst wäre ein Artikel wie „Star Wars: Episode I" als Datei „Episode I" missverstanden worden
+- **Audio aus einem Sprach-Wiki** versucht die MP3-Fassung auf Commons **und** im Sprach-Wiki, weil vorab unbekannt ist, wo die Datei liegt (Edge Case 17). Ein 404 fällt automatisch auf die nächste Quelle
+- **Hinweise sofort, Probe entprellt:** Erkennung und Warnungen sind rein lokal und erscheinen beim Tippen ohne Verzögerung; nur der Probe-Player lädt erst nach 450 ms Ruhe (wie die Bildvorschau). Zeitgrenze ohne Rückmeldung: 6 s → neutraler Hinweis „tippe zum Prüfen auf ‚Abspielen‘", nie eine Warnung
+- **Info-Hinweise mit `role="status"`, Warnungen mit `role="alert"`** — ein Screenreader soll „YouTube-Video erkannt" nicht als Alarm ansagen
+- **Platzhalter-Text** (Open Question) am Bildschirm festgelegt: „Video von YouTube abspielen" / „Beim Laden werden Daten an Google übertragen."
+- **Intro/Outro mit YouTube-Link** (nur über importierte Quests möglich) zeigen ebenfalls den Zwei-Klick-Platzhalter statt eines kaputten Videos
+
+### Gemessen bei der Umsetzung
+- MD5-Pfad an einer fünften Datei bestätigt (Toco-Tukan-Ruf: berechnet `a/a8`, Abruf 200 `audio/mpeg`); Klammern im Pfad funktionieren roh und kodiert
+- `Special:FilePath` versteht den Präfix auch prozentkodiert (`Datei%3A…` → 200)
+
+### Tests
+- **Unit:** `media-link.test.ts` (80 Tests: alle URL-Formen je Anbieter, Startzeiten, Playlist, Ordner, Wikimedia-Präfixe/mobil/Umlaute/Direktlinks, Fassungs-Reihenfolge, Angriffsfälle, Host-Prüfung jeder gebauten Adresse) und `md5.test.ts` (RFC-1321-Vektoren + gemessene Wikimedia-Pfade). Suite **418/418**
+- **E2E:** `tests/proj-15-medien-links.spec.ts`, **24 Tests je Engine, 48/48**. Darunter der Netzwerk-Mitschnitt „keine Anfrage an YouTube/Google/Vimeo vor dem Tippen" in Player und Creator
+- **Gegenprobe gegen den echten Vorgängerstand** (eigener Build): **42 von 48 fallen**. Grün bleiben genau die drei Wächter, die in beiden Ständen bestehen müssen — Fehlerzustand bei scheiternden Quellen, unbekannte Adresse unverändert, manipulierte Adresse nicht eingebettet (je Engine)
+
+### Eigene Fehler, offen benannt (Produkt jeweils richtig)
+1. Ein falsch abgeschriebener MD5-Testvektor (`message digest`) — per Python gegengeprüft, die Funktion war richtig
+2. `main img` im Test: Die Station hat kein `<main>`-Element
+3. Eine 404-Route wurde von der später registrierten Sammel-Route überdeckt — Playwright wertet die **zuletzt** registrierte Route zuerst aus
+4. Der Intro-Test wartete auf „Standort erlauben" — mit erteilter Freigabe kommt das Intro sofort. **Der Lauf hing danach komplett**, statt nach 30 s abzubrechen; im Browser einzeln nachgestellt: Die Seite blockiert nicht, es lag allein am Test
+5. Ein erster Entwurf entprellte den Probe-Player in einer Komponente, die erst beim Tippen eingehängt wird — das erste getippte Zeichen hätte als „beim Öffnen vorhanden" gegolten und sofort einen fremden Server angefragt. Vor dem ersten Lauf korrigiert
+
+### Nicht abgedeckt
+Echtes Abspielen von YouTube/Vimeo (Augenschein), Dropbox mit echten Dateien (Betreiber, Produktivsystem), Wikimedia-360p-MOV auf einem echten iPhone, Firefox.
 
 ## QA Test Results
 _To be added by /qa_

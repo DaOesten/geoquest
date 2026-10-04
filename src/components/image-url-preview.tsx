@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { resolveMediaUrl } from "@/lib/media-link";
 
 /**
  * Vorschau unter einem Bild-URL-Feld (PROJ-8, Refinement 2026-09-28).
@@ -18,6 +19,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
  * hier lädt, lädt auch beim Spielen.
  *
  * Das Ergebnis ist reiner Anzeige-Zustand und wird nie gespeichert.
+ *
+ * PROJ-15: Geprüft wird die **aufgelöste** Adresse — für Dropbox, Google Drive
+ * und Wikimedia also genau die Datei, die der Player lädt. Ergibt die Auflösung
+ * nichts Ladbares (z.B. YouTube im Bild-Feld), schweigt die Vorschau; den
+ * Grund nennt der Link-Hinweis darüber.
  */
 
 export const IMAGE_CHECK_DEBOUNCE_MS = 450;
@@ -28,8 +34,11 @@ type CheckState =
   | { url: string; status: "error" };
 
 export function ImageUrlPreview({ url }: { url: string }) {
-  const candidate = url.trim();
-  const checkable = candidate.startsWith("https://") && candidate.length > "https://".length;
+  const input = url.trim();
+  const resolved = resolveMediaUrl(input, "image");
+  const candidate = resolved.sources[0]?.src ?? "";
+  const checkable = input.startsWith("https://") && input.length > "https://".length && candidate !== "";
+  const isCloud = resolved.provider === "dropbox" || resolved.provider === "gdrive";
 
   const [state, setState] = useState<CheckState | null>(null);
   // Die beim Öffnen vorhandene Adresse wird sofort geprüft, jede spätere
@@ -102,6 +111,7 @@ export function ImageUrlPreview({ url }: { url: string }) {
           <AlertDescription className="text-foreground">
             So bleibt die Stelle im Spiel leer. Oft ist das die Adresse der Webseite, nicht die des Bildes. Öffne das
             Bild, drücke lange darauf (am Computer: Rechtsklick) und wähle „Bildadresse kopieren“.
+            {isCloud && " Prüfe auch, ob die Datei für „Jeder mit dem Link“ freigegeben ist."}
           </AlertDescription>
         </Alert>
       )}

@@ -23,7 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ImageUrlPreview } from "@/components/image-url-preview";
+import { MediaUrlFeedback } from "@/components/media-url-feedback";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { DraftModule } from "@/lib/quest-storage";
@@ -239,7 +239,7 @@ function MediaModuleSheet({
           autoFocus
         />
         {urlError && <p className="font-body text-xs text-destructive">{urlError}</p>}
-        {mediaType === "image" && <ImageUrlPreview url={url} />}
+        <MediaUrlFeedback url={url} field={mediaType} context="module" />
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="media-caption" className="text-tech text-[10px] tracking-[0.1em]">

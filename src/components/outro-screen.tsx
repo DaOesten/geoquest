@@ -2,6 +2,7 @@
 
 import { Check } from "lucide-react";
 import type { Quest } from "@/lib/quest-schema";
+import { QuestFrameMedia } from "./quest-frame-media";
 import { ConfettiEffect } from "./confetti-effect";
 
 interface OutroScreenProps {
@@ -76,37 +77,8 @@ export function OutroScreen({ quest, completedCount, totalCount, onDone }: Outro
           {completedCount} von {totalCount} {totalCount === 1 ? "Station" : "Stationen"} abgeschlossen
         </p>
 
-        {/* Media */}
-        {outro.mediaUrl && outro.mediaType === "image" && (
-          <div
-            className="relative w-full rounded-card overflow-hidden border border-border/50 mt-6 shadow-card"
-            style={{ animation: "gq-rise 0.4s cubic-bezier(.16,.84,.44,1) 0.5s both" }}
-          >
-            <img
-              src={outro.mediaUrl}
-              alt=""
-              className="w-full h-52 object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).parentElement!.style.display = "none";
-              }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-gq-black/60 via-transparent to-transparent" />
-          </div>
-        )}
-
-        {outro.mediaUrl && outro.mediaType === "audio" && (
-          <audio controls className="w-full mt-6" preload="none">
-            <source src={outro.mediaUrl} />
-          </audio>
-        )}
-
-        {outro.mediaUrl && outro.mediaType === "video" && (
-          <div className="w-full rounded-card overflow-hidden border border-border/50 mt-6 shadow-card">
-            <video controls className="w-full" preload="none" playsInline>
-              <source src={outro.mediaUrl} />
-            </video>
-          </div>
-        )}
+        {/* Media — Auflösung von Cloud-/Wikimedia-/Plattform-Links (PROJ-15) */}
+        <QuestFrameMedia mediaUrl={outro.mediaUrl} mediaType={outro.mediaType} className="mt-6" style={{ animation: "gq-rise 0.4s cubic-bezier(.16,.84,.44,1) 0.5s both" }} />
 
         {/* Outro text */}
         <p
