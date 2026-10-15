@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | Approved | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 | PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Deployed | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
 
@@ -593,6 +593,18 @@ Spec ist aktualisiert (31 Acceptance Criteria in einem eigenen Block, 12 Produkt
 **Nebenbefund, vorbestehend:** Eingeklappte FAQ-Antworten stehen nicht im Accordion-DOM, nur im JSON-LD und in den Next.js-Seitendaten. Der Test „Antworten im HTML" besteht, weil er das JSON-LD mitliest. Für Suchmaschinen unkritisch, aber die Begründung in Refinement 4 stimmt so nicht mehr; der neue Test prüft durch Aufklappen.
 
 **Für künftige Läufe:** Nach einem frischen Build brauchte die PROJ-13-Suite 16 statt 1–6 Minuten (kalter Bild-Cache, ohne Fehlschläge) — im Hintergrund starten, sonst sieht das Timeout wie ein Hänger aus.
+
+**QA am 2026-10-15 abgeschlossen: 31/31 Acceptance Criteria, 1 Low-Bug (BUG-22), keine Critical/High/Medium — Approved.** Neu gemessen statt übernommen, jede Tatsachenbehauptung der Seite gegen den Code geprüft: Die GPS-Koordinaten gehen an keinen Server (die OSM-Kacheln im Creator sind in `/datenschutz` offengelegt), Konten, Spielstand pro Gerät und Homescreen sind gedeckt. Einzige Ungenauigkeit ohne Bug-Status: „und eine Aufgabe" untertreibt, der Creator erlaubt mehrere.
+
+**Gemessen:** Spalten je Breite (Vorteile 1/2/4, Zielgruppen 1/1/3), Tastaturweg durch die Demo vollständig, Markup in der Code-Aufgabe ohne Wirkung, Demo-Reiter 7.3:1, Ladegewicht unter der live ausgelieferten alten Fassung (475 gegen 777 KB Skripte).
+
+**BUG-22 (Low):** Lädt der Screenshot oder die Illustration nicht, bleibt ein leerer Handy-Rahmen mit Bildsymbol (WebKit: quadratisch mit Fragezeichen), in der Abschluss-Sektion das Symbol oben links. Kein Überlauf, CTA unberührt, beide Bilder vom eigenen Server.
+
+**Gegenprobe mit eingebauten Fehlern:** 9 von 10 Wächtern fallen. **WebKit meldet Hydration-Fehler gar nicht an Playwright**; der Fall ist über den Test „Demo-Frage im statischen HTML" trotzdem auf beiden Engines abgesichert.
+
+**Gesamtsuite beider Engines 1433 passed / 0 failed / 0 flaky**, Unit 427/427. **Firefox weiter ungetestet:** Ein Installationsversuch hing beim Entpacken bei 888 KB (dasselbe Muster wie die Chromium-Ruine), abgebrochen und entfernt; der Cache ist im Ausgangszustand.
+
+**Für künftige Läufe:** Ein Tastatur-Test mit fester 150-ms-Pause bestand einzeln und fiel unter Last. Radix wählt per Pfeiltaste erst ab ~100 ms Tastenabstand aus und nur nach echtem Tab-Fokus — Tests nutzen deshalb Pfeiltaste + Leertaste.
 
 ## Next Available ID: PROJ-16
 

@@ -146,7 +146,12 @@ test.describe("Statisch und ohne Hydration-Fehler", () => {
   test("weder beim Laden noch beim Umschalten ein Hydration-Fehler", async ({ page }) => {
     const problems: string[] = [];
     page.on("console", (m) => {
-      if (m.type() === "error" && /hydrat|did not match|server rendered/i.test(m.text())) {
+      // Im Production-Build meldet React Hydration-Fehler nur als
+      // minifizierten Code (#418, #423, #425) — ohne das Wort „hydration".
+      if (
+        m.type() === "error" &&
+        /hydrat|did not match|server rendered|React error #(418|423|425)/i.test(m.text())
+      ) {
         problems.push(m.text());
       }
     });
@@ -249,5 +254,126 @@ test.describe("Unverändert", () => {
     });
     await expect(closing.getByRole("link")).toHaveCount(1);
     await expect(closing.getByRole("link")).toHaveAttribute("href", "/create");
+  });
+});
+
+/**
+ * QA Refinement 12 (2026-10-15) — über die Frontend-Phase hinaus: Spalten je
+ * Breite, Tastaturbedienung der Demo, Markup in der Code-Aufgabe und ein
+ * stabiles Layout, wenn der Screenshot nicht lädt.
+ */
+test.describe("QA: Layout je Breite", () => {
+  for (const [w, benefits, audiences] of [
+    [375, 1, 1],
+    [768, 2, 1],
+    [1440, 4, 3],
+  ] as const) {
+    test(`${w}px: Vorteile ${benefits}-spaltig, Zielgruppen ${audiences}-spaltig`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: w, height: 900 });
+      await page.goto("/about");
+      const perRow = await page.evaluate(() => {
+        const firstRow = (els: Element[]) => {
+          const tops = els.map((e) => Math.round(e.getBoundingClientRect().top));
+          return tops.filter((t) => t === tops[0]).length;
+        };
+        const benefits = [
+          ...document.querySelectorAll("main section")[0].querySelectorAll(":scope ul > li"),
+        ];
+        return {
+          benefits: firstRow(benefits),
+          audiences: firstRow([...document.querySelectorAll("main dl > div")]),
+        };
+      });
+      expect(perRow).toEqual({ benefits, audiences });
+    });
+  }
+});
+
+test.describe("QA: Tastatur", () => {
+  test("Reiter per Pfeiltaste, Antwort per Pfeiltaste, Prüfen per Enter", async ({
+    page,
+    browserName,
+  }) => {
+    await page.goto("/about");
+    const d = demo(page);
+    const first = d.getByRole("tab", { name: "Multiple Choice" });
+
+    await page.getByRole("button", { name: /Video ansehen/ }).focus();
+    await page.keyboard.press("Tab");
+    await expect(first).toBeFocused();
+
+    await page.keyboard.press("ArrowRight");
+    await expect(d.getByRole("tab", { name: "Code" })).toBeFocused();
+    await expect(d.getByRole("tab", { name: "Code" })).toHaveAttribute("aria-selected", "true");
+    await page.keyboard.press("ArrowLeft");
+    await expect(first).toHaveAttribute("aria-selected", "true");
+
+    // Radio-Gruppe per Tab erreichen (Reiter → Panel → erste Antwort). Ein
+    // programmatisches `.focus()` reicht hier nicht: Radix wählt per
+    // Pfeiltaste nur nach echter Tastatur-Navigation aus — gemessen in Chrome.
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Tab");
+    await expect(d.getByRole("radio").first()).toBeFocused();
+    // Pfeiltaste bewegt den Fokus, Leertaste wählt aus. Radix wählt per
+    // Pfeiltaste zwar auch direkt aus, aber erst ab ~100ms Abstand zur
+    // vorigen Taste (gemessen: 50ms → nur Fokus). Unter paralleler Testlast
+    // reichte selbst eine feste Pause von 150ms nicht — die Leertaste macht
+    // den Test deterministisch und ist der übliche Tastaturweg.
+    await page.keyboard.press("ArrowDown");
+    await expect(d.getByRole("radio", { name: "Eule" })).toBeFocused();
+    await page.keyboard.press("Space");
+    await expect(d.getByRole("radio", { name: "Eule" })).toBeChecked();
+
+    // Safari auf dem Mac nimmt Buttons ohne Systemeinstellung nicht in die
+    // Tab-Reihenfolge — das gilt app-weit und ist kein Befund dieser Seite.
+    test.skip(browserName === "webkit", "WebKit/macOS: Tab überspringt Buttons");
+    await page.keyboard.press("Tab");
+    await expect(d.getByRole("button", { name: "Prüfen" })).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(d.getByText("Richtig")).toBeVisible();
+  });
+});
+
+test.describe("QA: Sicherheit und Robustheit", () => {
+  test("Markup in der Code-Aufgabe wird nicht ausgeführt", async ({ page }) => {
+    let dialog = false;
+    page.on("dialog", (d) => {
+      dialog = true;
+      d.dismiss();
+    });
+    await page.goto("/about");
+    const d = demo(page);
+    await d.getByRole("tab", { name: "Code" }).click();
+    const input = d.getByPlaceholder("Deine Antwort...");
+    await input.fill('<img src=x onerror="window.__pwn=1;alert(1)">');
+    await input.press("Enter");
+    await expect(d.getByText(/Leider falsch/)).toBeVisible();
+
+    const res = await page.evaluate(() => ({
+      pwn: (window as unknown as { __pwn?: number }).__pwn ?? null,
+      injected: document.querySelectorAll("main img[src='x']").length,
+    }));
+    expect(res).toEqual({ pwn: null, injected: 0 });
+    expect(dialog).toBe(false);
+  });
+
+  test("fällt der Screenshot aus, bleibt das Layout stehen", async ({ page }) => {
+    await page.route(/about-hero-navigation/, (r) => r.abort());
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/about");
+
+    // Kein Überlauf, der CTA bleibt über dem Screenshot. Die Höhe hält nur
+    // Chrome; WebKit lässt das kaputte Bild auf ein Quadrat zusammenfallen
+    // (gemessen 208 statt 354px) — unterhalb des CTA, ohne Folgen für den
+    // Falz. Der leere Rahmen selbst ist als BUG-22 (Low) geführt.
+    const box = (await page.locator("main img[src*='about-hero-navigation']").boundingBox())!;
+    const cta = (await page.getByRole("link", { name: /Quest erstellen/i }).first().boundingBox())!;
+    expect(cta.y + cta.height).toBeLessThan(box.y);
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
   });
 });

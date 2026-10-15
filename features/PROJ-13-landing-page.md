@@ -1,7 +1,7 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: In Progress
-_**Refinement 12 (2026-10-15): `/about` spricht Eltern und Lehrkräfte an.** Betreiber: *„Ich möchte /about mehr auf die Zielgruppe Eltern, Lehrer abstimmen."* Als Richtung lieferte er einen externen HTML-Entwurf (hell, grün, Reiter, Live-Demo, App-Screenshot im Hero). Entschieden: Aufbau und Inhalte in diese Richtung, **Geo-Quest-Look und „du" bleiben**, Kinder werden nur noch über die Erwachsenen angesprochen. Neu: App-Screenshot statt Hintergrundbild im Hero, Vorteile-Leiste, drei Zielgruppen-Karten, Live-Demo mit echten Aufgaben-Bausteinen, FAQ aus Elternsicht. Entfallen: „Jeder Ort kann ein Level sein", „Du bist der Game-Designer", die Zielgruppe „Kinder & Jugendliche". Alles, was die App nicht einlöst oder erfunden wäre (Punkte, Tipps, Teilen-Link, Offline, Nutzerzahlen, Kundenstimmen, Zeitangabe), wurde aus dem Entwurf **nicht** übernommen. Siehe Abschnitt „Refinement 12" am Ende. **Frontend umgesetzt am 2026-10-15** — CTA auf 11 Viewports über dem Falz, Abschluss-Kontrast pro Pixel ≥ 4.86:1, PROJ-13 282/0, Gegenprobe gegen den Vorgänger: 82 Tests fallen. Siehe „Implementation Notes (Frontend — Refinement 12)"._
+## Status: Approved
+_**Refinement 12 (2026-10-15): `/about` spricht Eltern und Lehrkräfte an.** Betreiber: *„Ich möchte /about mehr auf die Zielgruppe Eltern, Lehrer abstimmen."* Als Richtung lieferte er einen externen HTML-Entwurf (hell, grün, Reiter, Live-Demo, App-Screenshot im Hero). Entschieden: Aufbau und Inhalte in diese Richtung, **Geo-Quest-Look und „du" bleiben**, Kinder werden nur noch über die Erwachsenen angesprochen. Neu: App-Screenshot statt Hintergrundbild im Hero, Vorteile-Leiste, drei Zielgruppen-Karten, Live-Demo mit echten Aufgaben-Bausteinen, FAQ aus Elternsicht. Entfallen: „Jeder Ort kann ein Level sein", „Du bist der Game-Designer", die Zielgruppe „Kinder & Jugendliche". Alles, was die App nicht einlöst oder erfunden wäre (Punkte, Tipps, Teilen-Link, Offline, Nutzerzahlen, Kundenstimmen, Zeitangabe), wurde aus dem Entwurf **nicht** übernommen. Siehe Abschnitt „Refinement 12" am Ende. **Frontend umgesetzt am 2026-10-15** — CTA auf 11 Viewports über dem Falz, Abschluss-Kontrast pro Pixel ≥ 4.86:1, PROJ-13 282/0, Gegenprobe gegen den Vorgänger: 82 Tests fallen. Siehe „Implementation Notes (Frontend — Refinement 12)". **QA am 2026-10-15: 31/31 Acceptance Criteria, 1 Low-Bug (BUG-22), Production-Ready — Approved.**_
 
 _**Refinement 11 (2026-09-29): Abstand Hero → Video-Sektion.** Betreiber nach dem Deploy: zwischen CTA und Video-Überschrift ist deutlich mehr Abstand als zwischen Video und erster Karte. Gemessen live: 176px gegen 80px (mobil 112 gegen 48). Entschieden: Kante zu Kante überall dasselbe Maß. **Frontend umgesetzt und QA-geprüft am 2026-09-29** — 6/6 Acceptance Criteria, keine Bugs. Approved._
 
@@ -11,7 +11,7 @@ _Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und d
 
 _**Refinement 7 (2026-09-20): Das Logo-Lockup kehrt auf den Desktop zurück.** Betreiber-Befund: „ich kann auf /about auf dem desktop das Logo nicht mehr sehen." **Frontend umgesetzt am 2026-09-21** — `lg:hidden` entfernt; CTA auf allen elf Viewports über dem Falz nachgemessen, knappster Fall 1366×768 mit 45px. Siehe Implementation Notes._
 **Created:** 2026-09-04
-**Last Updated:** 2026-10-15 (Refinement 12 Frontend umgesetzt — `/about` für Eltern und Lehrkräfte)
+**Last Updated:** 2026-10-15 (Refinement 12 QA-geprüft — `/about` für Eltern und Lehrkräfte)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -3163,3 +3163,77 @@ Und es fehlte, was diese Gruppe fragt: Datenschutz (stand nur als „ohne Accoun
 **Am Bildschirm abgenommen:** Hero auf 1440×900 und iPhone 13, ganze Seite am Desktop, Abschluss-Sektion mit sichtbarem Schriftzug „Explore. Solve. Discover." rechts. Ein Ganzseiten-Screenshot zeigte die Illustration zunächst nicht — reines Lazy-Loading-Artefakt der Aufnahme, nach Scrollen geladen.
 
 **Nicht abgedeckt:** echtes iPhone und Firefox; ob der Hero-Screenshot nach künftigen Änderungen am Navigations-Screen neu erzeugt wird, hängt am Skript-Aufruf (nicht automatisiert).
+
+## QA Test Results — Refinement 12: `/about` für Eltern und Lehrkräfte (2026-10-15)
+
+**Getestet:** 2026-10-15 gegen den Production-Build (`next start`, Port 3100), Chrome 152 und WebKit (iPhone 13). **Ergebnis: 31/31 Acceptance Criteria erfüllt, 1 Low-Bug (BUG-22), keine Critical/High/Medium. Production-Ready.**
+
+Weil in derselben Sitzung gebaut, sind die zentralen Behauptungen **neu gemessen statt übernommen**, und jede Tatsachenbehauptung der Seite ist gegen den Code geprüft.
+
+### Acceptance Criteria
+| Block | Ergebnis | Beleg |
+|---|---|---|
+| Ansprache & Ton (4) | erfüllt | Gesamter sichtbarer Text samt aufgeklappter FAQ gelesen: kein Satz an das spielende Kind, kein „Sie", Geo-Quest-Look. Verbotsliste (Punkte, Tipps, QR/Link, Offline, Nutzerzahlen, Zeitangabe, „kein Tracking", „DSGVO", JGA) als Test |
+| Hero (6) | erfüllt | Überschrift unverändert, ein Absatz + Preiszeile; Screenshot ab `lg` rechts (x 959 bei 1440), darunter unter dem CTA; kein Hintergrundbild; Alt-Text beschreibt Pfeil und Entfernung; CTA auf 11 Viewports × 2 Engines über dem Falz (320×568: 51px Luft) |
+| Aufbau (6) | erfüllt | 8 Sektionen in Reihenfolge; Vorteile 1/2/4 Spalten bei 375/768/1440, Zielgruppen 1/1/3, keine Reiter; „Lass deine Klasse selbst eine Quest bauen"; Schritt 3 „als Datei"; keine JGA |
+| Live-Demo (6) | erfüllt | Echte Komponenten; falsch/richtig wie im Player; **0 `localStorage`-Schreibzugriffe, 0 Geolocation-Aufrufe** (instrumentiert); kein Hydration-Fehler; MC-Frage im statischen HTML, Sortier-Frage nicht |
+| FAQ (4) | erfüllt | 8 Fragen; **jede aufgeklappt und wörtlich mit dem JSON-LD verglichen**; Internet-Antwort ehrlich |
+| Unverändert (5) | erfüllt | Kopfzeile ohne Anker, Ko-fi nur als Icon, Abschluss nur `/create`; Nachbarseiten ohne Bild/Screenshot; `/about` statisch, 0 fremde Hosts; Abstände 48/80px ab Trennlinie; Kontrast |
+
+### Faktencheck der Seite gegen den Code
+- **„Standort … nicht an einen Server geschickt"** — bestätigt: Keine Netzwerk-Anfrage enthält Koordinaten (`use-address-search` sendet nur den Suchtext an Nominatim). Die OSM-Kartenkacheln im Creator sind in `/datenschutz` offengelegt („keine Standortdaten übermittelt").
+- **„Zählt Besuche anonym und ohne Cookies"** — deckt sich mit Vercel Analytics laut PRD und Datenschutzerklärung.
+- **„Mehrere Gruppen mit derselben Quest", „jedes Handy führt seinen eigenen Spielstand", „keine Konten für Schülerinnen und Schüler", „Homescreen"** — durch Datei-Import, `localStorage` pro Gerät, fehlende Konten und PWA (PROJ-12) gedeckt.
+- **Beobachtung ohne Bug-Status:** „Jede Station kann Text, Bild, Audio, Video **und eine** Aufgabe kombinieren" untertreibt — der Creator erlaubt mehrere Aufgaben je Station. Kein falsches Versprechen, aber ungenau.
+
+### Kontrast (gemessen)
+- Abschluss-Sektion auf der Illustration, **pro Einzelpixel**: schlechtester Wert 4.86:1 (Teal, Desktop) — als Test festgehalten
+- Demo-Reiter (inaktiv, grau auf Karte): 7.29–7.72:1
+- Vorteile-, Zielgruppen-, Schritt- und Demo-Text: über 4.5:1 (bestehender Kontrast-Test, auf die neuen Elemente gezogen)
+
+### Responsive & Browser
+- 375/768/1440 auf Chrome und WebKit: Layout identisch, 0px Überlauf, Tap-Ziele ≥ 44px (wirksames Ziel bei Radio-Zeilen)
+- **Firefox nicht getestet:** Das Binary fehlt weiterhin. Ein Installationsversuch lud 93 MB, das Entpacken hing aber über zehn Minuten bei 888 KB — dasselbe Muster wie die bekannte 428-KB-Chromium-Ruine. Abgebrochen und das Teilverzeichnis entfernt, damit keine zweite Ruine liegen bleibt; der Playwright-Cache ist im Ausgangszustand
+
+### Tastatur
+Vollständig bedienbar: Reiter per Pfeiltaste (Links/Rechts, umlaufend), Antwort per Pfeiltaste + Leertaste, „Prüfen" per Enter. In WebKit überspringt Tab den „Prüfen"-Knopf — Standardverhalten von Safari auf dem Mac (Buttons nur mit „Mit Tab alle Objekte hervorheben"), app-weit, kein Befund dieser Seite.
+
+### Security
+- Markup in der Code-Aufgabe (`<img onerror=…>`, `alert`) wird nicht ausgeführt: 0 injizierte Elemente, 0 Dialoge
+- Seite statisch, keine Speicherung, keine fremden Hosts, JSON-LD escaped `<` (bestehender Test)
+- Ladegewicht nicht gestiegen: 475 KB Skripte und 9 KB Bilder beim ersten Laden gegenüber 777 KB und 215 KB der live ausgelieferten alten Fassung
+
+### Bugs
+
+#### BUG-22: Leerer Handy-Rahmen und Bildsymbol, wenn ein Bild nicht lädt
+- **Severity:** Low
+- **Steps to Reproduce:**
+  1. `/about` öffnen und Anfragen an `about-hero-navigation.png` und `hero_new.png` blockieren
+  2. Erwartet: Der Hero zeigt ohne Screenshot keinen leeren Rahmen, die Abschluss-Sektion kein Symbol
+  3. Tatsächlich: Chrome zeigt einen leeren Handy-Rahmen (290×478) mit Symbol für ein kaputtes Bild oben links; WebKit einen quadratischen Rahmen (208×208 auf dem Handy statt 354px Höhe) mit Fragezeichen-Symbol. Die Abschluss-Sektion zeigt das Symbol oben links; ihr Text bleibt auf dunklem Grund lesbar
+- **Folgen:** rein kosmetisch. Kein Überlauf, der CTA bleibt an seinem Platz über dem Screenshot. Beide Bilder kommen vom eigenen Server, ein Ausfall ist selten
+- **Priority:** Nice to have
+
+### Neue und gezogene Tests
+- `tests/proj-13-about-eltern.spec.ts` um einen QA-Block erweitert (jetzt 19 Tests je Engine): Spalten je Breite (3 Viewports), Tastaturweg durch die Demo, Markup in der Code-Aufgabe, stabiles Layout bei ausgefallenem Screenshot
+- Das Suchmuster des Hydration-Tests erkennt jetzt auch den minifizierten Production-Code (`React error #418/#423/#425`)
+
+### Gegenproben
+- **Gezielt eingebaute Fehler** (Abdunklung der Abschluss-Sektion 70 % → 30 %, Demo startet mit der Sortier-Aufgabe): **9 von 10** zuständigen Wächtern fallen. Grün bleibt nur der Hydration-Test in WebKit — **WebKit meldet Hydration-Fehler gar nicht an Playwright** (weder Konsole noch `pageerror`), Chrome als `Minified React error #418`. Abgesichert ist der Fall trotzdem auf beiden Engines: Der Test „Demo-Frage im ausgelieferten HTML" fängt dieselbe Ursache. Produktcode danach per `git diff` als identisch mit dem Commit bestätigt
+- Gegen den echten Vorgängerstand (Frontend-Phase): 82 PROJ-13-Tests fallen
+
+### Regression
+- **Gesamtsuite beider Engines: 1433 passed / 57 skipped / 0 failed / 0 flaky** (Production-Build, `--workers=2`)
+- Unit **427/427**, Lint 0 Fehler, `tsc` nur die 2 bekannten Fehler aus PROJ-6
+
+### Drei eigene Messfehler, offen benannt
+1. **Tastatur „funktioniert in Chrome nicht"** — meine Sonde las den Fokus ohne Wartezeit, bevor Radix ihn verschoben hatte. Mit 250 ms Pause läuft der ganze Weg
+2. **Programmatisches `.focus()` auf einem Radio** — danach wählt Radix per Pfeiltaste nicht aus; nur echter Tab-Fokus zählt. Im Test korrigiert
+3. **Feste 150-ms-Pause** — bestand dreimal einzeln, fiel im Gesamtlauf unter Last. Ersetzt durch Pfeiltaste + Leertaste (deterministisch); unter vierfacher Last 9/9
+
+### Summary
+- **Acceptance Criteria:** 31/31
+- **Bugs:** 1 (0 critical, 0 high, 0 medium, 1 low — BUG-22)
+- **Security:** ohne Befund
+- **Production Ready:** YES
+- **Recommendation:** Deploy; BUG-22 bei Gelegenheit
