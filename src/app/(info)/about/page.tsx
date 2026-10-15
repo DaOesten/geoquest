@@ -1,13 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight,
-  Compass,
+  Check,
+  Footprints,
   GraduationCap,
-  PartyPopper,
+  Puzzle,
+  ShieldCheck,
+  Smartphone,
   Sparkles,
+  Tent,
   Users,
 } from "lucide-react";
+import { AboutTaskDemo } from "@/components/about-task-demo";
 import { AboutVideo } from "@/components/about-video";
 import { InfoPageShell } from "@/components/info-page-shell";
 import { ANLEITUNG_VERFUEGBAR } from "@/lib/app-nav";
@@ -18,8 +24,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
+// Refinement 12 (2026-10-15): nennt Eltern und Lehrkraefte ihre Anlaesse statt
+// des Spielerlebnisses. „Schnitzeljagd" bleibt — das ist die Suchsprache.
 const DESCRIPTION =
-  "Die reale Welt wird zum Spielfeld: Erstelle deine eigene GPS-Rallye und mach aus jedem Ort ein Abenteuer. Digitale Schnitzeljagd für Kindergeburtstag, Schulausflug und Ferienprogramm — kostenlos, ohne Abo, ohne Account.";
+  "GPS-Schnitzeljagd und Lernpfade selbst erstellen — für Kindergeburtstag, Schulklasse und Familienausflug. Kostenlos, werbefrei, ohne Anmeldung.";
 
 export const metadata: Metadata = {
   title: "Digitale Schnitzeljagd selbst erstellen — kostenlos & ohne Anmeldung",
@@ -47,63 +55,93 @@ export const metadata: Metadata = {
   },
 };
 
-/** Sektion 2 — der Beleg für „überall". Als Fließtext-Aufzählung überliest man ihn. */
-const PLACES = [
-  "Ein Park",
-  "Eine Stadt",
-  "Der Schulhof",
-  "Ein Wanderweg",
-  "Dein Viertel",
+/**
+ * Vorteile-Leiste direkt unter dem Hero (Refinement 12). Beantwortet, was
+ * Eltern und Lehrkraefte zuerst pruefen. Jede Aussage ist von der App gedeckt:
+ * „Standort bleibt auf dem Geraet" statt „kein Tracking" — die Seite zaehlt
+ * Besuche (cookiefrei), und das waere sonst eine falsche Behauptung.
+ */
+const BENEFITS = [
+  {
+    icon: ShieldCheck,
+    title: "Datenschutz eingebaut",
+    body: "Keine Anmeldung, keine Werbung. Standort und Quests bleiben auf dem Gerät.",
+  },
+  {
+    icon: Footprints,
+    title: "Bewegung statt Sofa",
+    body: "Bildschirmzeit, die nach draußen führt: laufen, suchen, Rätsel lösen.",
+  },
+  {
+    icon: Puzzle,
+    title: "Einfacher Baukasten",
+    body: "Stationen auf der Karte setzen, Aufgaben hinzufügen. Kein Programmierwissen nötig.",
+  },
+  {
+    icon: Smartphone,
+    title: "Läuft im Browser",
+    body: "Auf jedem aktuellen Smartphone, ohne App-Store und ohne Installation.",
+  },
 ];
 
 const STEPS = [
   {
     no: "01",
-    title: "Ort auswählen",
-    body: "Entscheide, wo dein Abenteuer stattfinden soll.",
+    title: "Ort wählen & Stationen setzen",
+    body: "Setze im Creator die Stationen auf der Karte, ob Park, Schulhof oder Waldweg.",
   },
   {
     no: "02",
-    title: "Quest gestalten",
-    body: "Füge Stationen und Aufgaben hinzu und verbinde alles zu einem Abenteuer.",
+    title: "Aufgaben hinzufügen",
+    body: "Gib jeder Station Text, Bilder, Audio oder Video und eine Aufgabe: Multiple Choice, Code oder Sortieren.",
   },
   {
     no: "03",
-    title: "Losspielen",
-    // Bewusst nicht „teilen": Weitergabe läuft über den JSON-Export (PROJ-9),
-    // einen Teilen-Link gibt es nicht. Die Vorlage hätte eine Funktion
-    // versprochen, die die App nicht einlöst.
-    body: "Gib deine Quest als Datei weiter — oder spielt sie direkt auf deinem Gerät. GPS führt euch von Station zu Station.",
+    title: "Weitergeben & losspielen",
+    // Bewusst nicht „Link" oder „QR-Code": Weitergabe laeuft ueber den
+    // JSON-Export (PROJ-9), einen Teilen-Link gibt es nicht.
+    body: "Gib die Quest als Datei an die Handys der Spieler weiter. Der GPS-Pfeil führt von Station zu Station.",
   },
 ];
 
 /**
- * Lucide statt der Emoji aus der Spec-Vorlage: Das Design System schließt
- * Emojis aus („Energie kommt aus Type, Neon und Brush Marks"), und die
- * gesamte App zeichnet mit Lucide-Outlines.
+ * Drei Zielgruppen statt vier (Refinement 12): „Kinder & Jugendliche" entfaellt,
+ * die Seite spricht nur noch die Erwachsenen an, die eine Quest erstellen.
+ * Die Game-Designer-Idee lebt als Nutzen fuer Lehrkraefte weiter.
+ *
+ * Karten statt Reiter wie im Betreiber-Entwurf: Bei Reitern waeren zwei von
+ * drei Inhalten versteckt, und auf dem Handy liefen sie aus dem Bild.
  */
 const AUDIENCES = [
   {
     icon: Users,
-    title: "Für Familien",
-    body: "Mach aus einem Spaziergang, Ausflug oder Urlaub ein gemeinsames Abenteuer.",
+    title: "Familien",
+    body: "Mach aus Spaziergang, Ausflug oder Kindergeburtstag eine Schatzsuche.",
+    points: [
+      "Kindergeburtstag im Park oder Garten",
+      "Wandern ohne Nörgeln",
+      "Eigene Orte, eigenes Tempo",
+    ],
   },
   {
     icon: GraduationCap,
-    title: "Für Schule & Pädagogik",
-    // Am 2026-09-09 auf zwei Sätze gekürzt: Die Fachbeispiele sind
-    // entfallen, damit alle vier Zielgruppen-Karten gleich lang sind.
-    body: "Gestalte interaktive Lernpfade und bringe den Unterricht nach draußen. Verbessere das Lernen durch Bewegung.",
+    title: "Schule & Pädagogik",
+    body: "Bring den Unterricht nach draußen und verbinde Wissen mit echten Orten.",
+    points: [
+      "Wandertag und Exkursion mit Aufgaben",
+      "Keine Konten für Schülerinnen und Schüler",
+      "Lass deine Klasse selbst eine Quest bauen",
+    ],
   },
   {
-    icon: Compass,
-    title: "Für Kinder & Jugendliche",
-    body: "Erstelle deine eigene Quest, überrasche deine Freunde und werde selbst zum Game-Designer.",
-  },
-  {
-    icon: PartyPopper,
-    title: "Für Gruppen & Events",
-    body: "Geburtstag, Ferienprogramm, Jugendgruppe oder einfach ein Nachmittag mit Freunden — erstelle eine Quest, die zu deinem Anlass passt.",
+    icon: Tent,
+    title: "Jugendarbeit & Ferienprogramm",
+    body: "Für Gruppen, Ferienspiele und Freizeiten — eine Quest, die zu eurem Ort passt.",
+    points: [
+      "Ferienspiele und Zeltlager",
+      "Stadtrallye für Jugendgruppen",
+      "Mehrere Gruppen mit derselben Quest",
+    ],
   },
 ];
 
@@ -112,12 +150,30 @@ const FAQ = [
   {
     question: "Was kostet Geo Quest?",
     answer:
-      "Geo Quest ist vollständig kostenlos. Es gibt kein Abo, keine Testphase und keine Begrenzung auf eine bestimmte Anzahl von Quests.",
+      "Geo Quest ist vollständig kostenlos und werbefrei. Es gibt kein Abo, keine Testphase und keine Begrenzung der Quests. Wer das Projekt unterstützen möchte, kann das freiwillig über Ko-fi tun.",
   },
   {
-    question: "Brauche ich ein Benutzerkonto?",
+    question: "Brauchen die Kinder ein Konto oder eine App?",
     answer:
-      "Nein. Es gibt keine Anmeldung und keine E-Mail-Abfrage. Die Quests werden lokal im Browser gespeichert und lassen sich als Datei weitergeben.",
+      "Nein. Geo Quest läuft im Browser jedes aktuellen Smartphones, eine Installation aus dem App Store ist nicht nötig. Wer möchte, legt die App auf den Homescreen. Niemand muss sich anmelden oder eine E-Mail-Adresse angeben.",
+  },
+  {
+    // Ehrlich statt „kein Tracking" (Refinement 12): Die Seite zaehlt Besuche
+    // ueber Vercel Analytics, cookiefrei. Der Standort verlaesst das Geraet nie.
+    question: "Was passiert mit den Standortdaten?",
+    answer:
+      "Der Standort wird nur auf dem Handy verarbeitet, um die Entfernung zur nächsten Station zu berechnen, und nicht an einen Server geschickt. Quests und Spielstand liegen im Browser des Geräts. Die Seite zählt Besuche anonym und ohne Cookies.",
+  },
+  {
+    question: "Braucht jedes Kind ein eigenes Handy?",
+    answer:
+      "Nein. Eine Gruppe kann sich ein Handy teilen. Spielen mehrere Gruppen, lädt jede die Quest-Datei auf ihr Gerät — jedes Handy führt seinen eigenen Spielstand.",
+  },
+  {
+    // Kein Offline-Versprechen: PRD-Non-Goal, und Medien brauchen Internet.
+    question: "Braucht man unterwegs Internet?",
+    answer:
+      "Ja, die Handys brauchen eine mobile Datenverbindung, vor allem für Bilder, Audio und Videos in den Stationen. Für ein gutes GPS-Signal hilft freier Himmel; zwischen hohen Häusern oder unter dichtem Laub wird die Ortung ungenauer.",
   },
   {
     question: "Für welches Alter ist das gedacht?",
@@ -125,24 +181,17 @@ const FAQ = [
       "Die Quests richten sich vor allem an Kinder und Jugendliche von etwa 8 bis 16 Jahren, aber niemand ist zu alt um eine Quest zu spielen. Erstellt werden sie meist von Eltern, Lehrkräften oder Jugendleitern.",
   },
   {
-    // Frage und Antwort umformuliert (PROJ-14): Die alte Fassung beschrieb die
-    // KI-Anleitung als verfügbaren Weg — zum Launch gibt es sie nicht. Keine
-    // Zeitangabe mehr (Betreiber-Entscheidung): Die bisherige halbe Stunde galt
-    // mit KI-Hilfe, und manuell hängt die Dauer stark vom Umfang ab. Eine
-    // erfundene Zahl enttäuscht beim ersten Versuch. Die Frage zielt deshalb
-    // neu auf das WAS statt auf das WIE LANGE — eine Frage nach der Dauer, die
-    // keine Dauer nennt, wirkt ausweichend.
+    // Keine Zeitangabe (PROJ-14, Betreiber-Entscheidung): Die Dauer haengt
+    // stark vom Umfang ab, eine erfundene Zahl enttaeuscht beim ersten Versuch.
     question: "Wie erstelle ich eine Quest?",
     answer:
       "Im Creator: Quest anlegen, Ziele auf der Karte setzen und zu jedem Ziel Rätsel, Aufgaben oder Medien hinzufügen. Danach exportierst du sie als Datei und teilst sie.",
   },
   {
-    // Fängt auf, was mit der gestrichenen Sektion „Was drin steckt" wegfällt:
-    // Der Inhalt der drei Feature-Karten bleibt so im HTML und im JSON-LD,
-    // unterbricht aber den Lesefluss der Seite nicht mehr.
+    // Gekuerzt (Refinement 12): Die Live-Demo zeigt die Aufgabentypen jetzt.
     question: "Was kann ich in eine Quest einbauen?",
     answer:
-      "Jede Station kann fünf Bausteine kombinieren: Text, Bild, Audio, Video und Aufgaben. Als Aufgaben gibt es drei Typen — einen Code eintippen, Multiple Choice oder Elemente in die richtige Reihenfolge bringen. Weiter geht es erst, wenn die Aufgabe gelöst ist. Die Navigation zwischen den Stationen läuft über GPS: Ein Pfeil zeigt die Richtung, die Entfernung zählt herunter.",
+      "Jede Station kann Text, Bild, Audio, Video und eine Aufgabe kombinieren: einen Code eintippen, Multiple Choice oder Elemente sortieren. Weiter geht es erst, wenn die Aufgabe gelöst ist.",
   },
 ];
 
@@ -198,9 +247,6 @@ const SECTION_LABEL =
 /** Sektions-Überschrift im Display-Schnitt. */
 const SECTION_TITLE =
   "mt-2 font-display italic text-[clamp(1.5rem,4vw,2.4rem)] uppercase leading-[1] text-gq-white";
-/** Abschließende Merkzeile einer Sektion — der Beat am Ende des Blocks. */
-const PUNCHLINE =
-  "mt-5 font-display italic text-[clamp(1.15rem,3vw,1.6rem)] uppercase leading-[1.05] text-gq-teal";
 
 export default function AboutPage() {
   return (
@@ -208,9 +254,7 @@ export default function AboutPage() {
       showLogo
       showSupport
       /* Kein Eyebrow (2026-09-09): „Über Geo Quest" beschrieb die Seite,
-         statt den Besucher anzusprechen — auf einer Landingpage eine
-         verschenkte Zeile über der Headline. Die Shell lässt die Zeile
-         seitdem weg, statt ein leeres <p> zu rendern. */
+         statt den Besucher anzusprechen. */
       title={
         <>
           Die reale Welt
@@ -220,30 +264,21 @@ export default function AboutPage() {
       }
       lead={
         <>
+          {/* Ein Absatz fuer Ersteller statt zwei Saetzen fuer Ersteller und
+              Spieler (Refinement 12, 2026-10-15): Die Seite spricht Eltern und
+              Lehrkraefte an — der Anlass steht vorn, weil sie danach suchen.
+              Laenge mit Blick auf BUG-7: 320x568 hatte nur 39px Luft. */}
           <p className="font-body text-base sm:text-lg lg:text-xl leading-snug text-gq-white">
-            Erstelle deine eigene GPS-Rallye und mach aus jedem Ort ein
-            Abenteuer.
+            Erstelle GPS-Schnitzeljagden und Lernpfade für Kindergeburtstag,
+            Schulklasse oder Familienausflug. Die Kinder laufen draußen von
+            Station zu Station und lösen dabei Rätsel.
           </p>
-          {/* Zweite Zeile in gleicher Größe (2026-09-09): Die erste spricht
-              den Ersteller an, diese den Spieler — beide Rollen stehen so
-              gleichwertig im Hero. */}
-          <p className="mt-3 font-body text-base sm:text-lg lg:text-xl leading-snug text-gq-white">
-            Nimm die Herausforderung an, spiele eine Quest und entdecke Orte
-            auf eine neue Art.
-          </p>
-          {/* Der Hero trug bis 2026-09-09 zwei weitere Absätze: eine
-              Zielgruppen-Aufzählung und die Spielmechanik. Beide sind
-              entfallen — die Zielgruppen stehen als vier eigene Karten
-              weiter unten, die Mechanik in den drei Schritten und in der
-              FAQ. Zusammen kosteten sie 168px an der teuersten Stelle der
-              Seite, ohne dort etwas zu sagen, das nicht später käme. */}
 
-          {/* Das stärkste Einzelargument der Seite — als eigene Zeile über den
-              Buttons, damit es nicht im Fließtext untergeht. Teal, nicht Lime:
-              Das Design System erlaubt ein Lime-Element pro Screen, und das
-              ist die Game-Designer-Karte weiter unten. */}
+          {/* „Werbung" statt „Abo" (Refinement 12): fuer Eltern das staerkere
+              Wort. Teal, nicht Lime — das eine Lime-Element der Seite ist die
+              Entfernungsanzeige im App-Screenshot daneben. */}
           <p className="mt-5 text-tech text-xs sm:text-[13px] tracking-[0.1em] text-gq-teal">
-            Kostenlos. Ohne Abo. Ohne Account.
+            Kostenlos. Ohne Werbung. Ohne Anmeldung.
           </p>
 
           <div className="mt-5 lg:mt-4 flex flex-col gap-3 sm:flex-row">
@@ -257,13 +292,8 @@ export default function AboutPage() {
               <ArrowRight className="w-4 h-4" />
             </Link>
             {/* Entfällt, solange die KI-Anleitung nur angekündigt ist
-                (PROJ-14). Ein Call-to-Action ist ein Versprechen auf eine
-                Handlung — führt er auf "gibt's noch nicht", beschädigt er den
-                Conversion-Weg an der teuersten Stelle der Seite. Refinement 4
-                hat die Hero-CTAs eigens auf /create gezogen, um diesen Weg zu
-                verkürzen; ihn jetzt mit einer Sackgasse zu teilen, wäre ein
-                Rückschritt. Nebeneffekt: Der Hero wird kürzer, was BUG-7 (CTA
-                über dem Falz) weiter entschärft. */}
+                (PROJ-14) — ein CTA auf „gibt's noch nicht" wäre eine
+                Sackgasse an der teuersten Stelle der Seite. */}
             {ANLEITUNG_VERFUEGBAR && (
               <Link
                 href="/anleitung"
@@ -276,24 +306,53 @@ export default function AboutPage() {
           </div>
         </>
       }
-      /* Das Bild traegt den Hero als Hintergrund statt als Nachbar-Spalte
-         (Refinement 9, 2026-09-21). Refinement 8 hatte es auf die
-         Spaltenhoehe gestreckt und dafuer beschnitten — der Zuschnitt war die
-         einzige Stelle, die keine Messung entscheiden konnte, und er gefiel
-         nicht. Als Untergrund entfaellt die Frage ganz.
-
-         Kein `alt` und kein `aside` mehr: Das Bild sagt nichts, was der Text
-         daneben nicht sagt. Die Abdunklung sitzt in `InfoPageShell`, weil sie
-         nicht verhandelbar ist — ohne sie verfehlt Teal die Kontrastvorgabe. */
-      heroBackground={{ src: "/assets/hero_new.png" }}
+      /* App-Screenshot statt Hintergrundbild (Refinement 12). Zeigt Eltern,
+         was die Kinder in der Hand haben werden. Ein echter Zustand der App,
+         erzeugt von `scripts/make-about-screenshot.mjs` — kein Mockup, das
+         bei der naechsten Design-Aenderung still auseinanderlaeuft.
+         Unter `lg` steht er unter den Buttons, der CTA bleibt damit oben. */
+      aside={
+        <div className="flex justify-center lg:justify-end">
+          <div className="relative w-[230px] sm:w-[260px] lg:w-[290px] rounded-[42px] border border-gq-teal/30 bg-gq-black p-2.5 shadow-[0_0_0_1px_rgba(0,224,209,0.18),0_0_48px_rgba(0,224,209,0.18),0_24px_48px_rgba(0,0,0,0.6)]">
+            <Image
+              src="/assets/about-hero-navigation.png"
+              alt="Geo Quest auf dem Handy: Ein Pfeil zeigt zur Station „Die alte Eiche“, noch 108 Meter entfernt."
+              width={1170}
+              height={1992}
+              priority
+              sizes="(min-width: 1024px) 290px, (min-width: 640px) 260px, 230px"
+              className="w-full h-auto rounded-[32px]"
+            />
+          </div>
+        </div>
+      }
     >
-      {/* 2 — Erklärvideo (Refinement 10, 2026-09-28). Direkt nach dem Hero:
-          erst die Aussage, dann sofort, wie es aussieht. Überschrift
-          „funktioniert" statt „spielt sich": Das Video zeigt Erstellen,
-          Teilen und Spielen, nicht nur das Spiel. Hochformat bleibt
-          Hochformat — ab `sm` in einer Kinoformat-Karte mit unscharfem
-          Rand. Die Fassung „Text links, Video rechts" gefiel nicht.
-          Abstand wie jede andere Sektion, Kante zu Kante gemessen. */}
+      {/* 2 — Vier Vorteile (Refinement 12). Direkt nach dem Hero, weil sie
+          beantworten, was Eltern und Lehrkräfte zuerst prüfen. */}
+      <section className="mt-12 sm:mt-20">
+        <h2 className={SECTION_LABEL}>Warum Geo Quest</h2>
+        <h3 className={SECTION_TITLE}>Gemacht für draußen.</h3>
+
+        <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {BENEFITS.map(({ icon: Icon, title, body }) => (
+            <li
+              key={title}
+              className="rounded-card border border-border bg-gq-dark-teal/70 p-5 shadow-card"
+            >
+              <Icon className="w-7 h-7 text-gq-teal" aria-hidden />
+              <h4 className="mt-4 font-display italic text-lg lg:text-xl uppercase leading-tight text-gq-white">
+                {title}
+              </h4>
+              <p className="mt-2 font-body text-sm lg:text-[15px] leading-relaxed text-gq-grey">
+                {body}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* 3 — Erklärvideo (Refinement 10). Hochformat bleibt Hochformat — ab
+          `sm` in einer Kinoformat-Karte mit unscharfem Rand. */}
       <section className="mt-12 sm:mt-20">
         <div>
           <h2 className={SECTION_LABEL}>In 50 Sekunden</h2>
@@ -311,62 +370,35 @@ export default function AboutPage() {
         />
       </section>
 
-      {/* 3 — Orte als Chip-Reihe, in einer Karte wie Sektion 4. Ab hier heißt
-          es „Quest": Der Hero oben hat den Besucher mit „GPS-Rallye" in seiner
-          Suchsprache abgeholt, von jetzt an gilt die Sprache der App.
-
-          Teal statt Lime: Die beiden Karten sollen sich unterscheiden, und das
-          Design System lässt nur ein Lime-Element pro Screen zu — das bleibt
-          die Game-Designer-Karte darunter. */}
+      {/* 4 — Zielgruppen, drei Karten mit je drei Stichpunkten. */}
       <section className="mt-12 sm:mt-20">
-        <div className="rounded-card border border-gq-teal/40 bg-gq-dark-teal/70 p-6 sm:p-8 lg:p-10 shadow-card">
-          <h2 className={SECTION_LABEL}>Wo gespielt wird</h2>
-          <h3 className={SECTION_TITLE}>Jeder Ort kann ein Level sein.</h3>
+        <h2 className={SECTION_LABEL}>Für wen</h2>
+        <h3 className={SECTION_TITLE}>Für wen ist Geo Quest?</h3>
 
-          <ul className="mt-5 flex flex-wrap gap-2 sm:gap-3">
-            {PLACES.map((place) => (
-              <li
-                key={place}
-                className="rounded-pill border border-gq-teal/40 bg-gq-black/40 px-4 py-2 text-tech text-[11px] sm:text-xs tracking-[0.08em] text-gq-white"
-              >
-                {place}
-              </li>
-            ))}
-          </ul>
-
-          <p className="mt-6 max-w-[58ch] font-body text-sm sm:text-base lg:text-[17px] leading-relaxed text-gq-grey">
-            Lege Stationen fest, füge Aufgaben hinzu und verbinde sie zu einer
-            eigenen Quest. Die Teilnehmenden bewegen sich durch die echte Welt
-            und entdecken dabei die nächste Herausforderung.
-          </p>
-          <p className={PUNCHLINE}>Draußen ist das Game.</p>
-        </div>
-      </section>
-
-      {/* 4 — Die zweite Karte, in Lime: das eine Hervorhebungs-Element der
-          Seite laut Design System. */}
-      <section className="mt-12 sm:mt-20">
-        <div className="rounded-card border border-gq-lime/40 bg-gq-dark-teal/70 p-6 sm:p-8 lg:p-10 shadow-card">
-          <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-lime">
-            Deine Rolle
-          </h2>
-          <h3 className={SECTION_TITLE}>Nicht nur spielen. Selber machen.</h3>
-          <div className="mt-4 max-w-[58ch] font-body text-sm sm:text-base lg:text-[17px] leading-relaxed text-gq-grey">
-            <p>
-              Mit Geo Quest bist du nicht nur Spieler.{" "}
-              <span className="text-gq-white">Du bist der Game-Designer.</span>
-            </p>
-            <p className="mt-3">
-              Du brauchst kein Programmierwissen und keine besonderen
-              Vorkenntnisse. Erstelle eine Quest für deinen nächsten Ausflug,
-              eine Geburtstagsfeier, eine Schulstunde oder einfach für deine
-              Freunde.
-            </p>
-          </div>
-          <p className="mt-5 font-display italic text-[clamp(1.15rem,3vw,1.6rem)] uppercase leading-[1.05] text-gq-lime">
-            Deine Welt. Deine Regeln. Deine Herausforderungen.
-          </p>
-        </div>
+        <dl className="mt-6 grid gap-4 lg:grid-cols-3">
+          {AUDIENCES.map(({ icon: Icon, title, body, points }) => (
+            <div
+              key={title}
+              className="rounded-card border border-border bg-gq-dark-teal/70 p-5 sm:p-6 shadow-card transition-all duration-base ease-gq hover:-translate-y-0.5 hover:card-glow-teal"
+            >
+              <Icon className="w-7 h-7 text-gq-teal" aria-hidden />
+              <dt className="mt-4 font-display italic text-lg lg:text-xl uppercase leading-tight text-gq-white">
+                {title}
+              </dt>
+              <dd className="mt-2 font-body text-sm lg:text-[15px] leading-relaxed text-gq-grey">
+                <p>{body}</p>
+                <ul className="mt-4 space-y-2.5">
+                  {points.map((point) => (
+                    <li key={point} className="flex items-start gap-2.5 text-gq-white">
+                      <Check className="mt-0.5 w-4 h-4 shrink-0 text-gq-teal" aria-hidden />
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </dd>
+            </div>
+          ))}
+        </dl>
       </section>
 
       {/* 5 — Drei Schritte. */}
@@ -397,27 +429,18 @@ export default function AboutPage() {
         </ol>
       </section>
 
-      {/* 6 — Zielgruppen. */}
+      {/* 6 — Live-Demo mit den echten Aufgaben-Komponenten (Refinement 12).
+          Kein GPS, keine Punkte, kein Spielstand — siehe AboutTaskDemo. */}
       <section className="mt-12 sm:mt-20">
-        <h2 className={SECTION_LABEL}>Für wen</h2>
-        <h3 className={SECTION_TITLE}>Für wen ist Geo Quest?</h3>
-
-        <dl className="mt-6 grid gap-4 sm:grid-cols-2">
-          {AUDIENCES.map(({ icon: Icon, title, body }) => (
-            <div
-              key={title}
-              className="rounded-card border border-border bg-gq-dark-teal/70 p-5 shadow-card transition-all duration-base ease-gq hover:-translate-y-0.5 hover:card-glow-teal"
-            >
-              <Icon className="w-7 h-7 text-gq-teal" />
-              <dt className="mt-4 font-display italic text-lg lg:text-xl uppercase leading-tight text-gq-white">
-                {title}
-              </dt>
-              <dd className="mt-2 font-body text-sm lg:text-[15px] leading-relaxed text-gq-grey">
-                {body}
-              </dd>
-            </div>
-          ))}
-        </dl>
+        <div className="rounded-card border border-gq-teal/40 bg-gq-dark-teal/70 p-6 sm:p-8 lg:p-10 shadow-card">
+          <h2 className={SECTION_LABEL}>Selbst ausprobieren</h2>
+          <h3 className={SECTION_TITLE}>So fühlt sich eine Station an.</h3>
+          <p className="mt-4 mb-6 max-w-[58ch] font-body text-sm sm:text-base lg:text-[17px] leading-relaxed text-gq-grey">
+            Das sind echte Aufgaben aus Geo Quest. Beim Spielen erscheinen sie
+            erst, wenn die Gruppe an der Station angekommen ist.
+          </p>
+          <AboutTaskDemo />
+        </div>
       </section>
 
       {/* 7 — FAQ. Mirrors the JSON-LD below so structured data matches visible
@@ -426,9 +449,7 @@ export default function AboutPage() {
           them in full. */}
       <section className="mt-12 sm:mt-20">
         <h2 className={SECTION_LABEL}>Häufige Fragen</h2>
-        {/* Volle Containerbreite wie die übrigen Sektionen — eine auf 70ch
-            beschnittene Accordion-Spalte wirkt neben den Karten unfertig.
-            Die Antworten selbst bleiben unten auf Lesebreite begrenzt. */}
+        <h3 className={SECTION_TITLE}>Antworten für Eltern und Lehrkräfte</h3>
         <Accordion type="single" collapsible className="mt-4">
           {FAQ.map(({ question, answer }) => (
             <AccordionItem
@@ -455,16 +476,29 @@ export default function AboutPage() {
         }}
       />
 
-      {/* 8 — Abschluss-CTA */}
-      <section className="mt-12 sm:mt-20 rounded-card border border-gq-teal/40 bg-gq-dark-teal/70 p-6 sm:p-10 text-center shadow-card">
+      {/* 8 — Abschluss-CTA. Traegt seit Refinement 12 die Illustration, die
+          vorher hinter dem Hero lag — sie geht nicht verloren, sondern
+          rahmt jetzt den letzten Aufruf. Zwei Ebenen (Bild, Abdunklung)
+          statt eines Filters auf dem Bild: Ein Filter traefe im selben
+          Stapelkontext auch den Text. */}
+      <section className="relative isolate mt-12 sm:mt-20 overflow-hidden rounded-card border border-gq-teal/40 p-6 sm:p-10 text-center shadow-card">
+        <Image
+          src="/assets/hero_new.png"
+          alt=""
+          aria-hidden
+          fill
+          sizes="(min-width: 1100px) 1036px, 100vw"
+          className="-z-10 object-cover object-right"
+        />
+        <div className="absolute inset-0 -z-10 bg-background/70" />
         <h2 className="font-display italic text-[clamp(1.5rem,4vw,2.4rem)] uppercase leading-[1] text-gq-white">
           Deine Umgebung. <span className="text-gq-teal">Dein Abenteuer.</span>
         </h2>
         <p className="mx-auto mt-4 max-w-[46ch] font-body text-sm lg:text-base leading-relaxed text-gq-white">
           Erstelle jetzt kostenlos deine erste Quest.
         </p>
-        <p className="mx-auto mt-2 max-w-[46ch] font-body text-sm lg:text-base leading-relaxed text-gq-grey">
-          Kein Abo. Kein Account. Einfach draußen spielen.
+        <p className="mx-auto mt-2 max-w-[46ch] font-body text-sm lg:text-base leading-relaxed text-gq-white/85">
+          Keine Werbung. Keine Anmeldung. Einfach draußen spielen.
         </p>
         <Link
           href="/create"

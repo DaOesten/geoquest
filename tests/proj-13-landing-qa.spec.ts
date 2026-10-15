@@ -45,15 +45,18 @@ test.describe("Kontrast (PRD: WCAG AA, 4.5:1)", () => {
       const byText = (re: RegExp, sel = "p, h2, h3, span, li, dd") =>
         [...document.querySelectorAll(sel)].find((e) => re.test(e.textContent || ""));
 
+      // Seit Refinement 12 auf die neuen Elemente gezogen: Orte-Karte,
+      // Merkzeilen und Lime-Karte sind entfallen, Vorteile, Stichpunkte und
+      // Demo-Text neu. Die Abschluss-Sektion liegt auf einem Bild und hat
+      // einen eigenen, pixelgenauen Wächter weiter unten.
       const targets: [string, Element | undefined][] = [
-        ["Hero Kostenlos-Zeile", byText(/^Kostenlos\. Ohne Abo/)],
-        ["Hero Subline", byText(/^Erstelle deine eigene GPS-Rallye/)],
-        ["Orts-Chip", document.querySelector("main section ul li") || undefined],
-        ["Orte Fließtext", byText(/^Lege Stationen fest/)],
-        ["Merkzeile Karte 1", byText(/^Draußen ist das Game/)],
-        ["Lime Merkzeile", byText(/^Deine Welt\. Deine Regeln/)],
+        ["Hero Kostenlos-Zeile", byText(/^Kostenlos\. Ohne Werbung/)],
+        ["Hero Subline", byText(/^Erstelle GPS-Schnitzeljagden/)],
+        ["Vorteil-Text", byText(/^Keine Anmeldung, keine Werbung/)],
         ["Schritt-Text", document.querySelector("main ol li p") || undefined],
-        ["Zielgruppen-Text", document.querySelector("main dl dd") || undefined],
+        ["Zielgruppen-Text", document.querySelector("main dl dd p") || undefined],
+        ["Zielgruppen-Stichpunkt", document.querySelector("main dl dd li span") || undefined],
+        ["Demo-Text", byText(/^Das sind echte Aufgaben/)],
       ];
 
       return targets.map(([label, el]) => {
@@ -145,6 +148,9 @@ test.describe("Darstellungs-Rhythmus", () => {
     const forms = await page.locator("main section").evaluateAll((secs) =>
       secs.map((s) => {
         if (s.querySelector("video")) return "Video";
+        // Vor dem Accordion-Fall: Die Reiter der Live-Demo tragen ebenfalls
+        // `data-state` (Refinement 12).
+        if (s.querySelector("[role=tablist]")) return "Demo";
         if (s.querySelector("[data-state]")) return "Accordion";
         if (s.querySelector("dl")) return "Karten";
         if (s.querySelector("ol li")) return "Schritte";
@@ -167,15 +173,21 @@ test.describe("Darstellungs-Rhythmus", () => {
   }) => {
     await page.goto("/about");
 
-    // Lime = rgb(198, 255, 0) in Rahmen oder Text.
+    // Gezogen in Refinement 12: Bis dahin trug die Game-Designer-Karte den
+    // Lime-Rahmen. Sie ist entfallen; das eine Lime-Element ist jetzt die
+    // Entfernungsanzeige im App-Screenshot des Hero. Im gerenderten
+    // Seiten-CSS darf deshalb beim Laden KEIN weiteres Lime stehen.
+    // (Eine gelöste Demo-Aufgabe färbt sich Lime wie beim Spielen — das ist
+    // die Belohnung, kein Seitenelement.)
+    await expect(page.locator("main img[src*='about-hero-navigation']")).toHaveCount(1);
     const limeCount = await page.evaluate(() => {
       const isLime = (c: string) => /198,\s*255,\s*0/.test(c);
-      return [...document.querySelectorAll("main section")].filter((s) => {
-        const card = s.querySelector(":scope > div");
-        return card && isLime(getComputedStyle(card).borderColor);
+      return [...document.querySelectorAll("main *")].filter((el) => {
+        const cs = getComputedStyle(el);
+        return isLime(cs.color) || isLime(cs.borderTopColor) || isLime(cs.backgroundColor);
       }).length;
     });
-    expect(limeCount).toBe(1);
+    expect(limeCount).toBe(0);
   });
 });
 
@@ -198,10 +210,12 @@ test.describe("Responsive (PRD: 360–430px mobil, Desktop nutzbar)", () => {
       );
       expect(overflow, `${overflow}px horizontaler Überlauf`).toBeLessThanOrEqual(0);
 
+      // Wirksames Tap-Ziel: Die Radio-Knöpfe der Demo-Aufgabe liegen in
+      // einem <label>, die ganze Antwortzeile ist tippbar (wie im Player).
       const small = await page.evaluate(() =>
         [...document.querySelectorAll("main a, main button, header a, header button")]
           .filter((e) => {
-            const r = e.getBoundingClientRect();
+            const r = (e.closest("label") ?? e).getBoundingClientRect();
             return r.height > 0 && r.height < 44;
           })
           .map((e) => `${(e.textContent || "").trim().slice(0, 25)}`)
@@ -288,120 +302,134 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
     expect(overflow, "horizontaler Scrollbalken").toBeLessThanOrEqual(0);
   });
 
-  // Selektor seit 2026-09-28 auf das Bild AUSSERHALB der Sektionen begrenzt:
-  // Das Erklärvideo (Refinement 10) trägt ebenfalls ein dekoratives Bild
-  // (unscharfer Rand), und `main img[alt=""]` fand beide.
-  test("der Hero trägt ein Hintergrundbild hinter dem Text", async ({
+  // Gezogen in Refinement 12 (2026-10-15). Die fünf Tests davor prüften das
+  // Hintergrundbild hinter dem Hero-Text (Karte symmetrisch, Text auf dem
+  // Bild, Textschutz-Verlauf, Verlauf endet bei 68%, rechts verankert). Der
+  // Hero trägt jetzt einen App-Screenshot; die Illustration ist in die
+  // Abschluss-Sektion gewandert, und die Wächter für Bild, Abdunklung und
+  // Kontrast gelten dort.
+  test("der Hero zeigt einen App-Screenshot statt eines Hintergrundbilds", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/about");
 
-    const bg = page.locator('main img[alt=""]:not(section img)');
-    await expect(bg, "Hintergrundbild fehlt").toHaveCount(1);
-    // Dekoration: Ein Screenreader soll es nicht vorlesen.
-    await expect(bg).toHaveAttribute("aria-hidden", "true");
-    await expect(bg).toHaveAttribute("src", /hero_new/);
+    // Kein dekoratives Bild mehr außerhalb der Sektionen.
+    await expect(page.locator('main img[alt=""]:not(section img)')).toHaveCount(0);
 
-    // Gezogen am 2026-09-21: Der Hero lief kurzzeitig randlos, sah dadurch
-    // aber unsymmetrisch aus — links ein Streifen, der wie ein Rand wirkte,
-    // aber nur die dunkle Gasse war; rechts lief das Bild bis an die
-    // Fensterkante. Jetzt sitzt er als Karte im Container, mit gleichem
-    // Abstand links wie rechts.
-    const card = (await bg.locator("xpath=..").boundingBox())!;
-    const vw = page.viewportSize()!.width;
-    const links = Math.round(card.x);
-    const rechts = Math.round(vw - (card.x + card.width));
-    expect(
-      Math.abs(links - rechts),
-      `Karte sitzt nicht symmetrisch: links ${links}px, rechts ${rechts}px`
-    ).toBeLessThanOrEqual(1);
-    expect(links, "Karte klebt am Fensterrand").toBeGreaterThan(0);
+    const shot = page.locator("main img[src*='about-hero-navigation']");
+    await expect(shot).toBeVisible();
+    // Der Screenshot trägt Information — anders als das frühere Bild.
+    await expect(shot).toHaveAttribute("alt", /Pfeil/);
 
-    // Es liegt HINTER dem Text, nicht daneben: Die Headline überlappt es.
-    const b = (await bg.boundingBox())!;
+    // Ab `lg` rechts neben dem Text.
+    const s = (await shot.boundingBox())!;
     const h1 = (await page.locator("h1").boundingBox())!;
-    const overlaps =
-      h1.x < b.x + b.width &&
-      b.x < h1.x + h1.width &&
-      h1.y < b.y + b.height &&
-      b.y < h1.y + h1.height;
-    expect(overlaps, "Headline liegt nicht auf dem Bild").toBe(true);
+    expect(s.x, "Screenshot steht nicht rechts der Headline").toBeGreaterThan(h1.x + h1.width);
   });
 
-  test("auch auf dem Handy liegt der Text auf dem Bild", async ({ page }) => {
+  test("auf dem Handy steht der Screenshot unter dem CTA", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/about");
 
-    const bg = page.locator('main img[alt=""]:not(section img)');
-    await expect(bg).toHaveCount(1);
-
-    const b = (await bg.boundingBox())!;
-    const h1 = (await page.locator("h1").boundingBox())!;
-    expect(h1.y, "Headline müsste auf dem Bild liegen").toBeGreaterThanOrEqual(b.y);
-    expect(h1.y + h1.height).toBeLessThanOrEqual(b.y + b.height);
+    const shot = (await page.locator("main img[src*='about-hero-navigation']").boundingBox())!;
+    const cta = (await page.getByRole("link", { name: /Quest erstellen/i }).first().boundingBox())!;
+    expect(shot.y, "Screenshot muss unter dem CTA stehen").toBeGreaterThan(cta.y + cta.height);
   });
 
-  test("die Textschutz-Ebene liegt über dem Bild", async ({ page }) => {
-    // Ohne sie fällt der Kontrast auf hellen Bildstellen (Laternen, Reflexe)
-    // unter die PRD-Vorgabe — gemessen bis auf 1.95:1. Der Verlauf ist der
-    // Grund, warum der Text auf dem Foto überhaupt lesbar ist.
-    await page.setViewportSize({ width: 1440, height: 900 });
+  test("die Abschluss-Sektion trägt die Illustration mit Abdunklung", async ({ page }) => {
     await page.goto("/about");
 
-    // Vom Bild aus suchen statt von der Headline: Die Verschachtelung darf
-    // sich aendern, der Verlauf bleibt ein Geschwister des Bildes.
-    const found = await page.evaluate(() => {
-      const img = document.querySelector<HTMLImageElement>('main img[alt=""]:not(section img)')!;
-      const wrapper = img.parentElement!;
-      return [...wrapper.children].some((el) =>
-        /gradient/.test(getComputedStyle(el).backgroundImage)
+    const closing = page.locator("main section", {
+      has: page.getByRole("heading", { name: /Deine Umgebung/ }),
+    });
+    const img = closing.locator("img");
+    await expect(img).toHaveCount(1);
+    await expect(img).toHaveAttribute("src", /hero_new/);
+    await expect(img).toHaveAttribute("aria-hidden", "true");
+    await expect(img).toHaveAttribute("alt", "");
+
+    // Eine eigene Abdunklungs-Ebene zwischen Bild und Text — ohne sie fällt
+    // der Kontrast auf hellen Bildstellen unter die Vorgabe.
+    const alpha = await closing.evaluate((s) => {
+      const layer = [...s.children].find(
+        (el) => el.tagName === "DIV" && getComputedStyle(el).position === "absolute"
       );
+      if (!layer) return 0;
+      const m = getComputedStyle(layer).backgroundColor.match(/rgba?\([^)]*?,\s*([\d.]+)\)$/);
+      return m ? Number(m[1]) : 1;
     });
-    expect(found, "kein Verlauf über dem Hintergrundbild gefunden").toBe(true);
+    expect(alpha, "Abdunklung fehlt oder ist zu schwach").toBeGreaterThanOrEqual(0.6);
   });
 
-  test("der Verlauf gibt die rechte Bildhälfte frei", async ({ page }) => {
-    // Der Betreiber wollte Route und X auf der Strasse erkennen koennen.
-    // Gemessen lagen sie vorher unter 76-88% Abdunklung. Der Verlauf endet
-    // deshalb bei 68% statt erst am rechten Rand — rechts davon traegt das
-    // Bild unveraendert.
+  test("jeder Text der Abschluss-Sektion besteht 4.5:1 — pro Pixel gemessen", async ({
+    page,
+  }) => {
+    // Strengster Maßstab: jedes Hintergrundpixel hinter dem Text einzeln.
+    // Gemessen bei der Umsetzung: schlechtester Wert 4.86:1 (Teal auf
+    // Desktop), weiß ≥ 5.93:1.
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/about");
-
-    const endsEarly = await page.evaluate(() => {
-      const img = document.querySelector<HTMLImageElement>('main img[alt=""]:not(section img)')!;
-      const layer = [...img.parentElement!.children].find((el) =>
-        /gradient/.test(getComputedStyle(el).backgroundImage)
-      )!;
-      // Der letzte Stop muss VOR dem rechten Rand liegen, sonst verdeckt der
-      // Verlauf Route und X. Erst als arbitrary value greifen die Prozent-
-      // Angaben: Zwei `via-*`-Utilities kollidieren, Tailwind erzeugt daraus
-      // nur einen Stop ohne Position.
-      // `transparent` kommt als `rgba(0, 0, 0, 0)` zurueck — die letzte
-      // Prozentangabe im Wert ist der gesuchte Stop.
-      const bg = getComputedStyle(layer).backgroundImage;
-      const all = [...bg.matchAll(/(\d+)%/g)].map((m) => Number(m[1]));
-      return all.length > 0 && all[all.length - 1] <= 75;
+    const closing = page.locator("main section", {
+      has: page.getByRole("heading", { name: /Deine Umgebung/ }),
     });
-    expect(
-      endsEarly,
-      "der Verlauf läuft bis zum rechten Rand und verdeckt Route und X"
-    ).toBe(true);
-  });
-
-  test("der Bildausschnitt ist rechts verankert", async ({ page }) => {
-    // Der Schriftzug belegt die letzten 512px des Bildes (69..100% der
-    // Breite). Im Container werden ~256px zugeschnitten — die muessen von
-    // LINKS kommen, wo nur die dunkle Gasse steht. Mittig zugeschnitten
-    // wurde der Schriftzug mitten im Wort abgeschnitten.
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/about");
-    const pos = await page.evaluate(() => {
-      const img = document.querySelector<HTMLImageElement>('main img[alt=""]:not(section img)')!;
-      return getComputedStyle(img).objectPosition;
+    await closing.scrollIntoViewIfNeeded();
+    await page.waitForFunction(() => {
+      const i = document.querySelector<HTMLImageElement>("main section img[src*='hero_new']");
+      return !!i && i.complete && i.naturalWidth > 0;
     });
-    expect(pos).toMatch(/100%|right/);
+    const handle = (await closing.elementHandle())!;
+
+    // Textboxen und Farben erfassen, dann den Text ausblenden und nur den
+    // Hintergrund aufnehmen.
+    const boxes = await handle.evaluate((s) => {
+      const r0 = s.getBoundingClientRect();
+      return [...s.querySelectorAll("h2, h2 span, p")].map((e) => {
+        const range = document.createRange();
+        range.selectNodeContents(e);
+        const r = range.getBoundingClientRect();
+        return {
+          x: r.x - r0.x, y: r.y - r0.y, w: r.width, h: r.height,
+          color: getComputedStyle(e).color,
+        };
+      });
+    });
+    await handle.evaluate((s) =>
+      s.querySelectorAll("h2, p, a").forEach((e) => ((e as HTMLElement).style.visibility = "hidden"))
+    );
+    const sectionWidth = await handle.evaluate((s) => s.getBoundingClientRect().width);
+    const png = (await handle.screenshot()).toString("base64");
+
+    const worst = await page.evaluate(
+      async ({ png, boxes, sectionWidth }) => {
+        const img = new Image();
+        img.src = `data:image/png;base64,${png}`;
+        await img.decode();
+        const c = document.createElement("canvas");
+        c.width = img.width; c.height = img.height;
+        const ctx = c.getContext("2d")!;
+        ctx.drawImage(img, 0, 0);
+        const scale = img.width / sectionWidth;
+        const ch = (v: number) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+        const lum = (r: number, g: number, b: number) => 0.2126 * ch(r) + 0.7152 * ch(g) + 0.0722 * ch(b);
+        let min = 99;
+        for (const b of boxes) {
+          const m = b.color.match(/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)/)!;
+          const fg = [+m[1], +m[2], +m[3]];
+          const a = m[4] === undefined ? 1 : +m[4];
+          const d = ctx.getImageData(b.x * scale, b.y * scale, Math.max(1, b.w * scale), Math.max(1, b.h * scale)).data;
+          for (let i = 0; i < d.length; i += 4) {
+            const bg = [d[i], d[i + 1], d[i + 2]];
+            const f = fg.map((v, k) => v * a + bg[k] * (1 - a));
+            const l1 = lum(f[0], f[1], f[2]), l2 = lum(bg[0], bg[1], bg[2]);
+            min = Math.min(min, (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05));
+          }
+        }
+        return min;
+      },
+      { png, boxes, sectionWidth }
+    );
+    expect(worst, `schlechtester Einzelpixel ${worst.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
   });
 
   test("die Nachbarseiten bekommen kein Hintergrundbild", async ({ page }) => {
@@ -411,6 +439,8 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
         page.locator('main img[alt=""]:not(section img)'),
         `${path} trägt ein Hintergrundbild`
       ).toHaveCount(0);
+      // Auch keinen App-Screenshot — der gehört nur zu /about.
+      await expect(page.locator("main img[src*='about-hero-navigation']")).toHaveCount(0);
     }
   });
 });
@@ -478,21 +508,22 @@ test.describe("Refinement 5: Copy-Feinschliff (2026-09-09)", () => {
     expect(emptyEyebrow).toBe(0);
   });
 
-  test("die beiden Hero-Sätze sind identisch formatiert", async ({ page }) => {
+  // Gezogen in Refinement 12: Bis dahin prüfte dieser Test, dass zwei
+  // Hero-Sätze (Ersteller, Spieler) gleich gesetzt sind. Der Spieler-Satz ist
+  // entfallen; der Hero trägt genau einen Absatz in der Body-Schrift.
+  test("der Hero trägt genau einen Absatz in der Body-Schrift", async ({ page }) => {
     await page.goto("/about");
 
-    const style = (re: RegExp) =>
-      page
-        .locator("main p", { hasText: re })
-        .first()
-        .evaluate((e) => {
-          const cs = getComputedStyle(e);
-          return `${cs.fontSize}|${cs.fontWeight}|${cs.lineHeight}|${cs.fontFamily}`;
-        });
-
-    const a = await style(/^Erstelle deine eigene GPS-Rallye/);
-    const b = await style(/^Nimm die Herausforderung an/);
-    expect(b, "Satz 2 muss wie Satz 1 gesetzt sein").toBe(a);
+    const heroBody = await page.evaluate(() => {
+      const h1 = document.querySelector("h1")!;
+      const block = h1.parentElement!;
+      return [...block.querySelectorAll("p")]
+        // Die Preiszeile steht in der Tech-Schrift (Orbitron); ihr Font-Stack
+        // nennt Rubik als Ausweichschrift, deshalb über die Klasse filtern.
+        .filter((p) => !p.classList.contains("text-tech"))
+        .map((p) => (p.textContent || "").trim().slice(0, 30));
+    });
+    expect(heroBody).toEqual(["Erstelle GPS-Schnitzeljagden u"]);
   });
 
   // PROJ-14: Es gibt keinen sekundären CTA mehr, solange die Anleitung nur
@@ -508,11 +539,14 @@ test.describe("Refinement 5: Copy-Feinschliff (2026-09-09)", () => {
   test("die neue Copy steht, die alte ist weg", async ({ page }) => {
     await page.goto("/about");
 
-    await expect(page.getByText(/^Nimm die Herausforderung an/)).toBeVisible();
-    await expect(page.getByText("Draußen ist das Game.")).toBeVisible();
-    await expect(
-      page.getByText(/Verbessere das Lernen durch Bewegung/)
-    ).toBeVisible();
+    // Seit Refinement 12 auf die Copy für Eltern und Lehrkräfte gezogen.
+    await expect(page.getByText(/^Erstelle GPS-Schnitzeljagden/)).toBeVisible();
+    await expect(page.getByText("Lass deine Klasse selbst eine Quest bauen")).toBeVisible();
+    await expect(page.getByText(/^Bring den Unterricht nach draußen/)).toBeVisible();
+
+    await expect(page.getByText(/Nimm die Herausforderung an/)).toHaveCount(0);
+    await expect(page.getByText("Draußen ist das Game.")).toHaveCount(0);
+    await expect(page.getByText(/Verbessere das Lernen durch Bewegung/)).toHaveCount(0);
 
     await expect(page.getByText("Die Welt ist deine Spielkarte.")).toHaveCount(0);
     await expect(page.getByText(/Mit KI bauen/)).toHaveCount(0);

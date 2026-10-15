@@ -16,22 +16,23 @@ function playButton(page: Page) {
 }
 
 test.describe("Platzierung", () => {
-  test("steht als erste Sektion nach dem Hero, vor „Jeder Ort kann ein Level sein.“", async ({
-    page,
-  }) => {
+  // Gezogen in Refinement 12 (2026-10-15): Das Video rückt von Position 2
+  // auf Position 3 — direkt nach den Vorteilen, vor „Für wen". Die
+  // Orte-Sektion, vor der es bisher stand, ist entfallen.
+  test("steht nach den Vorteilen, vor „Für wen ist Geo Quest?“", async ({ page }) => {
     await page.goto("/about");
-    const firstSection = page.locator("main section").first();
-    await expect(firstSection.locator("video")).toHaveCount(1);
+    const secondSection = page.locator("main section").nth(1);
+    await expect(secondSection.locator("video")).toHaveCount(1);
     await expect(
-      firstSection.getByRole("heading", { name: "So funktioniert Geo Quest." })
+      secondSection.getByRole("heading", { name: "So funktioniert Geo Quest." })
     ).toBeVisible();
 
-    const h1 = await page.locator("h1").boundingBox();
+    const before = await page.getByRole("heading", { name: "Gemacht für draußen." }).boundingBox();
     const video = await page.locator("main video").boundingBox();
     const next = await page
-      .getByRole("heading", { name: "Jeder Ort kann ein Level sein." })
+      .getByRole("heading", { name: "Für wen ist Geo Quest?" })
       .boundingBox();
-    expect(video!.y).toBeGreaterThan(h1!.y);
+    expect(video!.y).toBeGreaterThan(before!.y);
     expect(next!.y).toBeGreaterThan(video!.y + video!.height);
   });
 });
@@ -299,6 +300,11 @@ test.describe("QA: offene Befunde", () => {
 /**
  * Refinement 11 (2026-09-29): Kante zu Kante gilt überall dasselbe Maß.
  * Vorher stapelten sich unter dem Hero drei Abstände (176px gegen 80px).
+ *
+ * Gezogen in Refinement 12 (2026-10-15): Die Hero-Bildkarte ist entfallen.
+ * Die Kante des Hero ist jetzt die Trennlinie unter Text und Screenshot —
+ * wie auf allen anderen Info-Seiten. Von ihr bis zur ersten Sektion gilt
+ * dasselbe Maß wie zwischen allen Sektionen.
  */
 test.describe("Sektionsabstand nach dem Hero", () => {
   for (const [w, h, gap] of [
@@ -306,66 +312,65 @@ test.describe("Sektionsabstand nach dem Hero", () => {
     [768, 1024, 80],
     [1440, 900, 80],
   ] as const) {
-    test(`${w}px: Hero-Kante → Video = Video → Karte = ${gap}px`, async ({ page }) => {
+    test(`${w}px: Hero-Kante → erste Sektion = Sektion → Sektion = ${gap}px`, async ({ page }) => {
       await page.setViewportSize({ width: w, height: h });
       await page.goto("/about");
       const m = await page.evaluate(() => {
-        const heroCard = document.querySelector('main img[alt=""]:not(section img)')!
-          .parentElement!.getBoundingClientRect();
-        const [video, next] = document.querySelectorAll("main section");
+        const divider = document.querySelector("main .h-px")!.getBoundingClientRect();
+        const [first, second] = document.querySelectorAll("main section");
         return {
-          heroToVideo: video.getBoundingClientRect().top - heroCard.bottom,
-          videoToNext:
-            next.getBoundingClientRect().top - video.getBoundingClientRect().bottom,
+          heroToFirst: first.getBoundingClientRect().top - divider.bottom,
+          firstToSecond:
+            second.getBoundingClientRect().top - first.getBoundingClientRect().bottom,
         };
       });
-      expect(Math.round(m.heroToVideo)).toBe(gap);
-      expect(Math.round(m.videoToNext)).toBe(gap);
+      expect(Math.round(m.heroToFirst)).toBe(gap);
+      expect(Math.round(m.firstToSecond)).toBe(gap);
     });
   }
 });
 
 /**
  * QA Refinement 11 (2026-09-29) — über den Frontend-Wächter hinaus: ein
- * einziger Rhythmus für die ganze Seite, symmetrische Hero-Karte, und die
- * Umbruchgrenze von `sm` ohne Zwischenzustand.
+ * einziger Rhythmus für die ganze Seite und die Umbruchgrenze von `sm` ohne
+ * Zwischenzustand.
+ *
+ * Seit Refinement 12 ohne die Prüfungen „CTA → Video" und „Hero-Karte
+ * symmetrisch": Es gibt keine Hero-Karte mehr, und unter `lg` steht der
+ * Screenshot zwischen CTA und erster Sektion. An ihre Stelle tritt: Die
+ * Trennlinie liegt unter BEIDEN Hero-Spalten, nichts ragt über sie hinaus.
  */
 test.describe("QA: Sektionsrhythmus", () => {
-  for (const [w, h, gap, cta, pad] of [
-    [320, 568, 48, 72, 24],
-    [639, 900, 48, 72, 24],
-    [640, 900, 80, 136, 56],
-    [1366, 768, 80, 136, 56],
+  for (const [w, h, gap] of [
+    [320, 568, 48],
+    [639, 900, 48],
+    [640, 900, 80],
+    [1366, 768, 80],
   ] as const) {
-    test(`${w}px: alle Abstände ${gap}px, CTA → Video ${cta}px, Hero-Karte symmetrisch`, async ({
+    test(`${w}px: alle Abstände ${gap}px, Trennlinie unter Text und Screenshot`, async ({
       page,
     }) => {
       await page.setViewportSize({ width: w, height: h });
       await page.goto("/about");
       const m = await page.evaluate(() => {
         const R = (e: Element) => e.getBoundingClientRect();
-        const bg = document.querySelector('main img[alt=""]:not(section img)')!;
-        const card = R(bg.parentElement!);
+        const divider = R(document.querySelector("main .h-px")!);
         const cta = [...document.querySelectorAll("main a")].find((a) =>
           /Quest erstellen/i.test(a.textContent ?? "")
         )!;
-        const top = bg.parentElement!.querySelector("img:not([aria-hidden])") ??
-          bg.parentElement!.querySelector("h1")!;
+        const shot = document.querySelector("main img[src*='about-hero-navigation']")!;
         const secs = [...document.querySelectorAll("main section")];
         return {
           gaps: [
-            R(secs[0]).top - card.bottom,
+            R(secs[0]).top - divider.bottom,
             ...secs.slice(1).map((s, i) => R(s).top - R(secs[i]).bottom),
           ].map(Math.round),
-          ctaToVideo: Math.round(R(secs[0]).top - R(cta).bottom),
-          padTop: Math.round(R(top).top - card.top),
-          padBottom: Math.round(card.bottom - R(cta).bottom),
+          heroBottom: Math.max(R(cta).bottom, R(shot).bottom),
+          dividerTop: divider.top,
         };
       });
       expect(new Set(m.gaps), `Abstände: ${m.gaps.join(", ")}`).toEqual(new Set([gap]));
-      expect(m.ctaToVideo).toBe(cta);
-      expect(m.padTop).toBe(pad);
-      expect(m.padBottom).toBe(pad);
+      expect(m.dividerTop).toBeGreaterThan(m.heroBottom);
     });
   }
 });

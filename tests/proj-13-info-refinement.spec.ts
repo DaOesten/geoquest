@@ -132,7 +132,8 @@ test.describe("Häufige Fragen (Accordion)", () => {
     const html = await page.content();
     for (const needle of [
       "vollständig kostenlos",
-      "keine E-Mail-Abfrage",
+      // Seit Refinement 12: „Brauchen die Kinder ein Konto oder eine App?"
+      "eine E-Mail-Adresse angeben",
       // Am 2026-09-09 vom Betreiber auf "etwa 8 bis 16 Jahren, aber niemand
       // ist zu alt" geändert; die Assertion hing noch am alten Wortlaut.
       "8 bis 16 Jahren",
@@ -149,8 +150,12 @@ test.describe("Häufige Fragen (Accordion)", () => {
   });
 });
 
-test.describe("Für wen — Zielgruppen-Karten (Refinement 4)", () => {
-  test("vier Zielgruppen statt der früheren vier Anlässe", async ({ page }) => {
+test.describe("Für wen — Zielgruppen-Karten (Refinement 4, gezogen in Refinement 12)", () => {
+  // Refinement 12 (2026-10-15): drei Zielgruppen statt vier. „Für Kinder &
+  // Jugendliche" entfällt — die Seite spricht nur noch die Erwachsenen an, die
+  // eine Quest erstellen. „Gruppen & Events" heißt jetzt „Jugendarbeit &
+  // Ferienprogramm". Die Titel tragen kein „Für" mehr.
+  test("drei Zielgruppen für die Erwachsenen, die Quests erstellen", async ({ page }) => {
     await page.goto("/about");
 
     await expect(
@@ -158,19 +163,22 @@ test.describe("Für wen — Zielgruppen-Karten (Refinement 4)", () => {
     ).toBeVisible();
 
     for (const zielgruppe of [
-      "Für Familien",
-      "Für Schule & Pädagogik",
-      "Für Kinder & Jugendliche",
-      "Für Gruppen & Events",
+      "Familien",
+      "Schule & Pädagogik",
+      "Jugendarbeit & Ferienprogramm",
     ]) {
       await expect(
         page.getByRole("term").filter({ hasText: zielgruppe })
       ).toBeVisible();
     }
 
-    // Der Lernpfad-Gedanke ist in der Schul-Karte aufgegangen, statt eine
-    // eigene Sektion zu bekommen.
-    await expect(page.getByText(/interaktive Lernpfade/)).toBeVisible();
+    await expect(page.getByRole("term")).toHaveCount(3);
+    await expect(page.getByRole("term").filter({ hasText: /Kinder & Jugendliche/ })).toHaveCount(0);
+
+    // Der Lernpfad-Gedanke steht seit Refinement 12 im Hero, der
+    // Unterrichtsgedanke in der Schul-Karte.
+    await expect(page.getByText(/GPS-Schnitzeljagden und Lernpfade/)).toBeVisible();
+    await expect(page.getByText(/Bring den Unterricht nach draußen/)).toBeVisible();
 
     // Die früheren Anlass-Karten und der Vorwissen-Satz sind ersetzt.
     await expect(page.getByText(/Kein technisches Vorwissen nötig/)).toHaveCount(0);

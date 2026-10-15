@@ -10,17 +10,19 @@ test.describe("Seite & Navigation", () => {
     await page.goto("/about");
 
     // Refinement 4 (2026-09-07): neue Marketing-Fassung, acht Sektionen.
+    // Refinement 12 (2026-10-15): neu geordnet für Eltern und Lehrkräfte —
+    // Vorteile statt Orte-Karte, Zielgruppen ohne „Für"-Präfix.
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
       "Die reale Welt"
     );
     await expect(
-      page.getByRole("heading", { name: "Jeder Ort kann ein Level sein." })
+      page.getByRole("heading", { name: "Gemacht für draußen." })
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Für wen ist Geo Quest?" })
     ).toBeVisible();
     await expect(
-      page.getByRole("term").filter({ hasText: "Für Familien" })
+      page.getByRole("term").filter({ hasText: "Familien" })
     ).toBeVisible();
   });
 
@@ -84,7 +86,9 @@ test.describe("Seite & Navigation", () => {
       const tooSmall = await page.evaluate(() =>
         [...document.querySelectorAll("a,button")]
           .filter((el) => {
-            const r = el.getBoundingClientRect();
+            // Wirksames Tap-Ziel: Radio-Knöpfe der Demo-Aufgabe auf /about
+            // liegen in einem <label>, die ganze Antwortzeile ist tippbar.
+            const r = (el.closest("label") ?? el).getBoundingClientRect();
             return r.height > 0 && r.height < 44;
           })
           .map((el) => (el.textContent || "").trim().slice(0, 40))

@@ -1,7 +1,7 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
 ## Status: In Progress
-_**Refinement 12 (2026-10-15): `/about` spricht Eltern und Lehrkräfte an.** Betreiber: *„Ich möchte /about mehr auf die Zielgruppe Eltern, Lehrer abstimmen."* Als Richtung lieferte er einen externen HTML-Entwurf (hell, grün, Reiter, Live-Demo, App-Screenshot im Hero). Entschieden: Aufbau und Inhalte in diese Richtung, **Geo-Quest-Look und „du" bleiben**, Kinder werden nur noch über die Erwachsenen angesprochen. Neu: App-Screenshot statt Hintergrundbild im Hero, Vorteile-Leiste, drei Zielgruppen-Karten, Live-Demo mit echten Aufgaben-Bausteinen, FAQ aus Elternsicht. Entfallen: „Jeder Ort kann ein Level sein", „Du bist der Game-Designer", die Zielgruppe „Kinder & Jugendliche". Alles, was die App nicht einlöst oder erfunden wäre (Punkte, Tipps, Teilen-Link, Offline, Nutzerzahlen, Kundenstimmen, Zeitangabe), wurde aus dem Entwurf **nicht** übernommen. Siehe Abschnitt „Refinement 12" am Ende. **Noch nicht gebaut.**_
+_**Refinement 12 (2026-10-15): `/about` spricht Eltern und Lehrkräfte an.** Betreiber: *„Ich möchte /about mehr auf die Zielgruppe Eltern, Lehrer abstimmen."* Als Richtung lieferte er einen externen HTML-Entwurf (hell, grün, Reiter, Live-Demo, App-Screenshot im Hero). Entschieden: Aufbau und Inhalte in diese Richtung, **Geo-Quest-Look und „du" bleiben**, Kinder werden nur noch über die Erwachsenen angesprochen. Neu: App-Screenshot statt Hintergrundbild im Hero, Vorteile-Leiste, drei Zielgruppen-Karten, Live-Demo mit echten Aufgaben-Bausteinen, FAQ aus Elternsicht. Entfallen: „Jeder Ort kann ein Level sein", „Du bist der Game-Designer", die Zielgruppe „Kinder & Jugendliche". Alles, was die App nicht einlöst oder erfunden wäre (Punkte, Tipps, Teilen-Link, Offline, Nutzerzahlen, Kundenstimmen, Zeitangabe), wurde aus dem Entwurf **nicht** übernommen. Siehe Abschnitt „Refinement 12" am Ende. **Frontend umgesetzt am 2026-10-15** — CTA auf 11 Viewports über dem Falz, Abschluss-Kontrast pro Pixel ≥ 4.86:1, PROJ-13 282/0, Gegenprobe gegen den Vorgänger: 82 Tests fallen. Siehe „Implementation Notes (Frontend — Refinement 12)"._
 
 _**Refinement 11 (2026-09-29): Abstand Hero → Video-Sektion.** Betreiber nach dem Deploy: zwischen CTA und Video-Überschrift ist deutlich mehr Abstand als zwischen Video und erster Karte. Gemessen live: 176px gegen 80px (mobil 112 gegen 48). Entschieden: Kante zu Kante überall dasselbe Maß. **Frontend umgesetzt und QA-geprüft am 2026-09-29** — 6/6 Acceptance Criteria, keine Bugs. Approved._
 
@@ -11,7 +11,7 @@ _Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und d
 
 _**Refinement 7 (2026-09-20): Das Logo-Lockup kehrt auf den Desktop zurück.** Betreiber-Befund: „ich kann auf /about auf dem desktop das Logo nicht mehr sehen." **Frontend umgesetzt am 2026-09-21** — `lg:hidden` entfernt; CTA auf allen elf Viewports über dem Falz nachgemessen, knappster Fall 1366×768 mit 45px. Siehe Implementation Notes._
 **Created:** 2026-09-04
-**Last Updated:** 2026-10-15 (Refinement 12 gespect — `/about` für Eltern und Lehrkräfte)
+**Last Updated:** 2026-10-15 (Refinement 12 Frontend umgesetzt — `/about` für Eltern und Lehrkräfte)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -395,11 +395,11 @@ _Hero-Teil überholt durch Refinement 12 (2026-10-15): Der Hero trägt kein Hint
 - [x] ~~Braucht `/about` zusätzlich einen Footer mit Impressum/Datenschutz für Desktop-Besucher?~~ → Ja, entschieden am 2026-09-05: Footer auf allen Info-Seiten mit Kontakt und Rechtslinks; die Links verlassen dafür den Desktop-Header
 - [x] ~~Welche konkreten Angaben kommen ins Impressum?~~ → Vom Betreiber geliefert und eingetragen (2026-09-05)
 
-- [ ] Wohin wandert das eine Lime-Element der Seite, nachdem die Game-Designer-Karte entfällt (z. B. Live-Demo) — oder trägt die Seite keins? Am Bildschirm zu entscheiden (Refinement 12, 2026-10-15)
-- [ ] Bleibt die Hero-Karte als gerahmte Fläche (Refinement 9, Nachtrag 3) oder wird der Hero ohne Bild randlos dunkel? Am Bildschirm zu entscheiden (2026-10-15)
+- [x] ~~Wohin wandert das eine Lime-Element der Seite, nachdem die Game-Designer-Karte entfällt?~~ → In den App-Screenshot: Die Entfernungsanzeige des Navigations-Screens ist Lime. Im Seiten-CSS steht beim Laden kein weiteres; ein Test hält das fest (2026-10-15)
+- [x] ~~Bleibt die Hero-Karte als gerahmte Fläche?~~ → Nein. Ohne Hintergrundbild nutzt `/about` dieselbe Hero-Form wie die übrigen Info-Seiten (Text + `aside`, Trennlinie darunter); `heroBackground` ist aus der Shell entfernt (2026-10-15)
 - [ ] Soll das Open-Graph-Vorschaubild (`urbanquest.png`) durch den neuen App-Screenshot ersetzt werden? (2026-10-15)
 - [ ] Gibt es echte Stimmen von Testern (Eltern, Lehrkräfte), die später als Zitate auf die Seite dürfen — mit Einverständnis? Bis dahin keine Zitate (2026-10-15)
-- [ ] Welche Beispiel-Quest und welche Entfernung zeigt der Screenshot? Eine fiktive, aber plausible Station (kein realer privater Ort) (2026-10-15)
+- [x] ~~Welche Beispiel-Quest zeigt der Screenshot?~~ → Erfundene Quest „Das Waldgeheimnis", Station „Die alte Eiche", 108 m, „Ziel 1 von 3" — im Skript festgelegt (2026-10-15)
 
 ## Decision Log
 
@@ -3121,3 +3121,45 @@ Und es fehlte, was diese Gruppe fragt: Datenschutz (stand nur als „ohne Accoun
 - **Neue Wächter:** Demo ohne `localStorage`-Schreibzugriff und ohne Geolocation-Aufruf; kein Hydration-Fehler in der Konsole; FAQ sichtbar == JSON-LD; Verbotsliste (Punkte, QR-Code, Junggesellenabschied, „Sie") nicht im Seitentext
 - Design System: nur **ein** Lime-Element pro Screen. Bisher trug die Game-Designer-Karte Lime; sie entfällt — wohin das eine Lime-Element wandert (oder ob keins), ist am Bildschirm zu entscheiden (Open Question)
 - **BUG-15** (23 Pixel hinter „ZUM SPIELFELD" auf 320×568) entfällt mit dem Hintergrundbild; in der QA als erledigt prüfen. BUG-17/BUG-18 (Video) sind unberührt
+
+## Implementation Notes (Frontend — Refinement 12, 2026-10-15)
+
+**Dateien:** `src/app/(info)/about/page.tsx` (Copy, Aufbau, Hero-`aside`, Abschluss mit Illustration), `src/components/info-page-shell.tsx` (`heroBackground` entfernt), neu `src/components/about-task-demo.tsx`, neu `scripts/make-about-screenshot.mjs`, neues Asset `public/assets/about-hero-navigation.png` (1170×1992, 528 KB, von `next/image` optimiert ausgeliefert). Kein neues Paket, `/about` bleibt statisch (`○`).
+
+**Hero:** App-Screenshot als `aside` der Shell — derselbe Weg, den `/anleitung` für ihre Info-Box nutzt. Ab `lg` rechts neben dem Text, darunter unter dem CTA. CSS-Handy-Rahmen mit Teal-Glow nach Design System (kein Bild-Mockup). Der Screenshot ist ein echter Zustand der App: Das Skript seedet eine erfundene Quest („Das Waldgeheimnis", Station „Die alte Eiche"), setzt die Position ~110 m entfernt und feuert Kompass-Events in WebKit mit iPhone-Profil (in Chrome mit iPhone-UA erschiene „Kompass aktivieren"). Neu erzeugbar mit `node scripts/make-about-screenshot.mjs` gegen einen laufenden Production-Build.
+
+**`heroBackground` entfernt statt umgehängt:** Nur `/about` setzte die Prop. Die Shell hat damit wieder eine Hero-Form für alle Info-Seiten; der Zweig ohne Hintergrund ist derselbe, den `/anleitung`, `/impressum` und `/datenschutz` schon vorher nutzten — sie sind unverändert. Die Illustration setzt die Abschluss-Sektion selbst (Bild + eigene Abdunklungs-Ebene `bg-background/70`).
+
+**Lime-Frage aus den Open Questions am Bildschirm beantwortet:** Der Screenshot enthält die Entfernungsanzeige in Lime — das ist das eine Lime-Element der Seite. Im Seiten-CSS steht beim Laden kein weiteres; eine gelöste Demo-Aufgabe färbt sich Lime wie beim Spielen (Belohnungszustand der echten Komponente).
+
+**Live-Demo mit shadcn `Tabs`** (Projektregel: keine eigenen Tabs) und den unveränderten Player-Komponenten `MultipleChoiceTask`, `CodeTask`, `SortingTask`. Der gelöste Zustand lebt im Demo-State und bleibt beim Umschalten erhalten.
+
+**Hydration gelöst ohne Zusatzcode:** Radix rendert nur den aktiven Reiter. Die Sortier-Aufgabe (mischt im `useState`-Initialisierer) entsteht dadurch erst nach einem Klick im Browser, nie auf dem Server. Ein erster Entwurf mit eigenem Mount-Flag und `eslint-disable` war damit überflüssig und ist entfallen. Bedingung: Der Start-Reiter muss deterministisch bleiben — ein Test prüft, dass die Multiple-Choice-Frage im ausgelieferten HTML steht und die Sortier-Frage nicht.
+
+**Hero-Absatz** ist mit 3 Zeilen auf 390px etwas länger als die zwei Sätze vorher; gemessen bleibt der CTA auf allen Referenz-Viewports über dem Falz (der BUG-7-Wächter läuft grün). „Ohne Programmierwissen." ist aus dem Hero-Absatz entfallen — es steht in der Vorteile-Karte „Einfacher Baukasten" und hätte den Absatz auf vier Zeilen gebracht.
+
+**Abweichungen von der Spec-Copy:** Vorteile-Sektion mit Titel „Gemacht für draußen." (die Spec nannte nur den Kicker; jede Sektion der Seite hat Kicker + Titel). Zielgruppen-Karten ab `lg` dreispaltig, darunter gestapelt (drei Karten auf `sm` zweispaltig ergäben eine verwaiste dritte).
+
+**Kontrast der Abschluss-Sektion pro Einzelpixel gemessen** (Text ausgeblendet, Hintergrund aufgenommen, jedes Pixel hinter jedem Textrechteck): schlechtester Wert **4.86:1** (Teal, Desktop) bzw. 5.48:1 (Handy); weiß ≥ 7.41:1, weiß/85 % ≥ 5.93:1. **Kein Pixel unter 4.5:1.** Als Test festgehalten. BUG-15 ist mit dem Hintergrundbild des Hero entfallen.
+
+**Kein Produktfehler, aber ein falsches Prüfmittel:** Drei Responsive-Tests meldeten Tap-Ziele unter 44px — die Radio-Knöpfe der Demo-Aufgabe (16px). Tippbar ist die ganze Antwortzeile (`<label>`, mind. 44px), genau wie im Player. Die Tests messen jetzt das wirksame Tap-Ziel (`closest("label")`).
+
+**Nebenbefund, vorbestehend (nicht Teil dieses Refinements):** Eingeklappte FAQ-Antworten hängen nach dem Laden **nicht** im DOM des Accordions; im ausgelieferten HTML stehen sie nur im JSON-LD und in den Next.js-Seitendaten (3 Treffer, alle in `<script>`). Der Refinement-4-Kommentar „Radix keeps the answers in the DOM" stimmt so nicht mehr, und der Test „alle Antworten bleiben eingeklappt im HTML" besteht, weil `page.content()` das JSON-LD mitliest. Für Suchmaschinen bleibt der Text im Quelltext; der neue Test prüft die sichtbaren Antworten durch Aufklappen jeder Frage.
+
+**Tests:** neue Suite `tests/proj-13-about-eltern.spec.ts` (13 Tests je Engine: Demo in drei Typen, falsch/richtig, gelöster Zustand bleibt, **kein `localStorage`-Schreibzugriff und keine Geolocation-Aufrufe**, keine Punkte, Demo-Frage im statischen HTML, kein Hydration-Fehler, Verbotsliste, kein „Sie", FAQ == JSON-LD durch Aufklappen, Kopfzeile/Ko-fi/Abschluss unverändert). In den fünf bestehenden PROJ-13-Dateien **gezogen, nicht gelöscht**: Sektionsfolge und -titel, Hero-Copy, Zielgruppen (3 statt 4), FAQ (8 statt 5), Lime-Regel (0 im CSS, eins im Screenshot), fünf Hero-Hintergrund-Tests → Screenshot-, Abschluss-Illustration- und Pixel-Kontrast-Tests, Abstandstests auf die Trennlinie als Hero-Kante, Video an Position 3, Rhythmus mit eigener Form „Demo".
+
+**Unverändert und grün:** BUG-7-Wächter (CTA über dem Falz), alle Video-Tests (0 MP4 vor dem Klick, Abspielen, Fallback, BUG-17/18-Wächter), Kopfzeile/Ko-fi, Nachbarseiten, Safe Area.
+
+**CTA über dem Falz, gemessen auf 11 Viewports × 2 Engines (identisch):** Luft unter dem CTA 320×568 **51px** (vorher 39 — die Hero-Karte mit ihrem Innenabstand ist entfallen), 360×640 123, 1024×768 81, 1280×800 89, **1366×768 57** (knappster Desktop-Fall), 1440×900 189, 1920×1080 369. Überall 0px horizontaler Überlauf.
+
+**Gegenprobe gegen den echten Vorgängerstand** (`page.tsx` und `info-page-shell.tsx` aus `HEAD` eingespielt, eigener Build): **82 PROJ-13-Tests fallen**. Von der neuen Suite fallen **9 von 13 je Engine**; grün bleiben genau die 4 Wächter, die auch die alte Seite erfüllte (keine Punkte, keine Versprechen aus dem Entwurf, kein „Sie", Kopfzeile/Ko-fi/Abschluss unverändert). Danach beide Dateien per `cmp` als byte-identisch zurückgespielt.
+
+**Suiten gegen den Production-Build:** PROJ-13 **282 passed / 22 skipped / 0 failed** über beide Engines; zusammen mit den Suiten, die `InfoPageShell` mitbenutzen (Ko-fi, Safe Area, PROJ-14, Navigation, Startscreen) **491 passed / 23 skipped / 0 failed**. Unit **427/427**. Build sauber (`/about` statisch), Lint 0 Fehler, `tsc` nur die 2 bekannten Fehler aus PROJ-6.
+
+**Für künftige Läufe:** Nach einem frischen Build dauerte dieselbe PROJ-13-Suite **16 Minuten statt 1–6** — der kalte Bild-Cache des lokalen `next start` (in INDEX.md vom 2026-09-29 dokumentiert), keine Fehlschläge. Bei einem 10-Minuten-Fenster läuft der Lauf ins Timeout und sieht wie ein Hänger aus; im Hintergrund starten.
+
+**Ein Build-Fehlschlag ohne Bezug zur Änderung:** Der erste Build nach dem Umbau scheiterte an `next/font/google` („Can't resolve '@vercel/turbopack-next/internal/font/google/font'"), der zweite mit identischem Code lief durch. Google Fonts war erreichbar (HTTP 200); vermutlich ein vorübergehender Abruf-Fehler.
+
+**Am Bildschirm abgenommen:** Hero auf 1440×900 und iPhone 13, ganze Seite am Desktop, Abschluss-Sektion mit sichtbarem Schriftzug „Explore. Solve. Discover." rechts. Ein Ganzseiten-Screenshot zeigte die Illustration zunächst nicht — reines Lazy-Loading-Artefakt der Aufnahme, nach Scrollen geladen.
+
+**Nicht abgedeckt:** echtes iPhone und Firefox; ob der Hero-Screenshot nach künftigen Änderungen am Navigations-Screen neu erzeugt wird, hängt am Skript-Aufruf (nicht automatisiert).

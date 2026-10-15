@@ -3,6 +3,11 @@ import { test, expect } from "@playwright/test";
 /**
  * PROJ-13 — Refinement 4 (2026-09-07): `/about` wird zur Marketing-Landingpage.
  * Ein test() pro Acceptance Criterion aus dem gleichnamigen Spec-Abschnitt.
+ *
+ * Seit Refinement 12 (2026-10-15, „/about für Eltern und Lehrkräfte") auf den
+ * neuen Aufbau gezogen: Hero mit App-Screenshot, Vorteile, Zielgruppen ohne
+ * „Kinder & Jugendliche", Live-Demo, FAQ mit acht Fragen. Die Zusicherungen
+ * sind umgeschrieben, nicht gelöscht.
  */
 
 test.describe("Hero", () => {
@@ -16,7 +21,7 @@ test.describe("Hero", () => {
       "zum Spielfeld."
     );
     await expect(
-      page.getByText("Kostenlos. Ohne Abo. Ohne Account.")
+      page.getByText("Kostenlos. Ohne Werbung. Ohne Anmeldung.")
     ).toBeVisible();
   });
 
@@ -28,21 +33,20 @@ test.describe("Hero", () => {
     // Am 2026-09-09 auf das Nötigste gekürzt (BUG-7): Zielgruppen-Aufzählung
     // und Spielmechanik sind raus — beide kosteten 168px an der teuersten
     // Stelle der Seite und stehen weiter unten ohnehin ausführlicher.
-    await expect(page.getByText(/^Erstelle deine eigene GPS-Rallye/)).toBeVisible();
-    await expect(page.getByText("Kostenlos. Ohne Abo. Ohne Account.")).toBeVisible();
+    // Seit Refinement 12 ein Absatz für Ersteller mit Anlass und Nutzen.
+    await expect(page.getByText(/^Erstelle GPS-Schnitzeljagden und Lernpfade/)).toBeVisible();
+    await expect(page.getByText("Kostenlos. Ohne Werbung. Ohne Anmeldung.")).toBeVisible();
     await expect(page.getByText(/Ob mit Freunden, der Familie/)).toHaveCount(0);
     await expect(page.getByText(/Laufe zu verschiedenen Orten/)).toHaveCount(0);
   });
 
-  test("die Spielmechanik ist weiterhin auf der Seite — in Schritten und FAQ", async ({
-    page,
-  }) => {
+  test("die Spielmechanik steht in Hero und Schritten", async ({ page }) => {
     await page.goto("/about");
 
-    // Sie darf aus dem Hero verschwinden, aber nicht aus der Seite.
-    await expect(page.getByText(/GPS führt euch von Station zu Station/)).toBeVisible();
-    const html = await page.content();
-    expect(html).toContain("Ein Pfeil zeigt die Richtung");
+    // Refinement 12: Der Hero-Absatz nennt sie selbst („von Station zu
+    // Station"), Schritt 03 nennt den GPS-Pfeil.
+    await expect(page.getByText(/laufen draußen von Station zu Station/)).toBeVisible();
+    await expect(page.getByText(/Der GPS-Pfeil führt von Station zu Station/)).toBeVisible();
   });
 
   test("kein Eyebrow über der Headline", async ({ page }) => {
@@ -60,25 +64,14 @@ test.describe("Hero", () => {
     }
   });
 
-  test("der Hero nennt Erstellen und Spielen gleichwertig", async ({ page }) => {
+  test("der Hero spricht den Ersteller an, nicht den Spieler", async ({ page }) => {
     await page.goto("/about");
 
-    const lead = page.locator("main p", {
-      hasText: /^Erstelle deine eigene GPS-Rallye/,
-    });
-    const play = page.locator("main p", {
-      hasText: /^Nimm die Herausforderung an/,
-    });
-    await expect(lead).toBeVisible();
-    await expect(play).toBeVisible();
-
-    // „in der gleichen Formatierung": identische Schriftgröße wie Satz 1.
-    const sizes = await Promise.all(
-      [lead, play].map((l) =>
-        l.evaluate((e) => getComputedStyle(e).fontSize)
-      )
-    );
-    expect(sizes[1]).toBe(sizes[0]);
+    // Gezogen in Refinement 12: Bis dahin stand hier „Erstellen und Spielen
+    // gleichwertig" mit einem zweiten, an den Spieler gerichteten Satz. Die
+    // Seite spricht jetzt nur noch Eltern, Lehrkräfte und Jugendleitung an.
+    await expect(page.getByText(/^Erstelle GPS-Schnitzeljagden/)).toBeVisible();
+    await expect(page.getByText(/Nimm die Herausforderung an/)).toHaveCount(0);
   });
 
   test("primärer CTA führt direkt in den Creator, ohne Umweg über /", async ({
@@ -118,6 +111,8 @@ test.describe("Sektionsfolge", () => {
     // Seit 2026-09-08 ohne „Draußen spielen. Wie ein Game." — die Erklärung
     // steht jetzt im Hero, der Hook lag ohnehin schon in der Headline.
     // Seit 2026-09-28 (Refinement 10) mit dem Erklärvideo an Position 2.
+    // Seit 2026-10-15 (Refinement 12) neu geordnet: Vorteile vorn, Video
+    // an Position 3, Live-Demo vor der FAQ.
     const sections = page.locator("main section");
     await expect(sections).toHaveCount(7);
 
@@ -128,12 +123,16 @@ test.describe("Sektionsfolge", () => {
       .locator("main section > h3, main section > div > h3")
       .allInnerTexts();
 
-    expect(headings.map((h) => h.trim())).toEqual([
-      "SO FUNKTIONIERT GEO QUEST.",
-      "JEDER ORT KANN EIN LEVEL SEIN.",
-      "NICHT NUR SPIELEN. SELBER MACHEN.",
-      "EINE QUEST ERSTELLEN? GANZ EINFACH.",
-      "FÜR WEN IST GEO QUEST?",
+    // Kleingeschrieben verglichen und ß/SS vereinheitlicht: Die Engines
+    // setzen „draußen" in Uppercase unterschiedlich um.
+    const norm = (h: string) => h.trim().toLowerCase().replace(/ß/g, "ss");
+    expect(headings.map(norm)).toEqual([
+      "gemacht für draussen.",
+      "so funktioniert geo quest.",
+      "für wen ist geo quest?",
+      "eine quest erstellen? ganz einfach.",
+      "so fühlt sich eine station an.",
+      "antworten für eltern und lehrkräfte",
     ]);
 
     // Der Abschluss-CTA trägt seine Überschrift als h2.
@@ -155,25 +154,71 @@ test.describe("Sektionsfolge", () => {
     await expect(
       page.getByRole("heading", { name: "Draußen spielen. Wie ein Game." })
     ).toHaveCount(0);
+    // Seit Refinement 12 entfallen: Orte stecken in Zielgruppen und
+    // Schritten, die Game-Designer-Idee in der Schul-Karte.
+    await expect(
+      page.getByRole("heading", { name: "Jeder Ort kann ein Level sein." })
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { name: "Nicht nur spielen. Selber machen." })
+    ).toHaveCount(0);
   });
 });
 
-test.describe("Orte-Sektion", () => {
-  test("fünf Orte als eigenständige Elemente, nicht als Fließtext", async ({
+// Gezogen in Refinement 12: Die Orte-Sektion („Jeder Ort kann ein Level
+// sein.", fünf Orts-Chips, „Draußen ist das Game.") ist entfallen. An ihre
+// Stelle treten Vorteile und Zielgruppen, die Eltern und Lehrkräfte zuerst
+// prüfen.
+test.describe("Vorteile und Zielgruppen", () => {
+  test("vier Vorteile: Datenschutz, Bewegung, Baukasten, Browser", async ({ page }) => {
+    await page.goto("/about");
+
+    const section = page.locator("main section", {
+      has: page.getByRole("heading", { name: "Gemacht für draußen." }),
+    });
+    for (const title of [
+      "Datenschutz eingebaut",
+      "Bewegung statt Sofa",
+      "Einfacher Baukasten",
+      "Läuft im Browser",
+    ]) {
+      await expect(section.getByRole("heading", { name: title })).toBeVisible();
+    }
+    await expect(section.locator("li")).toHaveCount(4);
+  });
+
+  test("drei Zielgruppen-Karten mit je drei Stichpunkten, alle sichtbar", async ({
     page,
   }) => {
     await page.goto("/about");
 
-    const places = page.locator("main section ul li", {
-      hasText: /^(Ein Park|Eine Stadt|Der Schulhof|Ein Wanderweg|Dein Viertel)$/,
+    const section = page.locator("main section", {
+      has: page.getByRole("heading", { name: "Für wen ist Geo Quest?" }),
     });
-    await expect(places).toHaveCount(5);
+    const titles = section.locator("dt");
+    await expect(titles).toHaveCount(3);
+    // Karten statt Reiter: nichts ist versteckt.
+    for (const title of ["Familien", "Schule & Pädagogik", "Jugendarbeit & Ferienprogramm"]) {
+      await expect(section.locator("dt", { hasText: title })).toBeVisible();
+    }
+    await expect(section.locator("dd li")).toHaveCount(9);
+    await expect(section.getByRole("tab")).toHaveCount(0);
+    // Die Game-Designer-Idee lebt als Nutzen für Lehrkräfte weiter.
+    await expect(section.getByText("Lass deine Klasse selbst eine Quest bauen")).toBeVisible();
   });
 
-  test("die Sektion schließt mit „Draußen ist das Game.\"", async ({ page }) => {
+  test("entfallene Kinder-Ansprache ist weg", async ({ page }) => {
     await page.goto("/about");
-    // Bis 2026-09-09 „Die Welt ist deine Spielkarte."
-    await expect(page.getByText("Draußen ist das Game.")).toBeVisible();
+
+    for (const gone of [
+      /Für Kinder & Jugendliche/,
+      /überrasche deine Freunde/,
+      /Du bist der Game-Designer/,
+      /Deine Welt\. Deine Regeln/,
+      /Draußen ist das Game/,
+    ]) {
+      await expect(page.getByText(gone)).toHaveCount(0);
+    }
   });
 });
 
@@ -183,25 +228,27 @@ test.describe("Schritte", () => {
   }) => {
     await page.goto("/about");
 
-    await expect(page.getByText(/Gib deine Quest als Datei weiter/)).toBeVisible();
-    // Kein Teilen-Versprechen, das die App nicht einlöst.
+    await expect(page.getByText(/Gib die Quest als Datei an die Handys/)).toBeVisible();
+    // Kein Teilen-Versprechen, das die App nicht einlöst — auch nicht das
+    // „per Link oder QR-Code" aus dem Betreiber-Entwurf (Refinement 12).
     await expect(page.getByText(/Teile deine Quest und los/)).toHaveCount(0);
+    await expect(page.getByText(/QR-Code/)).toHaveCount(0);
   });
 });
 
-test.describe("Vokabular: Rallye außen, Quest innen", () => {
-  test("„Rallye\" steht ausschließlich im Hero", async ({ page }) => {
+test.describe("Vokabular: Suchsprache außen, Quest innen", () => {
+  test("das Produkt heißt Quest — „Rallye\" nur noch als Anlass", async ({ page }) => {
     await page.goto("/about");
 
-    // Hero: der Begriff, in dem die Zielgruppe sucht.
-    await expect(page.getByText(/deine eigene GPS-Rallye/)).toBeVisible();
-
-    // Ab Sektion 2 gilt die App-Sprache. Der Titelblock (Hero) ist alles
-    // vor der ersten <section>, deshalb hier nur die Sektionen prüfen.
+    // Seit Refinement 12 holt der Hero mit „GPS-Schnitzeljagden" ab, nicht
+    // mehr mit „GPS-Rallye". „Rallye" darf als Anlass stehen
+    // („Stadtrallye für Jugendgruppen"), nie als Name des Produkts.
+    await expect(page.getByText(/GPS-Schnitzeljagden/)).toBeVisible();
+    const text = await page.locator("main").innerText();
+    expect(text).not.toMatch(/GPS-Rallye|Rallye erstellen|eigene Rallye/i);
     const sectionText = (
       await page.locator("main section").allInnerTexts()
     ).join(" ");
-    expect(sectionText).not.toMatch(/Rallye/);
     expect(sectionText).toMatch(/Quest/);
   });
 
@@ -225,25 +272,30 @@ test.describe("Vokabular: Rallye außen, Quest innen", () => {
 });
 
 test.describe("FAQ nach dem Refinement", () => {
-  test("fünf Fragen — die vier bisherigen plus die neue", async ({ page }) => {
+  test("acht Fragen aus Sicht von Eltern und Lehrkräften", async ({ page }) => {
     await page.goto("/about");
 
     // Auf die Accordion-Trigger begrenzt statt „jeder Button in einer
-    // Sektion" — seit Refinement 10 steht dort auch der Video-Startknopf.
+    // Sektion" — dort stehen auch der Video-Startknopf und die Demo.
     const questions = page.locator("main section button[aria-expanded]");
-    await expect(
-      page.getByRole("button", { name: /Was kann ich in eine Quest einbauen/ })
-    ).toBeVisible();
-    // Vier bestehende Fragen sind wörtlich erhalten geblieben.
+    // Seit Refinement 12: „Brauche ich ein Benutzerkonto?" ist in der Frage
+    // nach Konto oder App für die Kinder aufgegangen, vier sind neu.
     for (const frage of [
       /Was kostet Geo Quest/,
-      /Brauche ich ein Benutzerkonto/,
+      /Brauchen die Kinder ein Konto oder eine App/,
+      /Was passiert mit den Standortdaten/,
+      /Braucht jedes Kind ein eigenes Handy/,
+      /Braucht man unterwegs Internet/,
       /Für welches Alter/,
       /Wie erstelle ich eine Quest/,  // PROJ-14: keine Dauer-Frage mehr
+      /Was kann ich in eine Quest einbauen/,
     ]) {
       await expect(page.getByRole("button", { name: frage })).toBeVisible();
     }
-    await expect(questions).toHaveCount(5);
+    await expect(questions).toHaveCount(8);
+    await expect(
+      page.getByRole("heading", { name: "Antworten für Eltern und Lehrkräfte" })
+    ).toBeVisible();
   });
 
   test("der Inhalt der gestrichenen Feature-Karten steht in HTML und JSON-LD", async ({
@@ -253,9 +305,9 @@ test.describe("FAQ nach dem Refinement", () => {
 
     const html = await page.content();
     for (const needle of [
-      "Text, Bild, Audio, Video und Aufgaben",
+      // Seit Refinement 12 gekürzt — die Live-Demo zeigt die Aufgaben.
+      "Text, Bild, Audio, Video und eine Aufgabe",
       "Multiple Choice",
-      "Ein Pfeil zeigt die Richtung",
     ]) {
       expect(html, `fehlt im HTML: ${needle}`).toContain(needle);
     }
@@ -311,10 +363,13 @@ test.describe("Responsive", () => {
     );
     expect(overflows).toBe(false);
 
+    // Gemessen wird das wirksame Tap-Ziel: Liegt ein Element in einem
+    // <label> (die Radio-Knöpfe der Demo-Aufgabe), ist die ganze Zeile
+    // tippbar — genau so wie im Player.
     const tooSmall = await page.evaluate(() =>
       [...document.querySelectorAll("main a, main button")]
         .filter((el) => (el as HTMLElement).offsetParent !== null)
-        .filter((el) => el.getBoundingClientRect().height < 44)
+        .filter((el) => (el.closest("label") ?? el).getBoundingClientRect().height < 44)
         .map((el) => el.textContent?.trim().slice(0, 40))
     );
     expect(tooSmall).toEqual([]);

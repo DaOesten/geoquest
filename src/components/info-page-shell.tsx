@@ -22,26 +22,6 @@ interface InfoPageShellProps {
   lead?: React.ReactNode;
   /** Rendered beside the title block from `lg` up; stacked underneath on smaller screens. */
   aside?: React.ReactNode;
-  /**
-   * Bild, das hinter dem gesamten Hero-Block liegt (PROJ-13, Refinement 9,
-   * 2026-09-21) — hinter Logo, Headline, Lead, Preiszeile und CTA.
-   *
-   * Löst `asideFillsHeight` aus Refinement 8 ab: Dort stand das Bild als
-   * Nachbar-Spalte und musste dafür beschnitten werden. Als Untergrund
-   * entfällt die Zuschnittfrage ganz — es trägt die Fläche, statt eine Spalte
-   * zu füllen.
-   *
-   * Die Abdunklung ist nicht verhandelbar und deshalb hier fest verdrahtet
-   * statt als Prop: Gemessen fällt **Teal** auf dem unveränderten Bild auf
-   * 3.75:1 und verfehlt die PRD-Vorgabe von 4.5:1 — betroffen sind „ZUM
-   * SPIELFELD" in der Headline und die Kostenlos-Zeile. Weißer Text käme mit
-   * 6.26:1 durch, die Akzentfarbe nicht. Bei 40% liegt Teal bei 6.49:1
-   * (Desktop) und 6.33:1 (volle Breite, also der Mobile-Fall).
-   *
-   * Gilt auf **allen** Breiten. Der Betreiber-Wunsch „nur mobile sind die
-   * Elemente untereinander" betrifft die Anordnung, nicht den Hintergrund.
-   */
-  heroBackground?: { src: string };
   backHref?: string;
   /**
    * "dark" (Default) trägt den Gaming-Look der öffentlichen Eingangsseiten.
@@ -69,17 +49,6 @@ interface InfoPageShellProps {
 /** Shared max width so header, hero and body columns line up on every breakpoint. */
 const CONTAINER = "mx-auto w-full max-w-[1100px] px-5 sm:px-8";
 /**
- * Gleiche Aussenbegrenzung wie `CONTAINER`, aber ohne Innenabstand: Das
- * Hero-Bild soll bis an die Kartenkante laufen, waehrend der Text darin den
- * normalen Abstand behaelt (PROJ-13, Refinement 9, 2026-09-21).
- *
- * Unterhalb von `sm` ohne Seitenabstand: Dort ist der Bildschirm der Rahmen,
- * eine zusaetzlich eingerueckte Karte kostet nur Hoehe. Gemessen fiel der CTA
- * auf 320x568 sonst unter den Falz (BUG-7).
- */
-const CONTAINER_OUTER = "mx-auto w-full max-w-[1100px] sm:px-8";
-
-/**
  * Shared frame for the static info pages (/about, /anleitung, /impressum,
  * /datenschutz — PROJ-13).
  *
@@ -102,7 +71,6 @@ export function InfoPageShell({
   meta,
   lead,
   aside,
-  heroBackground,
   backHref,
   theme = "dark",
   showSupport = false,
@@ -178,113 +146,12 @@ export function InfoPageShell({
             ist die Bildschirmhöhe der knappe Faktor, nicht die Breite
             (BUG-7). Erst ab `xl` — wo auch flache Laptops genug Höhe
             haben — darf er wieder großzügiger werden. */}
-        {/* Traegt das Hintergrundbild randlos ueber die volle Fensterbreite
-            (Refinement 9, 2026-09-21). Der Inhalt bleibt im 1100px-Container
-            darin — sonst liefe der Text auf breiten Bildschirmen auseinander.
-
-            `-mt-14 sm:-mt-16 pt-14 sm:pt-16` zieht das Bild unter die
-            Kopfzeile: Die ist `sticky` und halbtransparent, also schimmert
-            Die Karte sitzt im 1100px-Container wie die uebrigen Sektionen,
-            damit links und rechts gleich viel Abstand bleibt. Randlos sah es
-            unsymmetrisch aus: Links entstand ein Streifen, der wie ein Rand
-            wirkte, aber nur die dunkle Gasse war — rechts lief der Schriftzug
-            bis an die Fensterkante. */}
-        <div
-          className={
-            heroBackground
-              ? `${CONTAINER_OUTER} sm:mt-6`
-              : ""
-          }
-        >
-          <div
-            className={
-              heroBackground
-                ? "relative isolate overflow-hidden sm:rounded-card"
-                : ""
-            }
-          >
-          {heroBackground && (
-            <>
-              {/* Bild und Abdunklung als ZWEI Ebenen, nicht als
-                  `filter: brightness()` auf dem Bild: Ein Filter trifft im
-                  selben Stapelkontext auch den Text darueber. */}
-              <Image
-                src={heroBackground.src}
-                // Dekoration: Der Hero sagt in Schrift, was das Bild zeigt.
-                // Ein Screenreader, der die Bildbeschreibung zwischen Logo und
-                // Headline vorliest, stoert den Lesefluss ohne Gegenwert.
-                alt=""
-                aria-hidden
-                fill
-                priority
-                sizes="(min-width: 1100px) 1100px, 100vw"
-                // Rechts verankert (2026-09-21): Der Schriftzug auf der
-                // Hauswand belegt die letzten 512px des Bildes (69..100% der
-                // Breite). Im Container werden 256px zugeschnitten — von
-                // links, wo nur die dunkle Gasse steht. Mittig zugeschnitten
-                // wuerde der Schriftzug mitten im Wort abgeschnitten, und auf
-                // schmalen Fenstern fiele die helle Bildhaelfte ganz weg
-                // (gemessen: Helligkeit rechts 3.19 -> 0.93 bei 900px).
-                className="-z-10 object-cover object-right"
-              />
-              {/* ZWEI Ebenen statt einer gleichmaessigen Abdunklung.
-
-                  Die erste liegt ueber dem ganzen Bild und nimmt ihm die
-                  Spitzen. Die zweite ist der eigentliche Textschutz: ein
-                  Verlauf von links, der genau dort am staerksten ist, wo Text
-                  steht, und nach rechts auslaeuft — dort traegt das Bild
-                  allein und bleibt klar sichtbar.
-
-                  Warum nicht eine gleichmaessige Ebene: Gemessen muesste sie
-                  auf ~73% hoch, damit auch die hellsten Stellen (Laternen,
-                  Reflexe) bestehen. Dann ist das Bild kaum noch zu erkennen —
-                  genau das, was ein Hintergrundbild nicht sein soll.
-
-                  Auf Mobile laeuft der Text ueber die ganze Breite, deshalb
-                  greift der Verlauf dort von unten statt von links: Der Text
-                  sitzt im unteren Bereich, das Bild bleibt oben frei. */}
-              {/* Von 30% auf 15% zurueckgenommen (2026-09-21): Der Betreiber
-                  wollte Route und X auf der Strasse besser erkennen. Die
-                  Reserve war da — der Kontrast lag bei 9.55:1 gegen eine
-                  Vorgabe von 4.5:1. */}
-              <div className="absolute inset-0 -z-10 bg-background/15" />
-              {/* Der Verlauf endet ab `lg` bei 68% statt erst am rechten Rand
-                  (2026-09-21). Gemessen lag die Route auf der Strasse bei
-                  55% Breite unter 76% Abdunklung und der Schriftzug bei 85%
-                  noch unter 25% — beide waren dadurch kaum zu erkennen.
-
-                  Jetzt: 85% ganz links, 68% dort wo der Text endet (52%),
-                  danach schnell auf null. Rechts der 68%-Marke traegt das
-                  Bild unveraendert. Kontrast in der Textzone 6.74:1 statt
-                  9.55:1 — weiterhin deutlich ueber der 4.5:1-Vorgabe.
-
-                  `via-*` sitzt bewusst dort, wo der Text endet: Auf 1920px
-                  reicht er bis 49% der Fensterbreite. */}
-              <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_top,hsl(var(--background))_0%,hsl(var(--background)/0.8)_45%,hsl(var(--background)/0.2)_100%)] lg:bg-[linear-gradient(to_right,hsl(var(--background)/0.85)_0%,hsl(var(--background)/0.68)_52%,transparent_68%)]" />
-            </>
-          )}
-          {/* Der Inhalt bleibt im Container, auch wenn das Bild randlos
-              laeuft. Der Kopfabstand sitzt hier statt am Aussen-Wrapper, damit
-              das Bild oben buendig unter der Kopfzeile beginnt.
-
-              `pt-14 sm:pt-16` gleicht den negativen Aussenabstand aus, mit
-              dem der Wrapper unter die Kopfzeile faehrt — sonst laege der
-              Inhalt dahinter. */}
-          <div
-            className={
-              heroBackground
-                ? // Eigener Innenabstand statt `CONTAINER`: Der liegt schon
-                  // am Aussen-Wrapper, doppelt gesetzt ruecken Headline und
-                  // Sektionen darunter um 32px auseinander.
-                  //
-                  // Auf kleinen Bildschirmen knapper (pt-6/pb-6): Die Karte
-                  // kostet gegenueber der randlosen Fassung Hoehe, und auf
-                  // 320x568 fiel der CTA dadurch 57px unter den Falz —
-                  // BUG-7. Ab `sm` ist genug Platz fuer den vollen Abstand.
-                  "px-5 sm:px-8 pt-6 pb-6 sm:pt-14 sm:pb-14"
-                : `${CONTAINER} pt-6 sm:pt-10 xl:pt-16`
-            }
-          >
+        {/* Das Hintergrundbild hinter dem Hero (Refinement 9) ist mit
+            Refinement 12 (2026-10-15) entfallen: /about zeigt dort jetzt einen
+            App-Screenshot als `aside`, die Illustration traegt die
+            Abschluss-Sektion. Damit gibt es wieder nur eine Hero-Form fuer
+            alle Info-Seiten. */}
+        <div className={`${CONTAINER} pt-6 sm:pt-10 xl:pt-16`}>
           {/* `items-start` statt `items-center` (2026-09-09): Seit der Hero
               von /about kürzer ist als das Bild daneben, ließ die Zentrierung
               den Text in der Spalte schweben. Oben bündig lesen sich beide
@@ -349,11 +216,7 @@ export function InfoPageShell({
             {aside && <div className="min-w-0">{aside}</div>}
           </div>
 
-          {/* Die Trennlinie entfaellt, wenn ein Hintergrundbild den Hero
-              traegt — die Bildkante setzt die Grenze bereits. */}
-          {!heroBackground && <div className="h-px bg-border mt-10 sm:mt-14" />}
-          </div>
-          </div>
+          <div className="h-px bg-border mt-10 sm:mt-14" />
         </div>
         {/* Sections set scroll-margin so anchored headings clear the sticky header. */}
         <div className={`${CONTAINER} pb-16 sm:pb-24 [&_section]:scroll-mt-20`}>

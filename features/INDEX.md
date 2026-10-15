@@ -580,7 +580,19 @@ Alle **10 Endpunkte HTTP 200** (0,06–0,44 s), Security-Header inkl. HSTS. Nach
 
 **Für `/frontend` vorab benannt:** `SortingTask` mischt im `useState`-Initialisierer — auf der statisch vorgerenderten `/about` gäbe das einen Hydration-Fehler; die Demo muss client-only rendern, `/about` bleibt statisch. Screenshot per eingechecktem Skript aus der echten App. Viele Copy-, Zählungs- und Hero-Hintergrund-Tests werden absichtlich falsch und sind zu ziehen, nicht zu löschen; BUG-7-Wächter und Video-Tests bleiben unangetastet. **BUG-15 entfällt** mit dem Hintergrundbild.
 
-Spec ist aktualisiert (31 Acceptance Criteria in einem eigenen Block, 12 Produkt- und 2 technische Entscheidungen, 4 Out-of-Scope-Einträge, 2 geschlossene und 5 neue Open Questions, Abschnitt „Refinement 12" mit vollständiger Copy). **Noch nicht gebaut.**
+Spec ist aktualisiert (31 Acceptance Criteria in einem eigenen Block, 12 Produkt- und 2 technische Entscheidungen, 4 Out-of-Scope-Einträge, 2 geschlossene und 5 neue Open Questions, Abschnitt „Refinement 12" mit vollständiger Copy).
+
+**Frontend umgesetzt am 2026-10-15.** `about/page.tsx` neu aufgebaut, `heroBackground` aus `InfoPageShell` entfernt (nur `/about` nutzte es; die Nachbarseiten laufen über denselben Zweig wie bisher), neu `about-task-demo.tsx` (shadcn `Tabs` + die unveränderten Player-Aufgaben) und `scripts/make-about-screenshot.mjs`, das den Hero-Screenshot als echten Zustand der App erzeugt (WebKit, iPhone-Profil, erfundene Quest). Kein neues Paket, `/about` bleibt statisch.
+
+**Der Hydration-Stolperstein erledigt sich ohne Zusatzcode:** Radix rendert nur den aktiven Reiter, die Sortier-Aufgabe entsteht also nie auf dem Server. Ein Test hält fest, dass die Multiple-Choice-Frage im ausgelieferten HTML steht und die Sortier-Frage nicht. Das eine Lime-Element der Seite ist jetzt die Entfernungsanzeige im Screenshot.
+
+**Gemessen:** CTA auf 11 Viewports × 2 Engines über dem Falz, auf 320×568 mit **51px** Luft (vorher 39). Abschluss-Sektion auf der Illustration **pro Einzelpixel ≥ 4.86:1**. Demo ohne `localStorage`-Schreibzugriff und ohne Geolocation-Aufruf.
+
+**Tests:** neue Suite `proj-13-about-eltern.spec.ts` (13 je Engine), fünf bestehende PROJ-13-Dateien gezogen, nicht gelöscht. **Gegenprobe gegen den Vorgänger: 82 Tests fallen**, von der neuen Suite 9 von 13; grün bleiben nur die vier Wächter, die auch die alte Seite erfüllte. **PROJ-13 282/0, mit den Shell-Nachbarsuiten 491/0, Unit 427/427**, Lint 0 Fehler.
+
+**Nebenbefund, vorbestehend:** Eingeklappte FAQ-Antworten stehen nicht im Accordion-DOM, nur im JSON-LD und in den Next.js-Seitendaten. Der Test „Antworten im HTML" besteht, weil er das JSON-LD mitliest. Für Suchmaschinen unkritisch, aber die Begründung in Refinement 4 stimmt so nicht mehr; der neue Test prüft durch Aufklappen.
+
+**Für künftige Läufe:** Nach einem frischen Build brauchte die PROJ-13-Suite 16 statt 1–6 Minuten (kalter Bild-Cache, ohne Fehlschläge) — im Hintergrund starten, sonst sieht das Timeout wie ein Hänger aus.
 
 ## Next Available ID: PROJ-16
 
