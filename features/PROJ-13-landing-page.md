@@ -1,6 +1,8 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Deployed
+## Status: In Progress
+_**Refinement 12 (2026-10-15): `/about` spricht Eltern und Lehrkräfte an.** Betreiber: *„Ich möchte /about mehr auf die Zielgruppe Eltern, Lehrer abstimmen."* Als Richtung lieferte er einen externen HTML-Entwurf (hell, grün, Reiter, Live-Demo, App-Screenshot im Hero). Entschieden: Aufbau und Inhalte in diese Richtung, **Geo-Quest-Look und „du" bleiben**, Kinder werden nur noch über die Erwachsenen angesprochen. Neu: App-Screenshot statt Hintergrundbild im Hero, Vorteile-Leiste, drei Zielgruppen-Karten, Live-Demo mit echten Aufgaben-Bausteinen, FAQ aus Elternsicht. Entfallen: „Jeder Ort kann ein Level sein", „Du bist der Game-Designer", die Zielgruppe „Kinder & Jugendliche". Alles, was die App nicht einlöst oder erfunden wäre (Punkte, Tipps, Teilen-Link, Offline, Nutzerzahlen, Kundenstimmen, Zeitangabe), wurde aus dem Entwurf **nicht** übernommen. Siehe Abschnitt „Refinement 12" am Ende. **Noch nicht gebaut.**_
+
 _**Refinement 11 (2026-09-29): Abstand Hero → Video-Sektion.** Betreiber nach dem Deploy: zwischen CTA und Video-Überschrift ist deutlich mehr Abstand als zwischen Video und erster Karte. Gemessen live: 176px gegen 80px (mobil 112 gegen 48). Entschieden: Kante zu Kante überall dasselbe Maß. **Frontend umgesetzt und QA-geprüft am 2026-09-29** — 6/6 Acceptance Criteria, keine Bugs. Approved._
 
 _Refinement 9 (Hero-Bild wird Hintergrund) ist deployt (Tag `v1.40.0-PROJ-13`, 2026-09-26). **Refinement 10 (Erklärvideo als neue Sektion 2) ist am 2026-09-28 gespect, gebaut und QA-geprüft** — 11/11 Acceptance Criteria, 1 Medium- und 1 Low-Bug (BUG-17, BUG-18), keine Critical/High. Approved. Siehe Abschnitte „Refinement 10" und „Implementation Notes (Frontend — Refinement 10)" am Ende dieser Spec._
@@ -9,7 +11,7 @@ _Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und d
 
 _**Refinement 7 (2026-09-20): Das Logo-Lockup kehrt auf den Desktop zurück.** Betreiber-Befund: „ich kann auf /about auf dem desktop das Logo nicht mehr sehen." **Frontend umgesetzt am 2026-09-21** — `lg:hidden` entfernt; CTA auf allen elf Viewports über dem Falz nachgemessen, knappster Fall 1366×768 mit 45px. Siehe Implementation Notes._
 **Created:** 2026-09-04
-**Last Updated:** 2026-09-29 (Refinement 11 QA-geprüft — Abstand Hero → Video)
+**Last Updated:** 2026-10-15 (Refinement 12 gespect — `/about` für Eltern und Lehrkräfte)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -42,13 +44,17 @@ Kern der Seite ist eine **Copy-Paste-Prompt-Vorlage**: Nutzer kopieren einen fer
 - **Automatische Koordinaten-Ermittlung** — die KI setzt Platzhalter, der Nutzer positioniert die Stationen im Stationen-Editor (PROJ-7)
 - **Medien-Hosting / Upload-Funktion** — Nutzer verwenden eigene externe HTTPS-URLs; Geo Quest speichert keine Mediendateien
 - **Websuche-Anweisung im Prompt für echte Medien-URLs** — verworfen: liefert überwiegend Seiten-Links statt direkter Datei-URLs, dazu Urheberrechts- und Link-Rot-Risiko
-- **Spieler-orientiertes Marketing** — die Seite adressiert primär Ersteller; Spieler kommen über direkte Quest-Links in die App. **Bestätigt in Refinement 4 (2026-09-07):** Die neue Copy duzt durchgehend, meint damit aber den Ersteller. Kinder und Jugendliche bleiben eine von vier Zielgruppen, nicht der Hauptadressat
+- **Spieler-orientiertes Marketing** — die Seite adressiert primär Ersteller; Spieler kommen über direkte Quest-Links in die App. **Bestätigt in Refinement 4 (2026-09-07):** Die neue Copy duzt durchgehend, meint damit aber den Ersteller. Kinder und Jugendliche bleiben eine von vier Zielgruppen, nicht der Hauptadressat. **Verschärft in Refinement 12 (2026-10-15):** Die Zielgruppe „Kinder & Jugendliche“ entfällt, die Seite spricht nur noch die Erwachsenen an
 - **Mehrsprachigkeit** — Seite ist ausschließlich deutsch, wie die gesamte App
 - **Quest-Bibliothek / Beispiel-Quests zum Download** — laut PRD Non-Goal (keine zentrale Quest-Bibliothek)
 - **Änderung der Root-Route `/`** — der bestehende Mode-Switch bleibt unangetastet
 - **Ko-fi-Anbindung** — der Aktions-Button im Header bleibt vorerst „Zur App"; der Wechsel auf einen Unterstützungslink ist bewusst vertagt (siehe Open Questions)
 - **Rechtsberatung / juristische Prüfung der Texte** — Impressum und Datenschutzerklärung entstehen als sachlich korrekte Beschreibung der tatsächlichen Verarbeitung, ersetzen aber keine anwaltliche Prüfung
 - **Cookie-Banner / Consent-Management** — die App setzt keine einwilligungspflichtigen Cookies; falls sich das durch ein späteres Tool ändert, ist das ein eigenes Feature
+- **Heller, eigener Look für `/about`** und **„Sie"-Anrede** — verworfen in Refinement 12 (2026-10-15); ein neuer Look für die ganze App wäre ein eigenes Vorhaben
+- **Erfundene Nutzerzahlen, Kundenstimmen, Bewertungen** — nicht ohne echte, freigegebene Quellen (Refinement 12)
+- **Sprungmarken-Navigation in der Kopfzeile und zusätzliche Ko-fi-Buttons** auf `/about` (Refinement 12)
+- **GPS, Punkte oder gespeicherter Fortschritt in der Live-Demo**; eine mehrstufige Mini-Quest (Refinement 12)
 - ~~**Burger-Menu in den App-Screens** — das Menu gehört zu den Info-Seiten; `/`, `/play` und `/create` bleiben unverändert~~ → **Aufgehoben am 2026-09-06:** Das Menu wird zur app-weiten Navigation und zieht nach PROJ-1 um. Die Info-Seiten binden künftig dieselbe Komponente ein, statt eine eigene zu besitzen
 
 ## Seitenaufbau
@@ -261,7 +267,54 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] Angenommen der primäre CTA lag vor diesem Refinement auf allen Referenz-Viewports über dem Falz (BUG-7), wenn der Abstand verkleinert ist, dann gilt das unverändert — der Eingriff liegt unterhalb des Hero
 - [x] Angenommen ein Besucher öffnet `/anleitung`, `/impressum` oder `/datenschutz`, wenn die Seiten laden, dann sind sie **unverändert** — sie tragen kein Hero-Bild, und nur für diesen Fall rendert die Shell den betroffenen Abstandshalter
 
+### `/about` für Eltern und Lehrkräfte (Refinement 12, 2026-10-15)
+_Ersetzt die Hero-Kriterien aus Refinement 9 (Hintergrundbild hinter dem Text) und die Sektionszählung aus Refinement 10 (Video an Position 2 von 8). Die vollständige Copy steht im Abschnitt „Refinement 12"._
+
+**Ansprache & Ton**
+- [ ] Angenommen ein Besucher liest `/about` von oben nach unten, wenn er die Texte prüft, dann richtet sich **jeder** Satz an den Erwachsenen, der eine Quest erstellt (Eltern, Lehrkräfte, Jugendleitung) — kein Satz spricht das spielende Kind direkt an („Nimm die Herausforderung an", „überrasche deine Freunde", „Du bist der Game-Designer" entfallen)
+- [ ] Angenommen ein Besucher liest die Seite, wenn er die Anrede prüft, dann wird er durchgehend **geduzt** — kein „Sie", auch nicht in der FAQ
+- [ ] Angenommen ein Besucher betrachtet die Seite, wenn er sie mit der App vergleicht, dann trägt sie weiterhin den Geo-Quest-Look (dunkler Grund, Teal-Akzent, Display-Schrift für Überschriften) — keine eigene helle Farbwelt
+- [ ] Angenommen die Seite nennt Funktionen oder Eigenschaften, wenn sie mit der App abgeglichen werden, dann ist **jede** Aussage durch die App gedeckt: keine Punkte, keine Tipp-Funktion, kein Teilen-Link/QR-Code, kein Offline-Versprechen, keine Zeitangabe fürs Erstellen, keine Nutzerzahlen, keine Kundenstimmen, kein „kein Tracking", kein „DSGVO-konform"
+
+**Hero**
+- [ ] Angenommen ein Besucher öffnet `/about`, wenn der Hero lädt, dann steht die Überschrift „Die reale Welt wird zum Spielfeld." unverändert, darunter **ein** Absatz für Ersteller mit Anlass und Nutzen und die Zeile „Kostenlos. Ohne Werbung. Ohne Anmeldung."
+- [ ] Angenommen ein Besucher öffnet `/about` ab `lg`, wenn der Hero lädt, dann steht links der Text und rechts ein Handy-Rahmen mit einem **echten Screenshot** des Navigations-Screens (Pfeil, Entfernung, Stationsname)
+- [ ] Angenommen ein Besucher öffnet `/about` unter `lg`, wenn der Hero lädt, dann steht der Screenshot **unter** den Buttons
+- [ ] Angenommen der Hero wird geladen, wenn er geprüft wird, dann liegt **kein** Hintergrundbild mehr hinter dem Text — die Illustration `hero_new.png` erscheint stattdessen als Hintergrund der Abschluss-Sektion
+- [ ] Angenommen ein Screenreader liest den Hero, wenn er den Screenshot erreicht, dann hört er einen Alternativtext, der beschreibt, was zu sehen ist (der Screenshot trägt Information, anders als das bisherige Hintergrundbild)
+- [ ] Angenommen der primäre CTA „Quest erstellen" wird auf den elf Referenz-Viewports gemessen, wenn der Hero umgebaut ist, dann steht er weiterhin vollständig über dem Falz (BUG-7 bleibt behoben)
+
+**Aufbau**
+- [ ] Angenommen ein Besucher scrollt durch `/about`, wenn er die Sektionen zählt, dann sind es acht in dieser Reihenfolge: Hero → Vier Vorteile → Erklärvideo → Für wen → Drei Schritte → Live-Demo → FAQ → Abschluss
+- [ ] Angenommen ein Besucher erreicht die Vorteile-Sektion, wenn er sie liest, dann sieht er vier Karten: Datenschutz, Bewegung draußen, einfacher Baukasten, läuft im Browser — auf dem Handy untereinander, ab `sm` zwei, ab `lg` vier nebeneinander
+- [ ] Angenommen ein Besucher erreicht „Für wen", wenn er die Sektion liest, dann sieht er **drei** gleichzeitig sichtbare Karten (Familien · Schule & Pädagogik · Jugendarbeit & Ferienprogramm) mit je einem Satz und drei Stichpunkten — **keine Reiter**, kein versteckter Inhalt
+- [ ] Angenommen ein Besucher liest die Karte „Schule & Pädagogik", wenn er die Stichpunkte liest, dann findet er den Hinweis, dass die Klasse selbst eine Quest bauen kann — die Game-Designer-Idee lebt als Nutzen für Lehrkräfte weiter
+- [ ] Angenommen ein Besucher liest die drei Schritte, wenn er Schritt 3 liest, dann beschreibt er die Weitergabe **als Datei** — nicht per Link oder QR-Code
+- [ ] Angenommen ein Besucher sucht nach „Junggesellenabschied", „Teamevent" oder Ähnlichem, wenn er die Seite durchliest, dann findet er nichts davon
+
+**Live-Demo**
+- [ ] Angenommen ein Besucher erreicht die Live-Demo, wenn sie lädt, dann zeigt sie eine **Multiple-Choice-Aufgabe**, gerendert mit derselben Komponente wie im Player (`MultipleChoiceTask`), und darüber drei Schalter „Multiple Choice · Code · Sortieren"
+- [ ] Angenommen ein Besucher tippt auf „Code" oder „Sortieren", wenn die Demo umschaltet, dann erscheint die jeweilige echte Aufgabe (`CodeTask` bzw. `SortingTask`) mit einer Beispielfrage zum Thema Natur
+- [ ] Angenommen ein Besucher löst eine Demo-Aufgabe, wenn die Antwort richtig ist, dann sieht er dieselbe Bestätigung wie beim Spielen; bei falscher Antwort dieselbe Rückmeldung wie beim Spielen
+- [ ] Angenommen ein Besucher nutzt die Demo, wenn er Aufgaben löst oder umschaltet, dann gibt es **keine** Standortabfrage, **keine** Punkte und **keinen** Schreibzugriff auf `localStorage`
+- [ ] Angenommen ein Besucher schaltet zwischen den Aufgaben hin und her, wenn er zurückkommt, dann darf die Aufgabe neu beginnen — ein Spielstand der Demo wird nicht erwartet
+- [ ] Angenommen die Seite wird ausgeliefert, wenn sie im Browser hydriert, dann entsteht **kein** Hydration-Fehler, auch nicht durch das Mischen der Sortier-Aufgabe
+
+**FAQ**
+- [ ] Angenommen ein Besucher öffnet die FAQ, wenn er die Fragen liest, dann sind es acht: Kosten · Konto/App für die Kinder · Standortdaten · ein Handy pro Kind? · Internet unterwegs · Alter · Wie erstelle ich eine Quest? · Was kann ich einbauen?
+- [ ] Angenommen die Sektion wird angezeigt, wenn der Besucher die Überschrift liest, dann lautet sie „Antworten für Eltern und Lehrkräfte"
+- [ ] Angenommen ein Crawler liest das `FAQPage`-JSON-LD, wenn er es mit der sichtbaren FAQ vergleicht, dann stimmen alle acht Fragen und Antworten wörtlich überein (eine Quelle)
+- [ ] Angenommen ein Besucher liest die Antwort zum Internet, wenn er sie liest, dann sagt sie ehrlich, dass eine mobile Datenverbindung nötig ist
+
+**Unverändert**
+- [ ] Angenommen ein Besucher betrachtet die Kopfzeile, wenn `/about` lädt, dann ist sie unverändert: Ko-fi-Icon, „Zur App", Burger — keine Sprungmarken-Navigation, kein zusätzlicher Ko-fi-Button; auch die Abschluss-Sektion führt nur auf „Quest erstellen"
+- [ ] Angenommen ein Besucher öffnet `/anleitung`, `/impressum` oder `/datenschutz`, wenn die Seiten laden, dann sind sie unverändert
+- [ ] Angenommen die Seite wird gebaut, wenn der Build-Output geprüft wird, dann bleibt `/about` statisch (`○`) und lädt keinen fremden Host
+- [ ] Angenommen die Abstände zwischen den Sektionen werden gemessen, wenn die Seite umgebaut ist, dann gilt weiter Kante zu Kante 48px (Handy) / 80px (ab `sm`), auch vom Hero zur ersten Sektion (Refinement 11)
+- [ ] Angenommen jedes Textelement wird gemessen, wenn der Kontrast geprüft wird, dann erreicht es mindestens 4.5:1 — auch der Text der Abschluss-Sektion auf der Illustration
+
 ### Hero-Bild wird Hintergrund (Refinement 9, 2026-09-21)
+_Hero-Teil überholt durch Refinement 12 (2026-10-15): Der Hero trägt kein Hintergrundbild mehr; die Kontrast-Kriterien gelten sinngemäß für die Abschluss-Sektion, die `hero_new.png` übernimmt._
 - [x] Angenommen ein Besucher öffnet `/about` auf **irgendeiner** Breite, wenn der Hero lädt, dann liegt `urbanquest.png` als Hintergrund **hinter** Logo, Headline, Lead, Preiszeile und CTA — nicht mehr als eigenes Element daneben oder darunter
 - [x] Angenommen der Besucher liest den Hero-Text, wenn der Kontrast gemessen wird, dann erfüllt **jedes** Textelement die PRD-Vorgabe von 4.5:1 — einschließlich der **Teal**-Elemente („ZUM SPIELFELD" und die Kostenlos-Zeile), die ohne Abdunklung auf 3.75:1 fielen
 - [x] Angenommen das Bild liegt hinter dem Text, wenn es dargestellt wird, dann ist es um **40%** in Richtung des Token-Hintergrunds abgedunkelt — stark genug für Teal, schwach genug, dass die Szene klar erkennbar bleibt
@@ -325,8 +378,8 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] ~~Wo genau sitzt der Einstieg aus der App heraus?~~ → Geklärt: im Creator-Empty-State, verlinkt direkt auf `/anleitung`
 - [x] ~~Welches Vorschaubild wird für Open Graph verwendet?~~ → Geklärt im Frontend: `public/assets/urbanquest.png` (1536×1024, markengetreu), zugleich Hero-Bild auf `/about`
 - [x] ~~Gefällt der Bildausschnitt aus Refinement 8?~~ → **Nein** (Betreiber, 2026-09-21). Die QA hatte ihn ausdrücklich als offene Geschmacksfrage benannt, die keine Messung entscheiden kann. Gelöst in Refinement 9: Als Hintergrund entfällt die Zuschnittfrage ganz
-- [ ] Stören die dunklen Streifen links und rechts des 1100px-Containers auf sehr breiten Bildschirmen? Erst am fertigen Bild zu beurteilen (2026-09-21)
-- [ ] Sieht 40% Abdunklung richtig aus? Die Messung sagt nur, dass sie für den Kontrast ausreicht (2026-09-21)
+- [x] ~~Stören die dunklen Streifen links und rechts des 1100px-Containers auf sehr breiten Bildschirmen?~~ → Gegenstandslos: Der Hero trägt ab Refinement 12 kein Hintergrundbild mehr (2026-10-15)
+- [x] ~~Sieht 40% Abdunklung richtig aus?~~ → Gegenstandslos für den Hero (Refinement 12). Die Abdunklung der Abschluss-Sektion wird am Bildschirm neu gewählt (2026-10-15)
 - [ ] Soll die Prompt-Vorlage in mehreren Varianten angeboten werden (z.B. kürzere Version für schwächere Modelle)? Aktuell: nein, eine vollständige Vorlage.
 - [x] ~~Sollen die beiden Seiten zusätzlich einen Einstieg außerhalb des Creator-Empty-States bekommen (z.B. dauerhaft im Creator-Header), sobald ein Nutzer bereits Quests hat?~~ → Ja, gelöst am 2026-09-06: Das app-weite Burger-Menu (PROJ-1) enthält unter „Info" die Links Über und Anleitung und ist auf jedem Screen erreichbar — auch im Creator mit bestehenden Quests
 - [x] ~~Warum sind die Häufigen Fragen ausgeklappt statt als Accordion?~~ → Ursprünglich für bessere Auffindbarkeit durch KI-Systeme ausgeklappt. Annahme war falsch: Accordion-Inhalte stehen vollständig im HTML (Radix blendet sie nur per `hidden` aus) und das `FAQPage`-JSON-LD trägt die Antworten ohnehin. Zurück zum eingeklappten Accordion (2026-09-05)
@@ -341,6 +394,12 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] ~~Soll das Logo-Lockup ein freigestelltes PNG mit Alpha bekommen?~~ → **Ja, entschieden am 2026-09-20.** Als eigenes Refinement an **PROJ-1** geführt, weil das Lockup zum Startscreen gehört und `/about` es mitbenutzt — es ist dieselbe Datei, ein Austausch wirkt an beiden Stellen. Gemessen: Platte rgb(5–6,7–8,9–10) gegen Hintergrund rgb(11,15,18); Grund flach (Eckspanne 0,57 gegen 17,9 beim Pin), Histogramm-Tal bei Luminanz 25–48. Erprobt LO=13/HI=30 plus ein Flecken-Filter gegen **3884 Korn-Flecken** der Quelldatei — damit Rahmen-Abweichung **0** statt 144. Details und Messtabellen in PROJ-1
 - [x] ~~Braucht `/about` zusätzlich einen Footer mit Impressum/Datenschutz für Desktop-Besucher?~~ → Ja, entschieden am 2026-09-05: Footer auf allen Info-Seiten mit Kontakt und Rechtslinks; die Links verlassen dafür den Desktop-Header
 - [x] ~~Welche konkreten Angaben kommen ins Impressum?~~ → Vom Betreiber geliefert und eingetragen (2026-09-05)
+
+- [ ] Wohin wandert das eine Lime-Element der Seite, nachdem die Game-Designer-Karte entfällt (z. B. Live-Demo) — oder trägt die Seite keins? Am Bildschirm zu entscheiden (Refinement 12, 2026-10-15)
+- [ ] Bleibt die Hero-Karte als gerahmte Fläche (Refinement 9, Nachtrag 3) oder wird der Hero ohne Bild randlos dunkel? Am Bildschirm zu entscheiden (2026-10-15)
+- [ ] Soll das Open-Graph-Vorschaubild (`urbanquest.png`) durch den neuen App-Screenshot ersetzt werden? (2026-10-15)
+- [ ] Gibt es echte Stimmen von Testern (Eltern, Lehrkräfte), die später als Zitate auf die Seite dürfen — mit Einverständnis? Bis dahin keine Zitate (2026-10-15)
+- [ ] Welche Beispiel-Quest und welche Entfernung zeigt der Screenshot? Eine fiktive, aber plausible Station (kein realer privater Ort) (2026-10-15)
 
 ## Decision Log
 
@@ -420,12 +479,26 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 | Kinoformat-Karte mit unscharfem Rand statt „Text links, Video rechts" | Betreiber lehnte die zweispaltige Fassung ab. Aus drei Vorschlägen (zentriert gestapelt, Kinoformat, linksbündig) gewählt. Das Video bleibt unbeschnitten 4:5; die Ränder füllt dieselbe, bereits geladene Poster-Datei — kein zusätzlicher Download. Abdunklung 25 % statt zunächst 55 % (bei 55 % verschluckte sie den türkisen Schimmer, und die Videokante wirkte wie eine Stufe), dazu ein weicher Schatten um das Video, damit die Kante gewollt aussieht | 2026-09-28 |
 | Sektionsabstand wird Kante zu Kante gemessen, auch zwischen Hero und erster Sektion | Betreiber-Befund 2026-09-29: CTA → Video-Überschrift wirkte deutlich größer als Video → Karte (gemessen 176 gegen 80px). Bezugskante ist die **Unterkante der Hero-Bildkarte**, nicht der CTA: Die Karte hat eine sichtbare Kante, und ihr Innenabstand ist oben und unten symmetrisch. Verworfen: vom CTA aus 80px — dafür müsste der Innenabstand unter dem CTA fast ganz weg, die Karte wirkte unten abgeschnitten | 2026-09-29 |
 | Kompression/Zuschnitt der Videodatei liegt beim Betreiber, nicht im Scope dieses Refinements | Die Spec beschreibt die Einbindung (Poster, Lazy-Load, Format-Vorgaben), nicht die Bildbearbeitung selbst — der Betreiber liefert die web-optimierte Datei nach | 2026-09-28 |
+| `/about` richtet sich durchgehend an Eltern, Lehrkräfte und Jugendleitung; Kinder kommen nur noch über die Erwachsenen vor (Refinement 12) | Betreiber-Wunsch. Das PRD nennt die Erwachsenen als die Gruppe, die den Nutzen bewertet; die Seite sprang bisher zwischen zwei Tonlagen. Die Game-Designer-Idee bleibt als Nutzen für Lehrkräfte („Lass deine Klasse selbst eine Quest bauen"). Verworfen: Kinder als Nebenrolle behalten (Tonbruch bleibt), Kinder ganz streichen (verschweigt eine echte Möglichkeit) | 2026-10-15 |
+| Geo-Quest-Look bleibt, Aufbau und Inhalte kommen aus dem Betreiber-Entwurf | Vertrauen bei Eltern entsteht durch Inhalte (Datenschutz, Ablauf, Antworten), nicht durch Farbe. Ein heller Look nur für `/about` erzeugte beim Tap auf „Quest erstellen" den Eindruck eines anderen Produkts und widerspräche der PRD-Differenzierung „Gaming-Look statt Bildungs-Tool". Verworfen: heller Look nur für `/about`, neuer Look für die ganze App (eigenes Vorhaben) | 2026-10-15 |
+| Durchgehend „du" | Passt zur App, die durchgehend duzt; ein „Sie" auf `/about` und „du" ab dem ersten Tap wäre derselbe Bruch wie bei den Farben. Erwachsener wird der Ton durch Sachlichkeit, nicht durch die Anrede | 2026-10-15 |
+| App-Screenshot ersetzt das Hintergrundbild im Hero; `hero_new.png` wandert in die Abschluss-Sektion | Der Screenshot zeigt, was die Kinder in der Hand haben werden — für Eltern das stärkere Bild. Zwei Bilder übereinander konkurrieren, und ein dunkler Screenshot vor einer dunklen Illustration hebt sich schlecht ab; ein Handy vor dem Bild verdeckte genau Route und X, die Refinement 9 sichtbar machen sollte. Die Illustration geht nicht verloren. Motiv: Navigations-Screen mit Pfeil | 2026-10-15 |
+| Hero-Überschrift bleibt, darunter ein Absatz für Ersteller | Die Überschrift ist die Marke und trägt den Gaming-Look. Der neue Absatz nennt Anlass und Nutzen; der Spieler-Satz entfällt. „Werbung" statt „Abo" in der Preiszeile — für Eltern das stärkere Wort. Länge nicht größer als die bisherigen zwei Sätze (320×568 hat nur 39px Luft) | 2026-10-15 |
+| Neuer Aufbau: Hero → Vorteile → Video → Für wen → Schritte → Demo → FAQ → Abschluss | Vorteile und Zielgruppen rücken nach oben, weil sie beantworten, was Erwachsene zuerst prüfen. „Jeder Ort kann ein Level sein" und „Du bist der Game-Designer" entfallen — die Orte stecken in Zielgruppen und Schritten, die Game-Designer-Idee in der Schul-Karte | 2026-10-15 |
+| Zielgruppen als drei Karten statt Reiter; ohne „Kinder & Jugendliche", ohne Junggesellenabschiede | Reiter verstecken zwei von drei Inhalten und laufen auf dem Handy aus dem Bild; Karten sind alle sichtbar und für Suchmaschinen vollständig im HTML. Dritte Zielgruppe „Jugendarbeit & Ferienprogramm" statt „Gruppen & Events" — passt zu Jugendleitern aus dem PRD | 2026-10-15 |
+| Live-Demo mit allen drei Aufgabentypen, umschaltbar, aus den echten Player-Komponenten | Zeigt die Bandbreite und beantwortet nebenbei „Was kann ich einbauen?"; Sortieren ist für Lehrkräfte besonders interessant. Echte Komponenten statt Nachbau: was der Besucher probiert, sieht genau so aus wie beim Spielen. Verworfen: nur Multiple Choice (zeigt zu wenig), Mini-Quest mit mehreren Stationen (länger, ohne GPS fehlt das Laufen ohnehin) | 2026-10-15 |
+| Keine Standortabfrage, keine Punkte, kein gespeicherter Fortschritt in der Demo | Eine Landingpage, die nach dem Standort fragt, verschreckt genau die Zielgruppe, der Datenschutz wichtig ist. Punkte sind PRD-Non-Goal | 2026-10-15 |
+| FAQ mit acht Fragen, neu: Konto/App für Kinder, Standortdaten, ein Handy pro Kind, Internet unterwegs | Das sind die Fragen, die Eltern und Lehrkräfte vor dem Einsatz stellen. Antworten ehrlich: „anonym und ohne Cookies" statt „kein Tracking", „mobile Datenverbindung nötig" statt Offline-Versprechen | 2026-10-15 |
+| Nichts aus dem Entwurf, was die App nicht einlöst oder erfunden ist | Punkte, Tipp-Funktion, Teilen-Link/QR-Code, Offline, „1.000+ Quests", Zitate, „10–15 Minuten", „kein Tracking", „DSGVO-konform". Eine Landingpage, die mehr verspricht als die App hält, beschädigt genau das Vertrauen, das sie bei Eltern aufbauen soll. Echte Stimmen von Testern sind später möglich | 2026-10-15 |
+| Ko-fi und Kopfzeile bleiben unverändert, keine Sprungmarken | PRD: Unterstützung bewusst zurückhaltend; der Abschluss-CTA führt allein auf „Quest erstellen". Für Sprungmarken ist auf dem Handy kein Platz | 2026-10-15 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
 | Decision | Rationale | Date |
 |----------|-----------|------|
 | Abstandshalter nach dem Hero-Bild (`info-page-shell.tsx`, `h-10 sm:h-14`) entfällt; die erste Sektion trägt den Abstand selbst mit `mt-12 sm:mt-20` wie alle anderen | Der Befund war ein Stapel aus drei Abständen (56 Innenabstand + 56 Abstandshalter + 64 `sm:mt-16`). Mit einer einzigen Quelle für den Sektionsabstand kann er nicht wieder auseinanderlaufen. Der Abstandshalter wird nur bei `heroBackground` gerendert, das ausschließlich `/about` setzt — die anderen Info-Seiten sind nicht betroffen. Der Innenabstand der Hero-Karte bleibt | 2026-09-29 |
+| Demo nutzt `MultipleChoiceTask`, `CodeTask`, `SortingTask` unverändert und rendert sie erst im Browser (Refinement 12) | Die Komponenten sind in sich geschlossen (`solved`/`onSolved` als Props) und schreiben nichts in den Speicher — die Demo kann sie ohne Nachbau einbinden. `SortingTask` mischt im `useState`-Initialisierer; bei statischem Vorrendern mischten Server und Browser unterschiedlich → Hydration-Fehler. Client-only-Rendering der Demo hält `/about` statisch | 2026-10-15 |
+| Hero-Screenshot entsteht per eingechecktem Skript aus der echten App | Nach dem Muster des Video-Posters und der Icon-Skripte: reproduzierbar statt einmalig von Hand, nach jeder Design-Änderung neu erzeugbar, und garantiert ein echter Zustand der App statt eines Mockups | 2026-10-15 |
 | Zwei statische Seiten (`/about`, `/anleitung`) statt einer langen Seite | Bedienen zwei verschiedene Nutzer-Momente; getrennt kommt der Ersteller ohne Marketing-Scroll direkt zur Prompt-Vorlage. Bleiben trotzdem eine Spec, weil sie zusammen gebaut und deployed werden | 2026-09-04 |
 | Serverseitig gerenderte Seiten ohne Client-State | Beide Seiten sind reiner Inhalt ohne Zugriff auf Browser-Speicher; das erlaubt echte Meta-Tags für das Teilen und die schnellste Ladezeit | 2026-09-04 |
 | Nur der Kopieren-Button ist eine Client-Komponente | Kleinstmöglicher interaktiver Teil; der Prompt-Text selbst bleibt serverseitig gerendert und damit auch ohne JavaScript lesbar | 2026-09-04 |
@@ -2945,3 +3018,106 @@ Dazu ein Werkzeugbefund: Turbopack verweigert den Build mit per Symlink verlinkt
 **Live verifiziert:** Die Feature-Suite `tests/proj-13-about-video.spec.ts` lief direkt gegen die Live-Seite, zusammen mit den PROJ-3-Suiten **84 passed / 0 failed** (die `test.fail`-Wächter für BUG-17/18 schlagen wie vorgesehen an). Darin enthalten: alle Sektionsabstände einheitlich 48/80px, Hero-Karte symmetrisch, 0 MP4-Requests vor dem Klick, Abspielen, Fallback. Nachbarseiten `/anleitung`, `/impressum`, `/datenschutz` vor und nach dem Deploy **identisch** vermessen. Alle 12 Endpunkte HTTP 200, Video mit Range `206`, HSTS/`x-frame-options`/`nosniff` aktiv.
 
 **Weiter offen:** BUG-17 (Medium), BUG-18 (Low), Untertitel-Frage zur Tonspur.
+
+## Refinement 12 (2026-10-15) — `/about` für Eltern und Lehrkräfte
+
+**Anlass:** Betreiber: *„Ich möchte /about mehr auf die Zielgruppe Eltern, Lehrer abstimmen."* Dazu ein externer HTML-Entwurf als Richtung (heller Emerald/Amber-Look, Vorteile-Leiste, Zielgruppen als Reiter, Live-Demo, App-Mockup im Hero). Kommentar des Betreibers: Farben unsicher, Screenshot im Hero und Live-Demo „super", Junggesellenabschiede weglassen.
+
+### Befund an der bisherigen Seite
+Das PRD nennt die Erwachsenen als die Gruppe, die den Nutzen bewertet — die Seite sprach aber an mehreren Stellen Kinder und Spieler an:
+- Hero, Satz 2: „Nimm die Herausforderung an, spiele eine Quest …" — an den Spieler gerichtet
+- Karte „Deine Rolle": „Du bist der Game-Designer", „Deine Welt. Deine Regeln. Deine Herausforderungen." — Tonlage eines Jugendlichen
+- Zielgruppe „Für Kinder & Jugendliche": „überrasche deine Freunde"
+- Zielgruppen erst an fünfter Stelle
+
+Und es fehlte, was diese Gruppe fragt: Datenschutz (stand nur als „ohne Account"), Ablauf mit einer Gruppe (ein Handy pro Kind?), App-Installation, Internet unterwegs.
+
+### Was aus dem Entwurf übernommen wird — und was nicht
+| Übernommen | Nicht übernommen | Grund |
+|---|---|---|
+| App-Screenshot im Hero | heller Emerald/Amber-Look | Bruch beim Wechsel in die dunkle App; PRD-Differenzierung „Gaming-Look statt Bildungs-Tool" |
+| Vorteile-Leiste | Punkte („100 Pkt", „Punktevergabe") | PRD-Non-Goal: kein Punktesystem |
+| Zielgruppen weiter oben, mit Stichpunkten | Zielgruppen als Reiter | zwei von drei Inhalten versteckt, Reiter laufen auf dem Handy aus dem Bild |
+| Live-Demo | „Tipp-Funktion" | gibt es nicht |
+| FAQ aus Elternsicht | „Teilen per Link oder QR-Code" | Weitergabe läuft als Datei (PROJ-9) |
+| | „Funktioniert bei schlechtem Netz" | PRD-Non-Goal: kein Offline-Modus; Medien brauchen Internet |
+| | „1.000+ gespielte Quests", drei Zitate | erfunden — keine Erhebung, keine echten Stimmen |
+| | „10–15 Minuten" | Zeitangabe wurde 2026-09-17 bewusst gestrichen (PROJ-14) |
+| | „Kein Daten-Tracking", „DSGVO-konform" | Vercel Analytics zählt Besuche (cookiefrei); YouTube/Vimeo nach Tippen; „DSGVO-konform" ist eine Rechtsaussage |
+| | Unsplash-Stockfotos | Seite lädt bewusst keinen fremden Host |
+| | Ko-fi zusätzlich in Kopfzeile und Abschluss | PRD: Unterstützung bewusst zurückhaltend |
+| | Sprungmarken-Navigation in der Kopfzeile | kein Platz auf dem Handy, Seite kurz genug |
+| | Junggesellenabschiede/Teamevents | Betreiber-Wunsch; passt nicht zur Zielgruppe |
+| | Gemischtes „du"/„Sie" | Entscheidung: durchgehend „du" |
+
+### Neuer Aufbau
+| | Bisher | Neu |
+|---|---|---|
+| 1 | Hero mit Hintergrundbild | **Hero** mit App-Screenshot im Handy-Rahmen |
+| 2 | Erklärvideo | **Vier Vorteile** |
+| 3 | „Jeder Ort kann ein Level sein." | **Erklärvideo** (unverändert) |
+| 4 | „Nicht nur spielen. Selber machen." | **Für wen** (3 Karten) |
+| 5 | Drei Schritte | **Drei Schritte** (Texte korrigiert) |
+| 6 | Für wen (4 Karten) | **Live-Demo** |
+| 7 | FAQ | **FAQ** (8 Fragen) |
+| 8 | Abschluss | **Abschluss** mit `hero_new.png` als Hintergrund |
+
+### Copy (Ausgangsfassung, Wortlaut darf in `/frontend` nach Rücksprache feinjustiert werden)
+
+**Hero**
+- Überschrift unverändert: „Die reale Welt / wird **zum Spielfeld.**"
+- Absatz: „Erstelle GPS-Schnitzeljagden und Lernpfade für Kindergeburtstag, Schulklasse oder Familienausflug. Die Kinder laufen draußen von Station zu Station und lösen dabei Rätsel. Ohne Programmierwissen."
+- Preiszeile: „Kostenlos. Ohne Werbung. Ohne Anmeldung."
+- CTA unverändert: „Quest erstellen" → `/create` (zweiter CTA weiter an `ANLEITUNG_VERFUEGBAR` gebunden)
+- Screenshot: Navigations-Screen einer Beispiel-Quest (Pfeil, Entfernung, Stationsname), im CSS-Handy-Rahmen. Alt-Text z. B. „Geo Quest auf dem Handy: Ein Pfeil zeigt zur nächsten Station, 120 Meter entfernt."
+
+**Vier Vorteile** (Kicker „Warum Geo Quest")
+| Icon | Titel | Text |
+|---|---|---|
+| `ShieldCheck` | Datenschutz eingebaut | Keine Anmeldung, keine Werbung. Standort und Quests bleiben auf dem Gerät. |
+| `Footprints` | Bewegung statt Sofa | Bildschirmzeit, die nach draußen führt: laufen, suchen, Rätsel lösen. |
+| `Puzzle` | Einfacher Baukasten | Stationen auf der Karte setzen, Aufgaben hinzufügen. Kein Programmierwissen nötig. |
+| `Smartphone` | Läuft im Browser | Auf jedem aktuellen Smartphone, ohne App-Store und ohne Installation. |
+
+**Für wen** (Kicker „Für wen", Titel „Für wen ist Geo Quest?")
+| Karte | Satz | Stichpunkte |
+|---|---|---|
+| Familien | Mach aus Spaziergang, Ausflug oder Kindergeburtstag eine Schatzsuche. | Kindergeburtstag im Park oder Garten · Wandern ohne Nörgeln · Eigene Orte, eigenes Tempo |
+| Schule & Pädagogik | Bring den Unterricht nach draußen und verbinde Wissen mit echten Orten. | Wandertag und Exkursion mit Aufgaben · Keine Konten für Schülerinnen und Schüler · Lass deine Klasse selbst eine Quest bauen |
+| Jugendarbeit & Ferienprogramm | Für Gruppen, Ferienspiele und Freizeiten — eine Quest, die zu eurem Ort passt. | Ferienspiele und Zeltlager · Stadtrallye für Jugendgruppen · Mehrere Gruppen mit derselben Quest |
+
+**Drei Schritte** (Titel unverändert „Eine Quest erstellen? Ganz einfach.")
+1. **Ort wählen & Stationen setzen** — Setze im Creator die Stationen auf der Karte, ob Park, Schulhof oder Waldweg.
+2. **Aufgaben hinzufügen** — Gib jeder Station Text, Bilder, Audio oder Video und eine Aufgabe: Multiple Choice, Code oder Sortieren.
+3. **Weitergeben & losspielen** — Gib die Quest als Datei an die Handys der Spieler weiter. Der GPS-Pfeil führt von Station zu Station.
+
+**Live-Demo** (Kicker „Selbst ausprobieren", Titel „So fühlt sich eine Station an.")
+- Text: „Das sind echte Aufgaben aus Geo Quest. Beim Spielen erscheinen sie erst, wenn die Gruppe an der Station angekommen ist."
+- Multiple Choice: „Welches Tier kann seinen Kopf fast ganz nach hinten drehen?" — Eichhörnchen · **Eule** · Igel
+- Code: „Zähle die Beine einer Spinne. Wie viele sind es?" — **8**
+- Sortieren: „Bring die Entwicklung des Frosches in die richtige Reihenfolge." — Laich → Kaulquappe → Kaulquappe mit Beinen → Frosch
+
+**FAQ** (Kicker „Häufige Fragen", Titel „Antworten für Eltern und Lehrkräfte")
+1. **Was kostet Geo Quest?** — Geo Quest ist vollständig kostenlos und werbefrei. Es gibt kein Abo, keine Testphase und keine Begrenzung der Quests. Wer das Projekt unterstützen möchte, kann das freiwillig über Ko-fi tun.
+2. **Brauchen die Kinder ein Konto oder eine App?** — Nein. Geo Quest läuft im Browser jedes aktuellen Smartphones, eine Installation aus dem App Store ist nicht nötig. Wer möchte, legt die App auf den Homescreen. Niemand muss sich anmelden oder eine E-Mail-Adresse angeben.
+3. **Was passiert mit den Standortdaten?** — Der Standort wird nur auf dem Handy verarbeitet, um die Entfernung zur nächsten Station zu berechnen, und nicht an einen Server geschickt. Quests und Spielstand liegen im Browser des Geräts. Die Seite zählt Besuche anonym und ohne Cookies.
+4. **Braucht jedes Kind ein eigenes Handy?** — Nein. Eine Gruppe kann sich ein Handy teilen. Spielen mehrere Gruppen, lädt jede die Quest-Datei auf ihr Gerät — jedes Handy führt seinen eigenen Spielstand.
+5. **Braucht man unterwegs Internet?** — Ja, die Handys brauchen eine mobile Datenverbindung, vor allem für Bilder, Audio und Videos in den Stationen. Für ein gutes GPS-Signal hilft freier Himmel; zwischen hohen Häusern oder unter dichtem Laub wird die Ortung ungenauer.
+6. **Für welches Alter ist das gedacht?** — unverändert
+7. **Wie erstelle ich eine Quest?** — unverändert (ohne Zeitangabe)
+8. **Was kann ich in eine Quest einbauen?** — gekürzt: „Jede Station kann Text, Bild, Audio, Video und eine Aufgabe kombinieren: einen Code eintippen, Multiple Choice oder Elemente sortieren. Weiter geht es erst, wenn die Aufgabe gelöst ist."
+
+**Abschluss** — Überschrift unverändert „Deine Umgebung. Dein Abenteuer.", darunter „Erstelle jetzt kostenlos deine erste Quest." und „Keine Werbung. Keine Anmeldung. Einfach draußen spielen.", CTA „Quest erstellen". `hero_new.png` als Hintergrund mit Abdunklung, Kontrast ≥ 4.5:1.
+
+**Metadaten** — Beschreibung z. B. „GPS-Schnitzeljagd und Lernpfade selbst erstellen — für Kindergeburtstag, Schulklasse und Familienausflug. Kostenlos, werbefrei, ohne Anmeldung." „Schnitzeljagd" bleibt in Titel, Keywords und JSON-LD.
+
+### Für `/frontend`
+- **Sortier-Aufgabe mischt im `useState`-Initialisierer** (`sorting-task.tsx:36-39`). `/about` wird statisch vorgerendert — Server und Browser würden unterschiedlich mischen → Hydration-Fehler. Die Demo muss die Aufgabe erst im Browser rendern (z. B. nach dem Mount oder per `next/dynamic` mit `ssr: false`), `/about` selbst muss statisch bleiben
+- Die Demo nutzt die Aufgaben-Komponenten **unverändert** (`src/components/modules/`); `solved`-State lebt in der Demo, `onSolved` schreibt nichts in `localStorage`. Kein Nachbau
+- **Screenshot per eingechecktem Skript** aus der echten App (Playwright gegen den Production-Build, feste Beispiel-Quest und Position), nach dem Muster des Video-Posters — neu erzeugbar nach jeder Design-Änderung. Ausgabe als optimiertes Bild unter `public/assets/`
+- `heroBackground` wandert von der Hero-Karte in die Abschluss-Sektion; prüfen, ob die Prop in `InfoPageShell` noch gebraucht wird oder die Abschluss-Sektion das Bild selbst setzt. Hero-Layout ab `lg` zweispaltig (Text / Handy)
+- **Tests, die absichtlich falsch werden** und zu **ziehen, nicht zu löschen** sind: Hero-Hintergrund und Kontrast-Wächter aus Refinement 9 (gelten jetzt für die Abschluss-Sektion), Sektionszählung/Reihenfolge aus Refinement 4/10, Copy-Assertions („Nimm die Herausforderung an", „Draußen ist das Game.", „Du bist der Game-Designer", „Für Kinder & Jugendliche", FAQ-Fragen), Rhythmus-Test aus Refinement 11
+- **Bleiben unangetastet:** BUG-7-Wächter (CTA über dem Falz, elf Viewports), Video-Tests (0 MP4 vor dem Klick, Abspielen, Fallback), Kopfzeilen-/Ko-fi-Tests, Nachbarseiten
+- **Neue Wächter:** Demo ohne `localStorage`-Schreibzugriff und ohne Geolocation-Aufruf; kein Hydration-Fehler in der Konsole; FAQ sichtbar == JSON-LD; Verbotsliste (Punkte, QR-Code, Junggesellenabschied, „Sie") nicht im Seitentext
+- Design System: nur **ein** Lime-Element pro Screen. Bisher trug die Game-Designer-Karte Lime; sie entfällt — wohin das eine Lime-Element wandert (oder ob keins), ist am Bildschirm zu entscheiden (Open Question)
+- **BUG-15** (23 Pixel hinter „ZUM SPIELFELD" auf 320×568) entfällt mit dem Hintergrundbild; in der QA als erledigt prüfen. BUG-17/BUG-18 (Video) sind unberührt

@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 | PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Deployed | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
 
@@ -568,6 +568,19 @@ Alle **10 Endpunkte HTTP 200** (0,06–0,44 s), Security-Header inkl. HSTS. Nach
 **Eine Auffälligkeit geprüft statt weggewunken:** Chrome meldete 3 Konsolenfehler, beide Engines 2 fehlgeschlagene Requests. Ein ruhiger Besuch von `/`, `/play`, `/create` und `/about` ergibt **0 Antworten ≥400** — die 404 stammen aus `/play/<id>`, das serverseitig 404 liefert, weil Quests nur im localStorage liegen. Vorbestehend seit dem 2026-09-07, für den Nutzer unsichtbar.
 
 **PROJ-3 ist abgeschlossen.** Offen bleibt allein die Bestätigung am echten iPhone: Quest mittendrin abbrechen, GPS ausschalten, später wieder öffnen und auf den Pfeil einer offenen Station tippen. Keine Testumgebung kann Safaris tatsächliches Verhalten beim Permissions-API beweisen — und genau dort wurde der Befund gemeldet.
+
+## Offenes Refinement 12: `/about` für Eltern und Lehrkräfte (2026-10-15)
+**PROJ-13** geht von Deployed zurück auf In Progress. Betreiber: *„Ich möchte /about mehr auf die Zielgruppe Eltern, Lehrer abstimmen."* Als Richtung kam ein externer HTML-Entwurf (hell, grün, Zielgruppen-Reiter, Live-Demo, App-Screenshot im Hero).
+
+**Befund:** Die Seite sprach an mehreren Stellen Kinder und Spieler an („Nimm die Herausforderung an", „Du bist der Game-Designer", Zielgruppe „Kinder & Jugendliche"), und es fehlte, was Eltern und Lehrkräfte fragen: Datenschutz, ein Handy pro Kind, App-Installation, Internet unterwegs.
+
+**Entschieden (alle Punkte vom Betreiber bestätigt):** Die Seite spricht nur noch Erwachsene an, Kinder kommen über sie vor („Lass deine Klasse selbst eine Quest bauen"). **Geo-Quest-Look und „du" bleiben**, kein heller Look, kein „Sie". Neuer Aufbau: Hero mit **echtem App-Screenshot** (Navigations-Screen) statt Hintergrundbild → vier Vorteile → Erklärvideo → drei Zielgruppen-Karten (Familien · Schule & Pädagogik · Jugendarbeit & Ferienprogramm, keine Reiter) → drei Schritte → **Live-Demo mit den echten Aufgaben-Komponenten**, alle drei Typen umschaltbar → FAQ mit acht Fragen aus Elternsicht → Abschluss mit `hero_new.png` als Hintergrund. Hero-Überschrift bleibt, darunter ein Absatz für Ersteller und „Kostenlos. Ohne Werbung. Ohne Anmeldung."
+
+**Aus dem Entwurf bewusst nicht übernommen**, weil die App es nicht einlöst oder es erfunden wäre: Punkte (PRD-Non-Goal), Tipp-Funktion, Teilen per Link/QR-Code, „funktioniert bei schlechtem Netz", „1.000+ gespielte Quests", Kundenstimmen, „10–15 Minuten", „kein Tracking", „DSGVO-konform", Stockfotos, zusätzliche Ko-fi-Buttons, Sprungmarken, Junggesellenabschiede.
+
+**Für `/frontend` vorab benannt:** `SortingTask` mischt im `useState`-Initialisierer — auf der statisch vorgerenderten `/about` gäbe das einen Hydration-Fehler; die Demo muss client-only rendern, `/about` bleibt statisch. Screenshot per eingechecktem Skript aus der echten App. Viele Copy-, Zählungs- und Hero-Hintergrund-Tests werden absichtlich falsch und sind zu ziehen, nicht zu löschen; BUG-7-Wächter und Video-Tests bleiben unangetastet. **BUG-15 entfällt** mit dem Hintergrundbild.
+
+Spec ist aktualisiert (31 Acceptance Criteria in einem eigenen Block, 12 Produkt- und 2 technische Entscheidungen, 4 Out-of-Scope-Einträge, 2 geschlossene und 5 neue Open Questions, Abschnitt „Refinement 12" mit vollständiger Copy). **Noch nicht gebaut.**
 
 ## Next Available ID: PROJ-16
 
