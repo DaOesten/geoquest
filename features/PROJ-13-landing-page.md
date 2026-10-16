@@ -1,7 +1,7 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Approved
-_**Refinement 12 (2026-10-15): `/about` spricht Eltern und Lehrkräfte an.** Betreiber: *„Ich möchte /about mehr auf die Zielgruppe Eltern, Lehrer abstimmen."* Als Richtung lieferte er einen externen HTML-Entwurf (hell, grün, Reiter, Live-Demo, App-Screenshot im Hero). Entschieden: Aufbau und Inhalte in diese Richtung, **Geo-Quest-Look und „du" bleiben**, Kinder werden nur noch über die Erwachsenen angesprochen. Neu: App-Screenshot statt Hintergrundbild im Hero, Vorteile-Leiste, drei Zielgruppen-Karten, Live-Demo mit echten Aufgaben-Bausteinen, FAQ aus Elternsicht. Entfallen: „Jeder Ort kann ein Level sein", „Du bist der Game-Designer", die Zielgruppe „Kinder & Jugendliche". Alles, was die App nicht einlöst oder erfunden wäre (Punkte, Tipps, Teilen-Link, Offline, Nutzerzahlen, Kundenstimmen, Zeitangabe), wurde aus dem Entwurf **nicht** übernommen. Siehe Abschnitt „Refinement 12" am Ende. **Frontend umgesetzt am 2026-10-15** — CTA auf 11 Viewports über dem Falz, Abschluss-Kontrast pro Pixel ≥ 4.86:1, PROJ-13 282/0, Gegenprobe gegen den Vorgänger: 82 Tests fallen. Siehe „Implementation Notes (Frontend — Refinement 12)". **QA am 2026-10-15: 31/31 Acceptance Criteria, 1 Low-Bug (BUG-22), Production-Ready — Approved.**_
+## Status: Deployed
+_**Refinement 12 (2026-10-15): `/about` spricht Eltern und Lehrkräfte an.** Betreiber: *„Ich möchte /about mehr auf die Zielgruppe Eltern, Lehrer abstimmen."* Als Richtung lieferte er einen externen HTML-Entwurf (hell, grün, Reiter, Live-Demo, App-Screenshot im Hero). Entschieden: Aufbau und Inhalte in diese Richtung, **Geo-Quest-Look und „du" bleiben**, Kinder werden nur noch über die Erwachsenen angesprochen. Neu: App-Screenshot statt Hintergrundbild im Hero, Vorteile-Leiste, drei Zielgruppen-Karten, Live-Demo mit echten Aufgaben-Bausteinen, FAQ aus Elternsicht. Entfallen: „Jeder Ort kann ein Level sein", „Du bist der Game-Designer", die Zielgruppe „Kinder & Jugendliche". Alles, was die App nicht einlöst oder erfunden wäre (Punkte, Tipps, Teilen-Link, Offline, Nutzerzahlen, Kundenstimmen, Zeitangabe), wurde aus dem Entwurf **nicht** übernommen. Siehe Abschnitt „Refinement 12" am Ende. **Frontend umgesetzt am 2026-10-15** — CTA auf 11 Viewports über dem Falz, Abschluss-Kontrast pro Pixel ≥ 4.86:1, PROJ-13 282/0, Gegenprobe gegen den Vorgänger: 82 Tests fallen. Siehe „Implementation Notes (Frontend — Refinement 12)". **QA am 2026-10-15: 31/31 Acceptance Criteria, 1 Low-Bug (BUG-22), Production-Ready.** **Am 2026-10-16 nach Production deployt** (Tag `v1.46.0-PROJ-13`)._
 
 _**Refinement 11 (2026-09-29): Abstand Hero → Video-Sektion.** Betreiber nach dem Deploy: zwischen CTA und Video-Überschrift ist deutlich mehr Abstand als zwischen Video und erster Karte. Gemessen live: 176px gegen 80px (mobil 112 gegen 48). Entschieden: Kante zu Kante überall dasselbe Maß. **Frontend umgesetzt und QA-geprüft am 2026-09-29** — 6/6 Acceptance Criteria, keine Bugs. Approved._
 
@@ -11,7 +11,7 @@ _Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und d
 
 _**Refinement 7 (2026-09-20): Das Logo-Lockup kehrt auf den Desktop zurück.** Betreiber-Befund: „ich kann auf /about auf dem desktop das Logo nicht mehr sehen." **Frontend umgesetzt am 2026-09-21** — `lg:hidden` entfernt; CTA auf allen elf Viewports über dem Falz nachgemessen, knappster Fall 1366×768 mit 45px. Siehe Implementation Notes._
 **Created:** 2026-09-04
-**Last Updated:** 2026-10-15 (Refinement 12 QA-geprüft — `/about` für Eltern und Lehrkräfte)
+**Last Updated:** 2026-10-16 (Refinement 12 deployt — `/about` für Eltern und Lehrkräfte)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -3237,3 +3237,21 @@ Vollständig bedienbar: Reiter per Pfeiltaste (Links/Rechts, umlaufend), Antwort
 - **Security:** ohne Befund
 - **Production Ready:** YES
 - **Recommendation:** Deploy; BUG-22 bei Gelegenheit
+
+## Deployment — Refinement 12: `/about` für Eltern und Lehrkräfte (2026-10-16)
+
+**Live auf https://geoquest.technolomagie.de/about** (und https://geoquesty.vercel.app/about), Tag `v1.46.0-PROJ-13`, Push `e0e1049..5fb97d3` — genau die drei PROJ-13-Commits (Spec, Frontend, QA), nichts Fremdes. Vercel deployte automatisch von `main`, **live nach 67 Sekunden**, belegt am neuen Screenshot `about-hero-navigation.png`, der vorher 404 lieferte.
+
+**Vorab:** Build und Lint sauber, QA Approved ohne Critical/High, keine Secrets (versioniert nur `.env.local.example`), kein Datenbank-Anteil.
+
+**Live verifiziert:**
+- Screenshot **byte-identisch** zum Repo; alle **22 Endpunkte** auf beiden Domains HTTP 200 (0,07–0,49 s); HSTS, `x-frame-options: DENY`, `nosniff` aktiv
+- Die eigene Domain liefert die neue Fassung (FAQ-Titel „Antworten für Eltern und Lehrkräfte" vorhanden, Spieler-Satz „Nimm die Herausforderung" 0×)
+- **PROJ-13-Feature-Suiten direkt gegen Production**, seriell je Engine: Chrome **106 passed / 1 failed**, Mobile Safari **105 passed / 1 skipped / 1 failed**. Darin enthalten: Demo ohne `localStorage`-Schreibzugriff und ohne Geolocation, kein Hydration-Fehler, FAQ == JSON-LD durch Aufklappen, Abschluss-Kontrast pro Pixel, CTA über dem Falz, alle Video-Tests
+- **Der eine Fehlschlag ist ein Test-Artefakt:** „die Seite lädt keine fremden Hosts nach" zählt jeden Host außer `localhost` als fremd — gegen Production also die eigene Domain. Nachgemessen fragt `/about` in beiden Engines **ausschließlich `geoquest.technolomagie.de`** an, auch nach Scrollen bis zum Ende
+- Konsole: WebKit 0 Fehler; Chrome 1 × 404 — `/favicon.ico`, vorbestehend seit 2026-09-19; die Seite selbst erzeugt **0 Antworten ≥ 400**
+- Am Bildschirm abgenommen (iPhone 13, WebKit): Hero mit neuem Absatz, Preiszeile, CTA und Screenshot darunter; Demo-Aufgabe live gelöst
+
+**Mit live gegangen, bekannt:** BUG-22 (Low, leerer Rahmen bei ausgefallenem Bild), BUG-17 (Medium) und BUG-18 (Low) beim Erklärvideo.
+
+**Offen:** Firefox ungetestet; der Test „keine fremden Hosts" sollte statt `localhost` die Origin der `baseURL` erlauben, damit er auch gegen Production aussagekräftig läuft.

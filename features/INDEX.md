@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | Approved | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 | PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Deployed | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
 
@@ -605,6 +605,8 @@ Spec ist aktualisiert (31 Acceptance Criteria in einem eigenen Block, 12 Produkt
 **Gesamtsuite beider Engines 1433 passed / 0 failed / 0 flaky**, Unit 427/427. **Firefox weiter ungetestet:** Ein Installationsversuch hing beim Entpacken bei 888 KB (dasselbe Muster wie die Chromium-Ruine), abgebrochen und entfernt; der Cache ist im Ausgangszustand.
 
 **Für künftige Läufe:** Ein Tastatur-Test mit fester 150-ms-Pause bestand einzeln und fiel unter Last. Radix wählt per Pfeiltaste erst ab ~100 ms Tastenabstand aus und nur nach echtem Tab-Fokus — Tests nutzen deshalb Pfeiltaste + Leertaste.
+
+**Am 2026-10-16 nach Production deployt** (Tag `v1.46.0-PROJ-13`, Push `e0e1049..5fb97d3`) — live auf https://geoquest.technolomagie.de/about nach 67 s, belegt am neuen Screenshot (vorher 404, jetzt 200 und byte-identisch). 22 Endpunkte auf beiden Domains HTTP 200, Security-Header aktiv. **PROJ-13-Suiten direkt gegen Production: Chrome 106/1, Mobile Safari 105/1** — der eine Fehlschlag je Engine ist der Test „keine fremden Hosts", der nur `localhost` erlaubt; nachgemessen fragt `/about` ausschließlich die eigene Domain an. WebKit 0 Konsolenfehler, Chrome nur der bekannte `/favicon.ico`-404. Demo live gelöst, am iPhone-Bildschirm abgenommen. **PROJ-13 ist abgeschlossen.** Offen: BUG-22 (Low), BUG-17/18 (Video), Firefox, und der Hosts-Test sollte die Origin der `baseURL` erlauben.
 
 ## Next Available ID: PROJ-16
 
