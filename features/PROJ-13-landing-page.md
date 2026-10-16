@@ -1,7 +1,7 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
 ## Status: Approved
-_**Refinement 13 (2026-10-16): Handy-Visual im Hero animiert, Live-Demo wird zur Quest-Simulation im Handy.** Betreiber nach dem Handy-Test der neuen `/about`: Das Hero-Visual soll mehr nach Handy aussehen und drei Screens zeigen (Stationsübersicht, Kompass, „Ziel erreicht“); die Demo soll eine komplette Quest in einem Handy-Screen simulieren. Entschieden: Die Screens laufen **einmal** durch und bleiben auf dem Kompass stehen (Design-System-Regel „keine Ambient-Loops“), danach von Hand weiterblättern; ein **neutrales Handy in CSS** für beide Stellen; in der Simulation läuft man per Knopf „Hinlaufen“ zur Station; Inhalt vorerst „Das Waldgeheimnis“ (Betreiber bessert später nach), Station 2 mit dem CC0-Foto „Manor Park Aldershot Pond“. Siehe Abschnitt „Refinement 13“ am Ende. **Frontend umgesetzt am 2026-10-16** — Simulation im iframe, Hero läuft einmal durch und bleibt auf dem Kompass; die Ausnahme von der Sicherheitsregel (`X-Frame-Options: SAMEORIGIN` nur für `/about/simulation`) ist vom Betreiber freigegeben. Siehe „Implementation Notes (Frontend — Refinement 13)“. **QA am 2026-10-16: 22/22 Acceptance Criteria, 2 Low-Bugs (BUG-23, BUG-24), Production-Ready — Approved.**_
+_**Refinement 13 (2026-10-16): Handy-Visual im Hero animiert, Live-Demo wird zur Quest-Simulation im Handy.** Betreiber nach dem Handy-Test der neuen `/about`: Das Hero-Visual soll mehr nach Handy aussehen und drei Screens zeigen (Stationsübersicht, Kompass, „Ziel erreicht“); die Demo soll eine komplette Quest in einem Handy-Screen simulieren. Entschieden: Die Screens laufen **einmal** durch und bleiben auf dem Kompass stehen (Design-System-Regel „keine Ambient-Loops“), danach von Hand weiterblättern; ein **neutrales Handy in CSS** für beide Stellen; in der Simulation läuft man per Knopf „Hinlaufen“ zur Station; Inhalt vorerst „Das Waldgeheimnis“ (Betreiber bessert später nach), Station 2 mit dem CC0-Foto „Manor Park Aldershot Pond“. Siehe Abschnitt „Refinement 13“ am Ende. **Frontend umgesetzt am 2026-10-16** — Simulation im iframe, Hero läuft einmal durch und bleibt auf dem Kompass; die Ausnahme von der Sicherheitsregel (`X-Frame-Options: SAMEORIGIN` nur für `/about/simulation`) ist vom Betreiber freigegeben. Siehe „Implementation Notes (Frontend — Refinement 13)“. **QA am 2026-10-16: 22/22 Acceptance Criteria, 2 Low-Bugs, Production-Ready — Approved.** BUG-24 am 2026-10-17 behoben, BUG-23 offen._
 
 _**Refinement 12 (2026-10-15): `/about` spricht Eltern und Lehrkräfte an.** Betreiber: *„Ich möchte /about mehr auf die Zielgruppe Eltern, Lehrer abstimmen."* Als Richtung lieferte er einen externen HTML-Entwurf (hell, grün, Reiter, Live-Demo, App-Screenshot im Hero). Entschieden: Aufbau und Inhalte in diese Richtung, **Geo-Quest-Look und „du" bleiben**, Kinder werden nur noch über die Erwachsenen angesprochen. Neu: App-Screenshot statt Hintergrundbild im Hero, Vorteile-Leiste, drei Zielgruppen-Karten, Live-Demo mit echten Aufgaben-Bausteinen, FAQ aus Elternsicht. Entfallen: „Jeder Ort kann ein Level sein", „Du bist der Game-Designer", die Zielgruppe „Kinder & Jugendliche". Alles, was die App nicht einlöst oder erfunden wäre (Punkte, Tipps, Teilen-Link, Offline, Nutzerzahlen, Kundenstimmen, Zeitangabe), wurde aus dem Entwurf **nicht** übernommen. Siehe Abschnitt „Refinement 12" am Ende. **Frontend umgesetzt am 2026-10-15** — CTA auf 11 Viewports über dem Falz, Abschluss-Kontrast pro Pixel ≥ 4.86:1, PROJ-13 282/0, Gegenprobe gegen den Vorgänger: 82 Tests fallen. Siehe „Implementation Notes (Frontend — Refinement 12)". **QA am 2026-10-15: 31/31 Acceptance Criteria, 1 Low-Bug (BUG-22), Production-Ready.** **Am 2026-10-16 nach Production deployt** (Tag `v1.46.0-PROJ-13`)._
 
@@ -3420,12 +3420,13 @@ Betreiber nach dem Test: *„In der Simulation wird bei allen 3 Stationen sehr l
 - **Folgen:** selten — die Route kommt vom eigenen Server; tritt bei Netzabbruch, strengen Content-Blockern oder einem künftigen Header-Fehler auf
 - **Priority:** Nice to have
 
-#### BUG-24: Inaktive Punkte unter dem Hero-Handy unter 3:1 Kontrast
+#### BUG-24: Inaktive Punkte unter dem Hero-Handy unter 3:1 Kontrast — behoben am 2026-10-17
 - **Severity:** Low
 - **Steps to Reproduce:** `/about` öffnen, die beiden nicht aktiven Punkte messen
 - **Erwartet:** mindestens 3:1 gegen den Seitengrund (WCAG 1.4.11, Bedienelemente)
 - **Tatsächlich:** **2.8:1** (`bg-gq-grey/50` auf `#0B0F12`), der aktive Punkt 11.53:1. Die Knöpfe sind per `aria-label` beschriftet, die Bedienung hängt nicht allein an der Farbe
 - **Priority:** Fix in next sprint — `test.fail`-Wächter vorhanden
+- **Behoben am 2026-10-17** (Betreiber-Wunsch vor dem Deploy): `bg-gq-grey/50` → `bg-gq-grey/70`, gemessen **4.39:1** (60 % hätte mit 3.52:1 zu knapp an der Grenze gelegen). Hover bleibt volles Grau. Der Wächter ist vom `test.fail` zum normalen Test geworden; PROJ-13-Simulations- und QA-Datei danach **125 passed / 0 failed**
 
 #### BUG-22 (Low, vorbestehend): verbessert, nicht behoben
 Fällt ein Hero-Screen aus, hält der Rahmen jetzt in beiden Engines dieselbe Höhe (411px statt eines Sprungs auf ein Quadrat in WebKit). WebKit zeigt aber weiterhin das Fragezeichen-Symbol im dunklen Bildschirm.
@@ -3453,7 +3454,7 @@ Fällt ein Hero-Screen aus, hält der Rahmen jetzt in beiden Engines dieselbe H�
 
 ### Summary
 - **Acceptance Criteria:** 22/22
-- **Bugs:** 2 neu (0 critical, 0 high, 0 medium, 2 low — BUG-23, BUG-24); BUG-22 verbessert
+- **Bugs:** 2 neu (0 critical, 0 high, 0 medium, 2 low — BUG-23 offen, BUG-24 behoben); BUG-22 verbessert
 - **Security:** ohne Befund; die freigegebene `SAMEORIGIN`-Ausnahme wirkt wie beschrieben
 - **Production Ready:** YES
 - **Recommendation:** Deploy; BUG-24 (ein Farbwert) und BUG-23 bei Gelegenheit

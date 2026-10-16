@@ -115,7 +115,9 @@ export function AboutHeroPhone() {
           >
             <span
               className={`block h-2 rounded-full transition-all duration-300 ease-gq ${
-                shown === i ? "w-6 bg-gq-teal" : "w-2 bg-gq-grey/50 group-hover:bg-gq-grey"
+                // /70 statt /50 (BUG-24): 4.39:1 gegen den Seitengrund statt
+                // 2.8:1 — WCAG 1.4.11 verlangt für Bedienelemente 3:1.
+                shown === i ? "w-6 bg-gq-teal" : "w-2 bg-gq-grey/70 group-hover:bg-gq-grey"
               }`}
             />
           </button>

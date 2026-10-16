@@ -701,10 +701,10 @@ test.describe("QA Refinement 13", () => {
     );
   });
 
-  // BUG-24 (Low): Inaktive Punkte erreichen nur 2.8:1 gegen den Seitengrund —
-  // WCAG 1.4.11 verlangt für Bedienelemente 3:1. `test.fail`, bis behoben;
-  // schlägt an, falls der Fehler unbemerkt verschwindet oder wiederkehrt.
-  test.fail("inaktive Punkte erreichen mindestens 3:1 Kontrast (BUG-24)", async ({ page }) => {
+  // BUG-24, behoben am 2026-10-17: Inaktive Punkte erreichten nur 2.8:1 gegen
+  // den Seitengrund — WCAG 1.4.11 verlangt für Bedienelemente 3:1. Jetzt
+  // `bg-gq-grey/70`, gemessen 4.39:1. Vom `test.fail`-Wächter zum normalen Test.
+  test("inaktive Punkte erreichen mindestens 3:1 Kontrast (BUG-24)", async ({ page }) => {
     await page.goto("/about");
     const ratio = await page.evaluate(() => {
       const parse = (s: string) => (s.match(/[\d.]+/g) ?? []).map(Number);
