@@ -119,9 +119,10 @@ test.describe("Sektionsfolge", () => {
     // Nur die Sektions-Titel, nicht die FAQ-Trigger (die ebenfalls h3 sind).
     // `allInnerTexts` liefert den gerenderten Text, und der Display-Schnitt
     // ist per CSS Uppercase — daher der Vergleich in Großschreibung.
-    const headings = await page
-      .locator("main section > h3, main section > div > h3")
-      .allInnerTexts();
+    // Titel = das h3 direkt nach dem Kicker-h2. Seit Refinement 13 sitzt der
+    // Simulationstitel eine Ebene tiefer (Spalte neben dem Handy); die
+    // FAQ-Trigger sind ebenfalls h3, folgen aber nie direkt auf ein h2.
+    const headings = await page.locator("main section h2 + h3").allInnerTexts();
 
     // Kleingeschrieben verglichen und ß/SS vereinheitlicht: Die Engines
     // setzen „draußen" in Uppercase unterschiedlich um.
@@ -131,7 +132,8 @@ test.describe("Sektionsfolge", () => {
       "so funktioniert geo quest.",
       "für wen ist geo quest?",
       "eine quest erstellen? ganz einfach.",
-      "so fühlt sich eine station an.",
+      // Seit Refinement 13 eine ganze Quest im Handy statt einzelner Aufgaben.
+      "so fühlt sich eine quest an.",
       "antworten für eltern und lehrkräfte",
     ]);
 

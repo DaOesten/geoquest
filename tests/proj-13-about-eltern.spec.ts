@@ -35,119 +35,320 @@ async function instrument(page: Page) {
   });
 }
 
-function demo(page: Page) {
-  return page.locator("main section", {
-    has: page.getByRole("heading", { name: "So fühlt sich eine Station an." }),
-  });
+// Gezogen in Refinement 13 (2026-10-16): Der Block „Live-Demo" (drei
+// Aufgaben-Reiter) ist durch die Quest-Simulation im Handy ersetzt. Seine
+// Zusicherungen — echte Aufgaben, falsch/richtig wie beim Spielen, kein
+// Speicher, kein Standort, keine Punkte, kein Hydration-Fehler — gelten jetzt
+// für die Simulation und stehen hier.
+const SIM = "iframe[title^='Simulation']";
+
+/** Das iframe der Quest-Simulation (Refinement 13). */
+function sim(page: Page) {
+  return page.frameLocator(SIM);
 }
 
-test.describe("Live-Demo", () => {
-  test("startet mit Multiple Choice und bietet drei Aufgabentypen", async ({ page }) => {
-    await page.goto("/about");
-    const d = demo(page);
+async function openSimulation(page: Page) {
+  await page.goto("/about");
+  await page.locator(SIM).scrollIntoViewIfNeeded();
+  await expect(sim(page).getByRole("button", { name: /Los geht/ })).toBeVisible();
+}
 
-    await expect(d.getByRole("tab")).toHaveCount(3);
-    await expect(d.getByRole("tab", { name: "Multiple Choice" })).toHaveAttribute(
-      "aria-selected",
-      "true"
-    );
-    await expect(d.getByText("Welches Tier kann seinen Kopf fast ganz nach hinten drehen?")).toBeVisible();
-    await expect(d.getByRole("radio")).toHaveCount(3);
+/** Läuft per „Hinlaufen" zur Station und öffnet ihre Inhalte. */
+async function walkTo(page: Page, station: string) {
+  const f = sim(page);
+  await f.getByRole("button", { name: new RegExp(station) }).first().click();
+  await f.getByRole("button", { name: "Hinlaufen" }).click();
+  await expect(f.getByText("Ziel erreicht!")).toBeVisible({ timeout: 8000 });
+  await f.getByRole("button", { name: /Station entdecken/i }).click();
+}
+
+/**
+ * Sortiert die Frosch-Aufgabe per Maus in die richtige Reihenfolge. Gegriffen
+ * wird am Handle, in kleinen Schritten — `dragTo` sendet für dnd-kit zu wenige
+ * Zwischenschritte (siehe `tests/proj-4-player-modul-rendering.spec.ts`).
+ */
+async function solveSorting(page: Page) {
+  const f = sim(page);
+  const target = ["Laich", "Kaulquappe", "Kaulquappe mit Beinen", "Frosch"];
+  const rows = f.locator('div:has(> button[aria-label$="verschieben"])');
+  for (let pass = 0; pass < 8; pass++) {
+    const order = (await rows.allInnerTexts()).map((t) => t.trim());
+    const wrong = order.findIndex((t, i) => t !== target[i]);
+    if (wrong === -1) break;
+    const from = order.indexOf(target[wrong]);
+    await rows.nth(from).scrollIntoViewIfNeeded();
+    const handle = (await rows.nth(from).getByRole("button").boundingBox())!;
+    const dest = (await rows.nth(wrong).boundingBox())!;
+    const x = handle.x + handle.width / 2;
+    const y = handle.y + handle.height / 2;
+    const dy = dest.y + dest.height / 2 - y;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    for (let i = 1; i <= 10; i++) {
+      await page.mouse.move(x, y + (dy * i) / 10, { steps: 2 });
+      await page.waitForTimeout(15);
+    }
+    await page.mouse.up();
+    await page.waitForTimeout(250);
+  }
+}
+
+test.describe("Quest-Simulation (Refinement 13)", () => {
+  test("eine komplette Quest ist im Handy spielbar — Start bis Konfetti", async ({ page }) => {
+    // Dreimal „Hinlaufen" (je 3 s), drei Ankunfts-Screens und eine Sortierung —
+    // der Durchlauf braucht ehrlich länger als die üblichen 30 s.
+    test.setTimeout(90_000);
+    await openSimulation(page);
+    const f = sim(page);
+
+    // Start
+    await expect(f.getByText(/Findet die drei Geheimnisse des Waldes/)).toBeVisible();
+    await f.getByRole("button", { name: /Los geht/ }).click();
+
+    // Station 1: Text + Multiple Choice
+    await walkTo(page, "Die alte Eiche");
+    await expect(f.getByText(/lautloser Jäger/)).toBeVisible();
+    await f.getByText("Eule").click();
+    await f.getByRole("button", { name: "Prüfen" }).click();
+    await f.getByRole("button", { name: /Station abschließen/i }).click();
+
+    // Station 2: Foto + Code
+    await walkTo(page, "Am Ententeich");
+    await expect(f.locator("img[src*='demo-ententeich']")).toBeVisible();
+    await expect(f.getByText(/Jack1956, Wikimedia Commons, CC0/)).toBeVisible();
+    await f.getByPlaceholder("Deine Antwort...").fill("8");
+    await f.getByRole("button", { name: "Prüfen" }).click();
+    await f.getByRole("button", { name: /Station abschließen/i }).click();
+
+    // Station 3: Text + Sortieren
+    await walkTo(page, "Der Fuchsbau");
+    await expect(f.getByText(/Fuchs seinen Bau/)).toBeVisible();
+    await solveSorting(page);
+    await f.getByRole("button", { name: "Prüfen" }).click();
+    await expect(f.getByText("Richtig", { exact: true })).toBeVisible();
+    await f.getByRole("button", { name: /abschließen/i }).click();
+
+    // Ende — „Fertig" beginnt die Simulation von vorn.
+    await expect(f.getByText(/alle drei Geheimnisse des Waldes gelüftet/)).toBeVisible();
+    await f.getByRole("button", { name: "Fertig" }).click();
+    await expect(f.getByRole("button", { name: /Los geht/ })).toBeVisible();
+    await f.getByRole("button", { name: /Los geht/ }).click();
+    // Fortschritt zurückgesetzt: Station 1 ist wieder die aktive.
+    await expect(f.getByText(/Aktiv/i).first()).toBeVisible();
   });
 
-  test("Multiple Choice: falsch gibt dieselbe Rückmeldung wie beim Spielen, richtig löst", async ({
+  test("„Hinlaufen“ zählt die Entfernung herunter und führt zur Ankunft", async ({ page }) => {
+    await openSimulation(page);
+    const f = sim(page);
+    await f.getByRole("button", { name: /Los geht/ }).click();
+    await f.getByRole("button", { name: /Die alte Eiche/ }).first().click();
+
+    // Zahl und Einheit stehen im selben Element („120m").
+    await expect(f.getByText(/^120\s*m$/)).toBeVisible();
+    await f.getByRole("button", { name: "Hinlaufen" }).click();
+    // Unterwegs steht eine kleinere Zahl da, am Ende der echte Ankunfts-Screen.
+    await expect(f.getByText(/^120\s*m$/)).toHaveCount(0);
+    await expect(f.getByText("Ziel erreicht!")).toBeVisible({ timeout: 8000 });
+  });
+
+  test("Zurück in der Stationsliste führt zum Start der Simulation, nicht nach /play", async ({
     page,
   }) => {
-    await page.goto("/about");
-    const d = demo(page);
-
-    await d.getByText("Igel").click();
-    await d.getByRole("button", { name: "Prüfen" }).click();
-    await expect(d.getByText(/Leider falsch/)).toBeVisible();
-
-    await d.getByText("Eule").click();
-    await d.getByRole("button", { name: "Prüfen" }).click();
-    await expect(d.getByText("Richtig")).toBeVisible();
+    await openSimulation(page);
+    const f = sim(page);
+    await f.getByRole("button", { name: /Los geht/ }).click();
+    await expect(f.getByRole("button", { name: /Die alte Eiche/ }).first()).toBeVisible();
+    await f.getByRole("button", { name: "Zurück" }).click();
+    await expect(f.getByRole("button", { name: /Los geht/ })).toBeVisible();
   });
 
-  test("Code: die richtige Zahl löst die Aufgabe", async ({ page }) => {
-    await page.goto("/about");
-    const d = demo(page);
+  test("nichts führt aus der Simulation heraus: kein Menü, kein Link in die App", async ({
+    page,
+  }) => {
+    await openSimulation(page);
+    const f = sim(page);
+    await f.getByRole("button", { name: /Los geht/ }).click();
+    await expect(f.getByRole("button", { name: "Menü öffnen" })).toHaveCount(0);
+    await expect(f.locator("a[href]")).toHaveCount(0);
 
-    await d.getByRole("tab", { name: "Code" }).click();
-    await expect(d.getByText(/Zähle die Beine einer Spinne/)).toBeVisible();
-    await d.getByPlaceholder("Deine Antwort...").fill("8");
-    await d.getByRole("button", { name: "Prüfen" }).click();
-    await expect(d.getByText("Richtig")).toBeVisible();
-  });
+    await f.getByRole("button", { name: /Die alte Eiche/ }).first().click();
+    await expect(f.getByRole("button", { name: "Menü öffnen" })).toHaveCount(0);
+    await expect(f.locator("a[href]")).toHaveCount(0);
 
-  test("Sortieren: die echte Sortier-Aufgabe erscheint mit vier Elementen", async ({ page }) => {
-    await page.goto("/about");
-    const d = demo(page);
-
-    await d.getByRole("tab", { name: "Sortieren" }).click();
-    await expect(d.getByText(/Entwicklung des Frosches/)).toBeVisible();
-    for (const item of ["Laich", "Kaulquappe", "Kaulquappe mit Beinen", "Frosch"]) {
-      await expect(d.getByText(item, { exact: true })).toBeVisible();
-    }
-  });
-
-  test("ein gelöster Typ bleibt beim Zurückschalten gelöst", async ({ page }) => {
-    await page.goto("/about");
-    const d = demo(page);
-
-    await d.getByRole("tab", { name: "Code" }).click();
-    await d.getByPlaceholder("Deine Antwort...").fill("8");
-    await d.getByRole("button", { name: "Prüfen" }).click();
-    await d.getByRole("tab", { name: "Multiple Choice" }).click();
-    await d.getByRole("tab", { name: "Code" }).click();
-    await expect(d.getByText("Richtig")).toBeVisible();
+    // Das iframe steht nach allen Klicks weiter auf der Simulations-Route.
+    const url = await page.locator(SIM).evaluate(
+      (el) => (el as HTMLIFrameElement).contentWindow!.location.pathname
+    );
+    expect(url).toBe("/about/simulation");
   });
 
   test("kein Schreibzugriff auf localStorage, keine Standortabfrage", async ({ page }) => {
     await instrument(page);
-    await page.goto("/about");
-    const d = demo(page);
+    await openSimulation(page);
+    const f = sim(page);
+    await f.getByRole("button", { name: /Los geht/ }).click();
+    await walkTo(page, "Die alte Eiche");
+    await f.getByText("Eule").click();
+    await f.getByRole("button", { name: "Prüfen" }).click();
+    await f.getByRole("button", { name: /Station abschließen/i }).click();
+    await expect(f.getByRole("button", { name: /Am Ententeich/ }).first()).toBeVisible();
 
-    // Alle drei Typen anfassen und zwei lösen.
-    await d.getByText("Eule").click();
-    await d.getByRole("button", { name: "Prüfen" }).click();
-    await d.getByRole("tab", { name: "Code" }).click();
-    await d.getByPlaceholder("Deine Antwort...").fill("8");
-    await d.getByRole("button", { name: "Prüfen" }).click();
-    await d.getByRole("tab", { name: "Sortieren" }).click();
-    await expect(d.getByText("Frosch", { exact: true })).toBeVisible();
-
-    const { writes, geo } = await page.evaluate(() => {
-      const w = window as unknown as { __writes: string[]; __geo: number };
-      return { writes: w.__writes, geo: w.__geo };
-    });
-    expect(writes, "Demo schreibt in localStorage").toEqual([]);
-    expect(geo, "Demo fragt den Standort ab").toBe(0);
+    // Instrumentierung gilt für Seite UND iframe (`addInitScript` läuft in jedem Frame).
+    const counts = await Promise.all(
+      [page.mainFrame(), page.frames().find((fr) => fr.url().includes("/about/simulation"))!].map(
+        (fr) =>
+          fr.evaluate(() => {
+            const w = window as unknown as { __writes: string[]; __geo: number };
+            return { writes: w.__writes, geo: w.__geo };
+          })
+      )
+    );
+    for (const c of counts) {
+      expect(c.writes, "Simulation schreibt in localStorage").toEqual([]);
+      expect(c.geo, "Simulation fragt den Standort ab").toBe(0);
+    }
   });
 
-  test("keine Punkte in der Demo", async ({ page }) => {
+  test("keine Punkte in der Simulation", async ({ page }) => {
+    await openSimulation(page);
+    const f = sim(page);
+    await f.getByRole("button", { name: /Los geht/ }).click();
+    await expect(f.getByText(/Punkte|Pkt\b/)).toHaveCount(0);
+  });
+
+  test("das Foto liegt auf der eigenen Domain", async ({ page }) => {
+    const hosts = new Set<string>();
+    page.on("request", (r) => hosts.add(new URL(r.url()).host));
+    await openSimulation(page);
+    const f = sim(page);
+    await f.getByRole("button", { name: /Los geht/ }).click();
+    await walkTo(page, "Die alte Eiche");
+    await f.getByText("Eule").click();
+    await f.getByRole("button", { name: "Prüfen" }).click();
+    await f.getByRole("button", { name: /Station abschließen/i }).click();
+    await walkTo(page, "Am Ententeich");
+    await expect(f.locator("img[src*='demo-ententeich']")).toBeVisible();
+    expect([...hosts]).toEqual([new URL(page.url()).host]);
+  });
+
+  test("das Handy wird nicht verkleinert: iframe höchstens 320px, ab 375px genau 320px", async ({
+    page,
+  }) => {
+    for (const [w, expected] of [
+      [375, 320],
+      [1440, 320],
+    ] as const) {
+      await page.setViewportSize({ width: w, height: 900 });
+      await page.goto("/about");
+      const box = (await page.locator(SIM).boundingBox())!;
+      expect(Math.round(box.width), `${w}px`).toBe(expected);
+      const transform = await page.locator(SIM).evaluate((el) => getComputedStyle(el).transform);
+      expect(transform).toBe("none");
+    }
+  });
+
+  test("die Simulations-Route lässt sich nur von der eigenen Domain einbetten", async ({
+    request,
+  }) => {
+    const res = await request.get("/about/simulation");
+    expect(res.headers()["x-frame-options"]).toBe("SAMEORIGIN");
+    const html = await res.text();
+    expect(html).toMatch(/<meta name="robots" content="noindex, nofollow"/);
+    // Alle anderen Seiten bleiben bei DENY.
+    for (const path of ["/about", "/play", "/create"]) {
+      expect((await request.get(path)).headers()["x-frame-options"], path).toBe("DENY");
+    }
+  });
+});
+
+test.describe("Hero: Handy mit drei Screens (Refinement 13)", () => {
+  const opacity = (page: Page) =>
+    page.evaluate(() =>
+      ["list", "navigation", "arrival"].map((n) =>
+        Number(getComputedStyle(document.querySelector(`img[src*='about-hero-${n}']`)!).opacity)
+      )
+    );
+
+  test("läuft einmal durch — Liste, Kompass, Ziel erreicht — und bleibt auf dem Kompass", async ({
+    page,
+  }) => {
+    await page.clock.install();
     await page.goto("/about");
-    await expect(demo(page).getByText(/Punkte|Pkt\b/)).toHaveCount(0);
+    await expect.poll(() => opacity(page)).toEqual([1, 0, 0]);
+    await page.clock.runFor(3000);
+    await expect.poll(() => opacity(page)).toEqual([0, 1, 0]);
+    await page.clock.runFor(3000);
+    await expect.poll(() => opacity(page)).toEqual([0, 0, 1]);
+    await page.clock.runFor(3000);
+    await expect.poll(() => opacity(page)).toEqual([0, 1, 0]);
+    // Danach kein weiterer Wechsel.
+    await page.clock.runFor(30000);
+    await expect.poll(() => opacity(page)).toEqual([0, 1, 0]);
+  });
+
+  test("die drei Punkte blättern von Hand und beenden den Ablauf", async ({ page }) => {
+    await page.clock.install();
+    await page.goto("/about");
+    const dots = page.getByRole("group", { name: "Screens der App" }).getByRole("button");
+    await expect(dots).toHaveCount(3);
+    for (const box of await dots.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height))) {
+      expect(box).toBeGreaterThanOrEqual(44);
+    }
+    await dots.nth(2).click();
+    await expect.poll(() => opacity(page)).toEqual([0, 0, 1]);
+    await expect(dots.nth(2)).toHaveAttribute("aria-pressed", "true");
+    // Der automatische Ablauf greift nicht mehr ein.
+    await page.clock.runFor(12000);
+    await expect.poll(() => opacity(page)).toEqual([0, 0, 1]);
+  });
+
+  test("bei „Bewegung reduzieren“ steht sofort der Kompass, ohne Wechsel", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    expect(await page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches)).toBe(
+      true
+    );
+    await page.clock.install();
+    await page.goto("/about");
+    await expect.poll(() => opacity(page)).toEqual([0, 1, 0]);
+    await page.clock.runFor(12000);
+    await expect.poll(() => opacity(page)).toEqual([0, 1, 0]);
+  });
+
+  test("das Handy ist als Smartphone gezeichnet: Statusleiste, kein Mockup-Bild", async ({
+    page,
+  }) => {
+    await page.goto("/about");
+    const frames = page.locator("main div.rounded-\\[44px\\]");
+    // Hero und Simulation teilen sich denselben Rahmen.
+    await expect(frames).toHaveCount(2);
+    for (let i = 0; i < 2; i++) {
+      await expect(frames.nth(i).getByText("9:41")).toBeVisible();
+    }
+    // Kein Gerätebild: Die einzigen Bilder im Hero-Handy sind die App-Screens.
+    const srcs = await frames
+      .first()
+      .locator("img")
+      .evaluateAll((imgs) => imgs.map((i) => (i as HTMLImageElement).src));
+    expect(srcs.every((s) => s.includes("about-hero-"))).toBe(true);
   });
 });
 
 test.describe("Statisch und ohne Hydration-Fehler", () => {
-  test("die erste Demo-Aufgabe steht schon im ausgelieferten HTML", async ({ request }) => {
-    // Beleg, dass /about statisch vorgerendert bleibt und Crawler die
-    // Demo-Frage lesen — der Start-Reiter ist deterministisch.
-    const html = await (await request.get("/about")).text();
-    expect(html).toContain("Welches Tier kann seinen Kopf fast ganz nach hinten drehen?");
-    // Die Sortier-Aufgabe mischt im Initialisierer und darf deshalb NICHT
-    // auf dem Server entstehen.
-    expect(html).not.toContain("Entwicklung des Frosches");
+  test("/about und /about/simulation sind statisch ausgeliefert", async ({ request }) => {
+    const about = await (await request.get("/about")).text();
+    // Der Hero-Kompass und das iframe stehen schon im ausgelieferten HTML.
+    expect(about).toContain("about-hero-navigation");
+    expect(about).toContain('src="/about/simulation"');
+    const simHtml = await (await request.get("/about/simulation")).text();
+    expect(simHtml).toContain("Das Waldgeheimnis");
   });
 
-  test("weder beim Laden noch beim Umschalten ein Hydration-Fehler", async ({ page }) => {
+  test("weder auf der Seite noch in der Simulation ein Hydration-Fehler", async ({ page }) => {
     const problems: string[] = [];
     page.on("console", (m) => {
       // Im Production-Build meldet React Hydration-Fehler nur als
       // minifizierten Code (#418, #423, #425) — ohne das Wort „hydration".
+      // WebKit meldet sie gar nicht an Playwright (QA 2026-10-15).
       if (
         m.type() === "error" &&
         /hydrat|did not match|server rendered|React error #(418|423|425)/i.test(m.text())
@@ -157,13 +358,9 @@ test.describe("Statisch und ohne Hydration-Fehler", () => {
     });
     page.on("pageerror", (e) => problems.push(e.message));
 
-    await page.goto("/about", { waitUntil: "networkidle" });
-    const d = demo(page);
-    await d.getByRole("tab", { name: "Sortieren" }).click();
-    await d.getByRole("tab", { name: "Code" }).click();
-    await d.getByRole("tab", { name: "Multiple Choice" }).click();
-    await expect(d.getByRole("radio")).toHaveCount(3);
-
+    await openSimulation(page);
+    await sim(page).getByRole("button", { name: /Los geht/ }).click();
+    await expect(sim(page).getByRole("button", { name: /Die alte Eiche/ }).first()).toBeVisible();
     expect(problems).toEqual([]);
   });
 });
@@ -292,47 +489,35 @@ test.describe("QA: Layout je Breite", () => {
 });
 
 test.describe("QA: Tastatur", () => {
-  test("Reiter per Pfeiltaste, Antwort per Pfeiltaste, Prüfen per Enter", async ({
-    page,
-    browserName,
-  }) => {
-    await page.goto("/about");
-    const d = demo(page);
-    const first = d.getByRole("tab", { name: "Multiple Choice" });
-
-    await page.getByRole("button", { name: /Video ansehen/ }).focus();
-    await page.keyboard.press("Tab");
-    await expect(first).toBeFocused();
-
-    await page.keyboard.press("ArrowRight");
-    await expect(d.getByRole("tab", { name: "Code" })).toBeFocused();
-    await expect(d.getByRole("tab", { name: "Code" })).toHaveAttribute("aria-selected", "true");
-    await page.keyboard.press("ArrowLeft");
-    await expect(first).toHaveAttribute("aria-selected", "true");
-
-    // Radio-Gruppe per Tab erreichen (Reiter → Panel → erste Antwort). Ein
-    // programmatisches `.focus()` reicht hier nicht: Radix wählt per
-    // Pfeiltaste nur nach echter Tastatur-Navigation aus — gemessen in Chrome.
-    await page.keyboard.press("Tab");
-    await page.keyboard.press("Tab");
-    await expect(d.getByRole("radio").first()).toBeFocused();
-    // Pfeiltaste bewegt den Fokus, Leertaste wählt aus. Radix wählt per
-    // Pfeiltaste zwar auch direkt aus, aber erst ab ~100ms Abstand zur
-    // vorigen Taste (gemessen: 50ms → nur Fokus). Unter paralleler Testlast
-    // reichte selbst eine feste Pause von 150ms nicht — die Leertaste macht
-    // den Test deterministisch und ist der übliche Tastaturweg.
-    await page.keyboard.press("ArrowDown");
-    await expect(d.getByRole("radio", { name: "Eule" })).toBeFocused();
-    await page.keyboard.press("Space");
-    await expect(d.getByRole("radio", { name: "Eule" })).toBeChecked();
-
+  // Gezogen in Refinement 13: Statt durch die Reiter führt der Tastaturweg
+  // jetzt durch die Simulation — Start, Station wählen, Hinlaufen, Antwort.
+  test("die Simulation ist per Tastatur bedienbar", async ({ page, browserName }) => {
     // Safari auf dem Mac nimmt Buttons ohne Systemeinstellung nicht in die
     // Tab-Reihenfolge — das gilt app-weit und ist kein Befund dieser Seite.
     test.skip(browserName === "webkit", "WebKit/macOS: Tab überspringt Buttons");
-    await page.keyboard.press("Tab");
-    await expect(d.getByRole("button", { name: "Prüfen" })).toBeFocused();
+    await openSimulation(page);
+    const f = sim(page);
+
+    await f.getByRole("button", { name: /Los geht/ }).focus();
     await page.keyboard.press("Enter");
-    await expect(d.getByText("Richtig")).toBeVisible();
+    await f.getByRole("button", { name: /Die alte Eiche/ }).first().focus();
+    await page.keyboard.press("Enter");
+    await f.getByRole("button", { name: "Hinlaufen" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(f.getByText("Ziel erreicht!")).toBeVisible({ timeout: 8000 });
+    await f.getByRole("button", { name: /Station entdecken/i }).focus();
+    await page.keyboard.press("Enter");
+
+    // Radio-Gruppe: Pfeiltaste bewegt den Fokus, Leertaste wählt aus (siehe
+    // QA 2026-10-15 — Radix wählt per Pfeiltaste erst ab ~100ms Tastenabstand).
+    await f.getByRole("radio").first().focus();
+    await page.keyboard.press("ArrowDown");
+    await expect(f.getByRole("radio", { name: "Eule" })).toBeFocused();
+    await page.keyboard.press("Space");
+    await expect(f.getByRole("radio", { name: "Eule" })).toBeChecked();
+    await f.getByRole("button", { name: "Prüfen" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(f.getByText("Richtig", { exact: true })).toBeVisible();
   });
 });
 
@@ -343,32 +528,39 @@ test.describe("QA: Sicherheit und Robustheit", () => {
       dialog = true;
       d.dismiss();
     });
-    await page.goto("/about");
-    const d = demo(page);
-    await d.getByRole("tab", { name: "Code" }).click();
-    const input = d.getByPlaceholder("Deine Antwort...");
+    // Seit Refinement 13 in der Simulation: Station 2 trägt die Code-Aufgabe.
+    await openSimulation(page);
+    const f = sim(page);
+    await f.getByRole("button", { name: /Los geht/ }).click();
+    await walkTo(page, "Die alte Eiche");
+    await f.getByText("Eule").click();
+    await f.getByRole("button", { name: "Prüfen" }).click();
+    await f.getByRole("button", { name: /Station abschließen/i }).click();
+    await walkTo(page, "Am Ententeich");
+    const input = f.getByPlaceholder("Deine Antwort...");
     await input.fill('<img src=x onerror="window.__pwn=1;alert(1)">');
     await input.press("Enter");
-    await expect(d.getByText(/Leider falsch/)).toBeVisible();
+    await expect(f.getByText(/Leider falsch/)).toBeVisible();
 
-    const res = await page.evaluate(() => ({
+    const frame = page.frames().find((fr) => fr.url().includes("/about/simulation"))!;
+    const res = await frame.evaluate(() => ({
       pwn: (window as unknown as { __pwn?: number }).__pwn ?? null,
-      injected: document.querySelectorAll("main img[src='x']").length,
+      injected: document.querySelectorAll("img[src='x']").length,
     }));
     expect(res).toEqual({ pwn: null, injected: 0 });
     expect(dialog).toBe(false);
   });
 
   test("fällt der Screenshot aus, bleibt das Layout stehen", async ({ page }) => {
-    await page.route(/about-hero-navigation/, (r) => r.abort());
+    await page.route(/about-hero-/, (r) => r.abort());
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/about");
 
-    // Kein Überlauf, der CTA bleibt über dem Screenshot. Die Höhe hält nur
-    // Chrome; WebKit lässt das kaputte Bild auf ein Quadrat zusammenfallen
-    // (gemessen 208 statt 354px) — unterhalb des CTA, ohne Folgen für den
-    // Falz. Der leere Rahmen selbst ist als BUG-22 (Low) geführt.
+    // Seit Refinement 13 hält ein Container mit festem Seitenverhältnis die
+    // Höhe — auch in WebKit, wo das kaputte Bild vorher auf ein Quadrat
+    // zusammenfiel (BUG-22). Kein Überlauf, der CTA bleibt über dem Handy.
     const box = (await page.locator("main img[src*='about-hero-navigation']").boundingBox())!;
+    expect(box.height).toBeGreaterThan(300);
     const cta = (await page.getByRole("link", { name: /Quest erstellen/i }).first().boundingBox())!;
     expect(cta.y + cta.height).toBeLessThan(box.y);
     const overflow = await page.evaluate(

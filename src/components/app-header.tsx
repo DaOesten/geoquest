@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { AppNavMenu } from "@/components/app-nav-menu";
+import { useInSimulation } from "@/lib/simulation-context";
 
 interface AppHeaderProps {
   title?: string;
@@ -35,6 +36,7 @@ interface AppHeaderProps {
  * bleiben unberührt, der Inset kommt darüber hinzu.
  */
 export function AppHeader({ title, backHref, onBack, transparent = false }: AppHeaderProps) {
+  const inSimulation = useInSimulation();
   const backButtonClassName =
     "flex-shrink-0 flex items-center justify-center w-11 h-11 -ml-2 rounded-full transition-colors duration-base ease-gq hover:bg-primary/10 active:scale-[0.96]";
 
@@ -61,8 +63,11 @@ export function AppHeader({ title, backHref, onBack, transparent = false }: AppH
 
       {/* ml-auto trägt das Menu auch dann nach rechts, wenn links nichts steht
           (Top-Level-Ansichten) oder kein Titel die Lücke füllt. */}
+      {/* In der Quest-Simulation auf /about (PROJ-13, Refinement 13) ohne
+          Menü — es würde im iframe die echte App öffnen. Der Platzhalter hält
+          die Zeile gleich breit, damit der Titel nicht verrutscht. */}
       <div className="flex-shrink-0 ml-auto -mr-2">
-        <AppNavMenu />
+        {inSimulation ? <div className="w-11 h-11" aria-hidden /> : <AppNavMenu />}
       </div>
     </header>
   );

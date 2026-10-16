@@ -13,7 +13,8 @@ import {
   Tent,
   Users,
 } from "lucide-react";
-import { AboutTaskDemo } from "@/components/about-task-demo";
+import { AboutHeroPhone } from "@/components/about-hero-phone";
+import { AboutSimulationPhone } from "@/components/about-simulation-phone";
 import { AboutVideo } from "@/components/about-video";
 import { InfoPageShell } from "@/components/info-page-shell";
 import { ANLEITUNG_VERFUEGBAR } from "@/lib/app-nav";
@@ -306,24 +307,12 @@ export default function AboutPage() {
           </div>
         </>
       }
-      /* App-Screenshot statt Hintergrundbild (Refinement 12). Zeigt Eltern,
-         was die Kinder in der Hand haben werden. Ein echter Zustand der App,
-         erzeugt von `scripts/make-about-screenshot.mjs` — kein Mockup, das
-         bei der naechsten Design-Aenderung still auseinanderlaeuft.
-         Unter `lg` steht er unter den Buttons, der CTA bleibt damit oben. */
+      /* Handy mit drei echten App-Screens (Refinement 13): Stationsübersicht
+         → Kompass → „Ziel erreicht!", einmal durch, dann Kompass. Unter `lg`
+         unter den Buttons, der CTA bleibt damit oben. */
       aside={
         <div className="flex justify-center lg:justify-end">
-          <div className="relative w-[230px] sm:w-[260px] lg:w-[290px] rounded-[42px] border border-gq-teal/30 bg-gq-black p-2.5 shadow-[0_0_0_1px_rgba(0,224,209,0.18),0_0_48px_rgba(0,224,209,0.18),0_24px_48px_rgba(0,0,0,0.6)]">
-            <Image
-              src="/assets/about-hero-navigation.png"
-              alt="Geo Quest auf dem Handy: Ein Pfeil zeigt zur Station „Die alte Eiche“, noch 108 Meter entfernt."
-              width={1170}
-              height={1992}
-              priority
-              sizes="(min-width: 1024px) 290px, (min-width: 640px) 260px, 230px"
-              className="w-full h-auto rounded-[32px]"
-            />
-          </div>
+          <AboutHeroPhone />
         </div>
       }
     >
@@ -429,17 +418,24 @@ export default function AboutPage() {
         </ol>
       </section>
 
-      {/* 6 — Live-Demo mit den echten Aufgaben-Komponenten (Refinement 12).
-          Kein GPS, keine Punkte, kein Spielstand — siehe AboutTaskDemo. */}
+      {/* 6 — Quest-Simulation im Handy (Refinement 13). Ersetzt die drei
+          Aufgaben-Reiter aus Refinement 12: Statt einzelner Aufgaben ist der
+          ganze Ablauf spielbar — Start, Liste, Hinlaufen, Ankunft, Station,
+          Ende. Ohne Karte darum: Das Handy braucht auf 375px die volle Breite. */}
       <section className="mt-12 sm:mt-20">
-        <div className="rounded-card border border-gq-teal/40 bg-gq-dark-teal/70 p-6 sm:p-8 lg:p-10 shadow-card">
-          <h2 className={SECTION_LABEL}>Selbst ausprobieren</h2>
-          <h3 className={SECTION_TITLE}>So fühlt sich eine Station an.</h3>
-          <p className="mt-4 mb-6 max-w-[58ch] font-body text-sm sm:text-base lg:text-[17px] leading-relaxed text-gq-grey">
-            Das sind echte Aufgaben aus Geo Quest. Beim Spielen erscheinen sie
-            erst, wenn die Gruppe an der Station angekommen ist.
-          </p>
-          <AboutTaskDemo />
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-14">
+          <div>
+            <h2 className={SECTION_LABEL}>Selbst ausprobieren</h2>
+            <h3 className={SECTION_TITLE}>So fühlt sich eine Quest an.</h3>
+            <p className="mt-4 max-w-[52ch] font-body text-sm sm:text-base lg:text-[17px] leading-relaxed text-gq-grey">
+              Spiel eine kleine Quest mit drei Stationen durch — so, wie die
+              Kinder sie draußen erleben. Statt zu laufen, tippst du auf
+              „Hinlaufen“. Gespeichert wird nichts.
+            </p>
+          </div>
+          <div className="flex justify-center">
+            <AboutSimulationPhone />
+          </div>
         </div>
       </section>
 

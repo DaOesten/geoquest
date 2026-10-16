@@ -615,7 +615,17 @@ Spec ist aktualisiert (31 Acceptance Criteria in einem eigenen Block, 12 Produkt
 
 **Für `/frontend` vorab benannt:** Die Player-Komponenten rechnen mit dem Viewport (`vw`, `dvh`, `fixed`) — direkt in einen 300px-Rahmen gesetzt, würde „Ziel erreicht!" am Desktop riesig und das Konfetti flöge über die Seite. **Die Simulation läuft deshalb in einem `iframe` in echter Handybreite** auf eigener `noindex`-Route; so laufen die Komponenten unverändert. Keine `scale()`-Verkleinerung (Tap-Ziele blieben sonst unter 44px). Nichts darf aus der Simulation herausführen (`StationList` verlinkt heute nach `/play`, `AppHeader` baut immer das Burger-Menü ein). Der Kompass wird nachgestellt (der echte fragt nach GPS); `ArrivalOverlay` wird exportiert und wiederverwendet. Offen am Gerät: ob die Seite am iPhone weiter scrollt, wenn der Finger über dem iframe liegt.
 
-Spec ist aktualisiert (22 Acceptance Criteria in einem eigenen Block, 6 Produkt- und 3 technische Entscheidungen, 2 Out-of-Scope-Einträge, 3 neue Open Questions, Abschnitt „Refinement 13" mit Simulations-Inhalt, Vorgaben und Edge Cases). **Noch nicht gebaut.**
+Spec ist aktualisiert (22 Acceptance Criteria in einem eigenen Block, 6 Produkt- und 3 technische Entscheidungen, 2 Out-of-Scope-Einträge, 3 neue Open Questions, Abschnitt „Refinement 13" mit Simulations-Inhalt, Vorgaben und Edge Cases).
+
+**Frontend umgesetzt am 2026-10-16.** Neues `PhoneFrame` (Handy in CSS) für Hero und Simulation; der Hero zeigt drei echte, per Skript erzeugte Screens, läuft einmal durch (gemessen Liste → Kompass → Ziel erreicht → Kompass, danach 30 s unverändert) und lässt sich über drei Punkte blättern; bei „Bewegung reduzieren" steht ohne Aufblitzen sofort der Kompass. Die Simulation läuft im iframe auf `/about/simulation` mit den echten Player-Screens; der Fortschritt lebt nur im State, ein `SimulationContext` blendet das Burger-Menü aus, `StationList` bekommt `onBack` statt des Links nach `/play`. Das Teich-Foto ist ohne Kamera-Metadaten abgelegt, die Demo-Quest ist eine Datei mit Schema-Test. Analytics zählt die Simulations-Route nicht mit.
+
+**⚠ Zu bestätigen: Abweichung von `.claude/rules/security.md`.** `X-Frame-Options: DENY` verhinderte das Einbetten, das Handy blieb leer. `next.config.ts` setzt **nur für `/about/simulation`** `SAMEORIGIN` — fremde Seiten können sie weiterhin nicht einbetten. Alle anderen Seiten bleiben bei `DENY`, ein Test hält beides fest.
+
+**Abweichungen:** Sektionstitel „So fühlt sich eine Quest an."; der End-Screen behält „Fertig" und führt in der Simulation zum Start; die Sektion hat keine Karte mehr (auf 375px fehlte sonst Platz für einen 320px-Bildschirm). Auf 360px ist der Bildschirm 306px, auf 320px 266px breit, ohne Verkleinerung.
+
+**Tests:** Live-Demo-Block auf die Simulation gezogen, neu u. a. kompletter Durchlauf bis zurück zum Start, „nichts führt hinaus", `SAMEORIGIN` nur für die Route, Hero-Ablauf mit Playwright-Uhr. Unit 432/432. Gesamtsuite zuerst 14 Fehlschläge — 2 echt und behoben (Selektor im Test; ausgeblendete Hero-Screens trugen `aria-hidden` **und** Alt-Text), 12 Zeitüberschreitungen; **Wiederholung der betroffenen Dateien 386/0**.
+
+**Für künftige Läufe:** Die Hänger kamen vom Rechner — der Mac ging in den Wartungs-Ruhezustand (`pmset -g log`), Läufe standen dann bei 0 % CPU, zwei Tests brauchten exakt 15 Minuten. `caffeinate -i` hilft nur gegen Leerlauf-Schlaf. Bei unerklärlichen Hängern zuerst den Sleep-Log prüfen.
 
 ## Next Available ID: PROJ-16
 

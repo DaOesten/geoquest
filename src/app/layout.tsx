@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Anton, Orbitron, Rubik } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/sonner";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
+import { PageAnalytics } from "@/components/page-analytics";
 import "./globals.css";
 
 /**
@@ -98,8 +98,9 @@ export default function RootLayout({
         <ServiceWorkerRegistration />
         {/* Reichweitenmessung ohne Cookies und ohne Geräte-Kennung — lädt nur in
             Produktion. Siehe /datenschutz; wird das hier entfernt oder gegen ein
-            anderes Werkzeug getauscht, muss der Text dort mitgezogen werden. */}
-        <Analytics />
+            anderes Werkzeug getauscht, muss der Text dort mitgezogen werden.
+            Ohne die eingebettete Quest-Simulation (PROJ-13, Refinement 13). */}
+        <PageAnalytics />
       </body>
     </html>
   );

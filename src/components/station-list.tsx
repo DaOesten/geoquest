@@ -20,6 +20,12 @@ interface StationListProps {
   getStatus: (station: Station, index: number) => StationStatus;
   onNavigate: (index: number) => void;
   onOpenModules: (index: number) => void;
+  /**
+   * Ersetzt den Zurück-Link nach /play durch einen Callback — für die
+   * Quest-Simulation auf /about (PROJ-13, Refinement 13), die nicht in die
+   * echte App führen darf.
+   */
+  onBack?: () => void;
 }
 
 function totalRouteKm(stations: Station[]): number {
@@ -36,6 +42,7 @@ export function StationList({
   getStatus,
   onNavigate,
   onOpenModules,
+  onBack,
 }: StationListProps) {
   const routeKm = totalRouteKm(stations);
 
@@ -87,7 +94,7 @@ export function StationList({
       <QuestListBackdrop />
 
       <div className="relative">
-        <AppHeader backHref="/play" transparent />
+        {onBack ? <AppHeader onBack={onBack} transparent /> : <AppHeader backHref="/play" transparent />}
 
         <div className="px-5 pt-3">
           <span className="text-tech text-[10px] text-gq-teal">Stationen</span>

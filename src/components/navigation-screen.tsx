@@ -348,7 +348,12 @@ function CompassActivateButton({
   );
 }
 
-function ArrivalOverlay({
+/**
+ * Exportiert für die Quest-Simulation auf /about (PROJ-13, Refinement 13):
+ * Dort zeigt sie denselben Ankunfts-Screen wie das Spiel, statt ihn
+ * nachzubauen.
+ */
+export function ArrivalOverlay({
   stationName,
   onContinue,
 }: {

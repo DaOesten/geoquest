@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 /**
- * Erzeugt den App-Screenshot fuer den Hero von /about (PROJ-13, Refinement 12).
+ * Erzeugt die drei App-Screens fuer das Handy im Hero von /about (PROJ-13,
+ * Refinement 12, auf drei Screens erweitert in Refinement 13): Stationsliste,
+ * Kompass und „Ziel erreicht!".
  *
  * Bewusst ein echter Zustand der App statt eines Mockups: Die Landingpage
  * zeigt Eltern und Lehrkraeften, was die Kinder in der Hand haben werden.
@@ -14,12 +16,17 @@
  * WebKit mit iPhone-Profil, weil das der Zielgeraet entspricht und dort kein
  * `requestPermission`-Knopf erscheint (Desktop-Chrome mit iPhone-UA wuerde
  * „Kompass aktivieren" zeigen). Die Quest ist erfunden, die Koordinaten
- * liegen auf keinem privaten Grundstueck.
+ * liegen auf keinem privaten Grundstueck. Namen und Koordinaten decken sich mit
+ * der Simulations-Quest in `src/lib/about-demo-quest.ts` — dort mitziehen.
  */
 import { webkit, devices } from "@playwright/test";
 
 const BASE_URL = process.argv[2] ?? "http://localhost:3100";
-const OUT = "public/assets/about-hero-navigation.png";
+const OUT = {
+  list: "public/assets/about-hero-list.png",
+  navigation: "public/assets/about-hero-navigation.png",
+  arrival: "public/assets/about-hero-arrival.png",
+};
 
 const QUEST = {
   version: 1,
@@ -79,6 +86,12 @@ await page.evaluate((quest) => {
 }, QUEST);
 await page.goto(`${BASE_URL}/play/${QUEST.id}`);
 await page.getByRole("button", { name: /Los geht/ }).click();
+
+// 1 — Stationsliste. Warten, bis die Routenlinie gezeichnet ist.
+await page.getByRole("button", { name: /Die alte Eiche/ }).waitFor();
+await page.waitForTimeout(1500);
+await page.screenshot({ path: OUT.list });
+
 await page.getByRole("button", { name: /Die alte Eiche/ }).click();
 
 // Kompass-Heading nach Norden, mehrfach, damit die Glaettung den Zielwert
@@ -95,6 +108,20 @@ await page.getByText(/\d+\s*m$/).first().waitFor();
 // Einblend-Animationen und Pfeil-Transition auslaufen lassen.
 await page.waitForTimeout(1500);
 
-await page.screenshot({ path: OUT });
+// 2 — Kompass.
+await page.screenshot({ path: OUT.navigation });
+
+// 3 — Ankunft. Die App verlangt zwei aufeinanderfolgende Messungen im Radius
+// (PROJ-3, Edge Case 31), deshalb zweimal setzen.
+const station = QUEST.stations[0];
+for (let i = 0; i < 2; i++) {
+  await context.setGeolocation({ latitude: station.lat, longitude: station.lng, accuracy: 5 });
+  await page.waitForTimeout(1200);
+}
+await page.getByText("Ziel erreicht!").waitFor();
+// Konfetti und Einblendungen auslaufen lassen — nach ~3 s ist der Screen ruhig.
+await page.waitForTimeout(3600);
+await page.screenshot({ path: OUT.arrival });
+
 await browser.close();
-console.log(`geschrieben: ${OUT}`);
+console.log(`geschrieben: ${Object.values(OUT).join(", ")}`);

@@ -56,7 +56,8 @@ test.describe("Kontrast (PRD: WCAG AA, 4.5:1)", () => {
         ["Schritt-Text", document.querySelector("main ol li p") || undefined],
         ["Zielgruppen-Text", document.querySelector("main dl dd p") || undefined],
         ["Zielgruppen-Stichpunkt", document.querySelector("main dl dd li span") || undefined],
-        ["Demo-Text", byText(/^Das sind echte Aufgaben/)],
+        // Seit Refinement 13: Text neben der Quest-Simulation.
+        ["Simulations-Text", byText(/^Spiel eine kleine Quest/)],
       ];
 
       return targets.map(([label, el]) => {
@@ -151,6 +152,8 @@ test.describe("Darstellungs-Rhythmus", () => {
         // Vor dem Accordion-Fall: Die Reiter der Live-Demo tragen ebenfalls
         // `data-state` (Refinement 12).
         if (s.querySelector("[role=tablist]")) return "Demo";
+        // Seit Refinement 13: die Quest-Simulation im Handy.
+        if (s.querySelector("iframe")) return "Simulation";
         if (s.querySelector("[data-state]")) return "Accordion";
         if (s.querySelector("dl")) return "Karten";
         if (s.querySelector("ol li")) return "Schritte";
@@ -314,8 +317,10 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/about");
 
-    // Kein dekoratives Bild mehr außerhalb der Sektionen.
-    await expect(page.locator('main img[alt=""]:not(section img)')).toHaveCount(0);
+    // Die Illustration liegt nicht mehr hinter dem Hero. Gezielt auf die
+    // Datei geprüft: Seit Refinement 13 tragen auch die gerade ausgeblendeten
+    // Hero-Screens ein leeres `alt` (Dekoration, solange unsichtbar).
+    await expect(page.locator("main img[src*='hero_new']:not(section img)")).toHaveCount(0);
 
     const shot = page.locator("main img[src*='about-hero-navigation']");
     await expect(shot).toBeVisible();
