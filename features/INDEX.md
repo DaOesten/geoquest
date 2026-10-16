@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 | PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Deployed | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
 
@@ -607,6 +607,15 @@ Spec ist aktualisiert (31 Acceptance Criteria in einem eigenen Block, 12 Produkt
 **Für künftige Läufe:** Ein Tastatur-Test mit fester 150-ms-Pause bestand einzeln und fiel unter Last. Radix wählt per Pfeiltaste erst ab ~100 ms Tastenabstand aus und nur nach echtem Tab-Fokus — Tests nutzen deshalb Pfeiltaste + Leertaste.
 
 **Am 2026-10-16 nach Production deployt** (Tag `v1.46.0-PROJ-13`, Push `e0e1049..5fb97d3`) — live auf https://geoquest.technolomagie.de/about nach 67 s, belegt am neuen Screenshot (vorher 404, jetzt 200 und byte-identisch). 22 Endpunkte auf beiden Domains HTTP 200, Security-Header aktiv. **PROJ-13-Suiten direkt gegen Production: Chrome 106/1, Mobile Safari 105/1** — der eine Fehlschlag je Engine ist der Test „keine fremden Hosts", der nur `localhost` erlaubt; nachgemessen fragt `/about` ausschließlich die eigene Domain an. WebKit 0 Konsolenfehler, Chrome nur der bekannte `/favicon.ico`-404. Demo live gelöst, am iPhone-Bildschirm abgenommen. **PROJ-13 ist abgeschlossen.** Offen: BUG-22 (Low), BUG-17/18 (Video), Firefox, und der Hosts-Test sollte die Origin der `baseURL` erlauben.
+
+## Offenes Refinement 13: Handy-Visual und Quest-Simulation auf `/about` (2026-10-16)
+**PROJ-13** geht von Deployed zurück auf In Progress. Betreiber nach dem Handy-Test der neuen `/about`: Das Hero-Visual soll mehr nach Handy aussehen und drei Screens zeigen (Stationsübersicht, Kompass, „Ziel erreicht"), die Demo eine **komplette Quest in einem Handy-Screen** simulieren — Start, drei Stationen mit je einem Aufgabentyp und Text oder Bild, Ende.
+
+**Entschieden (alle Punkte vom Betreiber bestätigt):** Die Hero-Screens laufen **einmal** durch und bleiben auf dem Kompass stehen, danach Weiterblättern über drei Punkte — ein Endlos-Wechsel wäre ein Ambient-Loop, den das Design System ausschließt. Ein **neutrales Handy in CSS** (Kamera-Aussparung, Statusleiste, Seitentasten, keine Marke) an beiden Stellen. In der Simulation läuft man per Knopf **„Hinlaufen"**: Die Entfernung zählt herunter, dann folgt der echte Ankunfts-Screen. Inhalt vorerst **„Das Waldgeheimnis"** (Betreiber bessert später nach), Station 2 mit dem CC0-Foto **„Manor Park Aldershot Pond"** (Jack1956), bei uns abgelegt, Quelle in der Bildunterschrift.
+
+**Für `/frontend` vorab benannt:** Die Player-Komponenten rechnen mit dem Viewport (`vw`, `dvh`, `fixed`) — direkt in einen 300px-Rahmen gesetzt, würde „Ziel erreicht!" am Desktop riesig und das Konfetti flöge über die Seite. **Die Simulation läuft deshalb in einem `iframe` in echter Handybreite** auf eigener `noindex`-Route; so laufen die Komponenten unverändert. Keine `scale()`-Verkleinerung (Tap-Ziele blieben sonst unter 44px). Nichts darf aus der Simulation herausführen (`StationList` verlinkt heute nach `/play`, `AppHeader` baut immer das Burger-Menü ein). Der Kompass wird nachgestellt (der echte fragt nach GPS); `ArrivalOverlay` wird exportiert und wiederverwendet. Offen am Gerät: ob die Seite am iPhone weiter scrollt, wenn der Finger über dem iframe liegt.
+
+Spec ist aktualisiert (22 Acceptance Criteria in einem eigenen Block, 6 Produkt- und 3 technische Entscheidungen, 2 Out-of-Scope-Einträge, 3 neue Open Questions, Abschnitt „Refinement 13" mit Simulations-Inhalt, Vorgaben und Edge Cases). **Noch nicht gebaut.**
 
 ## Next Available ID: PROJ-16
 

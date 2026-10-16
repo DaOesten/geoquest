@@ -1,6 +1,8 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Deployed
+## Status: In Progress
+_**Refinement 13 (2026-10-16): Handy-Visual im Hero animiert, Live-Demo wird zur Quest-Simulation im Handy.** Betreiber nach dem Handy-Test der neuen `/about`: Das Hero-Visual soll mehr nach Handy aussehen und drei Screens zeigen (Stationsübersicht, Kompass, „Ziel erreicht“); die Demo soll eine komplette Quest in einem Handy-Screen simulieren. Entschieden: Die Screens laufen **einmal** durch und bleiben auf dem Kompass stehen (Design-System-Regel „keine Ambient-Loops“), danach von Hand weiterblättern; ein **neutrales Handy in CSS** für beide Stellen; in der Simulation läuft man per Knopf „Hinlaufen“ zur Station; Inhalt vorerst „Das Waldgeheimnis“ (Betreiber bessert später nach), Station 2 mit dem CC0-Foto „Manor Park Aldershot Pond“. Siehe Abschnitt „Refinement 13“ am Ende. **Noch nicht gebaut.**_
+
 _**Refinement 12 (2026-10-15): `/about` spricht Eltern und Lehrkräfte an.** Betreiber: *„Ich möchte /about mehr auf die Zielgruppe Eltern, Lehrer abstimmen."* Als Richtung lieferte er einen externen HTML-Entwurf (hell, grün, Reiter, Live-Demo, App-Screenshot im Hero). Entschieden: Aufbau und Inhalte in diese Richtung, **Geo-Quest-Look und „du" bleiben**, Kinder werden nur noch über die Erwachsenen angesprochen. Neu: App-Screenshot statt Hintergrundbild im Hero, Vorteile-Leiste, drei Zielgruppen-Karten, Live-Demo mit echten Aufgaben-Bausteinen, FAQ aus Elternsicht. Entfallen: „Jeder Ort kann ein Level sein", „Du bist der Game-Designer", die Zielgruppe „Kinder & Jugendliche". Alles, was die App nicht einlöst oder erfunden wäre (Punkte, Tipps, Teilen-Link, Offline, Nutzerzahlen, Kundenstimmen, Zeitangabe), wurde aus dem Entwurf **nicht** übernommen. Siehe Abschnitt „Refinement 12" am Ende. **Frontend umgesetzt am 2026-10-15** — CTA auf 11 Viewports über dem Falz, Abschluss-Kontrast pro Pixel ≥ 4.86:1, PROJ-13 282/0, Gegenprobe gegen den Vorgänger: 82 Tests fallen. Siehe „Implementation Notes (Frontend — Refinement 12)". **QA am 2026-10-15: 31/31 Acceptance Criteria, 1 Low-Bug (BUG-22), Production-Ready.** **Am 2026-10-16 nach Production deployt** (Tag `v1.46.0-PROJ-13`)._
 
 _**Refinement 11 (2026-09-29): Abstand Hero → Video-Sektion.** Betreiber nach dem Deploy: zwischen CTA und Video-Überschrift ist deutlich mehr Abstand als zwischen Video und erster Karte. Gemessen live: 176px gegen 80px (mobil 112 gegen 48). Entschieden: Kante zu Kante überall dasselbe Maß. **Frontend umgesetzt und QA-geprüft am 2026-09-29** — 6/6 Acceptance Criteria, keine Bugs. Approved._
@@ -11,7 +13,7 @@ _Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und d
 
 _**Refinement 7 (2026-09-20): Das Logo-Lockup kehrt auf den Desktop zurück.** Betreiber-Befund: „ich kann auf /about auf dem desktop das Logo nicht mehr sehen." **Frontend umgesetzt am 2026-09-21** — `lg:hidden` entfernt; CTA auf allen elf Viewports über dem Falz nachgemessen, knappster Fall 1366×768 mit 45px. Siehe Implementation Notes._
 **Created:** 2026-09-04
-**Last Updated:** 2026-10-16 (Refinement 12 deployt — `/about` für Eltern und Lehrkräfte)
+**Last Updated:** 2026-10-16 (Refinement 13 gespect — Handy-Visual und Quest-Simulation)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -55,6 +57,8 @@ Kern der Seite ist eine **Copy-Paste-Prompt-Vorlage**: Nutzer kopieren einen fer
 - **Erfundene Nutzerzahlen, Kundenstimmen, Bewertungen** — nicht ohne echte, freigegebene Quellen (Refinement 12)
 - **Sprungmarken-Navigation in der Kopfzeile und zusätzliche Ko-fi-Buttons** auf `/about` (Refinement 12)
 - **GPS, Punkte oder gespeicherter Fortschritt in der Live-Demo**; eine mehrstufige Mini-Quest (Refinement 12)
+- **Echtes GPS, Sensor, Punkte oder gespeicherter Fortschritt in der Simulation**; mehr als drei Stationen; eine vom Besucher bearbeitbare Demo-Quest (Refinement 13)
+- **Endlos laufende Hero-Animation** (Refinement 13 — Design-System-Regel „keine Ambient-Loops")
 - ~~**Burger-Menu in den App-Screens** — das Menu gehört zu den Info-Seiten; `/`, `/play` und `/create` bleiben unverändert~~ → **Aufgehoben am 2026-09-06:** Das Menu wird zur app-weiten Navigation und zieht nach PROJ-1 um. Die Info-Seiten binden künftig dieselbe Komponente ein, statt eine eigene zu besitzen
 
 ## Seitenaufbau
@@ -267,7 +271,39 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] Angenommen der primäre CTA lag vor diesem Refinement auf allen Referenz-Viewports über dem Falz (BUG-7), wenn der Abstand verkleinert ist, dann gilt das unverändert — der Eingriff liegt unterhalb des Hero
 - [x] Angenommen ein Besucher öffnet `/anleitung`, `/impressum` oder `/datenschutz`, wenn die Seiten laden, dann sind sie **unverändert** — sie tragen kein Hero-Bild, und nur für diesen Fall rendert die Shell den betroffenen Abstandshalter
 
+### Handy-Visual und Quest-Simulation (Refinement 13, 2026-10-16)
+_Ersetzt die Hero-Screenshot-Kriterien und den Block „Live-Demo“ aus Refinement 12. Alles Übrige aus Refinement 12 gilt weiter._
+
+**Handy-Rahmen (beide Stellen)**
+- [ ] Angenommen ein Besucher sieht Hero oder Simulation, wenn er das Handy betrachtet, dann ist es als Smartphone erkennbar: schmaler dunkler Rand, Kamera-Aussparung oben mittig, Statusleiste mit Uhrzeit, Empfang und Akku, dezente Seitentasten, stark abgerundete Ecken — **ohne** Marke oder Logo
+- [ ] Angenommen der Rahmen wird gerendert, wenn die Seite lädt, dann ist er in CSS gezeichnet (kein Mockup-Bild) und an beiden Stellen derselbe Baustein
+
+**Hero: drei Screens**
+- [ ] Angenommen ein Besucher öffnet `/about`, wenn der Hero lädt, dann zeigt das Handy nacheinander **Stationsübersicht → Kompass → „Ziel erreicht!“**, jeweils rund 3 Sekunden, und bleibt danach auf dem **Kompass** stehen — es gibt keinen weiteren automatischen Wechsel
+- [ ] Angenommen die automatische Folge ist durchgelaufen, wenn der Besucher die drei Punkte unter dem Handy antippt, dann wechselt der Screen; der aktive Punkt ist erkennbar, jedes Tap-Ziel ist mindestens 44px groß und per Tastatur erreichbar
+- [ ] Angenommen der Besucher hat „Bewegung reduzieren“ eingestellt, wenn der Hero lädt, dann steht der Kompass sofort und ohne automatischen Wechsel da; Blättern von Hand bleibt möglich
+- [ ] Angenommen die Screens wechseln, wenn der Übergang läuft, dann dauert er höchstens 320ms (Design System „Screen/Reveal") — kein langer Fade
+- [ ] Angenommen ein Screenreader liest den Hero, wenn er das Handy erreicht, dann hört er pro Screen einen beschreibenden Alternativtext, und der automatische Wechsel wird nicht laufend angesagt
+- [ ] Angenommen die drei Screens werden ausgeliefert, wenn sie gemessen werden, dann sind es **echte Zustände der App**, erzeugt per Skript wie der bisherige Screenshot — keine nachgebauten Grafiken
+- [ ] Angenommen der primäre CTA wird auf den elf Referenz-Viewports gemessen, dann steht er weiterhin vollständig über dem Falz (BUG-7)
+
+**Quest-Simulation**
+- [ ] Angenommen ein Besucher erreicht die Sektion „So fühlt sich eine Station an.", wenn sie lädt, dann steht dort ein Handy, in dem eine komplette Quest spielbar ist — die drei Reiter aus Refinement 12 entfallen
+- [ ] Angenommen der Besucher spielt die Simulation, wenn er sie durchläuft, dann folgt sie dem echten Ablauf: **Start-Screen → Stationsliste → Kompass → „Ziel erreicht!" → Station mit Inhalt und Aufgabe → zurück zur Liste** (Station abgehakt) … nach der dritten Station **End-Screen mit Konfetti**
+- [ ] Angenommen der Besucher ist auf dem Kompass-Screen, wenn er „Hinlaufen" tippt, dann zählt die Entfernung in rund 3 Sekunden auf 0 herunter, der Pfeil zeigt zur Station, und danach erscheint der echte „Ziel erreicht!"-Screen
+- [ ] Angenommen die Simulation zeigt Start, Liste, Ankunft, Stationsinhalte und Ende, wenn sie gerendert wird, dann sind es die **echten Player-Komponenten** — nur der Kompass-Screen ist nachgestellt, weil der echte an GPS und Sensor hängt
+- [ ] Angenommen die drei Stationen werden gespielt, dann zeigt Station 1 Text + Multiple Choice, Station 2 **Foto** + Code, Station 3 Text + Sortieren (Inhalt siehe Abschnitt „Refinement 13")
+- [ ] Angenommen der Besucher erreicht den End-Screen, wenn er ihn abschließt, dann kann er die Simulation von vorn beginnen
+- [ ] Angenommen der Besucher spielt die Simulation, dann gibt es **keine Standortabfrage, keine Sensorabfrage, keine Punkte und keinen Schreibzugriff auf `localStorage`**
+- [ ] Angenommen der Besucher tippt in der Simulation auf Zurück-Pfeil, Menü oder einen Link, dann verlässt er die Simulation nicht: Es gibt kein Bedienelement, das zu einer echten App-Seite oder aus `/about` heraus führt
+- [ ] Angenommen der Besucher bedient die Simulation, dann sind Tap-Ziele im Handy mindestens 44px groß (keine verkleinerte Darstellung) und alles ist per Tastatur bedienbar
+- [ ] Angenommen ein Besucher auf dem Handy scrollt über die Simulation hinweg, dann bleibt die Seite scrollbar — die Simulation fängt das Scrollen nicht dauerhaft ein
+- [ ] Angenommen das Foto an Station 2 wird angezeigt, dann liegt es bei uns (kein fremder Host) und die Bildunterschrift nennt Quelle und Lizenz
+- [ ] Angenommen die Simulations-Quest wird gelesen, dann liegt sie als **eine** Datenquelle im Quest-Format vor und besteht die Validierung von `questSchema` — der Betreiber kann den Inhalt an einer Stelle austauschen
+- [ ] Angenommen die Seite wird ausgeliefert, dann bleibt `/about` statisch, ohne Hydration-Fehler, und lädt keinen fremden Host
+
 ### `/about` für Eltern und Lehrkräfte (Refinement 12, 2026-10-15)
+_Hero-Screenshot und Block „Live-Demo“ überholt durch Refinement 13 (2026-10-16)._
 _Ersetzt die Hero-Kriterien aus Refinement 9 (Hintergrundbild hinter dem Text) und die Sektionszählung aus Refinement 10 (Video an Position 2 von 8). Die vollständige Copy steht im Abschnitt „Refinement 12"._
 
 **Ansprache & Ton**
@@ -401,6 +437,10 @@ _Hero-Teil überholt durch Refinement 12 (2026-10-15): Der Hero trägt kein Hint
 - [ ] Gibt es echte Stimmen von Testern (Eltern, Lehrkräfte), die später als Zitate auf die Seite dürfen — mit Einverständnis? Bis dahin keine Zitate (2026-10-15)
 - [x] ~~Welche Beispiel-Quest zeigt der Screenshot?~~ → Erfundene Quest „Das Waldgeheimnis", Station „Die alte Eiche", 108 m, „Ziel 1 von 3" — im Skript festgelegt (2026-10-15)
 
+- [ ] Inhalt der Simulations-Quest: „Das Waldgeheimnis" ist ein Platzhalter, der Betreiber bessert nach. Besprochene Richtung: Aufgaben, deren Antwort man nur durch Hinschauen findet (z. B. „Wie viele Enten siehst du?" am Foto) (2026-10-16)
+- [ ] Reichen ~3 Sekunden je Hero-Screen? Erst am Bildschirm zu beurteilen (2026-10-16)
+- [ ] Scrollt die Seite am echten iPhone weiter, wenn der Finger über der Simulation liegt? Keine Testumgebung bildet das iframe-Scrollverhalten von iOS sicher nach (2026-10-16)
+
 ## Decision Log
 
 ### Product Decisions
@@ -491,6 +531,12 @@ _Hero-Teil überholt durch Refinement 12 (2026-10-15): Der Hero trägt kein Hint
 | FAQ mit acht Fragen, neu: Konto/App für Kinder, Standortdaten, ein Handy pro Kind, Internet unterwegs | Das sind die Fragen, die Eltern und Lehrkräfte vor dem Einsatz stellen. Antworten ehrlich: „anonym und ohne Cookies" statt „kein Tracking", „mobile Datenverbindung nötig" statt Offline-Versprechen | 2026-10-15 |
 | Nichts aus dem Entwurf, was die App nicht einlöst oder erfunden ist | Punkte, Tipp-Funktion, Teilen-Link/QR-Code, Offline, „1.000+ Quests", Zitate, „10–15 Minuten", „kein Tracking", „DSGVO-konform". Eine Landingpage, die mehr verspricht als die App hält, beschädigt genau das Vertrauen, das sie bei Eltern aufbauen soll. Echte Stimmen von Testern sind später möglich | 2026-10-15 |
 | Ko-fi und Kopfzeile bleiben unverändert, keine Sprungmarken | PRD: Unterstützung bewusst zurückhaltend; der Abschluss-CTA führt allein auf „Quest erstellen". Für Sprungmarken ist auf dem Handy kein Platz | 2026-10-15 |
+| Hero-Screens laufen einmal durch und bleiben auf dem Kompass stehen; drei Punkte zum Weiterblättern (Refinement 13) | Design-System-Regel „keine Ambient-Loops"; ein Dauer-Loop konkurriert mit Text und CTA direkt daneben. Der Kompass ist das stärkste Einzelbild. Verworfen: Endlos-Loop mit Ausnahme-Regel, nur von Hand | 2026-10-16 |
+| Neutrales Handy in CSS für Hero und Simulation | Klar als Smartphone erkennbar, ohne Marke; scharf auf jeder Größe, kein Zusatz-Download, an beiden Stellen derselbe Baustein. Verworfen: fotorealistisches iPhone-Mockup, nur Statusleiste | 2026-10-16 |
+| Live-Demo wird zur kompletten Quest-Simulation im Handy, die drei Reiter entfallen | Betreiber-Wunsch. Zeigt den ganzen Ablauf statt einzelner Aufgaben | 2026-10-16 |
+| In der Simulation läuft man per Knopf „Hinlaufen" zur Station | Zeigt den Kern von Geo Quest — erst hin, dann rätseln. Verworfen: Navigation überspringen, automatischer Film-Ablauf | 2026-10-16 |
+| Simulations-Inhalt vorerst „Das Waldgeheimnis" | Betreiber-Entscheidung, er bessert später nach. Alternativvorschläge (Lernpfad mit Bild-Hinweis, Piraten-Schatzsuche) besprochen und zurückgestellt | 2026-10-16 |
+| Foto Station 2: „Manor Park Aldershot Pond" (Jack1956, CC0), bei uns abgelegt, Quelle in der Bildunterschrift | Sieht wie ein Ort aus, zu dem man läuft, mit Enten auf dem Wasser. Kein fremder Host zur Laufzeit; Quellenangabe vorbildlich für Ersteller, obwohl CC0 sie nicht verlangt | 2026-10-16 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -499,6 +545,9 @@ _Hero-Teil überholt durch Refinement 12 (2026-10-15): Der Hero trägt kein Hint
 | Abstandshalter nach dem Hero-Bild (`info-page-shell.tsx`, `h-10 sm:h-14`) entfällt; die erste Sektion trägt den Abstand selbst mit `mt-12 sm:mt-20` wie alle anderen | Der Befund war ein Stapel aus drei Abständen (56 Innenabstand + 56 Abstandshalter + 64 `sm:mt-16`). Mit einer einzigen Quelle für den Sektionsabstand kann er nicht wieder auseinanderlaufen. Der Abstandshalter wird nur bei `heroBackground` gerendert, das ausschließlich `/about` setzt — die anderen Info-Seiten sind nicht betroffen. Der Innenabstand der Hero-Karte bleibt | 2026-09-29 |
 | Demo nutzt `MultipleChoiceTask`, `CodeTask`, `SortingTask` unverändert und rendert sie erst im Browser (Refinement 12) | Die Komponenten sind in sich geschlossen (`solved`/`onSolved` als Props) und schreiben nichts in den Speicher — die Demo kann sie ohne Nachbau einbinden. `SortingTask` mischt im `useState`-Initialisierer; bei statischem Vorrendern mischten Server und Browser unterschiedlich → Hydration-Fehler. Client-only-Rendering der Demo hält `/about` statisch | 2026-10-15 |
 | Hero-Screenshot entsteht per eingechecktem Skript aus der echten App | Nach dem Muster des Video-Posters und der Icon-Skripte: reproduzierbar statt einmalig von Hand, nach jeder Design-Änderung neu erzeugbar, und garantiert ein echter Zustand der App statt eines Mockups | 2026-10-15 |
+| Quest-Simulation im `iframe` in echter Handybreite auf eigener `noindex`-Route (Refinement 13) | Die Player-Komponenten rechnen mit dem Viewport (`vw`, `dvh`, `fixed`). Im iframe ist der Viewport das Handy — die Komponenten laufen unverändert und verhalten sich wie auf einem echten Gerät. Keine `scale()`-Verkleinerung, damit Tap-Ziele 44px bleiben. Verworfen: Komponenten auf Container-Einheiten umbauen (großer Eingriff in den Player für eine Marketing-Seite) | 2026-10-16 |
+| Kompass-Screen in der Simulation nachgestellt, `ArrivalOverlay` exportiert und wiederverwendet | `NavigationScreen` hängt an GPS und Sensor — er würde nach dem Standort fragen. Pfeil (`DirectionArrow`) und Ankunfts-Screen sind die echten Bausteine | 2026-10-16 |
+| Simulations-Quest als eine Datei im Quest-Format, gegen `questSchema` getestet | Der Betreiber tauscht den Inhalt später an einer Stelle aus; der Test verhindert, dass ein Tippfehler die Simulation still bricht | 2026-10-16 |
 | Zwei statische Seiten (`/about`, `/anleitung`) statt einer langen Seite | Bedienen zwei verschiedene Nutzer-Momente; getrennt kommt der Ersteller ohne Marketing-Scroll direkt zur Prompt-Vorlage. Bleiben trotzdem eine Spec, weil sie zusammen gebaut und deployed werden | 2026-09-04 |
 | Serverseitig gerenderte Seiten ohne Client-State | Beide Seiten sind reiner Inhalt ohne Zugriff auf Browser-Speicher; das erlaubt echte Meta-Tags für das Teilen und die schnellste Ladezeit | 2026-09-04 |
 | Nur der Kopieren-Button ist eine Client-Komponente | Kleinstmöglicher interaktiver Teil; der Prompt-Text selbst bleibt serverseitig gerendert und damit auch ohne JavaScript lesbar | 2026-09-04 |
@@ -3255,3 +3304,45 @@ Vollständig bedienbar: Reiter per Pfeiltaste (Links/Rechts, umlaufend), Antwort
 **Mit live gegangen, bekannt:** BUG-22 (Low, leerer Rahmen bei ausgefallenem Bild), BUG-17 (Medium) und BUG-18 (Low) beim Erklärvideo.
 
 **Offen:** Firefox ungetestet; der Test „keine fremden Hosts" sollte statt `localhost` die Origin der `baseURL` erlauben, damit er auch gegen Production aussagekräftig läuft.
+
+## Refinement 13 (2026-10-16) — Handy-Visual im Hero und Quest-Simulation
+
+**Anlass:** Betreiber nach dem Handy-Test der neuen `/about`: *„Auf der neuen /about seite gibt es nun ein hero visual: können wir das animieren und mehr nach Handy Screen aussehen lassen? Idee für animation: 3 screens wechseln sich ab. Eine Stationen-Übersicht, der screen mit der Kompassnadel und ein ‚geschafft' du hast die Station erreicht. Und die Simulation soll auch aussehen, als würde sie innerhalb eines Handyscreens laufen. Da würde ich eine komplette quest simulieren wollen: inkl. Start- und Ende-Screen, 3 Stationen, die je einen Aufgabentyp und Text oder ein Bild zeigen."*
+
+### Entschieden (alle Punkte vom Betreiber bestätigt)
+1. **Hero: einmal durchlaufen, dann Kompass.** Stationsübersicht → Kompass → „Ziel erreicht!" (je ~3 s), danach steht der Kompass; drei Punkte zum Weiterblättern. Verworfen: Endlos-Loop (bräuchte eine Ausnahme von „keine Ambient-Loops" und konkurriert dauerhaft mit Text und CTA daneben), nur von Hand (viele entdecken die drei Screens nie)
+2. **Neutrales Handy in CSS** an beiden Stellen. Verworfen: fotorealistisches iPhone-Mockup (großes Bild, Markenoptik mit unklaren Rechten, Android-Nutzer sehen nicht „ihr" Handy), nur Statusleiste ergänzen (zu wenig Wirkung)
+3. **Simulation: Knopf „Hinlaufen"** auf dem Kompass-Screen; die Entfernung zählt herunter, dann echter Ankunfts-Screen. Verworfen: Navigation überspringen (der Kern — erst hin, dann rätseln — fehlte), automatischer Ablauf wie ein Film (das leistet das Erklärvideo schon)
+4. **Inhalt vorerst „Das Waldgeheimnis"**, der Betreiber bessert später nach. Ein Alternativvorschlag (Lernpfad mit Aufgaben, deren Antwort im Bild steht) ist besprochen und zurückgestellt
+5. **Foto für Station 2:** „Manor Park Aldershot Pond" (Jack1956, Wikimedia Commons, **CC0**) — Parkteich mit Bäumen und Enten. Aus drei CC0-Kandidaten gewählt (Nahaufnahme einer Ente: kein Ort erkennbar; Herbstteich: keine Enten). Wird bei uns abgelegt; Quelle in der Bildunterschrift, obwohl CC0 sie nicht verlangt — so, wie die App es Erstellern empfiehlt
+
+### Simulations-Quest „Das Waldgeheimnis"
+| | Station | Inhalt | Aufgabe |
+|---|---|---|---|
+| Start | „Das Waldgeheimnis" | Intro: „Findet die drei Geheimnisse des Waldes!" | – |
+| 1 | Die alte Eiche | Text | Multiple Choice: „Welches Tier kann seinen Kopf fast ganz nach hinten drehen?" (Eichhörnchen · **Eule** · Igel) |
+| 2 | Am Ententeich | **Foto** (Manor Park Aldershot Pond, Bildunterschrift „Foto: Jack1956, Wikimedia Commons, CC0") | Code: „Zähle die Beine einer Spinne. Wie viele sind es?" (**8**) |
+| 3 | Der Fuchsbau | Text | Sortieren: „Bring die Entwicklung des Frosches in die richtige Reihenfolge." (Laich → Kaulquappe → Kaulquappe mit Beinen → Frosch) |
+| Ende | „Geschafft!" | Outro mit Konfetti, „Nochmal spielen" | – |
+
+Dieselbe Quest wie im Hero, damit beide Handys zusammenpassen. Texte für Station 1 und 3 schreibt `/frontend` kurz und kindgerecht (zwei Sätze); der Betreiber ersetzt den Inhalt später.
+
+### Für `/frontend`
+- **Die Simulation läuft in einem `iframe` in Handygröße, nicht direkt im Seitenfluss.** Die Player-Komponenten rechnen mit dem Bildschirm (`clamp(…, 11vw, …)`, `min-h-[100dvh]`, `fixed` positioniertes Konfetti und Sheets). Direkt in einen 300px-Rahmen gesetzt, wäre z. B. „Ziel erreicht!" am Desktop riesig, und das Konfetti flöge über die ganze Seite. Im iframe ist der Viewport die Handy-Breite — die Komponenten verhalten sich wie auf einem Handy, **ohne umgebaut zu werden**. Eigene, statische Route (z. B. `/about/simulation`), `noindex`, nicht in Navigation oder Sitemap
+- **Keine verkleinerte Darstellung:** Das iframe läuft in seiner echten Breite (mindestens ~320px, also passend für 375px-Handys mit 16px Rand) — eine `scale()`-Verkleinerung drückte die Tap-Ziele unter 44px
+- **Nichts führt aus der Simulation heraus:** `StationList` setzt `backHref="/play"`, `AppHeader` baut immer das Burger-Menü ein. Beides muss in der Simulation entfallen oder in-memory zurückführen (z. B. eine Prop), sonst navigiert das iframe in die echte App
+- **Kompass nachgestellt:** `NavigationScreen` hängt an GPS und Sensor und wird nicht verwendet. Die Simulation zeigt `DirectionArrow` mit fester Peilung und eine herunterzählende Entfernung; `ArrivalOverlay` (bisher nicht exportiert) wird für den Ankunfts-Screen wiederverwendet statt nachgebaut
+- **Kein Speicher, kein Standort:** Der Fortschritt lebt im State der Simulation; `QuestPlayer` (schreibt `gq_progress_*`) wird nicht verwendet
+- **Scrollen auf dem Handy:** Längere Stationen scrollen im iframe. Die Seite muss weiter scrollbar bleiben, wenn der Finger über dem Handy liegt — am echten iPhone zu prüfen (Edge Case unten)
+- **Hero-Screens per Skript:** `scripts/make-about-screenshot.mjs` erweitern auf drei Zustände (Stationsliste, Kompass, Ankunft) derselben Quest; ohne Statusleiste der App, die zeichnet der Rahmen
+- **Reduced Motion ohne Aufblitzen:** Welcher Screen beim Laden sichtbar ist, darf nicht erst nach dem Mount umspringen (z. B. über die Media Query in CSS entscheiden)
+- **Design-System-Abgrenzung:** Innerhalb der Handys gelten die Regeln der App selbst — Lime-Entfernung, Lime-Erfolgszustand und Konfetti sind App-Inhalt, kein zusätzliches Lime-Element der Seite
+- **Simulations-Quest als eine Datei** im Quest-Format, mit einem Unit-Test gegen `questSchema`
+- **Tests, die absichtlich falsch werden** und zu ziehen sind: der Block „Live-Demo" in `tests/proj-13-about-eltern.spec.ts` (Reiter, Demo-Frage im statischen HTML, Tastaturweg durch die Reiter), die Hero-Screenshot-Tests in `proj-13-landing-qa.spec.ts`, der Rhythmus-Test (Form „Demo"). Zu erhalten: kein `localStorage`-Schreibzugriff, keine Geolocation, kein Hydration-Fehler, Verbotsliste, BUG-7-Wächter
+
+### Edge Cases
+- **Analytics:** Vercel Analytics im Root-Layout würde die Simulations-Route als eigenen Seitenaufruf zählen und die Zahlen verfälschen — ausschließen oder bewusst hinnehmen und dokumentieren
+- **Simulation lädt nicht** (iframe blockiert, Route nicht erreichbar): Die Sektion darf nicht leer oder kaputt wirken — leerer Handy-Bildschirm mit kurzem Hinweis statt eines Browser-Fehlerbilds
+- **Station 2 scrollt:** Foto + Code-Aufgabe sind höher als der Handy-Bildschirm; der „Station abschließen"-Knopf muss erreichbar sein
+- **Konfetti** bleibt im Handy-Bildschirm und respektiert „Bewegung reduzieren" (tut die Komponente bereits)
+- **BUG-22** (leerer Rahmen bei ausgefallenem Bild): Mit dem CSS-Handy bleibt bei einem Ausfall ein dunkler Handy-Bildschirm statt eines leeren Rahmens; ob das Bildsymbol verschwindet, ist im Bau zu prüfen
