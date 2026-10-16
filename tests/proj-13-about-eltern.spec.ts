@@ -137,18 +137,48 @@ test.describe("Quest-Simulation (Refinement 13)", () => {
     await expect(f.getByText(/Aktiv/i).first()).toBeVisible();
   });
 
-  test("„Hinlaufen“ zählt die Entfernung herunter und führt zur Ankunft", async ({ page }) => {
+  test("„Hinlaufen“ zählt in rund 3 Sekunden Meter für Meter herunter", async ({ page }) => {
+    // Betreiber-Befund 2026-10-16: Bei 120 m sprang die Anzeige in großen
+    // Schritten und wirkte zäh. Jetzt 60 m in ~3 s, also etwa ein Meter je
+    // 50 ms — gezählt per Timer mit echter Zeit, nicht per Animations-Frame.
     await openSimulation(page);
     const f = sim(page);
     await f.getByRole("button", { name: /Los geht/ }).click();
     await f.getByRole("button", { name: /Die alte Eiche/ }).first().click();
+    // Zahl und Einheit stehen im selben Element („60m").
+    await expect(f.getByText(/^60\s*m$/)).toBeVisible();
 
-    // Zahl und Einheit stehen im selben Element („120m").
-    await expect(f.getByText(/^120\s*m$/)).toBeVisible();
+    const frame = page.frames().find((fr) => fr.url().includes("/about/simulation"))!;
+    await frame.evaluate(() => {
+      const w = window as unknown as { __seen: Set<string>; __near: boolean; __done: number; __t0: number };
+      w.__seen = new Set();
+      w.__near = false;
+      w.__done = 0;
+      new MutationObserver(() => {
+        const el = [...document.querySelectorAll("div")].find(
+          (d) => /^\d+\s*m$/.test((d.textContent ?? "").trim()) && d.children.length === 1
+        );
+        if (el) w.__seen.add((el.textContent ?? "").trim());
+        // textContent statt innerText: innerText liefert die per CSS
+        // großgeschriebene Darstellung („ZIEL ERREICHT!").
+        const text = document.body.textContent ?? "";
+        if (text.includes("fast da")) w.__near = true;
+        if (!w.__done && text.includes("Ziel erreicht")) w.__done = Date.now();
+      }).observe(document.body, { subtree: true, childList: true, characterData: true });
+      w.__t0 = Date.now();
+    });
     await f.getByRole("button", { name: "Hinlaufen" }).click();
-    // Unterwegs steht eine kleinere Zahl da, am Ende der echte Ankunfts-Screen.
-    await expect(f.getByText(/^120\s*m$/)).toHaveCount(0);
     await expect(f.getByText("Ziel erreicht!")).toBeVisible({ timeout: 8000 });
+
+    const r = await frame.evaluate(() => {
+      const w = window as unknown as { __seen: Set<string>; __near: boolean; __done: number; __t0: number };
+      return { ms: w.__done - w.__t0, steps: w.__seen.size, near: w.__near };
+    });
+    expect(r.ms, `${r.ms} ms`).toBeGreaterThan(2500);
+    expect(r.ms, `${r.ms} ms`).toBeLessThan(4500);
+    // Die meisten Meter erscheinen einzeln — kein Springen in großen Schritten.
+    expect(r.steps, `${r.steps} von 61 Werten`).toBeGreaterThanOrEqual(40);
+    expect(r.near, "„Du bist fast da“ erscheint vor der Ankunft").toBe(true);
   });
 
   test("Zurück in der Stationsliste führt zum Start der Simulation, nicht nach /play", async ({

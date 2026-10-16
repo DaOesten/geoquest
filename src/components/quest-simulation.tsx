@@ -23,8 +23,15 @@ type Screen =
   | { kind: "modules"; index: number }
   | { kind: "outro" };
 
-/** Startentfernung je Station — glaubwürdig, aber schnell heruntergezählt. */
-const START_DISTANCE = [120, 85, 60];
+/**
+ * Startentfernung je Station. So gewählt, dass in rund 3 Sekunden jeder Meter
+ * einzeln sichtbar herunterzählt (~50 ms je Meter) — bei 120 m sprang die
+ * Anzeige in großen Schritten und wirkte unruhig statt wie Laufen
+ * (Betreiber-Befund 2026-10-16). Alle knapp über 50 m, damit jede Station
+ * beide Zustände zeigt: „Zur nächsten Station" (Lime), in der letzten Sekunde
+ * „Du bist fast da" (Teal).
+ */
+const START_DISTANCE = [60, 55, 65];
 /** So lange zählt „Hinlaufen" herunter (Spec: rund 3 Sekunden). */
 const WALK_MS = 3000;
 /** Feste Peilung je Station, damit der Pfeil nicht immer gleich steht. */
@@ -190,7 +197,6 @@ function SimulatedNavigation({
   const start = START_DISTANCE[stationIndex] ?? 100;
   const [distance, setDistance] = useState(start);
   const [walking, setWalking] = useState(false);
-  const frame = useRef<number | null>(null);
   // In einer Ref, damit ein neues `onArrived` der Elternkomponente das
   // laufende Herunterzählen nicht neu startet.
   const arrived = useRef(onArrived);
@@ -205,20 +211,21 @@ function SimulatedNavigation({
       arrived.current();
       return;
     }
-    const t0 = performance.now();
-    const tick = (now: number) => {
-      const progress = Math.min(1, (now - t0) / WALK_MS);
+    // Timer statt `requestAnimationFrame`: Browser drosseln oder pausieren
+    // Animations-Frames in eingebetteten Fenstern (Stromsparmodus, Fokus
+    // verloren), der Zähler lief dann unkontrolliert länger. Der Stand wird
+    // aus der tatsächlich vergangenen Zeit berechnet, nicht aus der Zahl der
+    // Ticks — ein verspäteter Tick holt auf, statt die Dauer zu dehnen.
+    const t0 = Date.now();
+    const id = window.setInterval(() => {
+      const progress = Math.min(1, (Date.now() - t0) / WALK_MS);
       setDistance(Math.round(start * (1 - progress)));
-      if (progress < 1) {
-        frame.current = requestAnimationFrame(tick);
-      } else {
+      if (progress >= 1) {
+        window.clearInterval(id);
         arrived.current();
       }
-    };
-    frame.current = requestAnimationFrame(tick);
-    return () => {
-      if (frame.current !== null) cancelAnimationFrame(frame.current);
-    };
+    }, WALK_MS / start);
+    return () => window.clearInterval(id);
   }, [walking, start]);
 
   const isNear = distance <= 50;

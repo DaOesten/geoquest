@@ -627,6 +627,8 @@ Spec ist aktualisiert (22 Acceptance Criteria in einem eigenen Block, 6 Produkt-
 
 **Für künftige Läufe:** Die Hänger kamen vom Rechner — der Mac ging in den Wartungs-Ruhezustand (`pmset -g log`), Läufe standen dann bei 0 % CPU, zwei Tests brauchten exakt 15 Minuten. `caffeinate -i` hilft nur gegen Leerlauf-Schlaf. Bei unerklärlichen Hängern zuerst den Sleep-Log prüfen.
 
+**Nachtrag 2026-10-16 — Herunterzählen:** Betreiber-Befund „sehr lange heruntergezählt". Gemessen waren es bereits 3 s, aber 120 m in 3 s ließen die Anzeige springen. Jetzt 60/55/65 m, ein Meter je ~50 ms (gemessen 60 Einzelwerte), und ein Timer mit echter Zeit statt `requestAnimationFrame`, den Browser in eingebetteten Fenstern drosseln können. Neuer Test, 6/6 Wiederholungen grün; Simulations-Datei 49/49.
+
 ## Next Available ID: PROJ-16
 
 ## Offenes Refinement: BUG-6 — falsche iOS-Erkennung beim Kompass (2026-09-07)
