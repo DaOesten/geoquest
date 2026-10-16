@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | Approved | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 | PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Deployed | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
 
@@ -632,6 +632,8 @@ Spec ist aktualisiert (22 Acceptance Criteria in einem eigenen Block, 6 Produkt-
 **QA am 2026-10-16 abgeschlossen: 22/22 Acceptance Criteria, 2 Low-Bugs, keine Critical/High/Medium — Approved.** Über die Frontend-Phase hinaus geprüft: Von fremder Origin eingebettet verweigert Chrome die Simulation, WebKit zeigt ein leeres Fenster — die freigegebene `SAMEORIGIN`-Ausnahme wirkt. Touch-Wischen über dem iframe (Chrome/Pixel 7) scrollt die Seite weiter, auf Station 2 erst den Inhalt, dann die Seite — kein Einfangen; **echtes iOS bleibt ungeprüft**. Bei „Bewegung reduzieren" springt die Simulation sofort zur Ankunft, Konfetti 0 sichtbar.
 
 **BUG-23 (Low):** Bei blockiertem iframe legt Chrome seine graue Fehlerseite über den Hinweis; WebKit zeigt dauerhaft „wird geladen …". **BUG-24 (Low):** Inaktive Punkte unter dem Hero-Handy 2.8:1 statt der für Bedienelemente verlangten 3:1 — **am 2026-10-17 behoben** (`bg-gq-grey/70`, gemessen 4.39:1), der Wächter ist jetzt ein normaler Test; 125/0. **BUG-22** verbessert (keine Höhensprünge mehr), WebKit zeigt aber weiter das Fragezeichen-Symbol.
+
+**Am 2026-10-17 nach Production deployt** (Tag `v1.47.0-PROJ-13`, Push `f1b35b7..b6a4e62`) — live auf https://geoquest.technolomagie.de/about nach 57 s, belegt an `/about/simulation` (vorher 404). Neue Bilder byte-identisch, 22 Endpunkte HTTP 200, `SAMEORIGIN` nur für die Simulations-Route, `noindex`. Der Analytics-Filter ist am live ausgelieferten Code geprüft (lässt `/about` durch, verwirft die Simulation); echte Ereignisse sendet Vercel aus der Testumgebung nicht (`navigator.webdriver`). **PROJ-13-Suiten gegen Production: Chrome 89/1, Safari 84/3** — der bekannte Hosts-Test und ein Klick-Wettlauf im Test vor der Hydration über das echte Netz; `openSimulation` wartet jetzt darauf, danach 9/9. **PROJ-13 Refinement 13 ist abgeschlossen.** Offen: BUG-23, BUG-22, iOS-Scrollen am Gerät, Firefox.
 
 **Gegenprobe mit drei eingebauten Fehlern:** Ohne `SAMEORIGIN` fällt der Header-Test samt aller Simulationstests; mit Ausnahme fallen genau der Zähl-Test (alte 120 m) und „nichts führt hinaus" (Menü zurück). **Gesamtsuite 1452/1** — der eine ist der dokumentiert wackelige Service-Worker-Test, danach 15/15. Unit 432/432.
 

@@ -50,7 +50,17 @@ function sim(page: Page) {
 async function openSimulation(page: Page) {
   await page.goto("/about");
   await page.locator(SIM).scrollIntoViewIfNeeded();
-  await expect(sim(page).getByRole("button", { name: /Los geht/ })).toBeVisible();
+  const start = sim(page).getByRole("button", { name: /Los geht/ });
+  await expect(start).toBeVisible();
+  // Der Knopf steht schon im ausgelieferten HTML, bedienbar wird er erst, wenn
+  // React ihn übernommen hat. Über das echte Netz (Production-Lauf vom
+  // 2026-10-17) ging ein Klick in diesem Fenster verloren. Warten, bis React
+  // seine internen Eigenschaften am Element gesetzt hat.
+  await expect
+    .poll(() =>
+      start.evaluate((el) => Object.keys(el).some((k) => k.startsWith("__reactFiber")))
+    )
+    .toBe(true);
 }
 
 /** Läuft per „Hinlaufen" zur Station und öffnet ihre Inhalte. */

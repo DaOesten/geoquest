@@ -1,7 +1,7 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Approved
-_**Refinement 13 (2026-10-16): Handy-Visual im Hero animiert, Live-Demo wird zur Quest-Simulation im Handy.** Betreiber nach dem Handy-Test der neuen `/about`: Das Hero-Visual soll mehr nach Handy aussehen und drei Screens zeigen (Stationsübersicht, Kompass, „Ziel erreicht“); die Demo soll eine komplette Quest in einem Handy-Screen simulieren. Entschieden: Die Screens laufen **einmal** durch und bleiben auf dem Kompass stehen (Design-System-Regel „keine Ambient-Loops“), danach von Hand weiterblättern; ein **neutrales Handy in CSS** für beide Stellen; in der Simulation läuft man per Knopf „Hinlaufen“ zur Station; Inhalt vorerst „Das Waldgeheimnis“ (Betreiber bessert später nach), Station 2 mit dem CC0-Foto „Manor Park Aldershot Pond“. Siehe Abschnitt „Refinement 13“ am Ende. **Frontend umgesetzt am 2026-10-16** — Simulation im iframe, Hero läuft einmal durch und bleibt auf dem Kompass; die Ausnahme von der Sicherheitsregel (`X-Frame-Options: SAMEORIGIN` nur für `/about/simulation`) ist vom Betreiber freigegeben. Siehe „Implementation Notes (Frontend — Refinement 13)“. **QA am 2026-10-16: 22/22 Acceptance Criteria, 2 Low-Bugs, Production-Ready — Approved.** BUG-24 am 2026-10-17 behoben, BUG-23 offen._
+## Status: Deployed
+_**Refinement 13 (2026-10-16): Handy-Visual im Hero animiert, Live-Demo wird zur Quest-Simulation im Handy.** Betreiber nach dem Handy-Test der neuen `/about`: Das Hero-Visual soll mehr nach Handy aussehen und drei Screens zeigen (Stationsübersicht, Kompass, „Ziel erreicht“); die Demo soll eine komplette Quest in einem Handy-Screen simulieren. Entschieden: Die Screens laufen **einmal** durch und bleiben auf dem Kompass stehen (Design-System-Regel „keine Ambient-Loops“), danach von Hand weiterblättern; ein **neutrales Handy in CSS** für beide Stellen; in der Simulation läuft man per Knopf „Hinlaufen“ zur Station; Inhalt vorerst „Das Waldgeheimnis“ (Betreiber bessert später nach), Station 2 mit dem CC0-Foto „Manor Park Aldershot Pond“. Siehe Abschnitt „Refinement 13“ am Ende. **Frontend umgesetzt am 2026-10-16** — Simulation im iframe, Hero läuft einmal durch und bleibt auf dem Kompass; die Ausnahme von der Sicherheitsregel (`X-Frame-Options: SAMEORIGIN` nur für `/about/simulation`) ist vom Betreiber freigegeben. Siehe „Implementation Notes (Frontend — Refinement 13)“. **QA am 2026-10-16: 22/22 Acceptance Criteria, 2 Low-Bugs, Production-Ready — Approved.** BUG-24 am 2026-10-17 behoben, BUG-23 offen. **Am 2026-10-17 nach Production deployt** (Tag `v1.47.0-PROJ-13`)._
 
 _**Refinement 12 (2026-10-15): `/about` spricht Eltern und Lehrkräfte an.** Betreiber: *„Ich möchte /about mehr auf die Zielgruppe Eltern, Lehrer abstimmen."* Als Richtung lieferte er einen externen HTML-Entwurf (hell, grün, Reiter, Live-Demo, App-Screenshot im Hero). Entschieden: Aufbau und Inhalte in diese Richtung, **Geo-Quest-Look und „du" bleiben**, Kinder werden nur noch über die Erwachsenen angesprochen. Neu: App-Screenshot statt Hintergrundbild im Hero, Vorteile-Leiste, drei Zielgruppen-Karten, Live-Demo mit echten Aufgaben-Bausteinen, FAQ aus Elternsicht. Entfallen: „Jeder Ort kann ein Level sein", „Du bist der Game-Designer", die Zielgruppe „Kinder & Jugendliche". Alles, was die App nicht einlöst oder erfunden wäre (Punkte, Tipps, Teilen-Link, Offline, Nutzerzahlen, Kundenstimmen, Zeitangabe), wurde aus dem Entwurf **nicht** übernommen. Siehe Abschnitt „Refinement 12" am Ende. **Frontend umgesetzt am 2026-10-15** — CTA auf 11 Viewports über dem Falz, Abschluss-Kontrast pro Pixel ≥ 4.86:1, PROJ-13 282/0, Gegenprobe gegen den Vorgänger: 82 Tests fallen. Siehe „Implementation Notes (Frontend — Refinement 12)". **QA am 2026-10-15: 31/31 Acceptance Criteria, 1 Low-Bug (BUG-22), Production-Ready.** **Am 2026-10-16 nach Production deployt** (Tag `v1.46.0-PROJ-13`)._
 
@@ -13,7 +13,7 @@ _Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und d
 
 _**Refinement 7 (2026-09-20): Das Logo-Lockup kehrt auf den Desktop zurück.** Betreiber-Befund: „ich kann auf /about auf dem desktop das Logo nicht mehr sehen." **Frontend umgesetzt am 2026-09-21** — `lg:hidden` entfernt; CTA auf allen elf Viewports über dem Falz nachgemessen, knappster Fall 1366×768 mit 45px. Siehe Implementation Notes._
 **Created:** 2026-09-04
-**Last Updated:** 2026-10-16 (Refinement 13 QA-geprüft — Handy-Visual und Quest-Simulation)
+**Last Updated:** 2026-10-17 (Refinement 13 deployt — Handy-Visual und Quest-Simulation)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -3458,3 +3458,21 @@ Fällt ein Hero-Screen aus, hält der Rahmen jetzt in beiden Engines dieselbe H�
 - **Security:** ohne Befund; die freigegebene `SAMEORIGIN`-Ausnahme wirkt wie beschrieben
 - **Production Ready:** YES
 - **Recommendation:** Deploy; BUG-24 (ein Farbwert) und BUG-23 bei Gelegenheit
+
+## Deployment — Refinement 13: Handy-Visual und Quest-Simulation (2026-10-17)
+
+**Live auf https://geoquest.technolomagie.de/about** (und https://geoquesty.vercel.app/about), Tag `v1.47.0-PROJ-13`, Push `f1b35b7..b6a4e62` — genau die sechs PROJ-13-Commits von Refinement 13. **Live nach 57 Sekunden**, belegt an `/about/simulation` (vorher 404).
+
+**Vorab:** Build und Lint sauber, QA Approved ohne Critical/High, BUG-24 vor dem Deploy behoben, keine Secrets.
+
+**Live verifiziert:**
+- Die vier neuen Bilder (drei Hero-Screens, Teich-Foto) **byte-identisch** zum Repo; **22 Endpunkte** auf beiden Domains HTTP 200
+- `x-frame-options`: **`SAMEORIGIN` nur für `/about/simulation`**, `DENY` auf `/about`, `/play` und allen übrigen; die Route trägt `noindex, nofollow`
+- **Analytics-Filter am live ausgelieferten Code geprüft:** Der `beforeSend`-Filter lässt einen Seitenaufruf von `/about` durch und verwirft den der Simulation — in der Seite wie im iframe. Echte Ereignisse lassen sich aus der Testumgebung nicht beobachten: Vercel lädt das Skript unter einem verschleierten Pfad (`/0dd7fd6f4cb278f3/script.js`) und sendet nichts, solange `navigator.webdriver` gesetzt ist
+- **PROJ-13-Suiten direkt gegen Production**, seriell je Engine: Chrome **89 passed / 1 failed**, Mobile Safari **84 passed / 3 failed**. Der Fehlschlag in beiden Engines ist der bekannte Hosts-Test, der nur `localhost` erlaubt. Die zwei weiteren in Safari waren ein Wettlauf im Test: Über das echte Netz tippte er auf „Los geht's", bevor React den Knopf übernommen hatte. `openSimulation` wartet jetzt darauf; danach **9/9** gegen Production
+- Konsole: WebKit 0 Fehler; Chrome nur der bekannte `/favicon.ico`-404; keine Antwort ≥ 400 von der Seite
+- Am iPhone-Bildschirm (WebKit) abgenommen: Simulation mit Start-Screen im Handy, Hero-Handy mit Punkten
+
+**Mit live gegangen, bekannt:** BUG-23 (Low, graue Fehlerseite bei blockiertem iframe), BUG-22 (Low, verbessert), BUG-17/18 (Video).
+
+**Offen:** Scrollen über dem iframe am echten iPhone; Firefox; der Hosts-Test sollte die Origin der `baseURL` erlauben.
