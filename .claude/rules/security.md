@@ -26,6 +26,7 @@ paths:
 
 ## Security Headers
 - X-Frame-Options: DENY
+  - Einzige Ausnahme: `/about/simulation` sendet `SAMEORIGIN`, weil `/about` die Quest-Simulation als iframe einbettet (PROJ-13, Refinement 13, vom Betreiber am 2026-10-16 freigegeben). Fremde Seiten können sie weiterhin nicht einbetten. Weitere Ausnahmen brauchen eine eigene Freigabe
 - X-Content-Type-Options: nosniff
 - Referrer-Policy: origin-when-cross-origin
 - Strict-Transport-Security with includeSubDomains
