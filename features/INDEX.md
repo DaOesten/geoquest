@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | Approved | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 | PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Deployed | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
 
@@ -628,6 +628,12 @@ Spec ist aktualisiert (22 Acceptance Criteria in einem eigenen Block, 6 Produkt-
 **Für künftige Läufe:** Die Hänger kamen vom Rechner — der Mac ging in den Wartungs-Ruhezustand (`pmset -g log`), Läufe standen dann bei 0 % CPU, zwei Tests brauchten exakt 15 Minuten. `caffeinate -i` hilft nur gegen Leerlauf-Schlaf. Bei unerklärlichen Hängern zuerst den Sleep-Log prüfen.
 
 **Nachtrag 2026-10-16 — Herunterzählen:** Betreiber-Befund „sehr lange heruntergezählt". Gemessen waren es bereits 3 s, aber 120 m in 3 s ließen die Anzeige springen. Jetzt 60/55/65 m, ein Meter je ~50 ms (gemessen 60 Einzelwerte), und ein Timer mit echter Zeit statt `requestAnimationFrame`, den Browser in eingebetteten Fenstern drosseln können. Neuer Test, 6/6 Wiederholungen grün; Simulations-Datei 49/49.
+
+**QA am 2026-10-16 abgeschlossen: 22/22 Acceptance Criteria, 2 Low-Bugs, keine Critical/High/Medium — Approved.** Über die Frontend-Phase hinaus geprüft: Von fremder Origin eingebettet verweigert Chrome die Simulation, WebKit zeigt ein leeres Fenster — die freigegebene `SAMEORIGIN`-Ausnahme wirkt. Touch-Wischen über dem iframe (Chrome/Pixel 7) scrollt die Seite weiter, auf Station 2 erst den Inhalt, dann die Seite — kein Einfangen; **echtes iOS bleibt ungeprüft**. Bei „Bewegung reduzieren" springt die Simulation sofort zur Ankunft, Konfetti 0 sichtbar.
+
+**BUG-23 (Low):** Bei blockiertem iframe legt Chrome seine graue Fehlerseite über den Hinweis; WebKit zeigt dauerhaft „wird geladen …". **BUG-24 (Low):** Inaktive Punkte unter dem Hero-Handy 2.8:1 statt der für Bedienelemente verlangten 3:1, `test.fail`-Wächter vorhanden. **BUG-22** verbessert (keine Höhensprünge mehr), WebKit zeigt aber weiter das Fragezeichen-Symbol.
+
+**Gegenprobe mit drei eingebauten Fehlern:** Ohne `SAMEORIGIN` fällt der Header-Test samt aller Simulationstests; mit Ausnahme fallen genau der Zähl-Test (alte 120 m) und „nichts führt hinaus" (Menü zurück). **Gesamtsuite 1452/1** — der eine ist der dokumentiert wackelige Service-Worker-Test, danach 15/15. Unit 432/432.
 
 ## Next Available ID: PROJ-16
 

@@ -599,3 +599,130 @@ test.describe("QA: Sicherheit und Robustheit", () => {
     expect(overflow).toBeLessThanOrEqual(0);
   });
 });
+
+/**
+ * QA Refinement 13 (2026-10-16) — über die Frontend-Phase hinaus: Einbettung
+ * von fremder Origin, Scrollen über dem iframe, „Bewegung reduzieren" in der
+ * Simulation, Tastatur für die Punkte, Kontrast der Punkte.
+ */
+test.describe("QA Refinement 13", () => {
+  test("eine fremde Origin kann die Simulation nicht einbetten", async ({ page, baseURL }) => {
+    // 127.0.0.1 und localhost sind verschiedene Origins auf demselben Server.
+    test.skip(!baseURL?.includes("localhost"), "nur lokal: braucht eine zweite Origin");
+    const foreign = baseURL!.replace("localhost", "127.0.0.1");
+    await page.goto(`${foreign}/offline.html`);
+    await page.evaluate((src) => {
+      const f = document.createElement("iframe");
+      f.src = src;
+      document.body.appendChild(f);
+    }, `${baseURL}/about/simulation`);
+    await page.waitForTimeout(2000);
+    // Der Browser verweigert die Darstellung — kein Start-Knopf im fremden Rahmen.
+    await expect(
+      page.frameLocator("iframe").getByRole("button", { name: /Los geht/ })
+    ).toHaveCount(0);
+  });
+
+  test("Wischen über der Simulation scrollt die Seite weiter (Touch, Chrome)", async ({
+    browser,
+    browserName,
+    baseURL,
+  }) => {
+    test.skip(browserName !== "chromium", "CDP-Touch nur in Chromium");
+    const context = await browser.newContext({ viewport: { width: 412, height: 839 }, hasTouch: true, isMobile: true });
+    const page = await context.newPage();
+    await page.goto(`${baseURL}/about`);
+    const iframe = page.locator(SIM);
+    await iframe.scrollIntoViewIfNeeded();
+    await expect(page.frameLocator(SIM).getByRole("button", { name: /Los geht/ })).toBeVisible();
+    const box = (await iframe.boundingBox())!;
+    const before = await page.evaluate(() => scrollY);
+
+    const cdp = await context.newCDPSession(page);
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height / 2;
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y: y + 150 }] });
+    for (let i = 1; i <= 12; i++) {
+      await cdp.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: [{ x, y: y + 150 - (300 * i) / 12 }],
+      });
+      await page.waitForTimeout(16);
+    }
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await page.waitForTimeout(600);
+
+    // Der Start-Screen hat nichts zu scrollen — der Wisch muss die Seite bewegen.
+    expect(await page.evaluate(() => scrollY)).toBeGreaterThan(before + 100);
+    await context.close();
+  });
+
+  test("bei „Bewegung reduzieren“ springt die Simulation sofort zur Ankunft, ohne sichtbares Konfetti", async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await openSimulation(page);
+    const f = sim(page);
+    await f.getByRole("button", { name: /Los geht/ }).click();
+    await f.getByRole("button", { name: /Die alte Eiche/ }).first().click();
+    const t0 = Date.now();
+    await f.getByRole("button", { name: "Hinlaufen" }).click();
+    await expect(f.getByText("Ziel erreicht!")).toBeVisible();
+    expect(Date.now() - t0).toBeLessThan(1500);
+
+    const frame = page.frames().find((fr) => fr.url().includes("/about/simulation"))!;
+    expect(await frame.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches)).toBe(true);
+    const visible = await frame.evaluate(
+      () =>
+        [...document.querySelectorAll(".gq-confetti-particle")].filter(
+          (e) => getComputedStyle(e).display !== "none"
+        ).length
+    );
+    expect(visible).toBe(0);
+  });
+
+  test("die drei Punkte sind per Tab erreichbar und blättern per Enter", async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(browserName === "webkit", "WebKit/macOS: Tab überspringt Buttons");
+    await page.clock.install();
+    await page.goto("/about");
+    await page.getByRole("link", { name: /Quest erstellen/i }).first().focus();
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Tab");
+    const second = page.getByRole("button", { name: "Screen 2: Kompass" });
+    await expect(second).toBeFocused();
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("button", { name: "Screen 3: Ziel erreicht" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+  });
+
+  // BUG-24 (Low): Inaktive Punkte erreichen nur 2.8:1 gegen den Seitengrund —
+  // WCAG 1.4.11 verlangt für Bedienelemente 3:1. `test.fail`, bis behoben;
+  // schlägt an, falls der Fehler unbemerkt verschwindet oder wiederkehrt.
+  test.fail("inaktive Punkte erreichen mindestens 3:1 Kontrast (BUG-24)", async ({ page }) => {
+    await page.goto("/about");
+    const ratio = await page.evaluate(() => {
+      const parse = (s: string) => (s.match(/[\d.]+/g) ?? []).map(Number);
+      const lum = ([r, g, b]: number[]) => {
+        const f = (c: number) => {
+          c /= 255;
+          return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+        };
+        return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+      };
+      const bg = [11, 15, 18];
+      const dot = document.querySelector("[aria-label='Screen 2: Kompass'] span")!;
+      const c = parse(getComputedStyle(dot).backgroundColor);
+      const a = c.length === 4 ? c[3] : 1;
+      const mix = c.slice(0, 3).map((v, i) => v * a + bg[i] * (1 - a));
+      const [x, y] = [lum(mix), lum(bg)].sort((p, q) => q - p);
+      return (x + 0.05) / (y + 0.05);
+    });
+    expect(ratio).toBeGreaterThanOrEqual(3);
+  });
+});

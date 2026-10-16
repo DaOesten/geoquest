@@ -1,7 +1,7 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: In Progress
-_**Refinement 13 (2026-10-16): Handy-Visual im Hero animiert, Live-Demo wird zur Quest-Simulation im Handy.** Betreiber nach dem Handy-Test der neuen `/about`: Das Hero-Visual soll mehr nach Handy aussehen und drei Screens zeigen (Stationsübersicht, Kompass, „Ziel erreicht“); die Demo soll eine komplette Quest in einem Handy-Screen simulieren. Entschieden: Die Screens laufen **einmal** durch und bleiben auf dem Kompass stehen (Design-System-Regel „keine Ambient-Loops“), danach von Hand weiterblättern; ein **neutrales Handy in CSS** für beide Stellen; in der Simulation läuft man per Knopf „Hinlaufen“ zur Station; Inhalt vorerst „Das Waldgeheimnis“ (Betreiber bessert später nach), Station 2 mit dem CC0-Foto „Manor Park Aldershot Pond“. Siehe Abschnitt „Refinement 13“ am Ende. **Frontend umgesetzt am 2026-10-16** — Simulation im iframe, Hero läuft einmal durch und bleibt auf dem Kompass; die Ausnahme von der Sicherheitsregel (`X-Frame-Options: SAMEORIGIN` nur für `/about/simulation`) ist vom Betreiber freigegeben. Siehe „Implementation Notes (Frontend — Refinement 13)“._
+## Status: Approved
+_**Refinement 13 (2026-10-16): Handy-Visual im Hero animiert, Live-Demo wird zur Quest-Simulation im Handy.** Betreiber nach dem Handy-Test der neuen `/about`: Das Hero-Visual soll mehr nach Handy aussehen und drei Screens zeigen (Stationsübersicht, Kompass, „Ziel erreicht“); die Demo soll eine komplette Quest in einem Handy-Screen simulieren. Entschieden: Die Screens laufen **einmal** durch und bleiben auf dem Kompass stehen (Design-System-Regel „keine Ambient-Loops“), danach von Hand weiterblättern; ein **neutrales Handy in CSS** für beide Stellen; in der Simulation läuft man per Knopf „Hinlaufen“ zur Station; Inhalt vorerst „Das Waldgeheimnis“ (Betreiber bessert später nach), Station 2 mit dem CC0-Foto „Manor Park Aldershot Pond“. Siehe Abschnitt „Refinement 13“ am Ende. **Frontend umgesetzt am 2026-10-16** — Simulation im iframe, Hero läuft einmal durch und bleibt auf dem Kompass; die Ausnahme von der Sicherheitsregel (`X-Frame-Options: SAMEORIGIN` nur für `/about/simulation`) ist vom Betreiber freigegeben. Siehe „Implementation Notes (Frontend — Refinement 13)“. **QA am 2026-10-16: 22/22 Acceptance Criteria, 2 Low-Bugs (BUG-23, BUG-24), Production-Ready — Approved.**_
 
 _**Refinement 12 (2026-10-15): `/about` spricht Eltern und Lehrkräfte an.** Betreiber: *„Ich möchte /about mehr auf die Zielgruppe Eltern, Lehrer abstimmen."* Als Richtung lieferte er einen externen HTML-Entwurf (hell, grün, Reiter, Live-Demo, App-Screenshot im Hero). Entschieden: Aufbau und Inhalte in diese Richtung, **Geo-Quest-Look und „du" bleiben**, Kinder werden nur noch über die Erwachsenen angesprochen. Neu: App-Screenshot statt Hintergrundbild im Hero, Vorteile-Leiste, drei Zielgruppen-Karten, Live-Demo mit echten Aufgaben-Bausteinen, FAQ aus Elternsicht. Entfallen: „Jeder Ort kann ein Level sein", „Du bist der Game-Designer", die Zielgruppe „Kinder & Jugendliche". Alles, was die App nicht einlöst oder erfunden wäre (Punkte, Tipps, Teilen-Link, Offline, Nutzerzahlen, Kundenstimmen, Zeitangabe), wurde aus dem Entwurf **nicht** übernommen. Siehe Abschnitt „Refinement 12" am Ende. **Frontend umgesetzt am 2026-10-15** — CTA auf 11 Viewports über dem Falz, Abschluss-Kontrast pro Pixel ≥ 4.86:1, PROJ-13 282/0, Gegenprobe gegen den Vorgänger: 82 Tests fallen. Siehe „Implementation Notes (Frontend — Refinement 12)". **QA am 2026-10-15: 31/31 Acceptance Criteria, 1 Low-Bug (BUG-22), Production-Ready.** **Am 2026-10-16 nach Production deployt** (Tag `v1.46.0-PROJ-13`)._
 
@@ -13,7 +13,7 @@ _Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und d
 
 _**Refinement 7 (2026-09-20): Das Logo-Lockup kehrt auf den Desktop zurück.** Betreiber-Befund: „ich kann auf /about auf dem desktop das Logo nicht mehr sehen." **Frontend umgesetzt am 2026-09-21** — `lg:hidden` entfernt; CTA auf allen elf Viewports über dem Falz nachgemessen, knappster Fall 1366×768 mit 45px. Siehe Implementation Notes._
 **Created:** 2026-09-04
-**Last Updated:** 2026-10-16 (Refinement 13 Frontend umgesetzt — Handy-Visual und Quest-Simulation)
+**Last Updated:** 2026-10-16 (Refinement 13 QA-geprüft — Handy-Visual und Quest-Simulation)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -3390,3 +3390,70 @@ Betreiber nach dem Test: *„In der Simulation wird bei allen 3 Stationen sehr l
 **Test:** „Hinlaufen zählt in rund 3 Sekunden Meter für Meter herunter" — Dauer 2,5–4,5 s, mindestens 40 von 61 Werten einzeln sichtbar, „Du bist fast da" erscheint vor der Ankunft; 6/6 Wiederholungen grün. Simulations-Datei 49/49, Unit 432/432.
 
 **Messfehler, offen benannt:** Der erste Testentwurf suchte „Ziel erreicht" per `innerText` und fand es nie — `innerText` liefert die per CSS großgeschriebene Darstellung („ZIEL ERREICHT!"). Jetzt `textContent`.
+
+## QA Test Results — Refinement 13: Handy-Visual und Quest-Simulation (2026-10-16)
+
+**Getestet:** 2026-10-16 gegen den Production-Build (`next start`, Port 3100), Chrome 152 und WebKit (iPhone 13), dazu Chrome mit Touch-Emulation (Pixel 7). **Ergebnis: 22/22 Acceptance Criteria erfüllt, 2 neue Low-Bugs (BUG-23, BUG-24), BUG-22 verbessert, keine Critical/High/Medium. Production-Ready.**
+
+### Acceptance Criteria
+| Block | Ergebnis | Beleg |
+|---|---|---|
+| Handy-Rahmen (2) | erfüllt | Kamera-Aussparung, Statusleiste „9:41" mit Empfang/WLAN/Akku, Seitentasten, keine Marke; derselbe `PhoneFrame` an beiden Stellen, kein Gerätebild |
+| Hero (7) | erfüllt | Liste → Kompass → Ziel erreicht → Kompass mit Playwright-Uhr gemessen, danach 30 s unverändert; Punkte 44px, per Tab und Enter bedienbar; „Bewegung reduzieren" → sofort Kompass; Übergang 300ms; **keine Live-Region**, ausgeblendete Screens mit leerem `alt` und `aria-hidden`; drei echte Screens; CTA auf 4 Breiten über dem Falz (320×568: 51px Luft) |
+| Simulation (13) | erfüllt | Durchlauf Start bis Ende und zurück; „Hinlaufen" 60 m in ~3 s Meter für Meter; echte Player-Screens; Station 1/2/3 mit Text+MC, Foto+Code, Text+Sortieren; kein `localStorage`, keine Geolocation, keine Punkte; kein Menü, kein Link, iframe bleibt auf der Route; iframe 320px ohne `scale()`; Foto vom eigenen Host mit Quelle; Demo-Quest besteht `questSchema`; `/about` und `/about/simulation` statisch, kein Hydration-Fehler |
+
+### Über die Frontend-Phase hinaus geprüft
+- **Einbettung von fremder Origin:** Von `127.0.0.1` aus eingebettet verweigert Chrome die Simulation („localhost hat die Verbindung abgelehnt"), WebKit zeigt ein leeres Fenster — `SAMEORIGIN` wirkt. Von der eigenen Origin lädt sie. Alle anderen Seiten senden weiter `DENY`
+- **Scrollen über dem iframe (Touch, Chrome/Pixel 7):** Auf dem Start-Screen scrollt ein Wisch die Seite weiter (+411px); auf Station 2 scrollt erst der Inhalt im Handy bis zum Ende (138px), dann die Seite bis zu ihrem Ende. Kein Einfangen. **Echtes iOS bleibt ungeprüft** — keine Testumgebung bildet das iframe-Scrollen von iOS Safari sicher nach
+- **„Bewegung reduzieren" in der Simulation:** „Hinlaufen" springt in ~50 ms zur Ankunft; die 70 Konfetti-Elemente stehen im DOM, sind aber per `display: none` ausgeblendet — 0 sichtbar
+- **Analytics-Filter:** `beforeSend` mit `/about/simulation` steht im ausgelieferten Chunk; die Wirkung selbst ist nur in Production messbar
+- **Responsive:** 320/375/768/1440px, beide Handys ohne Überlauf; Simulationsbildschirm 266/320/320/320px
+
+### Bugs
+
+#### BUG-23: Blockiertes iframe zeigt in Chrome die Browser-Fehlerseite
+- **Severity:** Low
+- **Steps to Reproduce:**
+  1. `/about` öffnen, Anfragen an `/about/simulation` blockieren
+  2. Erwartet (Edge Case der Spec): leerer Handy-Bildschirm mit kurzem Hinweis statt eines Browser-Fehlerbilds
+  3. Tatsächlich: **Chrome** legt seine graue Fehlerseite mit dem traurigen Dokument-Symbol über den Hinweis. **WebKit** zeigt den Hinweis, aber dauerhaft „Die Simulation wird geladen …", obwohl nichts mehr lädt
+- **Folgen:** selten — die Route kommt vom eigenen Server; tritt bei Netzabbruch, strengen Content-Blockern oder einem künftigen Header-Fehler auf
+- **Priority:** Nice to have
+
+#### BUG-24: Inaktive Punkte unter dem Hero-Handy unter 3:1 Kontrast
+- **Severity:** Low
+- **Steps to Reproduce:** `/about` öffnen, die beiden nicht aktiven Punkte messen
+- **Erwartet:** mindestens 3:1 gegen den Seitengrund (WCAG 1.4.11, Bedienelemente)
+- **Tatsächlich:** **2.8:1** (`bg-gq-grey/50` auf `#0B0F12`), der aktive Punkt 11.53:1. Die Knöpfe sind per `aria-label` beschriftet, die Bedienung hängt nicht allein an der Farbe
+- **Priority:** Fix in next sprint — `test.fail`-Wächter vorhanden
+
+#### BUG-22 (Low, vorbestehend): verbessert, nicht behoben
+Fällt ein Hero-Screen aus, hält der Rahmen jetzt in beiden Engines dieselbe Höhe (411px statt eines Sprungs auf ein Quadrat in WebKit). WebKit zeigt aber weiterhin das Fragezeichen-Symbol im dunklen Bildschirm.
+
+### Security
+- `SAMEORIGIN` nur für die Simulations-Route, von fremder Origin nachweislich nicht einbettbar; alle anderen Seiten `DENY`
+- Markup in der Code-Aufgabe der Simulation wird nicht ausgeführt (0 injizierte Elemente, 0 Dialoge, `__pwn` bleibt `null`)
+- Simulation ohne Speicherzugriff, ohne Standort, ohne Links in die App; `noindex, nofollow`
+- Teich-Foto neu codiert, ohne Kamera-Metadaten; vom eigenen Host
+
+### Gegenproben
+- **Drei eingebaute Fehler** (Menü zurück in der Simulation, alte Strecken 120/85/60 m, `SAMEORIGIN` entfernt): Ohne Ausnahme fällt der Header-Test — und mit ihm alle Simulationstests, weil das iframe leer bleibt. Mit wiederhergestellter Ausnahme fallen **genau** der Zähl-Test (kein „60m") und „nichts führt hinaus" (1 Menü-Knopf statt 0); Durchlauf und Header-Test bleiben grün, wie es sein muss. Produktcode danach per `git diff` als identisch mit dem Commit bestätigt
+
+### Neue Tests
+`tests/proj-13-about-eltern.spec.ts`, Block „QA Refinement 13": fremde Origin kann nicht einbetten, Touch-Wisch scrollt die Seite (Chromium), „Bewegung reduzieren" in der Simulation, Punkte per Tab/Enter, BUG-24-Wächter (`test.fail`)
+
+### Regression
+- **Gesamtsuite beider Engines: 1452 passed / 59 skipped / 1 failed** (Production-Build, `--workers=2`, unter `caffeinate`, ohne Ruhephase des Macs, 9 Minuten). Der Fehlschlag ist der Service-Worker-Test „registriert sich im Production-Build weiterhin" (PROJ-12, Mobile Safari) — die seit September dokumentierte Zeitfenster-Wackeligkeit; danach seriell 8/9 und 15/15. Refinement 13 berührt im Layout nur den Analytics-Aufruf, nicht die Worker-Registrierung
+- Unit **432/432**, Lint 0 Fehler, `tsc` nur die 2 bekannten Fehler aus PROJ-6
+
+### Nicht abgedeckt
+- **Echtes iPhone:** Scrollen über dem iframe in iOS Safari, Gefühl von „Hinlaufen" und Hero-Ablauf am Gerät
+- **Firefox:** Binary weiterhin nicht verfügbar (Installationsversuch vom 2026-10-15 hing beim Entpacken)
+- **Analytics-Filter in Wirkung:** nur in Production messbar
+
+### Summary
+- **Acceptance Criteria:** 22/22
+- **Bugs:** 2 neu (0 critical, 0 high, 0 medium, 2 low — BUG-23, BUG-24); BUG-22 verbessert
+- **Security:** ohne Befund; die freigegebene `SAMEORIGIN`-Ausnahme wirkt wie beschrieben
+- **Production Ready:** YES
+- **Recommendation:** Deploy; BUG-24 (ein Farbwert) und BUG-23 bei Gelegenheit
