@@ -1,6 +1,8 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Deployed
+## Status: In Progress
+_**Refinement 15 (2026-10-17): Zwei FAQ-Antworten auf `/about` werden konkreter.** Betreiber: In „Was kostet Geo Quest?" soll der konkrete Ko-fi-Link stehen, und „Was kann ich in eine Quest einbauen?" soll sagen, dass Medien per Link eingebunden werden und von wo. Entschieden: Wortlaut des Betreibers für beide Antworten, „Ko-fi" als Textlink; die Regel „keine zusätzlichen Ko-fi-Buttons" aus Refinement 12 wird präzisiert statt aufgehoben. Die Medien-Antwort stellt außerdem klar, dass eine Station **mehrere** Aufgaben haben kann — der bisherige Satz „und eine Aufgabe" war zu knapp (bereits in der QA von Refinement 12 notiert). Siehe Abschnitt „Refinement 15"._
+
 _**Refinement 14 (2026-10-17): Drei Schritte wandern unter das Video, zwei Vorteil-Texte geschärft.** Kritische Prüfung auf Länge und Doppelungen: „So funktioniert's" stand viermal auf der Seite, am deutlichsten doppelten sich Video (Kapitel „01 Erstellen, 02 Teilen, 03 Spielen") und die Sektion „Drei Schritte". Entschieden: Die Sektion entfällt, die drei Schritte stehen als kompakte, immer sichtbare Kapitel (Nummer, Titel, ein Satz) direkt unter dem Video. „Bewegung statt Sofa" und „Einfacher Baukasten" bekommen den Wortlaut des Betreibers. Siehe Abschnitt „Refinement 14". **Frontend umgesetzt am 2026-10-17** — Seite auf dem Handy 6220 → 5776px. **QA am 2026-10-17: 7/7 Acceptance Criteria, keine Bugs.** **Am 2026-10-17 nach Production deployt** (Tag `v1.48.0-PROJ-13`)._
 
 _**Refinement 13 (2026-10-16): Handy-Visual im Hero animiert, Live-Demo wird zur Quest-Simulation im Handy.** Betreiber nach dem Handy-Test der neuen `/about`: Das Hero-Visual soll mehr nach Handy aussehen und drei Screens zeigen (Stationsübersicht, Kompass, „Ziel erreicht“); die Demo soll eine komplette Quest in einem Handy-Screen simulieren. Entschieden: Die Screens laufen **einmal** durch und bleiben auf dem Kompass stehen (Design-System-Regel „keine Ambient-Loops“), danach von Hand weiterblättern; ein **neutrales Handy in CSS** für beide Stellen; in der Simulation läuft man per Knopf „Hinlaufen“ zur Station; Inhalt vorerst „Das Waldgeheimnis“ (Betreiber bessert später nach), Station 2 mit dem CC0-Foto „Manor Park Aldershot Pond“. Siehe Abschnitt „Refinement 13“ am Ende. **Frontend umgesetzt am 2026-10-16** — Simulation im iframe, Hero läuft einmal durch und bleibt auf dem Kompass; die Ausnahme von der Sicherheitsregel (`X-Frame-Options: SAMEORIGIN` nur für `/about/simulation`) ist vom Betreiber freigegeben. Siehe „Implementation Notes (Frontend — Refinement 13)“. **QA am 2026-10-16: 22/22 Acceptance Criteria, 2 Low-Bugs, Production-Ready — Approved.** BUG-24 am 2026-10-17 behoben, BUG-23 offen. **Am 2026-10-17 nach Production deployt** (Tag `v1.47.0-PROJ-13`)._
@@ -57,7 +59,7 @@ Kern der Seite ist eine **Copy-Paste-Prompt-Vorlage**: Nutzer kopieren einen fer
 - **Cookie-Banner / Consent-Management** — die App setzt keine einwilligungspflichtigen Cookies; falls sich das durch ein späteres Tool ändert, ist das ein eigenes Feature
 - **Heller, eigener Look für `/about`** und **„Sie"-Anrede** — verworfen in Refinement 12 (2026-10-15); ein neuer Look für die ganze App wäre ein eigenes Vorhaben
 - **Erfundene Nutzerzahlen, Kundenstimmen, Bewertungen** — nicht ohne echte, freigegebene Quellen (Refinement 12)
-- **Sprungmarken-Navigation in der Kopfzeile und zusätzliche Ko-fi-Buttons** auf `/about` (Refinement 12)
+- **Sprungmarken-Navigation in der Kopfzeile und zusätzliche Ko-fi-Buttons** auf `/about` (Refinement 12). _Präzisiert 2026-10-17 (Refinement 15): Ausgeschlossen bleiben Ko-fi-**Buttons** im Inhalt. Ein Textlink „Ko-fi" in der FAQ-Antwort „Was kostet Geo Quest?" ist erlaubt — er steht in einer zugeklappten Antwort, genau dort, wo jemand nach den Kosten fragt._
 - **GPS, Punkte oder gespeicherter Fortschritt in der Live-Demo**; eine mehrstufige Mini-Quest (Refinement 12)
 - **Echtes GPS, Sensor, Punkte oder gespeicherter Fortschritt in der Simulation**; mehr als drei Stationen; eine vom Besucher bearbeitbare Demo-Quest (Refinement 13)
 - **Endlos laufende Hero-Animation** (Refinement 13 — Design-System-Regel „keine Ambient-Loops")
@@ -273,6 +275,14 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] Angenommen der primäre CTA lag vor diesem Refinement auf allen Referenz-Viewports über dem Falz (BUG-7), wenn der Abstand verkleinert ist, dann gilt das unverändert — der Eingriff liegt unterhalb des Hero
 - [x] Angenommen ein Besucher öffnet `/anleitung`, `/impressum` oder `/datenschutz`, wenn die Seiten laden, dann sind sie **unverändert** — sie tragen kein Hero-Bild, und nur für diesen Fall rendert die Shell den betroffenen Abstandshalter
 
+### FAQ: Ko-fi-Link und Medien per Link (Refinement 15, 2026-10-17)
+- [ ] Angenommen ein Besucher klappt „Was kostet Geo Quest?" auf, dann lautet die Antwort wörtlich: „Geo Quest ist vollständig kostenlos und werbefrei. Es gibt kein Abo, keine Testphase und keine Begrenzung der Quests. Wenn dir die App gefällt und du meine Arbeit unterstützen möchtest, freue ich mich über eine freiwillige Spende in meine digitale Kaffeekasse unter Ko-fi." Der bisherige Schlusssatz („Wer das Projekt unterstützen möchte, kann das freiwillig über Ko-fi tun.") entfällt, Ko-fi steht nicht doppelt
+- [ ] Angenommen ein Besucher liest die Kosten-Antwort, dann ist das Wort „Ko-fi" ein Textlink auf `https://ko-fi.com/technolomagie` (Konstante `KOFI_URL`), öffnet in einem neuen Tab mit `rel="noopener noreferrer"` und ist für Screenreader als neuer Tab erkennbar — derselbe Vertrag wie Menu-Eintrag und Kopfzeilen-Icon
+- [ ] Angenommen ein Besucher betrachtet den Link, dann ist er ein Textlink im Fließtext (unterstrichen oder farbig abgesetzt, Kontrast ≥ 4.5:1), **kein** Button, kein Icon, keine Farbfläche
+- [ ] Angenommen ein Besucher klappt „Was kann ich in eine Quest einbauen?" auf, dann lautet die Antwort wörtlich: „Jede Station kann Texte, Bilder, Audio, Videos und Aufgaben (einen Code eintippen, Multiple Choice oder Elemente sortieren) beliebig kombinieren. Weiter zur nächsten Station geht es erst, wenn alle Aufgaben der Station gelöst sind. Bilder, Audio und Videos bindest du per Link ein, hochgeladen wird nichts. Das klappt mit YouTube und Vimeo, mit Teilen-Links aus Dropbox, mit Bildern aus Google Drive, mit Dateien von Wikimedia Commons und Wikipedia. Ebenso geht jeder Link, der im Browser nur das Bild, den Ton oder das Video selbst öffnet, zum Beispiel eine Adresse, die auf .jpg oder .mp3 endet."
+- [ ] Angenommen eine Suchmaschine liest das `FAQPage`-JSON-LD, dann stehen dort beide neuen Antworten als reiner Text mit demselben Wortlaut (ohne Markup)
+- [ ] Angenommen ein Besucher zählt die Ko-fi-Links auf `/about`, dann gibt es genau **einen im Inhalt** (FAQ) und einen in der Kopfzeile; sonst keinen
+
 ### Schritte unter dem Video, Vorteil-Texte (Refinement 14, 2026-10-17)
 _Ersetzt die Sektionszählung aus Refinement 12 (acht Sektionen) — es sind jetzt sieben: Hero → Vorteile → Erklärvideo mit Kapiteln → Für wen → Simulation → FAQ → Abschluss._
 - [ ] Angenommen ein Besucher scrollt durch `/about`, wenn er die Sektionen zählt, dann gibt es **keine eigene Sektion „Eine Quest erstellen? Ganz einfach." mehr**
@@ -355,7 +365,7 @@ _Ersetzt die Hero-Kriterien aus Refinement 9 (Hintergrundbild hinter dem Text) u
 - [ ] Angenommen ein Besucher liest die Antwort zum Internet, wenn er sie liest, dann sagt sie ehrlich, dass eine mobile Datenverbindung nötig ist
 
 **Unverändert**
-- [ ] Angenommen ein Besucher betrachtet die Kopfzeile, wenn `/about` lädt, dann ist sie unverändert: Ko-fi-Icon, „Zur App", Burger — keine Sprungmarken-Navigation, kein zusätzlicher Ko-fi-Button; auch die Abschluss-Sektion führt nur auf „Quest erstellen"
+- [ ] Angenommen ein Besucher betrachtet die Kopfzeile, wenn `/about` lädt, dann ist sie unverändert: Ko-fi-Icon, „Zur App", Burger — keine Sprungmarken-Navigation, kein zusätzlicher Ko-fi-Button; auch die Abschluss-Sektion führt nur auf „Quest erstellen" _(präzisiert in Refinement 15: ein Ko-fi-Textlink in der Kosten-Antwort der FAQ ist erlaubt)_
 - [ ] Angenommen ein Besucher öffnet `/anleitung`, `/impressum` oder `/datenschutz`, wenn die Seiten laden, dann sind sie unverändert
 - [ ] Angenommen die Seite wird gebaut, wenn der Build-Output geprüft wird, dann bleibt `/about` statisch (`○`) und lädt keinen fremden Host
 - [ ] Angenommen die Abstände zwischen den Sektionen werden gemessen, wenn die Seite umgebaut ist, dann gilt weiter Kante zu Kante 48px (Handy) / 80px (ab `sm`), auch vom Hero zur ersten Sektion (Refinement 11)
@@ -549,6 +559,9 @@ _Hero-Teil überholt durch Refinement 12 (2026-10-15): Der Hero trägt kein Hint
 | In der Simulation läuft man per Knopf „Hinlaufen" zur Station | Zeigt den Kern von Geo Quest — erst hin, dann rätseln. Verworfen: Navigation überspringen, automatischer Film-Ablauf | 2026-10-16 |
 | Simulations-Inhalt vorerst „Das Waldgeheimnis" | Betreiber-Entscheidung, er bessert später nach. Alternativvorschläge (Lernpfad mit Bild-Hinweis, Piraten-Schatzsuche) besprochen und zurückgestellt | 2026-10-16 |
 | Foto Station 2: „Manor Park Aldershot Pond" (Jack1956, CC0), bei uns abgelegt, Quelle in der Bildunterschrift | Sieht wie ein Ort aus, zu dem man läuft, mit Enten auf dem Wasser. Kein fremder Host zur Laufzeit; Quellenangabe vorbildlich für Ersteller, obwohl CC0 sie nicht verlangt | 2026-10-16 |
+| Ko-fi als Textlink in der FAQ-Antwort „Was kostet Geo Quest?", Wortlaut des Betreibers (Refinement 15) | Wer nach den Kosten fragt, ist genau der erwachsene Ersteller, an den sich die Unterstützung laut PRD richtet. Ein Textlink in einer zugeklappten Antwort bleibt so zurückhaltend, wie das PRD es verlangt; die Regel aus Refinement 12 wird deshalb präzisiert (keine Buttons), nicht aufgehoben. Der alte Schlusssatz entfällt, damit Ko-fi nicht zweimal in einer Antwort steht | 2026-10-17 |
+| Medien-Antwort nennt den Link-Weg und die konkreten Quellen (Refinement 15) | Die FAQ sagte bisher nur, *was* eine Station enthalten kann, nicht *wie* Medien hineinkommen. Quellen exakt nach PROJ-15: YouTube, Vimeo, Dropbox, Wikimedia Commons/Wikipedia — Google Drive ausdrücklich nur mit Bildern, weil Google Audio und Video beim Einbetten sperrt (gemessen 2026-10-04). Die „direkte Adresse" ist alltagssprachlich erklärt („Link, der nur das Bild, den Ton oder das Video selbst öffnet"), weil der Fachbegriff genau den Fehler aus PROJ-8 (Webseite statt Datei) nicht verhindert | 2026-10-17 |
+| Medien-Antwort stellt klar: mehrere Aufgaben je Station, weiter erst nach allen (Refinement 15) | „und eine Aufgabe" untertrieb — der Creator erlaubt mehrere, der Player gibt „Station abschließen" erst frei, wenn alle gelöst sind (`station-modules.tsx`). Betreiber-Wortlaut | 2026-10-17 |
 
 ### Technical Decisions
 <!-- Added by /architecture -->
@@ -602,6 +615,8 @@ _Hero-Teil überholt durch Refinement 12 (2026-10-15): Der Hero trägt kein Hint
 | Das Bild verliert seinen Alternativtext | Es trägt keine Information mehr, die der Text nicht auch sagt — als Hintergrund ist es Dekoration. Ein Screenreader, der „Nächtliche Straße mit leuchtender Route…" zwischen Logo und Headline vorliest, stört den Lesefluss ohne Gegenwert | 2026-09-21 |
 | Der bestehende BUG-7-Wächter bleibt unangetastet | Der Hero bekommt eine neue Ebene, aber keine neue Höhe. Der Wächter misst den CTA auf elf Viewports gegen die Bildschirmkante und ist der Beleg dafür, dass das so bleibt | 2026-09-21 |
 | Der Hero läuft randlos, der Inhalt bleibt im Container | Am Bildschirm entschieden, nachdem die Container-Fassung den Schriftzug „EXPLORE" am rechten Rand anschnitt. Der Wrapper zieht sich per negativem Außenabstand unter die sticky Kopfzeile, weil die halbtransparent ist — das Bild schimmert durch sie hindurch, statt an ihrer Unterkante zu beginnen. Gemessen ist der Kontrast dadurch sogar **besser** (schlechtester Einzelpixel 7.44:1 statt 7.29:1): Der Verlauf hat auf der vollen Breite mehr Strecke | 2026-09-21 |
+| FAQ-Antworten können einen Link tragen, das JSON-LD bleibt reiner Text (Refinement 15) | Bisher ist `answer` ein String, der Seite und `FAQPage`-JSON-LD gemeinsam speist — eine Quelle, damit beide nicht auseinanderlaufen. Für den Ko-fi-Link braucht die Seite Markup, das JSON-LD nicht. **Für `/frontend`:** die eine Quelle beibehalten (z. B. Text plus optionale Link-Angabe je Antwort, aus der Seite und JSON-LD abgeleitet werden), nicht zwei Fassungen pflegen. Link-Ziel aus `KOFI_URL`, nicht als zweite Kopie der Adresse | 2026-10-17 |
+| Test „Im Inhalt kein weiterer Ko-fi-Button" wird gezogen, nicht gelöscht (Refinement 15) | `proj-13-about-eltern.spec.ts:487` erwartet 0 Ko-fi-Links in `main`. Künftig: genau einer, und zwar innerhalb der FAQ-Antwort „Was kostet Geo Quest?" — so bleibt der Schutz gegen zusätzliche Ko-fi-Buttons an anderer Stelle erhalten. Bestehende FAQ-Wortlaut-Assertions sind ebenfalls zu ziehen | 2026-10-17 |
 
 ## Tech Design (Solution Architect)
 
@@ -3538,3 +3553,25 @@ Fällt ein Hero-Screen aus, hält der Rahmen jetzt in beiden Engines dieselbe H�
 **Live auf https://geoquest.technolomagie.de/about** (und https://geoquesty.vercel.app/about), Tag `v1.48.0-PROJ-13`, Push `0fa2eb7..c702ead` — genau die drei Commits von Refinement 14. **Live nach 42 Sekunden**, belegt am neuen Baukasten-Text (vorher 0 Treffer im ausgelieferten HTML).
 
 **Live verifiziert auf beiden Domains:** beide neuen Vorteil-Texte und die drei Kapitel im HTML, Schritte-Sektion („Ganz einfach") und Einleitungssatz 0×; acht Routen HTTP 200, darunter `/about/simulation`. **Refinement-14-Tests direkt gegen Production: 12/12** über beide Engines.
+
+## Refinement 15 (2026-10-17) — FAQ: Ko-fi-Link und Medien per Link
+
+**Anlass:** Betreiber: In „Was kostet Geo Quest?" soll der konkrete Ko-fi-Link stehen; „Was kann ich in eine Quest einbauen?" soll beschreiben, dass Medien per URL/Link eingebunden werden und von wo.
+
+**Abgeglichen statt angenommen:** Die Quellen stammen aus PROJ-15 (deployt 2026-10-04): YouTube und Vimeo (Zwei-Klick-Player), Dropbox-Teilen-Links (Bild, Audio, Video), Google Drive **nur Bilder**, Wikimedia Commons und Wikipedia, dazu jede direkte Datei-Adresse. Mehrere Aufgaben je Station im Code bestätigt (`src/components/station-modules.tsx:50-51`, „Station abschließen" erst bei `allTasksSolved`).
+
+**Neuer Wortlaut (vom Betreiber freigegeben):**
+
+| Frage | Antwort |
+|---|---|
+| Was kostet Geo Quest? | Geo Quest ist vollständig kostenlos und werbefrei. Es gibt kein Abo, keine Testphase und keine Begrenzung der Quests. Wenn dir die App gefällt und du meine Arbeit unterstützen möchtest, freue ich mich über eine freiwillige Spende in meine digitale Kaffeekasse unter Ko-fi. — „Ko-fi" als Textlink auf `KOFI_URL`, neuer Tab |
+| Was kann ich in eine Quest einbauen? | Jede Station kann Texte, Bilder, Audio, Videos und Aufgaben (einen Code eintippen, Multiple Choice oder Elemente sortieren) beliebig kombinieren. Weiter zur nächsten Station geht es erst, wenn alle Aufgaben der Station gelöst sind. Bilder, Audio und Videos bindest du per Link ein, hochgeladen wird nichts. Das klappt mit YouTube und Vimeo, mit Teilen-Links aus Dropbox, mit Bildern aus Google Drive, mit Dateien von Wikimedia Commons und Wikipedia. Ebenso geht jeder Link, der im Browser nur das Bild, den Ton oder das Video selbst öffnet, zum Beispiel eine Adresse, die auf .jpg oder .mp3 endet. |
+
+**Ko-fi-Regel präzisiert, nicht aufgehoben:** Refinement 12 schloss „zusätzliche Ko-fi-Buttons" aus. Bleibt so — erlaubt ist nur der Textlink in der Kosten-Antwort.
+
+**Für `/frontend`:**
+- Nur `src/app/(info)/about/page.tsx`. Die FAQ-Konstante bleibt die **eine** Quelle für Seite und JSON-LD; die Seite rendert „Ko-fi" als Link, das JSON-LD bekommt denselben Satz als reinen Text.
+- Link-Vertrag wie in Refinement 6 (`target="_blank"`, `rel="noopener noreferrer"`, `sr-only`-Hinweis auf den neuen Tab); Linkfarbe auf dem Accordion-Grau mit ≥ 4.5:1 messen.
+- Zu ziehen, nicht zu löschen: `proj-13-about-eltern.spec.ts:487` (0 → genau 1 Ko-fi-Link in `main`, innerhalb der Kosten-Antwort) und alle Assertions auf den alten Wortlaut beider Antworten. Die Deploy-Prüfungen zählen „1× Ko-fi" im HTML von `/about` — künftig 2.
+- Die Medien-Antwort ist deutlich länger als bisher; auf 320px am Bildschirm prüfen, ob sie im aufgeklappten Accordion gut lesbar bleibt.
+

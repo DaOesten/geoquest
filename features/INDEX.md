@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1, PROJ-15 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 | PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Deployed | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
 
@@ -645,6 +645,17 @@ Spec ist aktualisiert (22 Acceptance Criteria in einem eigenen Block, 6 Produkt-
 **QA am 2026-10-17: 7/7 Acceptance Criteria, keine Bugs — Approved.** Kapitel auf beiden Engines und vier Breiten wie spezifiziert (1/1/3/3 je Zeile, 0px Überlauf), Kontrast 7.9–19.2:1, Überschriften ohne Sprünge. Gegenprobe gegen den Vorgängerstand: alle 6 Wächter fallen. Regression PROJ-13 + Shell-Suiten 503/0, Unit 432/432.
 
 **Am 2026-10-17 nach Production deployt** (Tag `v1.48.0-PROJ-13`, Push `0fa2eb7..c702ead`) — live nach 42 s auf beiden Domains, neue Texte und Kapitel im HTML, Schritte-Sektion und Einleitungssatz weg; Refinement-14-Tests gegen Production 12/12. **Refinement 14 ist abgeschlossen.**
+
+## Offenes Refinement 15: FAQ mit Ko-fi-Link und Medien per Link (2026-10-17)
+**PROJ-13** geht von Deployed zurück auf In Progress. Betreiber: In der FAQ „Was kostet Geo Quest?" soll der konkrete Ko-fi-Link stehen, und „Was kann ich in eine Quest einbauen?" soll erklären, dass Medien per Link eingebunden werden und von wo.
+
+**Entschieden (Wortlaut des Betreibers):** Die Kosten-Antwort endet mit „Wenn dir die App gefällt und du meine Arbeit unterstützen möchtest, freue ich mich über eine freiwillige Spende in meine digitale Kaffeekasse unter Ko-fi.", wobei „Ko-fi" ein Textlink ist, der in einem neuen Tab öffnet. Der alte Schlusssatz entfällt. Die Medien-Antwort nennt YouTube, Vimeo, Dropbox, Google Drive (**nur Bilder**, wie in PROJ-15 gemessen), Wikimedia Commons und Wikipedia sowie jeden Link, der nur die Datei selbst öffnet. Sie stellt außerdem klar, dass eine Station **mehrere Aufgaben** haben kann und es erst weitergeht, wenn alle gelöst sind (im Code bestätigt).
+
+**Ko-fi-Regel präzisiert, nicht aufgehoben:** Refinement 12 schloss zusätzliche Ko-fi-Buttons aus. Das bleibt so; erlaubt ist nur der Textlink in der Kosten-Antwort.
+
+**Für `/frontend`:** Nur `about/page.tsx`. Die FAQ-Konstante bleibt die eine Quelle für Seite und JSON-LD (das JSON-LD bekommt reinen Text). Zu ziehen, nicht zu löschen: der Test „kein Ko-fi-Link im Inhalt" (künftig genau einer, in der Kosten-Antwort) und die Wortlaut-Assertions. Deploy-Prüfungen zählen künftig 2× Ko-fi auf `/about` statt 1×.
+
+Spec ist aktualisiert (6 Acceptance Criteria, 3 Produkt- und 2 technische Entscheidungen, Out of Scope präzisiert, Abschnitt „Refinement 15").
 
 ## Next Available ID: PROJ-16
 
