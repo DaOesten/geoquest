@@ -760,6 +760,10 @@ test.describe("Refinement 14: Kapitel unter dem Video, Vorteil-Texte", () => {
     const first = (await chapters.first().boundingBox())!;
     expect(first.y).toBeGreaterThan(video.y + video.height);
     await expect(section.locator("ol a, ol button")).toHaveCount(0);
+    // Kein Einleitungssatz über dem Video, der die Kapitel vorwegnimmt.
+    await expect(page.getByText(/der ganze Weg einmal durchgespielt/)).toHaveCount(0);
+    const title = (await section.getByRole("heading", { name: "So funktioniert Geo Quest." }).boundingBox())!;
+    expect(video.y - (title.y + title.height), "Abstand Titel → Video").toBeGreaterThan(16);
   });
 
   test("ab sm stehen die Kapitel nebeneinander, auf dem Handy untereinander", async ({ page }) => {

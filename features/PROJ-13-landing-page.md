@@ -276,6 +276,7 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 ### Schritte unter dem Video, Vorteil-Texte (Refinement 14, 2026-10-17)
 _Ersetzt die Sektionszählung aus Refinement 12 (acht Sektionen) — es sind jetzt sieben: Hero → Vorteile → Erklärvideo mit Kapiteln → Für wen → Simulation → FAQ → Abschluss._
 - [ ] Angenommen ein Besucher scrollt durch `/about`, wenn er die Sektionen zählt, dann gibt es **keine eigene Sektion „Eine Quest erstellen? Ganz einfach." mehr**
+- [ ] Angenommen ein Besucher erreicht das Erklärvideo, dann steht über dem Video nur Kicker und Titel — **kein Einleitungssatz**, der die Kapitel vorwegnimmt (Nachtrag 2026-10-17)
 - [ ] Angenommen ein Besucher erreicht das Erklärvideo, wenn er darunter schaut, dann stehen dort **immer sichtbar** drei Kapitel: „01 Erstellen — Stationen auf der Karte setzen, Aufgaben dazu.", „02 Weitergeben — Als Datei auf die Handys der Spieler.", „03 Spielen — Der GPS-Pfeil führt von Station zu Station."
 - [ ] Angenommen ein Besucher öffnet die Seite ab `sm`, dann stehen die drei Kapitel nebeneinander; auf dem Handy untereinander; ohne Kästen, nicht antippbar
 - [ ] Angenommen ein Besucher liest den Vorteil „Bewegung statt Sofa", dann steht dort: „Bildschirmzeit, die nach draußen führt: Eine Quest führt von Station zu Station in der echten Welt."
@@ -3508,4 +3509,4 @@ Fällt ein Hero-Screen aus, hält der Rahmen jetzt in beiden Engines dieselbe H�
 
 **Tests:** drei neue in `proj-13-about-eltern.spec.ts` (Kapitel unter dem Video ohne Bedienelemente, Spalten je Breite, Vorteil-Texte im Wortlaut); gezogen: Sektionszählung (sieben statt acht, `main section` 6), Sektionstitel-Liste, „gestrichene Sektionen", „Weitergabe als Datei" jetzt für Kapitel 02. **PROJ-13 317 passed / 0 failed nach Korrektur** (der eine fehlerhafte Zähltest auf beiden Engines danach grün), Build und Lint sauber.
 
-**Am Bildschirm abgenommen** (Desktop und iPhone). **Neue kleine Doppelung, nicht geändert:** Der Satz über dem Video („Quest erstellen, als Datei weitergeben, draußen losspielen — der ganze Weg einmal durchgespielt.") sagt jetzt dasselbe wie die Kapitel direkt darunter — als Vorschlag an den Betreiber offen.
+**Am Bildschirm abgenommen** (Desktop und iPhone). **Nachtrag 2026-10-17:** Der Satz über dem Video („Quest erstellen, als Datei weitergeben, draußen losspielen — der ganze Weg einmal durchgespielt.") sagte nach dem Umbau dasselbe wie die Kapitel darunter — auf Betreiber-Wunsch gestrichen. Kicker „In 50 Sekunden" und Titel „So funktioniert Geo Quest." tragen die Sektion allein; der Abstand zum Video sitzt jetzt am Titelblock (`mb-6`).

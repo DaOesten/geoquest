@@ -339,13 +339,12 @@ export default function AboutPage() {
       {/* 3 — Erklärvideo (Refinement 10). Hochformat bleibt Hochformat — ab
           `sm` in einer Kinoformat-Karte mit unscharfem Rand. */}
       <section className="mt-12 sm:mt-20">
-        <div>
+        {/* Ohne Einleitungssatz (Refinement 14, 2026-10-17): Er sagte dasselbe
+            wie die Kapitel unter dem Video. Der Abstand zum Video sitzt jetzt
+            am Titelblock. */}
+        <div className="mb-6">
           <h2 className={SECTION_LABEL}>In 50 Sekunden</h2>
           <h3 className={SECTION_TITLE}>So funktioniert Geo Quest.</h3>
-          <p className="mt-4 mb-6 max-w-[58ch] font-body text-sm sm:text-base lg:text-[17px] leading-relaxed text-gq-grey">
-            Quest erstellen, als Datei weitergeben, draußen losspielen — der
-            ganze Weg einmal durchgespielt.
-          </p>
         </div>
         <AboutVideo
           src="/assets/video-geoquest-4x5-game-web.mp4"

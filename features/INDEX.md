@@ -640,7 +640,7 @@ Spec ist aktualisiert (22 Acceptance Criteria in einem eigenen Block, 6 Produkt-
 ## Offenes Refinement 14: Schritte unter dem Video, Vorteil-Texte (2026-10-17)
 **PROJ-13** geht von Deployed zurück auf In Progress. Kritische Prüfung auf Länge und Doppelungen: Die Seite ist mit 379 Wörtern und 7,4 Handy-Bildschirmhöhen nicht zu lang, erklärt aber „So funktioniert's" viermal — am deutlichsten doppeln sich Video und die Sektion „Drei Schritte". Entschieden: Die Sektion entfällt, die drei Schritte stehen als kompakte, immer sichtbare Kapitel unter dem Video; „Bewegung statt Sofa" und „Einfacher Baukasten" bekommen den Wortlaut des Betreibers. Die Abschluss-Zeile „Keine Werbung. Keine Anmeldung." bleibt vorerst.
 
-**Frontend umgesetzt am 2026-10-17.** Seite auf dem Handy von 6220 auf 5776px (7,4 → 6,8 Bildschirmhöhen), die Kapitel kosten 198 statt 639px. Drei neue Tests, vier gezogen; PROJ-13 317/0 nach Korrektur der Sektionszählung. Offen als Vorschlag: Der Satz über dem Video doppelt jetzt die Kapitel darunter.
+**Frontend umgesetzt am 2026-10-17.** Seite auf dem Handy von 6220 auf 5776px (7,4 → 6,8 Bildschirmhöhen), die Kapitel kosten 198 statt 639px. Drei neue Tests, vier gezogen; PROJ-13 317/0 nach Korrektur der Sektionszählung. Der Satz über dem Video, der die Kapitel vorwegnahm, ist auf Betreiber-Wunsch gestrichen.
 
 ## Next Available ID: PROJ-16
 
