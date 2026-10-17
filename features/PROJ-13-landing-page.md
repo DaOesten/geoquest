@@ -1,6 +1,8 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Deployed
+## Status: In Progress
+_**Refinement 14 (2026-10-17): Drei Schritte wandern unter das Video, zwei Vorteil-Texte geschärft.** Kritische Prüfung auf Länge und Doppelungen: „So funktioniert's" stand viermal auf der Seite, am deutlichsten doppelten sich Video (Kapitel „01 Erstellen, 02 Teilen, 03 Spielen") und die Sektion „Drei Schritte". Entschieden: Die Sektion entfällt, die drei Schritte stehen als kompakte, immer sichtbare Kapitel (Nummer, Titel, ein Satz) direkt unter dem Video. „Bewegung statt Sofa" und „Einfacher Baukasten" bekommen den Wortlaut des Betreibers. Siehe Abschnitt „Refinement 14". **Frontend umgesetzt am 2026-10-17** — Seite auf dem Handy 6220 → 5776px._
+
 _**Refinement 13 (2026-10-16): Handy-Visual im Hero animiert, Live-Demo wird zur Quest-Simulation im Handy.** Betreiber nach dem Handy-Test der neuen `/about`: Das Hero-Visual soll mehr nach Handy aussehen und drei Screens zeigen (Stationsübersicht, Kompass, „Ziel erreicht“); die Demo soll eine komplette Quest in einem Handy-Screen simulieren. Entschieden: Die Screens laufen **einmal** durch und bleiben auf dem Kompass stehen (Design-System-Regel „keine Ambient-Loops“), danach von Hand weiterblättern; ein **neutrales Handy in CSS** für beide Stellen; in der Simulation läuft man per Knopf „Hinlaufen“ zur Station; Inhalt vorerst „Das Waldgeheimnis“ (Betreiber bessert später nach), Station 2 mit dem CC0-Foto „Manor Park Aldershot Pond“. Siehe Abschnitt „Refinement 13“ am Ende. **Frontend umgesetzt am 2026-10-16** — Simulation im iframe, Hero läuft einmal durch und bleibt auf dem Kompass; die Ausnahme von der Sicherheitsregel (`X-Frame-Options: SAMEORIGIN` nur für `/about/simulation`) ist vom Betreiber freigegeben. Siehe „Implementation Notes (Frontend — Refinement 13)“. **QA am 2026-10-16: 22/22 Acceptance Criteria, 2 Low-Bugs, Production-Ready — Approved.** BUG-24 am 2026-10-17 behoben, BUG-23 offen. **Am 2026-10-17 nach Production deployt** (Tag `v1.47.0-PROJ-13`)._
 
 _**Refinement 12 (2026-10-15): `/about` spricht Eltern und Lehrkräfte an.** Betreiber: *„Ich möchte /about mehr auf die Zielgruppe Eltern, Lehrer abstimmen."* Als Richtung lieferte er einen externen HTML-Entwurf (hell, grün, Reiter, Live-Demo, App-Screenshot im Hero). Entschieden: Aufbau und Inhalte in diese Richtung, **Geo-Quest-Look und „du" bleiben**, Kinder werden nur noch über die Erwachsenen angesprochen. Neu: App-Screenshot statt Hintergrundbild im Hero, Vorteile-Leiste, drei Zielgruppen-Karten, Live-Demo mit echten Aufgaben-Bausteinen, FAQ aus Elternsicht. Entfallen: „Jeder Ort kann ein Level sein", „Du bist der Game-Designer", die Zielgruppe „Kinder & Jugendliche". Alles, was die App nicht einlöst oder erfunden wäre (Punkte, Tipps, Teilen-Link, Offline, Nutzerzahlen, Kundenstimmen, Zeitangabe), wurde aus dem Entwurf **nicht** übernommen. Siehe Abschnitt „Refinement 12" am Ende. **Frontend umgesetzt am 2026-10-15** — CTA auf 11 Viewports über dem Falz, Abschluss-Kontrast pro Pixel ≥ 4.86:1, PROJ-13 282/0, Gegenprobe gegen den Vorgänger: 82 Tests fallen. Siehe „Implementation Notes (Frontend — Refinement 12)". **QA am 2026-10-15: 31/31 Acceptance Criteria, 1 Low-Bug (BUG-22), Production-Ready.** **Am 2026-10-16 nach Production deployt** (Tag `v1.46.0-PROJ-13`)._
@@ -13,7 +15,7 @@ _Refinement 5 (Copy-Feinschliff) ist am 2026-09-09 nach Production deployt und d
 
 _**Refinement 7 (2026-09-20): Das Logo-Lockup kehrt auf den Desktop zurück.** Betreiber-Befund: „ich kann auf /about auf dem desktop das Logo nicht mehr sehen." **Frontend umgesetzt am 2026-09-21** — `lg:hidden` entfernt; CTA auf allen elf Viewports über dem Falz nachgemessen, knappster Fall 1366×768 mit 45px. Siehe Implementation Notes._
 **Created:** 2026-09-04
-**Last Updated:** 2026-10-17 (Refinement 13 deployt — Handy-Visual und Quest-Simulation)
+**Last Updated:** 2026-10-17 (Refinement 14 — Schritte unter dem Video, Vorteil-Texte)
 
 ## Dependencies
 - Requires: PROJ-1 (App Shell) — für den Einstieg aus der App heraus und das bestehende Design-System
@@ -270,6 +272,15 @@ Der Prompt ist auf der Seite **immer als lesbarer, selektierbarer Text sichtbar*
 - [x] Angenommen ein Besucher betrachtet die Hero-Karte, wenn er den Raum über der Headline und unter dem CTA vergleicht, dann ist ihr Innenabstand weiterhin oben und unten gleich (Desktop je 56px) — die Karte wirkt nicht unten abgeschnitten
 - [x] Angenommen der primäre CTA lag vor diesem Refinement auf allen Referenz-Viewports über dem Falz (BUG-7), wenn der Abstand verkleinert ist, dann gilt das unverändert — der Eingriff liegt unterhalb des Hero
 - [x] Angenommen ein Besucher öffnet `/anleitung`, `/impressum` oder `/datenschutz`, wenn die Seiten laden, dann sind sie **unverändert** — sie tragen kein Hero-Bild, und nur für diesen Fall rendert die Shell den betroffenen Abstandshalter
+
+### Schritte unter dem Video, Vorteil-Texte (Refinement 14, 2026-10-17)
+_Ersetzt die Sektionszählung aus Refinement 12 (acht Sektionen) — es sind jetzt sieben: Hero → Vorteile → Erklärvideo mit Kapiteln → Für wen → Simulation → FAQ → Abschluss._
+- [ ] Angenommen ein Besucher scrollt durch `/about`, wenn er die Sektionen zählt, dann gibt es **keine eigene Sektion „Eine Quest erstellen? Ganz einfach." mehr**
+- [ ] Angenommen ein Besucher erreicht das Erklärvideo, wenn er darunter schaut, dann stehen dort **immer sichtbar** drei Kapitel: „01 Erstellen — Stationen auf der Karte setzen, Aufgaben dazu.", „02 Weitergeben — Als Datei auf die Handys der Spieler.", „03 Spielen — Der GPS-Pfeil führt von Station zu Station."
+- [ ] Angenommen ein Besucher öffnet die Seite ab `sm`, dann stehen die drei Kapitel nebeneinander; auf dem Handy untereinander; ohne Kästen, nicht antippbar
+- [ ] Angenommen ein Besucher liest den Vorteil „Bewegung statt Sofa", dann steht dort: „Bildschirmzeit, die nach draußen führt: Eine Quest führt von Station zu Station in der echten Welt."
+- [ ] Angenommen ein Besucher liest den Vorteil „Einfacher Baukasten", dann steht dort: „Jede Station kann flexibel mit Texten, Bildern, Videos und Aufgaben aufgebaut werden. Kein Programmierwissen nötig."
+- [ ] Angenommen die Seite wird gemessen, dann ist sie auf dem Handy spürbar kürzer als vorher (6220px auf 390×844), ohne dass eine Information verloren geht — die FAQ „Wie erstelle ich eine Quest?" behält den Ablauf als Text
 
 ### Handy-Visual und Quest-Simulation (Refinement 13, 2026-10-16)
 _Ersetzt die Hero-Screenshot-Kriterien und den Block „Live-Demo“ aus Refinement 12. Alles Übrige aus Refinement 12 gilt weiter._
@@ -550,6 +561,8 @@ _Hero-Teil überholt durch Refinement 12 (2026-10-15): Der Hero trägt kein Hint
 | Simulations-Quest als eine Datei im Quest-Format, gegen `questSchema` getestet | Der Betreiber tauscht den Inhalt später an einer Stelle aus; der Test verhindert, dass ein Tippfehler die Simulation still bricht | 2026-10-16 |
 | Simulation zählt 60/55/65 m per Timer mit echter Zeit herunter, nicht 120/85/60 m per `requestAnimationFrame` (Nachtrag 2026-10-16) | Betreiber-Befund „sehr lange heruntergezählt". Kürzere Strecken lassen in ~3 s jeden Meter einzeln erscheinen, statt in großen Schritten zu springen; ein Timer mit echter Zeit kann nicht durch gedrosselte Animations-Frames gedehnt werden | 2026-10-16 |
 | `X-Frame-Options: SAMEORIGIN` nur für `/about/simulation`, alle anderen Seiten bleiben bei `DENY` | Ohne die Ausnahme lässt sich die Simulation nicht einbetten. `SAMEORIGIN` erhält den Zweck der Regel — keine fremde Seite kann sie einbetten —, und die Route hat keine Eingaben oder Aktionen mit Wirkung. Vom Betreiber freigegeben und in `.claude/rules/security.md` als einzige Ausnahme vermerkt | 2026-10-16 |
+| Sektion „Drei Schritte" entfällt, die Schritte stehen als kompakte Kapitel unter dem Video (Refinement 14) | Kritische Prüfung: Video und Schritte sagten dasselbe — das Video hat selbst die Kapitel „Erstellen, Teilen, Spielen". Option 1 von drei: immer sichtbar mit kurzem Erklärsatz, damit nichts von den Schritten verloren geht. Verworfen: antippbare Kapitel, die im Video springen (bräuchten Zeitmarken, die bei einem Video-Tausch still falsch würden), und eine schmale Zeile ohne Erklärsatz (die Weitergabe „als Datei" stünde nur noch in der FAQ) | 2026-10-17 |
+| Vorteil-Texte „Bewegung statt Sofa" und „Einfacher Baukasten" im Wortlaut des Betreibers | „Von Station zu Station in der echten Welt" macht die Bewegung konkret; „Texte, Bilder, Videos und Aufgaben" nennt, was eine Station enthalten kann. Die Abschluss-Zeile „Keine Werbung. Keine Anmeldung." (sechste Wiederholung) bleibt vorerst — nicht freigegeben | 2026-10-17 |
 | Zwei statische Seiten (`/about`, `/anleitung`) statt einer langen Seite | Bedienen zwei verschiedene Nutzer-Momente; getrennt kommt der Ersteller ohne Marketing-Scroll direkt zur Prompt-Vorlage. Bleiben trotzdem eine Spec, weil sie zusammen gebaut und deployed werden | 2026-09-04 |
 | Serverseitig gerenderte Seiten ohne Client-State | Beide Seiten sind reiner Inhalt ohne Zugriff auf Browser-Speicher; das erlaubt echte Meta-Tags für das Teilen und die schnellste Ladezeit | 2026-09-04 |
 | Nur der Kopieren-Button ist eine Client-Komponente | Kleinstmöglicher interaktiver Teil; der Prompt-Text selbst bleibt serverseitig gerendert und damit auch ohne JavaScript lesbar | 2026-09-04 |
@@ -3476,3 +3489,23 @@ Fällt ein Hero-Screen aus, hält der Rahmen jetzt in beiden Engines dieselbe H�
 **Mit live gegangen, bekannt:** BUG-23 (Low, graue Fehlerseite bei blockiertem iframe), BUG-22 (Low, verbessert), BUG-17/18 (Video).
 
 **Offen:** Scrollen über dem iframe am echten iPhone; Firefox; der Hosts-Test sollte die Origin der `baseURL` erlauben.
+
+## Refinement 14 (2026-10-17) — Schritte unter dem Video, Vorteil-Texte
+
+**Anlass:** Betreiber bat um eine kritische Prüfung, ob `/about` zu lang ist oder Doppelungen enthält.
+
+**Befund:** Mit 379 sichtbaren Wörtern textarm; 7,4 Bildschirmhöhen auf dem Handy (6220px), 5,4 am Desktop — im üblichen Rahmen, getragen von drei großen Bildelementen (Hero-Handy, Video, Simulation). Doppelungen: „So funktioniert's" viermal (Hero-Handy, Video, drei Schritte, Simulation, dazu zwei FAQ-Fragen) — am deutlichsten Video und Schritte; „kostenlos / ohne Werbung / ohne Anmeldung" an sechs Stellen. Nicht doppelt: Zielgruppen, FAQ zu Handy/Internet/Alter, die Simulation.
+
+**Entschieden:** Sektion „Drei Schritte" entfällt, die Schritte stehen als Kapitel unter dem Video (Option 1: immer sichtbar, Nummer + Titel + ein Satz, ab `sm` nebeneinander, ohne Kästen, nicht antippbar). Zwei Vorteil-Texte im Wortlaut des Betreibers. Abschluss-Zeile bleibt vorerst.
+
+**Für `/frontend`:** Tests, die die Schritte-Sektion oder acht Sektionen prüfen, sind zu ziehen, nicht zu löschen; die Zusicherung „Weitergabe als Datei, nicht per Link" gilt jetzt für Kapitel 02.
+
+## Implementation Notes (Frontend — Refinement 14, 2026-10-17)
+
+**Eine Datei** (`src/app/(info)/about/page.tsx`): Sektion „Eine Quest erstellen? Ganz einfach." entfernt, `STEPS` durch `CHAPTERS` ersetzt und als `<ol>` direkt unter `AboutVideo` gesetzt (Nummer in Teal, Titel in Tech-Schrift, ein Satz in Grau; ab `sm` dreispaltig, ohne Kästen, ohne Bedienelemente). Die Vorteil-Texte „Bewegung statt Sofa" und „Einfacher Baukasten" im Wortlaut des Betreibers. Kein neues Paket, `/about` statisch.
+
+**Gemessen:** Seite auf 390×844 von **6220 auf 5776px** (7,4 → 6,8 Bildschirmhöhen), auf 1440×900 von 4841 auf 4602px. Die Kapitel kosten auf dem Handy 198px statt der früheren 639px für die eigene Sektion. Sichtbare Wörter 379 → 350.
+
+**Tests:** drei neue in `proj-13-about-eltern.spec.ts` (Kapitel unter dem Video ohne Bedienelemente, Spalten je Breite, Vorteil-Texte im Wortlaut); gezogen: Sektionszählung (sieben statt acht, `main section` 6), Sektionstitel-Liste, „gestrichene Sektionen", „Weitergabe als Datei" jetzt für Kapitel 02. **PROJ-13 317 passed / 0 failed nach Korrektur** (der eine fehlerhafte Zähltest auf beiden Engines danach grün), Build und Lint sauber.
+
+**Am Bildschirm abgenommen** (Desktop und iPhone). **Neue kleine Doppelung, nicht geändert:** Der Satz über dem Video („Quest erstellen, als Datei weitergeben, draußen losspielen — der ganze Weg einmal durchgespielt.") sagt jetzt dasselbe wie die Kapitel direkt darunter — als Vorschlag an den Betreiber offen.

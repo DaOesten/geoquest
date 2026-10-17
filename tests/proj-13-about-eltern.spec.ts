@@ -736,3 +736,59 @@ test.describe("QA Refinement 13", () => {
     expect(ratio).toBeGreaterThanOrEqual(3);
   });
 });
+
+/**
+ * Refinement 14 (2026-10-17): Die drei Schritte stehen als Kapitel unter dem
+ * Video statt als eigene Sektion; zwei Vorteil-Texte im Wortlaut des Betreibers.
+ */
+test.describe("Refinement 14: Kapitel unter dem Video, Vorteil-Texte", () => {
+  test("drei Kapitel stehen immer sichtbar direkt unter dem Video", async ({ page }) => {
+    await page.goto("/about");
+    const section = page.locator("main section", { has: page.locator("video") });
+    const chapters = section.locator("ol > li");
+    await expect(chapters).toHaveCount(3);
+    for (const [i, title, body] of [
+      [0, /01\s*Erstellen/, "Stationen auf der Karte setzen, Aufgaben dazu."],
+      [1, /02\s*Weitergeben/, "Als Datei auf die Handys der Spieler."],
+      [2, /03\s*Spielen/, "Der GPS-Pfeil führt von Station zu Station."],
+    ] as const) {
+      await expect(chapters.nth(i).getByRole("heading", { level: 4 })).toHaveText(title);
+      await expect(chapters.nth(i).getByText(body)).toBeVisible();
+    }
+    // Unter dem Video, nicht darüber; ohne Bedienelemente.
+    const video = (await section.locator("video").boundingBox())!;
+    const first = (await chapters.first().boundingBox())!;
+    expect(first.y).toBeGreaterThan(video.y + video.height);
+    await expect(section.locator("ol a, ol button")).toHaveCount(0);
+  });
+
+  test("ab sm stehen die Kapitel nebeneinander, auf dem Handy untereinander", async ({ page }) => {
+    for (const [w, perRow] of [
+      [390, 1],
+      [768, 3],
+      [1440, 3],
+    ] as const) {
+      await page.setViewportSize({ width: w, height: 900 });
+      await page.goto("/about");
+      const tops = await page
+        .locator("main section", { has: page.locator("video") })
+        .locator("ol > li")
+        .evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
+      expect(tops.filter((t) => t === tops[0]).length, `${w}px`).toBe(perRow);
+    }
+  });
+
+  test("die Vorteil-Texte stehen im Wortlaut des Betreibers", async ({ page }) => {
+    await page.goto("/about");
+    await expect(
+      page.getByText(
+        "Bildschirmzeit, die nach draußen führt: Eine Quest führt von Station zu Station in der echten Welt."
+      )
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        "Jede Station kann flexibel mit Texten, Bildern, Videos und Aufgaben aufgebaut werden. Kein Programmierwissen nötig."
+      )
+    ).toBeVisible();
+  });
+});

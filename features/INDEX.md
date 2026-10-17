@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 | PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Deployed | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
 
@@ -636,6 +636,11 @@ Spec ist aktualisiert (22 Acceptance Criteria in einem eigenen Block, 6 Produkt-
 **Am 2026-10-17 nach Production deployt** (Tag `v1.47.0-PROJ-13`, Push `f1b35b7..b6a4e62`) — live auf https://geoquest.technolomagie.de/about nach 57 s, belegt an `/about/simulation` (vorher 404). Neue Bilder byte-identisch, 22 Endpunkte HTTP 200, `SAMEORIGIN` nur für die Simulations-Route, `noindex`. Der Analytics-Filter ist am live ausgelieferten Code geprüft (lässt `/about` durch, verwirft die Simulation); echte Ereignisse sendet Vercel aus der Testumgebung nicht (`navigator.webdriver`). **PROJ-13-Suiten gegen Production: Chrome 89/1, Safari 84/3** — der bekannte Hosts-Test und ein Klick-Wettlauf im Test vor der Hydration über das echte Netz; `openSimulation` wartet jetzt darauf, danach 9/9. **PROJ-13 Refinement 13 ist abgeschlossen.** Offen: BUG-23, BUG-22, iOS-Scrollen am Gerät, Firefox.
 
 **Gegenprobe mit drei eingebauten Fehlern:** Ohne `SAMEORIGIN` fällt der Header-Test samt aller Simulationstests; mit Ausnahme fallen genau der Zähl-Test (alte 120 m) und „nichts führt hinaus" (Menü zurück). **Gesamtsuite 1452/1** — der eine ist der dokumentiert wackelige Service-Worker-Test, danach 15/15. Unit 432/432.
+
+## Offenes Refinement 14: Schritte unter dem Video, Vorteil-Texte (2026-10-17)
+**PROJ-13** geht von Deployed zurück auf In Progress. Kritische Prüfung auf Länge und Doppelungen: Die Seite ist mit 379 Wörtern und 7,4 Handy-Bildschirmhöhen nicht zu lang, erklärt aber „So funktioniert's" viermal — am deutlichsten doppeln sich Video und die Sektion „Drei Schritte". Entschieden: Die Sektion entfällt, die drei Schritte stehen als kompakte, immer sichtbare Kapitel unter dem Video; „Bewegung statt Sofa" und „Einfacher Baukasten" bekommen den Wortlaut des Betreibers. Die Abschluss-Zeile „Keine Werbung. Keine Anmeldung." bleibt vorerst.
+
+**Frontend umgesetzt am 2026-10-17.** Seite auf dem Handy von 6220 auf 5776px (7,4 → 6,8 Bildschirmhöhen), die Kapitel kosten 198 statt 639px. Drei neue Tests, vier gezogen; PROJ-13 317/0 nach Korrektur der Sektionszählung. Offen als Vorschlag: Der Satz über dem Video doppelt jetzt die Kapitel darunter.
 
 ## Next Available ID: PROJ-16
 

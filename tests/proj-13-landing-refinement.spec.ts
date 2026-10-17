@@ -104,7 +104,9 @@ test.describe("Hero", () => {
 });
 
 test.describe("Sektionsfolge", () => {
-  test("genau acht Sektionen in der festgelegten Reihenfolge", async ({ page }) => {
+  // Seit Refinement 14 (2026-10-17) sieben statt acht: Die Schritte stehen
+  // als Kapitel unter dem Video.
+  test("genau sieben Sektionen in der festgelegten Reihenfolge", async ({ page }) => {
     await page.goto("/about");
 
     // Hero lebt im Shell-Titelblock (h1), die übrigen sieben sind <section>.
@@ -114,7 +116,7 @@ test.describe("Sektionsfolge", () => {
     // Seit 2026-10-15 (Refinement 12) neu geordnet: Vorteile vorn, Video
     // an Position 3, Live-Demo vor der FAQ.
     const sections = page.locator("main section");
-    await expect(sections).toHaveCount(7);
+    await expect(sections).toHaveCount(6);
 
     // Nur die Sektions-Titel, nicht die FAQ-Trigger (die ebenfalls h3 sind).
     // `allInnerTexts` liefert den gerenderten Text, und der Display-Schnitt
@@ -131,7 +133,8 @@ test.describe("Sektionsfolge", () => {
       "gemacht für draussen.",
       "so funktioniert geo quest.",
       "für wen ist geo quest?",
-      "eine quest erstellen? ganz einfach.",
+      // Seit Refinement 14 keine eigene Schritte-Sektion mehr — die drei
+      // Schritte stehen als Kapitel unter dem Video.
       // Seit Refinement 13 eine ganze Quest im Handy statt einzelner Aufgaben.
       "so fühlt sich eine quest an.",
       "antworten für eltern und lehrkräfte",
@@ -163,6 +166,10 @@ test.describe("Sektionsfolge", () => {
     ).toHaveCount(0);
     await expect(
       page.getByRole("heading", { name: "Nicht nur spielen. Selber machen." })
+    ).toHaveCount(0);
+    // Seit Refinement 14 entfallen: Die Schritte stehen unter dem Video.
+    await expect(
+      page.getByRole("heading", { name: "Eine Quest erstellen? Ganz einfach." })
     ).toHaveCount(0);
   });
 });
@@ -225,12 +232,14 @@ test.describe("Vorteile und Zielgruppen", () => {
 });
 
 test.describe("Schritte", () => {
-  test("Schritt 03 spricht von Weitergeben als Datei, nicht von einem Teilen-Link", async ({
+  // Gezogen in Refinement 14: Die Weitergabe steht jetzt in Kapitel 02 unter
+  // dem Video. Die Zusicherung „als Datei, nicht per Link" bleibt.
+  test("Kapitel 02 spricht von Weitergeben als Datei, nicht von einem Teilen-Link", async ({
     page,
   }) => {
     await page.goto("/about");
 
-    await expect(page.getByText(/Gib die Quest als Datei an die Handys/)).toBeVisible();
+    await expect(page.getByText(/^Als Datei auf die Handys der Spieler\.$/)).toBeVisible();
     // Kein Teilen-Versprechen, das die App nicht einlöst — auch nicht das
     // „per Link oder QR-Code" aus dem Betreiber-Entwurf (Refinement 12).
     await expect(page.getByText(/Teile deine Quest und los/)).toHaveCount(0);

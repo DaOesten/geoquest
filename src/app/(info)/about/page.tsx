@@ -71,12 +71,14 @@ const BENEFITS = [
   {
     icon: Footprints,
     title: "Bewegung statt Sofa",
-    body: "Bildschirmzeit, die nach draußen führt: laufen, suchen, Rätsel lösen.",
+    // Wortlaut des Betreibers (Refinement 14, 2026-10-17).
+    body: "Bildschirmzeit, die nach draußen führt: Eine Quest führt von Station zu Station in der echten Welt.",
   },
   {
     icon: Puzzle,
     title: "Einfacher Baukasten",
-    body: "Stationen auf der Karte setzen, Aufgaben hinzufügen. Kein Programmierwissen nötig.",
+    // Wortlaut des Betreibers (Refinement 14, 2026-10-17).
+    body: "Jede Station kann flexibel mit Texten, Bildern, Videos und Aufgaben aufgebaut werden. Kein Programmierwissen nötig.",
   },
   {
     icon: Smartphone,
@@ -85,24 +87,18 @@ const BENEFITS = [
   },
 ];
 
-const STEPS = [
-  {
-    no: "01",
-    title: "Ort wählen & Stationen setzen",
-    body: "Setze im Creator die Stationen auf der Karte, ob Park, Schulhof oder Waldweg.",
-  },
-  {
-    no: "02",
-    title: "Aufgaben hinzufügen",
-    body: "Gib jeder Station Text, Bilder, Audio oder Video und eine Aufgabe: Multiple Choice, Code oder Sortieren.",
-  },
-  {
-    no: "03",
-    title: "Weitergeben & losspielen",
-    // Bewusst nicht „Link" oder „QR-Code": Weitergabe laeuft ueber den
-    // JSON-Export (PROJ-9), einen Teilen-Link gibt es nicht.
-    body: "Gib die Quest als Datei an die Handys der Spieler weiter. Der GPS-Pfeil führt von Station zu Station.",
-  },
+/**
+ * Die drei Schritte als Kapitel unter dem Erklärvideo (Refinement 14,
+ * 2026-10-17). Bis dahin eine eigene Sektion mit Karten — sie sagte dasselbe
+ * wie das Video, das selbst die Kapitel „Erstellen, Teilen, Spielen" zeigt.
+ * Jetzt kompakt: Nummer, Titel, ein Satz.
+ */
+const CHAPTERS = [
+  { no: "01", title: "Erstellen", body: "Stationen auf der Karte setzen, Aufgaben dazu." },
+  // Bewusst nicht „Link" oder „QR-Code": Weitergabe laeuft ueber den
+  // JSON-Export (PROJ-9), einen Teilen-Link gibt es nicht.
+  { no: "02", title: "Weitergeben", body: "Als Datei auf die Handys der Spieler." },
+  { no: "03", title: "Spielen", body: "Der GPS-Pfeil führt von Station zu Station." },
 ];
 
 /**
@@ -357,6 +353,22 @@ export default function AboutPage() {
           playLabel="Video ansehen: So funktioniert Geo Quest (52 Sekunden)"
           durationLabel="0:52"
         />
+
+        {/* Kapitel unter dem Video (Refinement 14): immer sichtbar, ohne
+            Kästen und nicht antippbar — antippbare Kapitel bräuchten
+            Zeitmarken, die bei einem Video-Tausch still falsch würden. */}
+        <ol className="mt-6 grid gap-5 sm:grid-cols-3 sm:gap-8">
+          {CHAPTERS.map(({ no, title, body }) => (
+            <li key={no}>
+              <h4 className="text-tech text-xs lg:text-[13px] tracking-[0.08em] text-gq-white">
+                <span className="text-gq-teal">{no}</span> {title}
+              </h4>
+              <p className="mt-1.5 font-body text-sm lg:text-[15px] leading-relaxed text-gq-grey">
+                {body}
+              </p>
+            </li>
+          ))}
+        </ol>
       </section>
 
       {/* 4 — Zielgruppen, drei Karten mit je drei Stichpunkten. */}
@@ -390,35 +402,7 @@ export default function AboutPage() {
         </dl>
       </section>
 
-      {/* 5 — Drei Schritte. */}
-      <section className="mt-12 sm:mt-20">
-        <h2 className={SECTION_LABEL}>So geht es</h2>
-        <h3 className={SECTION_TITLE}>Eine Quest erstellen? Ganz einfach.</h3>
-
-        <ol className="mt-6 grid gap-4 sm:grid-cols-3">
-          {STEPS.map(({ no, title, body }) => (
-            <li
-              key={no}
-              className="rounded-card border border-border bg-gq-dark-teal/70 p-5 shadow-card"
-            >
-              <span
-                aria-hidden
-                className="grid place-items-center w-9 h-9 rounded-full border border-gq-teal text-tech text-xs text-gq-teal"
-              >
-                {no}
-              </span>
-              <h4 className="mt-4 text-tech text-xs lg:text-[13px] tracking-[0.08em] text-gq-white">
-                {title}
-              </h4>
-              <p className="mt-2 font-body text-sm lg:text-[15px] leading-relaxed text-gq-grey">
-                {body}
-              </p>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      {/* 6 — Quest-Simulation im Handy (Refinement 13). Ersetzt die drei
+      {/* 5 — Quest-Simulation im Handy (Refinement 13). Ersetzt die drei
           Aufgaben-Reiter aus Refinement 12: Statt einzelner Aufgaben ist der
           ganze Ablauf spielbar — Start, Liste, Hinlaufen, Ankunft, Station,
           Ende. Ohne Karte darum: Das Handy braucht auf 375px die volle Breite. */}
@@ -439,7 +423,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 7 — FAQ. Mirrors the JSON-LD below so structured data matches visible
+      {/* 6 — FAQ. Mirrors the JSON-LD below so structured data matches visible
           content. Collapsed by default: Radix keeps the answers in the DOM
           (hidden only via attribute), so crawlers and AI systems still read
           them in full. */}
@@ -472,7 +456,7 @@ export default function AboutPage() {
         }}
       />
 
-      {/* 8 — Abschluss-CTA. Traegt seit Refinement 12 die Illustration, die
+      {/* 7 — Abschluss-CTA. Traegt seit Refinement 12 die Illustration, die
           vorher hinter dem Hero lag — sie geht nicht verloren, sondern
           rahmt jetzt den letzten Aufruf. Zwei Ebenen (Bild, Abdunklung)
           statt eines Filters auf dem Bild: Ein Filter traefe im selben
