@@ -1,7 +1,7 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Approved
-_**Refinement 15 (2026-10-17): Zwei FAQ-Antworten auf `/about` werden konkreter.** Betreiber: In „Was kostet Geo Quest?" soll der konkrete Ko-fi-Link stehen, und „Was kann ich in eine Quest einbauen?" soll sagen, dass Medien per Link eingebunden werden und von wo. Entschieden: Wortlaut des Betreibers für beide Antworten, „Ko-fi" als Textlink; die Regel „keine zusätzlichen Ko-fi-Buttons" aus Refinement 12 wird präzisiert statt aufgehoben. Die Medien-Antwort stellt außerdem klar, dass eine Station **mehrere** Aufgaben haben kann — der bisherige Satz „und eine Aufgabe" war zu knapp (bereits in der QA von Refinement 12 notiert). Siehe Abschnitt „Refinement 15". **Frontend umgesetzt am 2026-10-17** — beide Antworten im Wortlaut, Ko-fi als Teal-Textlink (11.6:1), Gegenprobe: 10 von 12 Wächtern fallen gegen den Vorgänger. **QA am 2026-10-17: 6/6 Acceptance Criteria, keine Bugs — Approved.**_
+## Status: Deployed
+_**Refinement 15 (2026-10-17): Zwei FAQ-Antworten auf `/about` werden konkreter.** Betreiber: In „Was kostet Geo Quest?" soll der konkrete Ko-fi-Link stehen, und „Was kann ich in eine Quest einbauen?" soll sagen, dass Medien per Link eingebunden werden und von wo. Entschieden: Wortlaut des Betreibers für beide Antworten, „Ko-fi" als Textlink; die Regel „keine zusätzlichen Ko-fi-Buttons" aus Refinement 12 wird präzisiert statt aufgehoben. Die Medien-Antwort stellt außerdem klar, dass eine Station **mehrere** Aufgaben haben kann — der bisherige Satz „und eine Aufgabe" war zu knapp (bereits in der QA von Refinement 12 notiert). Siehe Abschnitt „Refinement 15". **Frontend umgesetzt am 2026-10-17** — beide Antworten im Wortlaut, Ko-fi als Teal-Textlink (11.6:1), Gegenprobe: 10 von 12 Wächtern fallen gegen den Vorgänger. **QA am 2026-10-17: 6/6 Acceptance Criteria, keine Bugs.** **Am 2026-10-17 nach Production deployt** (Tag `v1.49.0-PROJ-13`)._
 
 _**Refinement 14 (2026-10-17): Drei Schritte wandern unter das Video, zwei Vorteil-Texte geschärft.** Kritische Prüfung auf Länge und Doppelungen: „So funktioniert's" stand viermal auf der Seite, am deutlichsten doppelten sich Video (Kapitel „01 Erstellen, 02 Teilen, 03 Spielen") und die Sektion „Drei Schritte". Entschieden: Die Sektion entfällt, die drei Schritte stehen als kompakte, immer sichtbare Kapitel (Nummer, Titel, ein Satz) direkt unter dem Video. „Bewegung statt Sofa" und „Einfacher Baukasten" bekommen den Wortlaut des Betreibers. Siehe Abschnitt „Refinement 14". **Frontend umgesetzt am 2026-10-17** — Seite auf dem Handy 6220 → 5776px. **QA am 2026-10-17: 7/7 Acceptance Criteria, keine Bugs.** **Am 2026-10-17 nach Production deployt** (Tag `v1.48.0-PROJ-13`)._
 
@@ -3618,4 +3618,14 @@ Fällt ein Hero-Screen aus, hält der Rahmen jetzt in beiden Engines dieselbe H�
 **Regression:** alle PROJ-13-Suiten plus Ko-fi, Navigation, Safe Area und PROJ-14 (alle nutzen `InfoPageShell` oder `/about`), beide Engines: **523 passed / 25 skipped / 0 failed**; die 4 als ✘ gelisteten Video-Tests sind die bekannten `test.fail`-Wächter für BUG-17/18. Unit **432/432**, Lint 0 Fehler.
 
 **Nicht abgedeckt:** Firefox (Binary weiterhin nicht verfügbar) und das Erscheinen der Ko-fi-Seite selbst (aus der Testumgebung gesperrt).
+
+## Deployment — Refinement 15: FAQ mit Ko-fi-Link und Medien per Link (2026-10-17)
+
+**Live auf https://geoquest.technolomagie.de/about** (und https://geoquesty.vercel.app/about), Tag `v1.49.0-PROJ-13`, Push `8c9c997..84521e1` — genau die drei Commits von Refinement 15. **Live nach 45 Sekunden**, belegt am Satz „digitale Kaffeekasse" im ausgelieferten HTML (über das `FAQPage`-JSON-LD; vorher 0 Treffer, die Prüfung konnte also fehlschlagen).
+
+**Live verifiziert:** beide neuen Antworten auf beiden Domains im HTML; 16 Endpunkte (8 Routen × 2 Domains) HTTP 200 in 0,20–0,48 s; Security-Header aktiv (HSTS, `X-Frame-Options: DENY`, `nosniff`). Im Live-Browser auf beiden Engines: Link auf `https://ko-fi.com/technolomagie` mit `noopener noreferrer` und Namen „Ko-fi (öffnet neuen Tab)", 0 Antworten ≥ 400. WebKit 0 Konsolenfehler; Chrome nur der bekannte `/favicon.ico`-404 (vorbestehend seit 2026-09-19).
+
+**Refinement-15-Tests direkt gegen Production** (seriell je Engine): **26/26** — Chrome 13/13, Mobile Safari 13/13, inklusive echtem Klick mit `window.opener === null` und Wortgleichheit aller FAQ-Antworten mit dem JSON-LD.
+
+**Refinement 15 ist abgeschlossen.**
 
