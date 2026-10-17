@@ -657,6 +657,8 @@ Spec ist aktualisiert (22 Acceptance Criteria in einem eigenen Block, 6 Produkt-
 
 Spec ist aktualisiert (6 Acceptance Criteria, 3 Produkt- und 2 technische Entscheidungen, Out of Scope präzisiert, Abschnitt „Refinement 15").
 
+**Frontend umgesetzt am 2026-10-17.** Eine Datei (`about/page.tsx`): FAQ-Einträge können ein Wort als Link tragen, das JSON-LD bleibt reiner Text aus derselben Quelle. Ko-fi als Teal-Textlink (11.6:1, neuer Tab, Hinweis im `aria-label`, weil ein Test den Antworttext wörtlich mit dem JSON-LD vergleicht). Am Bildschirm auf 320px und iPhone 13 abgenommen. 4 neue Tests, 3 gezogen — darunter der Wächter „per Link", der auf die Medien-Antwort ansprang; er schließt jetzt nur noch „Quest per Link teilen" aus. **Gegenprobe gegen den Vorgänger: 10 von 12 fallen.** Regression PROJ-13 + Ko-fi + PROJ-14: 427 passed, der eine Fehlschlag (alter Wortlaut) gezogen; Unit 432/432, Lint sauber.
+
 ## Next Available ID: PROJ-16
 
 ## Offenes Refinement: BUG-6 — falsche iOS-Erkennung beim Kompass (2026-09-07)

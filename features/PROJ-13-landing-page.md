@@ -1,7 +1,7 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
 ## Status: In Progress
-_**Refinement 15 (2026-10-17): Zwei FAQ-Antworten auf `/about` werden konkreter.** Betreiber: In „Was kostet Geo Quest?" soll der konkrete Ko-fi-Link stehen, und „Was kann ich in eine Quest einbauen?" soll sagen, dass Medien per Link eingebunden werden und von wo. Entschieden: Wortlaut des Betreibers für beide Antworten, „Ko-fi" als Textlink; die Regel „keine zusätzlichen Ko-fi-Buttons" aus Refinement 12 wird präzisiert statt aufgehoben. Die Medien-Antwort stellt außerdem klar, dass eine Station **mehrere** Aufgaben haben kann — der bisherige Satz „und eine Aufgabe" war zu knapp (bereits in der QA von Refinement 12 notiert). Siehe Abschnitt „Refinement 15"._
+_**Refinement 15 (2026-10-17): Zwei FAQ-Antworten auf `/about` werden konkreter.** Betreiber: In „Was kostet Geo Quest?" soll der konkrete Ko-fi-Link stehen, und „Was kann ich in eine Quest einbauen?" soll sagen, dass Medien per Link eingebunden werden und von wo. Entschieden: Wortlaut des Betreibers für beide Antworten, „Ko-fi" als Textlink; die Regel „keine zusätzlichen Ko-fi-Buttons" aus Refinement 12 wird präzisiert statt aufgehoben. Die Medien-Antwort stellt außerdem klar, dass eine Station **mehrere** Aufgaben haben kann — der bisherige Satz „und eine Aufgabe" war zu knapp (bereits in der QA von Refinement 12 notiert). Siehe Abschnitt „Refinement 15". **Frontend umgesetzt am 2026-10-17** — beide Antworten im Wortlaut, Ko-fi als Teal-Textlink (11.6:1), Gegenprobe: 10 von 12 Wächtern fallen gegen den Vorgänger._
 
 _**Refinement 14 (2026-10-17): Drei Schritte wandern unter das Video, zwei Vorteil-Texte geschärft.** Kritische Prüfung auf Länge und Doppelungen: „So funktioniert's" stand viermal auf der Seite, am deutlichsten doppelten sich Video (Kapitel „01 Erstellen, 02 Teilen, 03 Spielen") und die Sektion „Drei Schritte". Entschieden: Die Sektion entfällt, die drei Schritte stehen als kompakte, immer sichtbare Kapitel (Nummer, Titel, ein Satz) direkt unter dem Video. „Bewegung statt Sofa" und „Einfacher Baukasten" bekommen den Wortlaut des Betreibers. Siehe Abschnitt „Refinement 14". **Frontend umgesetzt am 2026-10-17** — Seite auf dem Handy 6220 → 5776px. **QA am 2026-10-17: 7/7 Acceptance Criteria, keine Bugs.** **Am 2026-10-17 nach Production deployt** (Tag `v1.48.0-PROJ-13`)._
 
@@ -3574,4 +3574,21 @@ Fällt ein Hero-Screen aus, hält der Rahmen jetzt in beiden Engines dieselbe H�
 - Link-Vertrag wie in Refinement 6 (`target="_blank"`, `rel="noopener noreferrer"`, `sr-only`-Hinweis auf den neuen Tab); Linkfarbe auf dem Accordion-Grau mit ≥ 4.5:1 messen.
 - Zu ziehen, nicht zu löschen: `proj-13-about-eltern.spec.ts:487` (0 → genau 1 Ko-fi-Link in `main`, innerhalb der Kosten-Antwort) und alle Assertions auf den alten Wortlaut beider Antworten. Die Deploy-Prüfungen zählen „1× Ko-fi" im HTML von `/about` — künftig 2.
 - Die Medien-Antwort ist deutlich länger als bisher; auf 320px am Bildschirm prüfen, ob sie im aufgeklappten Accordion gut lesbar bleibt.
+
+## Implementation Notes (Frontend — Refinement 15, 2026-10-17)
+
+**Eine Produktivdatei** (`src/app/(info)/about/page.tsx`), kein neues Paket, `/about` bleibt statisch. Die FAQ-Einträge haben ein optionales Feld `link: { text, href }`; die neue Komponente `FaqAnswer` verlinkt genau dieses Wort in `answer`. Das JSON-LD liest `answer` unverändert — eine Quelle, reiner Text. Link-Ziel aus `KOFI_URL`, Stil wie die Links auf `/impressum` und `/datenschutz` (`text-primary underline underline-offset-4`).
+
+**Abweichung, begründet:** Der Hinweis auf den neuen Tab steht im `aria-label` („Ko-fi (öffnet neuen Tab)") statt in einem `sr-only`-Span wie im Burger-Menu. Ein Test vergleicht den Textinhalt jeder aufgeklappten Antwort wörtlich mit dem JSON-LD; ein versteckter Zusatz hätte diesen Vergleich gebrochen. Das `aria-label` beginnt mit dem sichtbaren Wort, Sprachsteuerung trifft den Link also weiterhin.
+
+**Gemessen** (Production-Build, Chrome 320px und WebKit iPhone 13): Linkfarbe rgb(0,224,206) auf rgb(10,14,15) ≈ **11.6:1**, unterstrichen, `display: inline`, kein Icon, keine Fläche; 0px horizontaler Überlauf. Aufgeklappt misst die Medien-Antwort 357px (Chrome 320px) bzw. 289px (iPhone 13) — lang, aber am Bildschirm gut lesbar.
+
+**Tests:** 4 neue in `proj-13-about-eltern.spec.ts` (Kosten-Wortlaut mit Ko-fi genau einmal, Textlink-Vertrag, Medien-Wortlaut ohne „Audio/Video aus Google Drive", JSON-LD als reiner Text). Drei bestehende gezogen, nicht gelöscht:
+- „Kopfzeile ohne Sprungmarken …": 0 → genau **1** Ko-fi-Link im Inhalt, innerhalb der Kosten-Antwort. Erst nach dem Aufklappen gezählt — eingeklappte Antworten stehen nicht im DOM (bekannt seit Refinement 12)
+- „nichts aus dem Entwurf …": der Wächter `per Link` (Quest-Weitergabe läuft als Datei) schlug auf die neue Medien-Antwort an — jetzt `per Link(?! ein)`, also weiterhin rot bei „Quest per Link teilen", aber nicht bei „Medien per Link einbinden"
+- `proj-13-landing-refinement.spec.ts:312`: alter Wortlaut „Text, Bild, Audio, Video und eine Aufgabe" → „Texte, Bilder, Audio, Videos und Aufgaben"
+
+**Gegenprobe gegen den Vorgänger** (`page.tsx` aus `HEAD`, eigener Build): **10 von 12** gezielten Tests fallen — alle 4 neuen und der gezogene Ko-fi-Test auf beiden Engines. Grün bleibt nur „nichts aus dem Entwurf", richtig so: Die alte Seite erfüllte ihn ebenfalls.
+
+**Regression:** alle PROJ-13-Suiten plus `proj-1-kofi-support` und `proj-14-anleitung-coming-soon`, beide Engines: **427 passed / 25 skipped** im Sammellauf; der eine echte Fehlschlag (alter Wortlaut, siehe oben) gezogen, Datei danach 54/54. Die zwei rot markierten Video-Tests sind die bekannten `test.fail`-Wächter für BUG-17/18. Unit **432/432**, Lint 0 Fehler, `tsc` ohne neue Fehler.
 

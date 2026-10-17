@@ -17,7 +17,7 @@ import { AboutHeroPhone } from "@/components/about-hero-phone";
 import { AboutSimulationPhone } from "@/components/about-simulation-phone";
 import { AboutVideo } from "@/components/about-video";
 import { InfoPageShell } from "@/components/info-page-shell";
-import { ANLEITUNG_VERFUEGBAR } from "@/lib/app-nav";
+import { ANLEITUNG_VERFUEGBAR, KOFI_URL } from "@/lib/app-nav";
 import {
   Accordion,
   AccordionContent,
@@ -142,12 +142,26 @@ const AUDIENCES = [
   },
 ];
 
+type FaqEntry = {
+  question: string;
+  answer: string;
+  /**
+   * Optional: ein Wort aus `answer`, das auf der Seite als externer Link
+   * erscheint. Das JSON-LD bekommt `answer` unverändert als reinen Text —
+   * so bleibt es bei einer Quelle (Refinement 15).
+   */
+  link?: { text: string; href: string };
+};
+
 /** Rendered on the page AND fed into the JSON-LD below — one source, so the two can't drift apart. */
-const FAQ = [
+const FAQ: FaqEntry[] = [
   {
+    // Refinement 15: Ko-fi als Textlink, kein Button — die Regel aus
+    // Refinement 12 („keine zusaetzlichen Ko-fi-Buttons") gilt weiter.
     question: "Was kostet Geo Quest?",
     answer:
-      "Geo Quest ist vollständig kostenlos und werbefrei. Es gibt kein Abo, keine Testphase und keine Begrenzung der Quests. Wer das Projekt unterstützen möchte, kann das freiwillig über Ko-fi tun.",
+      "Geo Quest ist vollständig kostenlos und werbefrei. Es gibt kein Abo, keine Testphase und keine Begrenzung der Quests. Wenn dir die App gefällt und du meine Arbeit unterstützen möchtest, freue ich mich über eine freiwillige Spende in meine digitale Kaffeekasse unter Ko-fi.",
+    link: { text: "Ko-fi", href: KOFI_URL },
   },
   {
     question: "Brauchen die Kinder ein Konto oder eine App?",
@@ -185,12 +199,39 @@ const FAQ = [
       "Im Creator: Quest anlegen, Ziele auf der Karte setzen und zu jedem Ziel Rätsel, Aufgaben oder Medien hinzufügen. Danach exportierst du sie als Datei und teilst sie.",
   },
   {
-    // Gekuerzt (Refinement 12): Die Live-Demo zeigt die Aufgabentypen jetzt.
+    // Refinement 15: Quellen exakt nach PROJ-15 — Google Drive nur mit
+    // Bildern, weil Google Audio und Video beim Einbetten sperrt.
     question: "Was kann ich in eine Quest einbauen?",
     answer:
-      "Jede Station kann Text, Bild, Audio, Video und eine Aufgabe kombinieren: einen Code eintippen, Multiple Choice oder Elemente sortieren. Weiter geht es erst, wenn die Aufgabe gelöst ist.",
+      "Jede Station kann Texte, Bilder, Audio, Videos und Aufgaben (einen Code eintippen, Multiple Choice oder Elemente sortieren) beliebig kombinieren. Weiter zur nächsten Station geht es erst, wenn alle Aufgaben der Station gelöst sind. Bilder, Audio und Videos bindest du per Link ein, hochgeladen wird nichts. Das klappt mit YouTube und Vimeo, mit Teilen-Links aus Dropbox, mit Bildern aus Google Drive, mit Dateien von Wikimedia Commons und Wikipedia. Ebenso geht jeder Link, der im Browser nur das Bild, den Ton oder das Video selbst öffnet, zum Beispiel eine Adresse, die auf .jpg oder .mp3 endet.",
   },
 ];
+
+/**
+ * Rendert eine FAQ-Antwort; traegt sie einen Link, wird genau dieses Wort
+ * verlinkt. Der Textinhalt bleibt identisch mit `answer` (ein Test vergleicht
+ * ihn woertlich mit dem JSON-LD) — der Hinweis auf den neuen Tab steht deshalb
+ * im `aria-label`, nicht in einem `sr-only`-Span.
+ */
+function FaqAnswer({ answer, link }: FaqEntry) {
+  const at = link ? answer.lastIndexOf(link.text) : -1;
+  if (!link || at === -1) return <>{answer}</>;
+  return (
+    <>
+      {answer.slice(0, at)}
+      <a
+        href={link.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`${link.text} (öffnet neuen Tab)`}
+        className="text-primary underline underline-offset-4 transition-colors duration-base ease-gq hover:text-primary/80"
+      >
+        {link.text}
+      </a>
+      {answer.slice(at + link.text.length)}
+    </>
+  );
+}
 
 /**
  * Structured data so search engines and AI assistants can state plainly what
@@ -430,17 +471,17 @@ export default function AboutPage() {
         <h2 className={SECTION_LABEL}>Häufige Fragen</h2>
         <h3 className={SECTION_TITLE}>Antworten für Eltern und Lehrkräfte</h3>
         <Accordion type="single" collapsible className="mt-4">
-          {FAQ.map(({ question, answer }) => (
+          {FAQ.map((entry) => (
             <AccordionItem
-              key={question}
-              value={question}
+              key={entry.question}
+              value={entry.question}
               className="border-border"
             >
               <AccordionTrigger className="text-left font-display italic text-lg uppercase leading-tight text-gq-white hover:text-gq-teal hover:no-underline">
-                {question}
+                {entry.question}
               </AccordionTrigger>
               <AccordionContent className="max-w-[70ch] font-body text-sm lg:text-[15px] leading-relaxed text-gq-grey">
-                {answer}
+                <FaqAnswer {...entry} />
               </AccordionContent>
             </AccordionItem>
           ))}

@@ -316,8 +316,8 @@ test.describe("FAQ nach dem Refinement", () => {
 
     const html = await page.content();
     for (const needle of [
-      // Seit Refinement 12 gekürzt — die Live-Demo zeigt die Aufgaben.
-      "Text, Bild, Audio, Video und eine Aufgabe",
+      // Seit Refinement 15: mehrere Aufgaben je Station, Medien per Link.
+      "Texte, Bilder, Audio, Videos und Aufgaben",
       "Multiple Choice",
     ]) {
       expect(html, `fehlt im HTML: ${needle}`).toContain(needle);

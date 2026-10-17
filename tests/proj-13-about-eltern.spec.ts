@@ -416,7 +416,9 @@ test.describe("Ansprache und Wahrheit", () => {
     for (const [re, warum] of [
       [/Punkte|Pkt\b/, "kein Punktesystem (PRD-Non-Goal)"],
       [/Tipp-Funktion|Tipps?\b/, "es gibt keine Tipp-Funktion"],
-      [/QR-Code|per Link/, "Weitergabe läuft als Datei"],
+      // „per Link ein(binden)" meint Medien in der Station (Refinement 15),
+      // nicht die Weitergabe der Quest — nur das ist ausgeschlossen.
+      [/QR-Code|per Link(?! ein)/, "Weitergabe läuft als Datei"],
       [/schlechte[mn]? (Mobilfunk)?netz|offline spielbar|ohne Internet/i, "kein Offline-Modus"],
       [/1\.000|gespielte Quests/, "keine erfundenen Nutzerzahlen"],
       [/\d+\s*(bis|–|-)\s*\d+\s*Minuten|halbe Stunde/, "keine Zeitangabe fürs Erstellen"],
@@ -483,8 +485,15 @@ test.describe("Unverändert", () => {
     expect(headerLinks.some((h) => h?.startsWith("#"))).toBe(false);
     expect(headerLinks.filter((h) => h?.includes("ko-fi"))).toHaveLength(1);
 
-    // Im Inhalt kein weiterer Ko-fi-Button.
-    await expect(page.locator("main a[href*='ko-fi']")).toHaveCount(0);
+    // Im Inhalt kein Ko-fi-Button — nur der Textlink in der Kosten-Antwort
+    // der FAQ (Refinement 15). Gezogen statt gelöscht: Ein zweiter Ko-fi-Link
+    // an anderer Stelle lässt diesen Test weiterhin fallen.
+    // Eingeklappte Antworten stehen nicht im DOM: erst aufklappen, dann zählen.
+    await page.getByRole("button", { name: /Was kostet Geo Quest/ }).click();
+    const kofiInMain = page.locator("main a[href*='ko-fi']");
+    await expect(kofiInMain).toHaveCount(1);
+    const costRegion = page.getByRole("region", { name: /Was kostet Geo Quest/ });
+    await expect(costRegion.locator("a[href*='ko-fi']")).toHaveCount(1);
 
     const closing = page.locator("main section", {
       has: page.getByRole("heading", { name: /Deine Umgebung/ }),
@@ -794,5 +803,84 @@ test.describe("Refinement 14: Kapitel unter dem Video, Vorteil-Texte", () => {
         "Jede Station kann flexibel mit Texten, Bildern, Videos und Aufgaben aufgebaut werden. Kein Programmierwissen nötig."
       )
     ).toBeVisible();
+  });
+});
+
+/**
+ * PROJ-13 — Refinement 15 (2026-10-17): FAQ mit Ko-fi-Link und Medien per
+ * Link. Wortlaut vom Betreiber; die Quellen folgen PROJ-15 (Google Drive nur
+ * mit Bildern).
+ */
+test.describe("FAQ: Ko-fi-Link und Medien per Link (Refinement 15)", () => {
+  async function openAnswer(page: Page, question: RegExp) {
+    await page.goto("/about");
+    await page.getByRole("button", { name: question }).click();
+    return page.getByRole("region", { name: question });
+  }
+
+  test("die Kosten-Antwort endet mit dem Kaffeekassen-Satz, Ko-fi nur einmal", async ({
+    page,
+  }) => {
+    const region = await openAnswer(page, /Was kostet Geo Quest/);
+    const text = ((await region.textContent()) ?? "").trim();
+    expect(text).toBe(
+      "Geo Quest ist vollständig kostenlos und werbefrei. Es gibt kein Abo, keine Testphase und keine Begrenzung der Quests. Wenn dir die App gefällt und du meine Arbeit unterstützen möchtest, freue ich mich über eine freiwillige Spende in meine digitale Kaffeekasse unter Ko-fi."
+    );
+    expect(text.match(/Ko-fi/g)).toHaveLength(1);
+  });
+
+  test("„Ko-fi“ ist ein Textlink in einen neuen Tab, kein Button", async ({ page }) => {
+    const region = await openAnswer(page, /Was kostet Geo Quest/);
+    const link = region.getByRole("link", { name: /Ko-fi.*neuen Tab/ });
+    await expect(link).toHaveText("Ko-fi");
+    await expect(link).toHaveAttribute("href", "https://ko-fi.com/technolomagie");
+    await expect(link).toHaveAttribute("target", "_blank");
+    await expect(link).toHaveAttribute("rel", "noopener noreferrer");
+
+    // Textlink: unterstrichen, ohne Fläche, keine Bildmarke.
+    const style = await link.evaluate((a) => {
+      const cs = getComputedStyle(a);
+      return {
+        deco: cs.textDecorationLine,
+        bg: cs.backgroundColor,
+        display: cs.display,
+        svg: a.querySelectorAll("svg, img").length,
+      };
+    });
+    expect(style.deco).toContain("underline");
+    expect(style.bg).toBe("rgba(0, 0, 0, 0)");
+    expect(style.display).toBe("inline");
+    expect(style.svg).toBe(0);
+    await expect(region.getByRole("button")).toHaveCount(0);
+  });
+
+  test("die Medien-Antwort nennt mehrere Aufgaben, den Link-Weg und die Quellen", async ({
+    page,
+  }) => {
+    const region = await openAnswer(page, /Was kann ich in eine Quest einbauen/);
+    const text = ((await region.textContent()) ?? "").trim();
+    expect(text).toBe(
+      "Jede Station kann Texte, Bilder, Audio, Videos und Aufgaben (einen Code eintippen, Multiple Choice oder Elemente sortieren) beliebig kombinieren. Weiter zur nächsten Station geht es erst, wenn alle Aufgaben der Station gelöst sind. Bilder, Audio und Videos bindest du per Link ein, hochgeladen wird nichts. Das klappt mit YouTube und Vimeo, mit Teilen-Links aus Dropbox, mit Bildern aus Google Drive, mit Dateien von Wikimedia Commons und Wikipedia. Ebenso geht jeder Link, der im Browser nur das Bild, den Ton oder das Video selbst öffnet, zum Beispiel eine Adresse, die auf .jpg oder .mp3 endet."
+    );
+    // Google Drive ausdrücklich nur mit Bildern (PROJ-15, gemessen 2026-10-04).
+    expect(text).not.toMatch(/(Audio|Videos?) (aus|von) Google Drive/);
+    await expect(region.getByRole("link")).toHaveCount(0);
+  });
+
+  test("das JSON-LD trägt beide Antworten als reinen Text", async ({ page }) => {
+    await page.goto("/about");
+    const raw = (await page.locator('script[type="application/ld+json"]').textContent())!;
+    const faq = JSON.parse(raw)["@graph"].find(
+      (g: { "@type": string }) => g["@type"] === "FAQPage"
+    );
+    const byQ = Object.fromEntries(
+      faq.mainEntity.map((e: { name: string; acceptedAnswer: { text: string } }) => [
+        e.name,
+        e.acceptedAnswer.text,
+      ])
+    );
+    expect(byQ["Was kostet Geo Quest?"]).toMatch(/digitale Kaffeekasse unter Ko-fi\.$/);
+    expect(byQ["Was kostet Geo Quest?"]).not.toContain("<");
+    expect(byQ["Was kann ich in eine Quest einbauen?"]).toContain("mit Bildern aus Google Drive");
   });
 });
