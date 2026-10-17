@@ -307,9 +307,10 @@ export default function AboutPage() {
               Lehrkraefte an — der Anlass steht vorn, weil sie danach suchen.
               Laenge mit Blick auf BUG-7: 320x568 hatte nur 39px Luft. */}
           <p className="font-body text-base sm:text-lg lg:text-xl leading-snug text-gq-white">
-            Erstelle GPS-Schnitzeljagden und Lernpfade für Kindergeburtstag,
-            Schulklasse oder Familienausflug. Die Kinder laufen draußen von
-            Station zu Station und lösen dabei Rätsel.
+            Erstelle eigene GPS-Schnitzeljagden und spannende Lernpfade für
+            Kindergeburtstage, Schulklassen und Familienausflüge. Die Kinder
+            entdecken draußen neue Orte, lösen Rätsel und erleben gemeinsam ein
+            Abenteuer.
           </p>
 
           {/* „Werbung" statt „Abo" (Refinement 12): fuer Eltern das staerkere

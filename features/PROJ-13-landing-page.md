@@ -1,6 +1,8 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: Deployed
+## Status: In Progress
+_**Refinement 16 (2026-10-17): Neuer Hero-Absatz auf `/about`.** Wortlaut vom Betreiber, Überschrift unverändert. Siehe Abschnitt „Refinement 16“. **Frontend umgesetzt am 2026-10-17.**_
+
 _**Refinement 15 (2026-10-17): Zwei FAQ-Antworten auf `/about` werden konkreter.** Betreiber: In „Was kostet Geo Quest?" soll der konkrete Ko-fi-Link stehen, und „Was kann ich in eine Quest einbauen?" soll sagen, dass Medien per Link eingebunden werden und von wo. Entschieden: Wortlaut des Betreibers für beide Antworten, „Ko-fi" als Textlink; die Regel „keine zusätzlichen Ko-fi-Buttons" aus Refinement 12 wird präzisiert statt aufgehoben. Die Medien-Antwort stellt außerdem klar, dass eine Station **mehrere** Aufgaben haben kann — der bisherige Satz „und eine Aufgabe" war zu knapp (bereits in der QA von Refinement 12 notiert). Siehe Abschnitt „Refinement 15". **Frontend umgesetzt am 2026-10-17** — beide Antworten im Wortlaut, Ko-fi als Teal-Textlink (11.6:1), Gegenprobe: 10 von 12 Wächtern fallen gegen den Vorgänger. **QA am 2026-10-17: 6/6 Acceptance Criteria, keine Bugs.** **Am 2026-10-17 nach Production deployt** (Tag `v1.49.0-PROJ-13`)._
 
 _**Refinement 14 (2026-10-17): Drei Schritte wandern unter das Video, zwei Vorteil-Texte geschärft.** Kritische Prüfung auf Länge und Doppelungen: „So funktioniert's" stand viermal auf der Seite, am deutlichsten doppelten sich Video (Kapitel „01 Erstellen, 02 Teilen, 03 Spielen") und die Sektion „Drei Schritte". Entschieden: Die Sektion entfällt, die drei Schritte stehen als kompakte, immer sichtbare Kapitel (Nummer, Titel, ein Satz) direkt unter dem Video. „Bewegung statt Sofa" und „Einfacher Baukasten" bekommen den Wortlaut des Betreibers. Siehe Abschnitt „Refinement 14". **Frontend umgesetzt am 2026-10-17** — Seite auf dem Handy 6220 → 5776px. **QA am 2026-10-17: 7/7 Acceptance Criteria, keine Bugs.** **Am 2026-10-17 nach Production deployt** (Tag `v1.48.0-PROJ-13`)._
@@ -3628,4 +3630,23 @@ Fällt ein Hero-Screen aus, hält der Rahmen jetzt in beiden Engines dieselbe H�
 **Refinement-15-Tests direkt gegen Production** (seriell je Engine): **26/26** — Chrome 13/13, Mobile Safari 13/13, inklusive echtem Klick mit `window.opener === null` und Wortgleichheit aller FAQ-Antworten mit dem JSON-LD.
 
 **Refinement 15 ist abgeschlossen.**
+
+## Refinement 16 (2026-10-17) — Neuer Hero-Absatz
+
+Betreiber-Vorgabe, die Überschrift „Die reale Welt wird zum Spielfeld.“ bleibt. Der Absatz unter der Überschrift lautet jetzt:
+
+> Erstelle eigene GPS-Schnitzeljagden und spannende Lernpfade für Kindergeburtstage, Schulklassen und Familienausflüge. Die Kinder entdecken draußen neue Orte, lösen Rätsel und erleben gemeinsam ein Abenteuer.
+
+Vorher: „Erstelle GPS-Schnitzeljagden und Lernpfade für Kindergeburtstag, Schulklasse oder Familienausflug. Die Kinder laufen draußen von Station zu Station und lösen dabei Rätsel.“
+
+**Acceptance Criteria**
+- [x] Der Hero-Absatz steht im neuen Wortlaut, der alte ist weg
+- [x] Überschrift, Preiszeile und CTA bleiben unverändert
+- [x] Der CTA steht auf allen Referenz-Viewports über dem Falz (BUG-7)
+
+## Implementation Notes (Frontend — Refinement 16, 2026-10-17)
+
+Nur der Absatz in `about/page.tsx` geändert; Metadaten-Beschreibung und JSON-LD bleiben, wie sie sind. Fünf Wortlaut-Assertions in drei PROJ-13-Testdateien auf den neuen Text gezogen. Dazu der Wächter „die Spielmechanik steht in Hero und Schritten“: Der neue Absatz sagt nicht mehr „von Station zu Station“, den Weg trägt jetzt allein Schritt 03 (GPS-Pfeil). Der Test prüft weiter beides, den Hero über „entdecken draußen neue Orte“. **PROJ-13 gegen den Production-Build: 337 passed / 2 failed** (genau dieser Wächter, beide Engines), nach dem Anpassen die drei betroffenen Dateien **180/0**.
+
+**Gemessen gegen den Production-Build, Chrome und WebKit identisch:** Der CTA steht auf allen neun geprüften Viewports über dem Falz. Der Absatz ist länger als vorher, deshalb ist die Luft unter dem CTA kleiner geworden: **320×568 nur noch 7px (vorher 51px)**, 1366×768 29px, 1024×768 53px. Kein Bug, aber auf 320×568 kippt der CTA beim nächsten zusätzlichen Wort im Hero unter den Falz.
 

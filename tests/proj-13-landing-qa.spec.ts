@@ -51,7 +51,7 @@ test.describe("Kontrast (PRD: WCAG AA, 4.5:1)", () => {
       // einen eigenen, pixelgenauen Wächter weiter unten.
       const targets: [string, Element | undefined][] = [
         ["Hero Kostenlos-Zeile", byText(/^Kostenlos\. Ohne Werbung/)],
-        ["Hero Subline", byText(/^Erstelle GPS-Schnitzeljagden/)],
+        ["Hero Subline", byText(/^Erstelle eigene GPS-Schnitzeljagden/)],
         ["Vorteil-Text", byText(/^Keine Anmeldung, keine Werbung/)],
         ["Schritt-Text", document.querySelector("main ol li p") || undefined],
         ["Zielgruppen-Text", document.querySelector("main dl dd p") || undefined],
@@ -528,7 +528,7 @@ test.describe("Refinement 5: Copy-Feinschliff (2026-09-09)", () => {
         .filter((p) => !p.classList.contains("text-tech"))
         .map((p) => (p.textContent || "").trim().slice(0, 30));
     });
-    expect(heroBody).toEqual(["Erstelle GPS-Schnitzeljagden u"]);
+    expect(heroBody).toEqual(["Erstelle eigene GPS-Schnitzelj"]);
   });
 
   // PROJ-14: Es gibt keinen sekundären CTA mehr, solange die Anleitung nur
@@ -545,7 +545,7 @@ test.describe("Refinement 5: Copy-Feinschliff (2026-09-09)", () => {
     await page.goto("/about");
 
     // Seit Refinement 12 auf die Copy für Eltern und Lehrkräfte gezogen.
-    await expect(page.getByText(/^Erstelle GPS-Schnitzeljagden/)).toBeVisible();
+    await expect(page.getByText(/^Erstelle eigene GPS-Schnitzeljagden/)).toBeVisible();
     await expect(page.getByText("Lass deine Klasse selbst eine Quest bauen")).toBeVisible();
     await expect(page.getByText(/^Bring den Unterricht nach draußen/)).toBeVisible();
 

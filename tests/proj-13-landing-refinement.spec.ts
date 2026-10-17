@@ -34,7 +34,7 @@ test.describe("Hero", () => {
     // und Spielmechanik sind raus — beide kosteten 168px an der teuersten
     // Stelle der Seite und stehen weiter unten ohnehin ausführlicher.
     // Seit Refinement 12 ein Absatz für Ersteller mit Anlass und Nutzen.
-    await expect(page.getByText(/^Erstelle GPS-Schnitzeljagden und Lernpfade/)).toBeVisible();
+    await expect(page.getByText(/^Erstelle eigene GPS-Schnitzeljagden und spannende Lernpfade/)).toBeVisible();
     await expect(page.getByText("Kostenlos. Ohne Werbung. Ohne Anmeldung.")).toBeVisible();
     await expect(page.getByText(/Ob mit Freunden, der Familie/)).toHaveCount(0);
     await expect(page.getByText(/Laufe zu verschiedenen Orten/)).toHaveCount(0);
@@ -43,9 +43,10 @@ test.describe("Hero", () => {
   test("die Spielmechanik steht in Hero und Schritten", async ({ page }) => {
     await page.goto("/about");
 
-    // Refinement 12: Der Hero-Absatz nennt sie selbst („von Station zu
-    // Station"), Schritt 03 nennt den GPS-Pfeil.
-    await expect(page.getByText(/laufen draußen von Station zu Station/)).toBeVisible();
+    // Refinement 16: Der Hero-Absatz sagt nur noch, was die Kinder erleben
+    // („draußen neue Orte"); den Weg von Station zu Station trägt allein
+    // Schritt 03 mit dem GPS-Pfeil. Er darf deshalb nicht verschwinden.
+    await expect(page.getByText(/Die Kinder entdecken draußen neue Orte/)).toBeVisible();
     await expect(page.getByText(/Der GPS-Pfeil führt von Station zu Station/)).toBeVisible();
   });
 
@@ -70,7 +71,7 @@ test.describe("Hero", () => {
     // Gezogen in Refinement 12: Bis dahin stand hier „Erstellen und Spielen
     // gleichwertig" mit einem zweiten, an den Spieler gerichteten Satz. Die
     // Seite spricht jetzt nur noch Eltern, Lehrkräfte und Jugendleitung an.
-    await expect(page.getByText(/^Erstelle GPS-Schnitzeljagden/)).toBeVisible();
+    await expect(page.getByText(/^Erstelle eigene GPS-Schnitzeljagden/)).toBeVisible();
     await expect(page.getByText(/Nimm die Herausforderung an/)).toHaveCount(0);
   });
 

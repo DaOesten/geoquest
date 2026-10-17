@@ -177,7 +177,7 @@ test.describe("Für wen — Zielgruppen-Karten (Refinement 4, gezogen in Refinem
 
     // Der Lernpfad-Gedanke steht seit Refinement 12 im Hero, der
     // Unterrichtsgedanke in der Schul-Karte.
-    await expect(page.getByText(/GPS-Schnitzeljagden und Lernpfade/)).toBeVisible();
+    await expect(page.getByText(/GPS-Schnitzeljagden und spannende Lernpfade/)).toBeVisible();
     await expect(page.getByText(/Bring den Unterricht nach draußen/)).toBeVisible();
 
     // Die früheren Anlass-Karten und der Vorwissen-Satz sind ersetzt.
