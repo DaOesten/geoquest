@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1 | Approved | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 | PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Deployed | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
 
@@ -641,6 +641,8 @@ Spec ist aktualisiert (22 Acceptance Criteria in einem eigenen Block, 6 Produkt-
 **PROJ-13** geht von Deployed zurück auf In Progress. Kritische Prüfung auf Länge und Doppelungen: Die Seite ist mit 379 Wörtern und 7,4 Handy-Bildschirmhöhen nicht zu lang, erklärt aber „So funktioniert's" viermal — am deutlichsten doppeln sich Video und die Sektion „Drei Schritte". Entschieden: Die Sektion entfällt, die drei Schritte stehen als kompakte, immer sichtbare Kapitel unter dem Video; „Bewegung statt Sofa" und „Einfacher Baukasten" bekommen den Wortlaut des Betreibers. Die Abschluss-Zeile „Keine Werbung. Keine Anmeldung." bleibt vorerst.
 
 **Frontend umgesetzt am 2026-10-17.** Seite auf dem Handy von 6220 auf 5776px (7,4 → 6,8 Bildschirmhöhen), die Kapitel kosten 198 statt 639px. Drei neue Tests, vier gezogen; PROJ-13 317/0 nach Korrektur der Sektionszählung. Der Satz über dem Video, der die Kapitel vorwegnahm, ist auf Betreiber-Wunsch gestrichen.
+
+**QA am 2026-10-17: 7/7 Acceptance Criteria, keine Bugs — Approved.** Kapitel auf beiden Engines und vier Breiten wie spezifiziert (1/1/3/3 je Zeile, 0px Überlauf), Kontrast 7.9–19.2:1, Überschriften ohne Sprünge. Gegenprobe gegen den Vorgängerstand: alle 6 Wächter fallen. Regression PROJ-13 + Shell-Suiten 503/0, Unit 432/432.
 
 ## Next Available ID: PROJ-16
 

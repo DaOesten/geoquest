@@ -1,7 +1,7 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: In Progress
-_**Refinement 14 (2026-10-17): Drei Schritte wandern unter das Video, zwei Vorteil-Texte geschärft.** Kritische Prüfung auf Länge und Doppelungen: „So funktioniert's" stand viermal auf der Seite, am deutlichsten doppelten sich Video (Kapitel „01 Erstellen, 02 Teilen, 03 Spielen") und die Sektion „Drei Schritte". Entschieden: Die Sektion entfällt, die drei Schritte stehen als kompakte, immer sichtbare Kapitel (Nummer, Titel, ein Satz) direkt unter dem Video. „Bewegung statt Sofa" und „Einfacher Baukasten" bekommen den Wortlaut des Betreibers. Siehe Abschnitt „Refinement 14". **Frontend umgesetzt am 2026-10-17** — Seite auf dem Handy 6220 → 5776px._
+## Status: Approved
+_**Refinement 14 (2026-10-17): Drei Schritte wandern unter das Video, zwei Vorteil-Texte geschärft.** Kritische Prüfung auf Länge und Doppelungen: „So funktioniert's" stand viermal auf der Seite, am deutlichsten doppelten sich Video (Kapitel „01 Erstellen, 02 Teilen, 03 Spielen") und die Sektion „Drei Schritte". Entschieden: Die Sektion entfällt, die drei Schritte stehen als kompakte, immer sichtbare Kapitel (Nummer, Titel, ein Satz) direkt unter dem Video. „Bewegung statt Sofa" und „Einfacher Baukasten" bekommen den Wortlaut des Betreibers. Siehe Abschnitt „Refinement 14". **Frontend umgesetzt am 2026-10-17** — Seite auf dem Handy 6220 → 5776px. **QA am 2026-10-17: 7/7 Acceptance Criteria, keine Bugs — Approved.**_
 
 _**Refinement 13 (2026-10-16): Handy-Visual im Hero animiert, Live-Demo wird zur Quest-Simulation im Handy.** Betreiber nach dem Handy-Test der neuen `/about`: Das Hero-Visual soll mehr nach Handy aussehen und drei Screens zeigen (Stationsübersicht, Kompass, „Ziel erreicht“); die Demo soll eine komplette Quest in einem Handy-Screen simulieren. Entschieden: Die Screens laufen **einmal** durch und bleiben auf dem Kompass stehen (Design-System-Regel „keine Ambient-Loops“), danach von Hand weiterblättern; ein **neutrales Handy in CSS** für beide Stellen; in der Simulation läuft man per Knopf „Hinlaufen“ zur Station; Inhalt vorerst „Das Waldgeheimnis“ (Betreiber bessert später nach), Station 2 mit dem CC0-Foto „Manor Park Aldershot Pond“. Siehe Abschnitt „Refinement 13“ am Ende. **Frontend umgesetzt am 2026-10-16** — Simulation im iframe, Hero läuft einmal durch und bleibt auf dem Kompass; die Ausnahme von der Sicherheitsregel (`X-Frame-Options: SAMEORIGIN` nur für `/about/simulation`) ist vom Betreiber freigegeben. Siehe „Implementation Notes (Frontend — Refinement 13)“. **QA am 2026-10-16: 22/22 Acceptance Criteria, 2 Low-Bugs, Production-Ready — Approved.** BUG-24 am 2026-10-17 behoben, BUG-23 offen. **Am 2026-10-17 nach Production deployt** (Tag `v1.47.0-PROJ-13`)._
 
@@ -3510,3 +3510,25 @@ Fällt ein Hero-Screen aus, hält der Rahmen jetzt in beiden Engines dieselbe H�
 **Tests:** drei neue in `proj-13-about-eltern.spec.ts` (Kapitel unter dem Video ohne Bedienelemente, Spalten je Breite, Vorteil-Texte im Wortlaut); gezogen: Sektionszählung (sieben statt acht, `main section` 6), Sektionstitel-Liste, „gestrichene Sektionen", „Weitergabe als Datei" jetzt für Kapitel 02. **PROJ-13 317 passed / 0 failed nach Korrektur** (der eine fehlerhafte Zähltest auf beiden Engines danach grün), Build und Lint sauber.
 
 **Am Bildschirm abgenommen** (Desktop und iPhone). **Nachtrag 2026-10-17:** Der Satz über dem Video („Quest erstellen, als Datei weitergeben, draußen losspielen — der ganze Weg einmal durchgespielt.") sagte nach dem Umbau dasselbe wie die Kapitel darunter — auf Betreiber-Wunsch gestrichen. Kicker „In 50 Sekunden" und Titel „So funktioniert Geo Quest." tragen die Sektion allein; der Abstand zum Video sitzt jetzt am Titelblock (`mb-6`).
+
+## QA Test Results — Refinement 14: Schritte unter dem Video, Vorteil-Texte (2026-10-17)
+
+**Getestet:** 2026-10-17 gegen den Production-Build, Chrome 152 und WebKit, je 320/375/768/1440px. **Ergebnis: 7/7 Acceptance Criteria erfüllt, keine Bugs, Production-Ready.**
+
+| Kriterium | Ergebnis | Beleg |
+|---|---|---|
+| Keine eigene Schritte-Sektion | erfüllt | 6 `<section>` + Hero auf allen Breiten und beiden Engines |
+| Kein Einleitungssatz über dem Video | erfüllt | Titelblock ohne Absatz; Abstand Titel → Video bleibt (Test) |
+| Drei Kapitel immer sichtbar unter dem Video | erfüllt | Texte wörtlich, unter der Videokante, ohne Links oder Knöpfe |
+| Ab `sm` nebeneinander, darunter untereinander | erfüllt | 1/1/3/3 je Zeile bei 320/375/768/1440, 0px Überlauf |
+| „Bewegung statt Sofa" im Wortlaut | erfüllt | Test auf den genauen Satz |
+| „Einfacher Baukasten" im Wortlaut | erfüllt | Test auf den genauen Satz |
+| Seite kürzer, ohne Informationsverlust | erfüllt | 390×844: 6220 → 5776px; FAQ „Wie erstelle ich eine Quest?" trägt den Ablauf weiter als Text |
+
+**Zusätzlich geprüft:** Kontrast der Kapitel — Nummer 11.53:1, Titel 19.24:1, Satz 7.90:1; Überschriften-Hierarchie ohne Sprünge (Kapitel als `h4` unter dem `h3`-Titel); keine neuen Bedienelemente, Tastaturweg unverändert. Security unverändert — reine Textänderung ohne Eingaben.
+
+**Gegenprobe gegen den echten Vorgängerstand** (`page.tsx` aus `0fa2eb7`, eigener Build): **alle 6** neuen bzw. gezogenen Wächter fallen (Kapitel, Spalten, Vorteil-Texte, sieben Sektionen, gestrichene Sektion, Kapitel 02). Produktcode danach per `git diff` als identisch mit dem Commit bestätigt.
+
+**Regression:** PROJ-13 und die Suiten, die `InfoPageShell` mitbenutzen (Ko-fi, Safe Area, PROJ-14, Navigation), **503 passed / 25 skipped / 0 failed** über beide Engines. Unit **432/432**. Ein Build-Versuch scheiterte am bekannten, vorübergehenden `next/font/google`-Fehler; der zweite lief durch.
+
+**Nicht abgedeckt:** Firefox (Binary weiterhin nicht verfügbar).
