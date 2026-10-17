@@ -1,7 +1,7 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: In Progress
-_**Refinement 16 (2026-10-17): Neuer Hero-Absatz auf `/about`.** Wortlaut vom Betreiber, Überschrift unverändert. Siehe Abschnitt „Refinement 16“. **Frontend umgesetzt am 2026-10-17.**_
+## Status: Deployed
+_**Refinement 16 (2026-10-17): Neuer Hero-Absatz auf `/about`.** Wortlaut vom Betreiber, Überschrift unverändert. Siehe Abschnitt „Refinement 16“. **Frontend umgesetzt am 2026-10-17.** Ohne formale QA deployt (Betreiber-Entscheidung, reine Textänderung). **Am 2026-10-17 nach Production deployt** (Tag `v1.50.0-PROJ-13`)._
 
 _**Refinement 15 (2026-10-17): Zwei FAQ-Antworten auf `/about` werden konkreter.** Betreiber: In „Was kostet Geo Quest?" soll der konkrete Ko-fi-Link stehen, und „Was kann ich in eine Quest einbauen?" soll sagen, dass Medien per Link eingebunden werden und von wo. Entschieden: Wortlaut des Betreibers für beide Antworten, „Ko-fi" als Textlink; die Regel „keine zusätzlichen Ko-fi-Buttons" aus Refinement 12 wird präzisiert statt aufgehoben. Die Medien-Antwort stellt außerdem klar, dass eine Station **mehrere** Aufgaben haben kann — der bisherige Satz „und eine Aufgabe" war zu knapp (bereits in der QA von Refinement 12 notiert). Siehe Abschnitt „Refinement 15". **Frontend umgesetzt am 2026-10-17** — beide Antworten im Wortlaut, Ko-fi als Teal-Textlink (11.6:1), Gegenprobe: 10 von 12 Wächtern fallen gegen den Vorgänger. **QA am 2026-10-17: 6/6 Acceptance Criteria, keine Bugs.** **Am 2026-10-17 nach Production deployt** (Tag `v1.49.0-PROJ-13`)._
 
@@ -3649,4 +3649,12 @@ Vorher: „Erstelle GPS-Schnitzeljagden und Lernpfade für Kindergeburtstag, Sch
 Nur der Absatz in `about/page.tsx` geändert; Metadaten-Beschreibung und JSON-LD bleiben, wie sie sind. Fünf Wortlaut-Assertions in drei PROJ-13-Testdateien auf den neuen Text gezogen. Dazu der Wächter „die Spielmechanik steht in Hero und Schritten“: Der neue Absatz sagt nicht mehr „von Station zu Station“, den Weg trägt jetzt allein Schritt 03 (GPS-Pfeil). Der Test prüft weiter beides, den Hero über „entdecken draußen neue Orte“. **PROJ-13 gegen den Production-Build: 337 passed / 2 failed** (genau dieser Wächter, beide Engines), nach dem Anpassen die drei betroffenen Dateien **180/0**.
 
 **Gemessen gegen den Production-Build, Chrome und WebKit identisch:** Der CTA steht auf allen neun geprüften Viewports über dem Falz. Der Absatz ist länger als vorher, deshalb ist die Luft unter dem CTA kleiner geworden: **320×568 nur noch 7px (vorher 51px)**, 1366×768 29px, 1024×768 53px. Kein Bug, aber auf 320×568 kippt der CTA beim nächsten zusätzlichen Wort im Hero unter den Falz.
+
+## Deployment — Refinement 16: Neuer Hero-Absatz (2026-10-17)
+
+- **Production:** https://geoquest.technolomagie.de/about (und https://geoquesty.vercel.app/about), Commit `cb78df6`, Tag `v1.50.0-PROJ-13`
+- **Ohne formale QA**, bewusste Entscheidung des Betreibers: reine Textänderung, die PROJ-13-Suiten liefen vorher gegen den Production-Build (Abschnitt oben)
+- Live nach **37 s**. Auf beiden Domains steht der neue Absatz im HTML, der alte kommt dort nicht mehr vor
+- 10 Endpunkte HTTP 200
+- **Auf der Live-Seite gemessen, Chrome und WebKit identisch zu lokal:** CTA auf allen neun Viewports über dem Falz, 320×568 mit **7px** Luft, 0 Konsolenfehler
 

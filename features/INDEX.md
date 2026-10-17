@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1, PROJ-15 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1, PROJ-15 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 | PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Deployed | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
 
@@ -665,6 +665,8 @@ Spec ist aktualisiert (6 Acceptance Criteria, 3 Produkt- und 2 technische Entsch
 
 ## Offenes Refinement 16: Neuer Hero-Absatz auf `/about` (2026-10-17)
 **PROJ-13** geht von Deployed zurück auf In Progress. Der Betreiber hat den Absatz unter der Hero-Überschrift neu formuliert, die Überschrift bleibt. **Frontend umgesetzt am 2026-10-17:** Text eingesetzt, fünf Wortlaut-Assertions gezogen. CTA auf neun Viewports × zwei Engines über dem Falz, aber auf 320×568 nur noch **7px Luft** (vorher 51px).
+
+**Am 2026-10-17 nach Production deployt** (Tag `v1.50.0-PROJ-13`, Commit `cb78df6`), ohne formale QA auf Betreiber-Entscheidung. Live nach 37 s auf beiden Domains, 10 Endpunkte HTTP 200. CTA live auf neun Viewports × zwei Engines identisch zu lokal, 0 Konsolenfehler. **Refinement 16 ist abgeschlossen.**
 
 ## Next Available ID: PROJ-16
 
