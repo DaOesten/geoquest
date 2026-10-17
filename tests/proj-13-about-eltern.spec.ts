@@ -884,3 +884,109 @@ test.describe("FAQ: Ko-fi-Link und Medien per Link (Refinement 15)", () => {
     expect(byQ["Was kann ich in eine Quest einbauen?"]).toContain("mit Bildern aus Google Drive");
   });
 });
+
+/**
+ * QA Refinement 15 (2026-10-17) — über die Frontend-Phase hinaus: echter
+ * Klick, Tastatur, drei Breiten mit Kontrast, und dass die übrigen sieben
+ * Antworten unverlinkt bleiben.
+ */
+test.describe("QA Refinement 15: Ko-fi-Link in der FAQ", () => {
+  const lum = (rgb: number[]) => {
+    const [r, g, b] = rgb.map((c) => {
+      c /= 255;
+      return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const ratio = (a: number[], b: number[]) => {
+    const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+    return (hi + 0.05) / (lo + 0.05);
+  };
+
+  for (const width of [375, 768, 1440]) {
+    test(`${width}px: Link lesbar (≥ 4.5:1), kein Überlauf`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/about");
+      await page.getByRole("button", { name: /Was kostet Geo Quest/ }).click();
+      const link = page
+        .getByRole("region", { name: /Was kostet Geo Quest/ })
+        .getByRole("link");
+      await expect(link).toBeVisible();
+      const { fg, bg } = await link.evaluate((el) => {
+        let n: Element | null = el;
+        let bg = "rgba(0, 0, 0, 0)";
+        while (n && bg === "rgba(0, 0, 0, 0)") {
+          bg = getComputedStyle(n).backgroundColor;
+          n = n.parentElement;
+        }
+        return { fg: getComputedStyle(el).color, bg };
+      });
+      const nums = (s: string) => s.match(/\d+/g)!.slice(0, 3).map(Number);
+      expect(ratio(nums(fg), nums(bg))).toBeGreaterThanOrEqual(4.5);
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - window.innerWidth
+      );
+      expect(overflow).toBe(0);
+    });
+  }
+
+  test("ein echter Klick öffnet Ko-fi im neuen Tab ohne Zugriff auf die App", async ({
+    page,
+    context,
+  }) => {
+    await page.goto("/about");
+    const trigger = page.getByRole("button", { name: /Was kostet Geo Quest/ });
+    await trigger.click();
+    const link = page
+      .getByRole("region", { name: /Was kostet Geo Quest/ })
+      .getByRole("link");
+    const [popup] = await Promise.all([context.waitForEvent("page"), link.click()]);
+    // Keine URL-Prüfung des Tabs: Chrome meldet sie beim Öffnen noch nicht,
+    // und Ko-fi ist aus der Testumgebung gesperrt (Fehlerseite). Das Ziel
+    // prüft der Textlink-Test über `href`.
+    // noopener wirkt tatsächlich, nicht nur als Attribut.
+    // Der Tab wechselt von about:blank zur Zielseite — eine einzelne Abfrage
+    // kann mitten in diesen Wechsel fallen (gemessen: 5 von 6 Läufen auf Chrome).
+    await expect
+      .poll(() => popup.evaluate(() => window.opener === null).catch(() => null))
+      .toBe(true);
+    // Ursprungsseite bleibt stehen, die Antwort bleibt aufgeklappt.
+    expect(new URL(page.url()).pathname).toBe("/about");
+    await expect(trigger).toHaveAttribute("aria-expanded", "true");
+    // Kein `popup.close()`: Ko-fi ist aus der Testumgebung gesperrt, und
+    // WebKit hängt beim Schließen einer solchen Seite ~5 s. Der Kontext räumt auf.
+  });
+
+  test("per Tastatur erreichbar, mit Hinweis auf den neuen Tab", async ({
+    page,
+    browserName,
+  }) => {
+    await page.goto("/about");
+    const trigger = page.getByRole("button", { name: /Was kostet Geo Quest/ });
+    await trigger.click();
+    await trigger.focus();
+    // Safari springt mit Tab nicht zu Links (auch nicht zu „Zur App") —
+    // Systemstandard; mit Alt+Tab schon. Gemessen 2026-10-17.
+    await page.keyboard.press(browserName === "webkit" ? "Alt+Tab" : "Tab");
+    const focused = await page.evaluate(() => ({
+      tag: document.activeElement?.tagName,
+      label: document.activeElement?.getAttribute("aria-label"),
+    }));
+    expect(focused).toEqual({ tag: "A", label: "Ko-fi (öffnet neuen Tab)" });
+  });
+
+  test("nur die Kosten-Antwort trägt einen Link", async ({ page }) => {
+    await page.goto("/about");
+    const triggers = page.locator("main section button[aria-expanded]");
+    const count = await triggers.count();
+    const linksPerAnswer: number[] = [];
+    for (let i = 0; i < count; i++) {
+      const t = triggers.nth(i);
+      await t.click();
+      await expect(t).toHaveAttribute("aria-expanded", "true");
+      const id = await t.getAttribute("aria-controls");
+      linksPerAnswer.push(await page.locator(`[id="${id}"] a`).count());
+    }
+    expect(linksPerAnswer).toEqual([1, 0, 0, 0, 0, 0, 0, 0]);
+  });
+});

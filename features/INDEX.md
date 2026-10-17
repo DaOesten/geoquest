@@ -28,7 +28,7 @@
 | PROJ-10 | Creator — Vorschau / Testmodus | ~~P0~~ | PROJ-4, PROJ-5, PROJ-8 | Verworfen | [Spec](PROJ-10-creator-vorschau-testmodus.md) | 2026-08-23 |
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
-| PROJ-13 | Landing Page | P1 | PROJ-1, PROJ-15 | In Progress | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
+| PROJ-13 | Landing Page | P1 | PROJ-1, PROJ-15 | Approved | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 | PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Deployed | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
 
@@ -658,6 +658,8 @@ Spec ist aktualisiert (22 Acceptance Criteria in einem eigenen Block, 6 Produkt-
 Spec ist aktualisiert (6 Acceptance Criteria, 3 Produkt- und 2 technische Entscheidungen, Out of Scope präzisiert, Abschnitt „Refinement 15").
 
 **Frontend umgesetzt am 2026-10-17.** Eine Datei (`about/page.tsx`): FAQ-Einträge können ein Wort als Link tragen, das JSON-LD bleibt reiner Text aus derselben Quelle. Ko-fi als Teal-Textlink (11.6:1, neuer Tab, Hinweis im `aria-label`, weil ein Test den Antworttext wörtlich mit dem JSON-LD vergleicht). Am Bildschirm auf 320px und iPhone 13 abgenommen. 4 neue Tests, 3 gezogen — darunter der Wächter „per Link", der auf die Medien-Antwort ansprang; er schließt jetzt nur noch „Quest per Link teilen" aus. **Gegenprobe gegen den Vorgänger: 10 von 12 fallen.** Regression PROJ-13 + Ko-fi + PROJ-14: 427 passed, der eine Fehlschlag (alter Wortlaut) gezogen; Unit 432/432, Lint sauber.
+
+**QA am 2026-10-17 abgeschlossen: 6/6 Acceptance Criteria, keine Bugs — Approved.** Neu gemessen auf beiden Engines und drei Breiten: Link-Kontrast 11.60:1, 0px Überlauf, ein echter Klick öffnet einen neuen Tab mit `window.opener === null`, die Antwort bleibt aufgeklappt; nur die Kosten-Antwort trägt einen Link. Auf WebKit erreicht erst Alt+Tab den Link — Safaris Standard, gilt auch für „Zur App". Ein neuer Klick-Test war zunächst wackelig (Wettlauf beim Tab-Wechsel im Test), danach 6/6 grün. **Gegenprobe** ohne `noopener`: genau die 2 zuständigen Tests fallen auf beiden Engines. **Regression 523 passed / 0 failed**, Unit 432/432. Beobachtung ohne Bug-Status: Der Link ist als Fließtext-Link 17px hoch (WCAG-Ausnahme, wie auf `/impressum`).
 
 ## Next Available ID: PROJ-16
 

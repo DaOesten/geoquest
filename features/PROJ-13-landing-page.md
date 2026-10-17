@@ -1,7 +1,7 @@
 # PROJ-13: Landing Page mit App-Link & KI-Anleitung
 
-## Status: In Progress
-_**Refinement 15 (2026-10-17): Zwei FAQ-Antworten auf `/about` werden konkreter.** Betreiber: In „Was kostet Geo Quest?" soll der konkrete Ko-fi-Link stehen, und „Was kann ich in eine Quest einbauen?" soll sagen, dass Medien per Link eingebunden werden und von wo. Entschieden: Wortlaut des Betreibers für beide Antworten, „Ko-fi" als Textlink; die Regel „keine zusätzlichen Ko-fi-Buttons" aus Refinement 12 wird präzisiert statt aufgehoben. Die Medien-Antwort stellt außerdem klar, dass eine Station **mehrere** Aufgaben haben kann — der bisherige Satz „und eine Aufgabe" war zu knapp (bereits in der QA von Refinement 12 notiert). Siehe Abschnitt „Refinement 15". **Frontend umgesetzt am 2026-10-17** — beide Antworten im Wortlaut, Ko-fi als Teal-Textlink (11.6:1), Gegenprobe: 10 von 12 Wächtern fallen gegen den Vorgänger._
+## Status: Approved
+_**Refinement 15 (2026-10-17): Zwei FAQ-Antworten auf `/about` werden konkreter.** Betreiber: In „Was kostet Geo Quest?" soll der konkrete Ko-fi-Link stehen, und „Was kann ich in eine Quest einbauen?" soll sagen, dass Medien per Link eingebunden werden und von wo. Entschieden: Wortlaut des Betreibers für beide Antworten, „Ko-fi" als Textlink; die Regel „keine zusätzlichen Ko-fi-Buttons" aus Refinement 12 wird präzisiert statt aufgehoben. Die Medien-Antwort stellt außerdem klar, dass eine Station **mehrere** Aufgaben haben kann — der bisherige Satz „und eine Aufgabe" war zu knapp (bereits in der QA von Refinement 12 notiert). Siehe Abschnitt „Refinement 15". **Frontend umgesetzt am 2026-10-17** — beide Antworten im Wortlaut, Ko-fi als Teal-Textlink (11.6:1), Gegenprobe: 10 von 12 Wächtern fallen gegen den Vorgänger. **QA am 2026-10-17: 6/6 Acceptance Criteria, keine Bugs — Approved.**_
 
 _**Refinement 14 (2026-10-17): Drei Schritte wandern unter das Video, zwei Vorteil-Texte geschärft.** Kritische Prüfung auf Länge und Doppelungen: „So funktioniert's" stand viermal auf der Seite, am deutlichsten doppelten sich Video (Kapitel „01 Erstellen, 02 Teilen, 03 Spielen") und die Sektion „Drei Schritte". Entschieden: Die Sektion entfällt, die drei Schritte stehen als kompakte, immer sichtbare Kapitel (Nummer, Titel, ein Satz) direkt unter dem Video. „Bewegung statt Sofa" und „Einfacher Baukasten" bekommen den Wortlaut des Betreibers. Siehe Abschnitt „Refinement 14". **Frontend umgesetzt am 2026-10-17** — Seite auf dem Handy 6220 → 5776px. **QA am 2026-10-17: 7/7 Acceptance Criteria, keine Bugs.** **Am 2026-10-17 nach Production deployt** (Tag `v1.48.0-PROJ-13`)._
 
@@ -3591,4 +3591,31 @@ Fällt ein Hero-Screen aus, hält der Rahmen jetzt in beiden Engines dieselbe H�
 **Gegenprobe gegen den Vorgänger** (`page.tsx` aus `HEAD`, eigener Build): **10 von 12** gezielten Tests fallen — alle 4 neuen und der gezogene Ko-fi-Test auf beiden Engines. Grün bleibt nur „nichts aus dem Entwurf", richtig so: Die alte Seite erfüllte ihn ebenfalls.
 
 **Regression:** alle PROJ-13-Suiten plus `proj-1-kofi-support` und `proj-14-anleitung-coming-soon`, beide Engines: **427 passed / 25 skipped** im Sammellauf; der eine echte Fehlschlag (alter Wortlaut, siehe oben) gezogen, Datei danach 54/54. Die zwei rot markierten Video-Tests sind die bekannten `test.fail`-Wächter für BUG-17/18. Unit **432/432**, Lint 0 Fehler, `tsc` ohne neue Fehler.
+
+## QA Test Results — Refinement 15: FAQ mit Ko-fi-Link und Medien per Link (2026-10-17)
+
+**Getestet:** 2026-10-17 gegen den Production-Build, Chrome 152 und WebKit, je 375/768/1440px. **Ergebnis: 6/6 Acceptance Criteria erfüllt, keine Bugs, Production-Ready.**
+
+| Kriterium | Ergebnis | Beleg |
+|---|---|---|
+| Kosten-Antwort im Wortlaut, Ko-fi nur einmal | erfüllt | Textinhalt der aufgeklappten Antwort wörtlich verglichen |
+| „Ko-fi" ist Textlink auf `KOFI_URL`, neuer Tab, noopener, Hinweis für Screenreader | erfüllt | Attribute geprüft; **echter Klick**: neuer Tab, `window.opener === null`, Ursprungsseite und aufgeklappte Antwort bleiben; Name „Ko-fi (öffnet neuen Tab)" |
+| Textlink, kein Button | erfüllt | unterstrichen, `inline`, keine Fläche, kein Icon; Kontrast **11.60:1** (Fließtext daneben 7.97:1) auf allen drei Breiten, beide Engines |
+| Medien-Antwort im Wortlaut | erfüllt | wörtlich verglichen; „Audio/Video aus Google Drive" kommt nicht vor |
+| JSON-LD reiner Text, gleicher Wortlaut | erfüllt | kein `<` in der Antwort; Wortgleichheit aller acht Antworten mit der Seite (bestehender Test) |
+| Genau ein Ko-fi-Link im Inhalt, einer in der Kopfzeile | erfüllt | nach dem Aufklappen gezählt; über alle acht Antworten: Links je Antwort `[1,0,0,0,0,0,0,0]` |
+
+**Zusätzlich geprüft:** Tastatur — auf Chrome erreicht Tab vom Fragen-Knopf aus direkt den Link, Enter öffnet den neuen Tab. Auf WebKit springt Tab nicht zu Links; das ist Safaris Systemstandard und betrifft auch den bestehenden Link „Zur App" — mit Alt+Tab wird der Ko-fi-Link erreicht. Kein horizontaler Überlauf auf 375/768/1440px. Ein Klick auf den Link klappt die Antwort nicht zu.
+
+**Security:** Beide Antworten sind feste Strings im Code, es gibt keine Eingaben. Der Link entsteht aus `KOFI_URL`, nicht aus Nutzerdaten; das JSON-LD escaped `<` weiterhin. `noopener` ist am Verhalten bestätigt, nicht nur am Attribut. Kein neuer externer Request beim Laden (der Link lädt erst auf Klick).
+
+**Beobachtung ohne Bug-Status:** Der Link ist 17–18px hoch, also unter den 44px des PRD für Tap-Ziele. Für Links mitten im Fließtext sieht WCAG 2.5.8 ausdrücklich eine Ausnahme vor; die Links auf `/impressum` und `/datenschutz` sind gleich gebaut.
+
+**Neue Tests:** 6 in `proj-13-about-eltern.spec.ts` („QA Refinement 15": Kontrast und Überlauf auf drei Breiten, echter Klick mit `opener`-Prüfung, Tastatur, nur die Kosten-Antwort trägt einen Link). **Stabilität:** Der Klick-Test fiel zuerst in 5 von 6 Läufen auf Chrome — ein Wettlauf im Test (der neue Tab wechselt von `about:blank` zur Zielseite, während der Test darin liest), kein Produktfehler. Jetzt per `expect.poll`; danach **6 von 6 Läufen grün**.
+
+**Gegenprobe:** `rel="opener"` statt `noopener noreferrer` eingebaut und gebaut → genau die 2 zuständigen Tests fallen auf **beiden** Engines (Attribut-Test und Klick-Test, letzterer am tatsächlichen `window.opener`). Produktcode danach per `git diff` als identisch mit dem Commit bestätigt.
+
+**Regression:** alle PROJ-13-Suiten plus Ko-fi, Navigation, Safe Area und PROJ-14 (alle nutzen `InfoPageShell` oder `/about`), beide Engines: **523 passed / 25 skipped / 0 failed**; die 4 als ✘ gelisteten Video-Tests sind die bekannten `test.fail`-Wächter für BUG-17/18. Unit **432/432**, Lint 0 Fehler.
+
+**Nicht abgedeckt:** Firefox (Binary weiterhin nicht verfügbar) und das Erscheinen der Ko-fi-Seite selbst (aus der Testumgebung gesperrt).
 
