@@ -29,7 +29,7 @@
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1, PROJ-15 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
-| PROJ-14 | KI-Anleitung — „Coming soon“ zum Launch | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
+| PROJ-14 | KI-Anleitung (Prompt-Formular, Freischaltung) | P0 | PROJ-13, PROJ-1 | In Progress | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 | PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Deployed | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
 
 <!-- Add features above this line -->
@@ -669,6 +669,17 @@ Spec ist aktualisiert (6 Acceptance Criteria, 3 Produkt- und 2 technische Entsch
 **Am 2026-10-17 nach Production deployt** (Tag `v1.50.0-PROJ-13`, Commit `cb78df6`), ohne formale QA auf Betreiber-Entscheidung. Live nach 37 s auf beiden Domains, 10 Endpunkte HTTP 200. CTA live auf neun Viewports × zwei Engines identisch zu lokal, 0 Konsolenfehler. **Refinement 16 ist abgeschlossen.**
 
 ## Next Available ID: PROJ-16
+
+## Offenes Refinement: KI-Anleitung mit Prompt-Formular wird freigeschaltet (2026-10-23)
+**PROJ-14** geht von Deployed zurück auf In Progress. Der Betreiber hat einen neuen Prompt geschrieben: Er arbeitet im Dialog (erst Story-Vorschlag, dann lesbare Fassung, JSON erst auf Zustimmung), erzeugt pro Station genau einen Text und eine Aufgabe und keine Medien. Die Angaben im Block „Meine Angaben“ sollen auf `/anleitung` als Felder ausgefüllt werden; ein Button „Prompt erzeugen“ baut daraus den Prompt zum Kopieren.
+
+**Entschieden (Betreiber):** Alle **fünf** Angaben werden Felder (Thema, Alter der Kinder, Anzahl der Stationen, Spielort, Besondere Wünsche), die Beispiele stehen als **graue Vorlage**, nicht vorausgefüllt. Leere Felder sperren nichts: je Zeile steht der eingetragene Wert oder die unveränderte Vorlagen-Zeile, und für fehlende Angaben fragt die KI laut Schritt 1 des Prompts selbst nach. Schritt 1 bleibt wörtlich. Die Prompt-Box erscheint erst nach dem Klick; ändert sich danach ein Feld, steht ein Hinweis „Angaben geändert“ mit Knopf zum Neuerzeugen darüber. **Die Anleitung wird mit diesem Refinement freigeschaltet** (`ANLEITUNG_VERFUEGBAR = true`), damit kommen Menü ohne „Bald“, Hero-CTA auf `/about`, Link in der `/create`-Leeransicht und Header-Link zurück. Die übrige Seite wird an den neuen Prompt angepasst: „4 Schritte“ ohne Zeitangabe, „Medien-Adressen ersetzen“ wird freiwilliger Tipp, „Woher Medien nehmen“ nach PROJ-15, Hilfe ohne „BITTE-ERSETZEN“ und mit neuem Eintrag „Die KI gibt keine Datei aus“.
+
+**Ohne Rückfrage mitentschieden:** „Anzahl“ nimmt nur 1–20 an (Grenze des Import-Schemas). Der alte Prompt wird ersetzt statt behalten. Am Code bestätigt: Die Code-Aufgabe ignoriert Groß-/Kleinschreibung, wie der Prompt verspricht.
+
+**Für `/frontend`:** `\n` im Prompt muss im Template-String als `\\n` stehen. Das Beispiel-JSON bleibt gegen `questSchema` geprüft. `/anleitung` bleibt statisch. Am Handy liegt der zweite Hero-Button auf `/about` unter dem Falz (auf 320×568 nur 7px Luft); erlaubt, solange der primäre sichtbar bleibt. Ankündigungs-Tests bleiben als Wächter für ein Zurückschalten, Assertions auf den alten Inhalt sind zu ziehen, nicht zu löschen.
+
+**Offen:** Die Vorlagen-Zeile „Spielort: z.B. Park“ hat als einzige keine eckigen Klammern; Empfehlung: angleichen, **vor `/frontend` zu bestätigen**. Dazu: mehrzeiliges Wunsch-Feld, Höchstlängen, und ob die FAQ auf `/about` die KI-Anleitung erwähnen soll.
 
 ## Offenes Refinement: BUG-6 — falsche iOS-Erkennung beim Kompass (2026-09-07)
 **PROJ-3** geht von Deployed zurück auf In Progress. BUG-6 stand als vermutliches Testumgebungs-Artefakt in den Notizen ("Playwright liefert unter Chrome keinen Fix, `position` bleibt null"). Auf echtem Chrome 152 reproduziert und instrumentiert — **diese Diagnose ist widerlegt**: Die Position liegt vor, die Distanz rendert mit `12514m`, der Nachbartest im selben Block besteht.

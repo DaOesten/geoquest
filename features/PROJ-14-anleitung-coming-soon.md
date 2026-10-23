@@ -1,8 +1,10 @@
-# PROJ-14: KI-Anleitung — „Coming soon" zum Launch
+# PROJ-14: KI-Anleitung
 
-## Status: Deployed
+_Bis 2026-10-23: „KI-Anleitung — Coming soon zum Launch". Mit Refinement 2026-10-23 wird die Anleitung freigeschaltet und bekommt ein Prompt-Formular; der Dateiname bleibt, damit bestehende Verweise gültig bleiben._
+
+## Status: In Progress
 **Created:** 2026-09-17
-**Last Updated:** 2026-09-18 (deployt, Tag `v1.29.0-PROJ-14`)
+**Last Updated:** 2026-10-23 (Refinement: Prompt-Formular und Freischaltung — vorher deployt, Tag `v1.29.0-PROJ-14`)
 
 ## Dependencies
 - Requires: PROJ-13 (Landing Page) — die Seite `/anleitung`, ihre Einstiegspunkte und der geteilte Seitenrahmen `InfoPageShell` stammen von dort
@@ -38,11 +40,17 @@ Dazu die FAQ-Antwort „Wie lange dauert das Erstellen?" auf `/about`, die die K
 - Als **interessierter Ersteller** möchte ich erfahren, dass die KI-Unterstützung geplant ist und was sie können wird, damit ich später wiederkomme.
 - Als **Betreiber** möchte ich die fertige Anleitung im Code behalten, damit ich sie nach dem Launch mit minimalem Aufwand freischalten kann.
 - Als **Betreiber** möchte ich, dass keine Stelle der App eine Funktion verspricht, die es zum Launch nicht gibt, damit der erste Eindruck der App ehrlich ist.
+- Als **Ersteller** möchte ich Thema, Alter, Anzahl der Stationen, Spielort und besondere Wünsche in Felder auf der Seite eintragen und daraus einen fertigen Prompt erzeugen, damit ich ihn nur noch kopieren muss und nicht im Prompt-Text nach den Stellen suchen muss, die ich ändern soll. _(Refinement 2026-10-23)_
+- Als **Ersteller**, der die Felder leer lässt, möchte ich trotzdem eine Prompt-Vorlage bekommen, damit ich meine Angaben auch erst im Chat mit der KI machen kann. _(Refinement 2026-10-23)_
 
 ## Out of Scope
 
-- **Das Freischalten der Anleitung selbst** — die Gegenrichtung (Ankündigung entfernen, Inhalt wieder sichtbar) ist ein eigener, späterer Vorgang. Dieses Feature bereitet ihn nur vor.
-- **Inhaltliche Änderungen an der Anleitung** — Prompt, Schritte und Troubleshooting werden nicht überarbeitet, nur ausgeblendet. Was zum Launch nicht gezeigt wird, bleibt inhaltlich unverändert liegen.
+- ~~**Das Freischalten der Anleitung selbst**~~ — **aufgehoben 2026-10-23:** Das Refinement „Prompt-Formular und Freischaltung" schaltet die Anleitung frei.
+- ~~**Inhaltliche Änderungen an der Anleitung**~~ — **aufgehoben 2026-10-23:** Neuer Prompt, Formular, neue Schritte und überarbeitete Hilfe sind Teil des Refinements.
+- **Angaben im Browser speichern** _(2026-10-23)_ — die Felder merken sich nichts über einen Seitenaufruf hinaus. Wer die Seite neu lädt, beginnt leer.
+- **Den Prompt direkt an ein KI-Tool übergeben** (Link „In ChatGPT öffnen" o. ä.) _(2026-10-23)_ — der Nutzer kopiert und fügt selbst ein. Kein Anbieter wird bevorzugt, kein Datenfluss an Dritte.
+- **Weitere Felder über die fünf Angaben hinaus** (z. B. Dauer, Schwierigkeit) _(2026-10-23)_ — der neue Prompt kennt nur diese fünf; Dauer und Schwierigkeit leitet die KI selbst ab.
+- **Die FAQ auf `/about` um die KI-Anleitung ergänzen** _(2026-10-23)_ — siehe Open Questions.
 - **Eine E-Mail-Benachrichtigung / „Sag mir Bescheid"-Anmeldung** — bewusst verworfen: erfordert Backend und Datenverarbeitung, beides laut PRD ausgeschlossen (kein Backend, kein Account).
 - **Ein Datum oder Zeitraum für die Verfügbarkeit** — siehe Product Decisions.
 - **Ein allgemeines Feature-Flag-System** — dieses Feature schaltet genau eine Seite. Eine generische Infrastruktur dafür wäre Overhead ohne zweiten Anwendungsfall.
@@ -94,6 +102,47 @@ Dazu die FAQ-Antwort „Wie lange dauert das Erstellen?" auf `/about`, die die K
 - [ ] Angenommen der Menu-Eintrag trägt eine neue Kennzeichnung, wenn das Burger-Menu geöffnet wird, dann sind weiterhin **vier Gruppen mit sieben Zielen** vorhanden und der Ko-fi-Eintrag ist unberührt
 - [ ] Angenommen der sekundäre CTA auf `/about` ist entfallen, wenn die Seite auf den elf bekannten Referenz-Viewports (320×568 bis 1920×1080) geprüft wird, dann steht der verbliebene primäre CTA weiterhin über dem Falz (BUG-7 bleibt behoben)
 
+### Prompt-Formular (Refinement 2026-10-23)
+
+- [ ] Angenommen ein Besucher ruft `/anleitung` auf, wenn die Seite lädt, dann sieht er die volle Anleitung — keine „Bald verfügbar"-Kennzeichnung mehr, keine Ankündigung
+- [ ] Angenommen ein Besucher ist im Abschnitt zum Prompt, wenn er ihn betrachtet, dann sieht er fünf Eingabefelder mit Beschriftung: „Thema", „Alter der Kinder", „Anzahl der Stationen (höchstens 20)", „Spielort", „Besondere Wünsche (optional)"
+- [ ] Angenommen ein Feld ist leer, wenn der Besucher es betrachtet, dann zeigt es als graue Vorlage das Beispiel aus dem Prompt (z. B. „z. B. Detektiv, Abenteuer, Magie, Piraten, Weltraum"); die Vorlage verschwindet beim Tippen und ist **kein** eingetragener Wert
+- [ ] Angenommen der Besucher hat noch nicht auf „Prompt erzeugen" getippt, wenn er die Seite betrachtet, dann sieht er die Felder und den Button „Prompt erzeugen", aber **noch keine Prompt-Box**
+- [ ] Angenommen der Besucher hat alle fünf Felder ausgefüllt, wenn er auf „Prompt erzeugen" tippt, dann erscheint darunter der vollständige Prompt, in dem der Block „Meine Angaben" seine Werte trägt (z. B. „- Thema: Piraten") und sonst wörtlich der Vorlage entspricht
+- [ ] Angenommen der Besucher hat **kein** Feld ausgefüllt, wenn er auf „Prompt erzeugen" tippt, dann erscheint der Prompt mit dem Block „Meine Angaben" exakt so, wie er in der Vorlage steht (mit den Beispielen in eckigen Klammern) — es gibt keine Fehlermeldung und keine Sperre
+- [ ] Angenommen der Besucher hat nur einen Teil der Felder ausgefüllt, wenn er auf „Prompt erzeugen" tippt, dann trägt jede Zeile einzeln entweder seinen Wert (Feld ausgefüllt) oder die Vorlagen-Zeile (Feld leer)
+- [ ] Angenommen ein Feld enthält nur Leerzeichen, wenn der Prompt erzeugt wird, dann gilt es als leer; Leerzeichen am Anfang und Ende eines Werts werden entfernt
+- [ ] Angenommen der Prompt wurde erzeugt, wenn er erscheint, dann scrollt die Seite so, dass die Prompt-Box mit dem „Kopieren"-Knopf sichtbar ist (auf dem Handy sonst leicht zu übersehen)
+- [ ] Angenommen der Prompt ist sichtbar, wenn der Besucher auf „Kopieren" tippt, dann landet **genau der angezeigte** Prompt in der Zwischenablage; schlägt das Kopieren fehl, erscheint der bestehende Hinweis zum Markieren von Hand
+- [ ] Angenommen der Prompt wurde erzeugt, wenn der Besucher danach ein Feld ändert, dann bleibt die Box stehen und darüber erscheint ein Hinweis „Angaben geändert" mit einem Knopf, der den Prompt neu erzeugt; auch der Button „Prompt erzeugen" erzeugt ihn neu
+- [ ] Angenommen der Besucher hat den Prompt neu erzeugt, wenn er die Box betrachtet, dann ist der Hinweis „Angaben geändert" verschwunden und der Prompt trägt die neuen Werte
+- [ ] Angenommen der Besucher trägt bei „Anzahl der Stationen" eine Zahl außerhalb von 1 bis 20 oder etwas anderes als eine ganze Zahl ein, wenn er auf „Prompt erzeugen" tippt, dann erscheint am Feld ein Hinweis („Bitte eine Zahl von 1 bis 20") und der Prompt wird nicht erzeugt
+- [ ] Angenommen ein Besucher bedient die Seite per Tastatur, wenn er durch das Formular geht, dann erreicht er alle Felder, „Prompt erzeugen" und danach „Kopieren" in sinnvoller Reihenfolge; Enter in einem einzeiligen Feld erzeugt den Prompt
+- [ ] Angenommen ein Besucher nutzt einen Screenreader, wenn der Prompt erzeugt oder neu erzeugt wird, dann wird das angesagt (z. B. „Prompt erzeugt")
+
+### Der neue Prompt (Refinement 2026-10-23)
+
+- [ ] Angenommen der Prompt wird erzeugt, wenn man ihn mit der Vorlage im Abschnitt „Refinement 2026-10-23" vergleicht, dann ist er außerhalb des Blocks „Meine Angaben" Zeichen für Zeichen identisch — insbesondere steht im Prompt wörtlich `\n` (Backslash + n), nicht ein echter Zeilenumbruch
+- [ ] Angenommen das Beispiel-JSON im Prompt wird gegen das Import-Schema (`questSchema`) geprüft, wenn der Unit-Test läuft, dann besteht es; ändert sich das Schema so, dass das Beispiel nicht mehr importierbar ist, schlägt der Test fehl
+- [ ] Angenommen der alte Prompt wurde ersetzt, wenn ein Entwickler das Repository durchsucht, dann gibt es **nur noch eine** Prompt-Vorlage (keine zweite, veraltete Fassung)
+
+### Anleitung an den neuen Prompt angepasst (Refinement 2026-10-23)
+
+- [ ] Angenommen ein Besucher liest den Kopfbereich, wenn er Lead, Meta-Zeile und Infokasten betrachtet, dann beschreiben sie den neuen Ablauf (Angaben eintragen → Prompt kopieren → mit der KI die Geschichte abstimmen → Datei importieren); die Meta-Zeile lautet „4 Schritte" ohne Zeitangabe; der Infokasten nennt nur noch einen Schritt, den man selbst macht: Ziele auf die Karte setzen
+- [ ] Angenommen ein Besucher liest „So geht es", wenn er die vier Schritte betrachtet, dann lauten sie sinngemäß: (1) Angaben eintragen und Prompt erzeugen, (2) in ChatGPT, Claude oder Gemini einfügen und den Story-Vorschlag abstimmen, (3) wenn die KI fragt, die Datei ausgeben lassen und als .json speichern, (4) in Geo Quest importieren
+- [ ] Angenommen ein Besucher liest „Danach", wenn er die Hinweise betrachtet, dann ist „Ziele auf die Karte setzen" weiterhin als Pflicht gekennzeichnet und „Bilder, Ton oder Video ergänzen" als freiwilliger Tipp — es gibt keinen Pflichtschritt „Medien-Adressen ersetzen" und keinen Hinweis auf „BITTE-ERSETZEN" mehr
+- [ ] Angenommen ein Besucher liest „Woher Medien nehmen", wenn er den Abschnitt betrachtet, dann nennt er die heute unterstützten Quellen (YouTube, Vimeo, Dropbox, Google Drive nur für Bilder, Wikimedia Commons und Wikipedia, direkte Datei-Links) — die Aussage „die Adresse muss auf .jpg/.png/.mp3/.mp4 enden" ist entfallen
+- [ ] Angenommen ein Besucher öffnet die Hilfe, wenn er die Einträge betrachtet, dann gibt es keinen Eintrag mehr zu erfundenen Bild-Adressen, der Eintrag zu ungültigen Werten erwähnt keinen Radius mehr, und es gibt einen neuen Eintrag „Die KI gibt keine Datei aus" mit dem Rat, ihr zu schreiben: „Gib die Schnitzeljagd jetzt als Geo-Quest-Datei (JSON) aus."
+
+### Freischaltung (Refinement 2026-10-23)
+
+- [ ] Angenommen die Anleitung ist freigeschaltet, wenn ein Nutzer das Burger-Menu öffnet, dann trägt der Eintrag „Anleitung" **keine** „Bald"-Kennzeichnung mehr
+- [ ] Angenommen die Anleitung ist freigeschaltet, wenn ein Besucher `/about` öffnet, dann sieht er im Hero neben „Quest erstellen" wieder den Button „Mit KI erstellen", der nach `/anleitung` führt
+- [ ] Angenommen die Anleitung ist freigeschaltet, wenn ein Ersteller `/create` ohne Quests öffnet, dann sieht er wieder den Link „Quest mit KI bauen"
+- [ ] Angenommen die Anleitung ist freigeschaltet, wenn ein Besucher eine Info-Seite am Desktop öffnet, dann trägt die Kopfzeile wieder den Textlink „Anleitung", ohne Überlauf auf 375, 768 und 1440px
+- [ ] Angenommen die Anleitung ist freigeschaltet, wenn `/about` auf den elf Referenz-Viewports geprüft wird, dann steht der **primäre** CTA „Quest erstellen" weiterhin über dem Falz (BUG-7 bleibt behoben)
+- [ ] Angenommen die Anleitung ist freigeschaltet, wenn `/anleitung` gebaut wird, dann bleibt die Seite statisch (`○`) und die Metadaten (Title/Description) beschreiben die verfügbare Anleitung, nicht mehr die Ankündigung
+
 ## Edge Cases
 
 1. **Besucher kommt über einen alten geteilten Link / QR-Code direkt auf `/anleitung`** → Er landet auf der Ankündigungsseite mit HTTP 200, nicht auf einer 404. Genau dafür bleibt die Route bestehen.
@@ -108,6 +157,19 @@ Dazu die FAQ-Antwort „Wie lange dauert das Erstellen?" auf `/about`, die die K
 10. **Jemand ruft `/anleitung` mit angehängten Parametern auf** (z. B. aus einer Kampagne) → Verhalten unverändert, die Ankündigungsseite wird normal gerendert.
 11. **Freischaltung später: Der Betreiber legt den Schalter um, vergisst aber die „Bald"-Kennzeichnung im Menu** → Vermeidbar, wenn beide Stellen von **derselben** Quelle gesteuert werden. Als technische Anforderung festgehalten.
 
+_Edge Cases 12–21: Refinement 2026-10-23 (Prompt-Formular und Freischaltung)_
+
+12. **Besucher füllt nichts aus und tippt auf „Prompt erzeugen"** → Er bekommt die unveränderte Vorlage. Die KI fragt dann laut Schritt 1 des Ablaufs selbst nach den fehlenden Angaben. Das ist gewollt, kein Fehler.
+13. **Besucher trägt Anführungszeichen, Backslashes, spitze Klammern oder Markup ein** (z. B. `<script>`, `"Piraten"`) → Der Wert landet als reiner Text im Prompt und wird als Text angezeigt; nichts wird ausgeführt, kein Element entsteht. Der Prompt ist reiner Text für ein KI-Tool, kein JSON — Anführungszeichen müssen nicht maskiert werden.
+14. **Besucher fügt einen sehr langen Text ein** (z. B. eine ganze Geschichte in „Besondere Wünsche") → Die Felder haben eine sinnvolle Höchstlänge; das Layout bricht nicht, kein horizontaler Überlauf auf 320px.
+15. **Besucher tippt Zeilenumbrüche in „Besondere Wünsche"** → Mehrzeilige Wünsche sind erlaubt (Feld ist mehrzeilig) — oder werden zu Leerzeichen zusammengefasst, damit der Block „Meine Angaben" lesbar bleibt. Am Bildschirm zu entscheiden (siehe Open Questions).
+16. **Besucher tippt bei „Anzahl" Text wie „acht" oder „8 Stationen"** → Hinweis am Feld, kein Prompt (siehe Acceptance Criteria). Auf dem Handy öffnet sich die Zahlentastatur, damit das selten vorkommt.
+17. **Besucher ändert ein Feld und kopiert, ohne neu zu erzeugen** → Er kopiert den alten Stand, sieht aber den Hinweis „Angaben geändert" direkt über der Box. Bewusst kein automatisches Mitändern (Betreiber-Entscheidung).
+18. **JavaScript ist aus oder lädt nicht** → Formular und Button funktionieren nicht. Der Rest der Anleitung (Schritte, Hilfe) bleibt lesbar. Hingenommen: Wer ein KI-Tool im Browser bedient, hat JavaScript an. Abweichung von PROJ-13, wo der Prompt ohne JavaScript lesbar war (siehe Decision Log).
+19. **Zwischenablage blockiert** (z. B. Safari ohne Nutzergeste, eingebettete Browser) → Der bestehende Hinweis aus `prompt-copy-box.tsx` erscheint, der Prompt bleibt markierbar.
+20. **`/about` am Handy bekommt den zweiten Hero-Button zurück** → Auf schmalen Geräten stehen die Buttons untereinander; auf 320×568 hat der primäre CTA seit Refinement 16 von PROJ-13 nur noch 7px Luft. Der **sekundäre** Button „Mit KI erstellen" darf unter dem Falz liegen; der primäre muss sichtbar bleiben (BUG-7-Wächter).
+21. **Ein Nutzer hat die Ankündigungsseite im Cache oder als installierte PWA geöffnet** → Beim nächsten Laden erscheint die volle Anleitung. Der Service Worker cacht keine Seiten (PROJ-12), es bleibt nichts hängen.
+
 ## Technical Requirements
 
 - **Eine einzige Schaltstelle:** Sichtbarkeit der Anleitung und die „Bald"-Kennzeichnung im Menu müssen von derselben Konstante abhängen. Zwei unabhängige Schalter würden beim Freischalten auseinanderlaufen (Edge Case 11).
@@ -121,11 +183,27 @@ Dazu die FAQ-Antwort „Wie lange dauert das Erstellen?" auf `/about`, die die K
 - **Tests:** Die bestehenden Suiten prüfen `/anleitung` an 41 Stellen über sechs Dateien (`proj-13-landing-page.spec.ts` allein 21×). Sie müssen auf den neuen Zustand gezogen werden — inklusive der Tests, die den Header-Textlink und den `/about`-CTA prüfen.
 - **Browser:** Chrome und Mobile Safari (WebKit), wie im Projekt etabliert.
 
+_Ergänzt 2026-10-23 (Prompt-Formular und Freischaltung):_
+- **Freischalten über den bestehenden Schalter:** `ANLEITUNG_VERFUEGBAR = true` in `src/lib/app-nav.ts`. Alle fünf Stellen kommen gemeinsam zurück; keine Stelle wird einzeln umgebaut.
+- **Eine Quelle für Feld-Vorlagen und Prompt-Zeilen:** Beschriftung, graue Vorlage und die Vorlagen-Zeile im Prompt kommen aus derselben Definition. Sonst kann die graue Vorlage im Feld vom Beispiel im Prompt abweichen.
+- **Prompt-Erzeugung als reine Funktion** (Angaben rein, Prompt-Text raus) in `src/lib/`, mit Unit-Tests für: alle Felder leer → exakt die Vorlage; alle gefüllt; teilweise gefüllt; nur Leerzeichen; Werte mit Sonderzeichen.
+- **`\n` im Quelltext:** Der Prompt steht in einem JavaScript-Template-String. Die Anweisung „Zeilenumbrüche im Text als \n schreiben" muss im Quelltext als `\\n` stehen, sonst wird daraus ein echter Zeilenumbruch und die Anweisung an die KI ist sinnlos. Ein Unit-Test hält das fest.
+- **Beispiel-JSON bleibt geprüft:** Das Beispiel im Prompt liegt weiterhin als eigene Konstante vor und wird gegen `questSchema` validiert (bestehender Schutz aus PROJ-13 in `quest-ai-prompt.test.ts`).
+- **`/anleitung` bleibt statisch** (`○`): Das Formular ist eine Client-Komponente innerhalb der statischen Seite; `InfoPageShell` bleibt Server-Komponente.
+- **Bestehende Bausteine nutzen:** shadcn `Input`, `Textarea`, `Label`, `Button`; die Ergebnis-Box ist die vorhandene `PromptCopyBox`. Keine neuen Pakete.
+- **Kein Speichern:** keine `localStorage`-Schreibzugriffe, keine Anfrage an einen Server oder Dritte beim Erzeugen oder Kopieren.
+- **Barrierefreiheit:** sichtbare Beschriftung an jedem Feld (nicht nur Platzhalter — die graue Vorlage ist kein Label), Kontrast der grauen Vorlage ≥ 4.5:1 gegen den Feldhintergrund, Tap-Ziele ≥ 44px, Statusmeldung per `aria-live`.
+- **Tests:** Der freigeschaltete Zustand wird zum Normalzustand. Die Ankündigungs-Tests in `proj-14-anleitung-coming-soon.spec.ts` sind an den Schalter gebunden und laufen danach nicht mehr — sie bleiben als Wächter für ein mögliches Zurückschalten erhalten, statt gelöscht zu werden. `scripts/test-anleitung-freigeschaltet.mjs` bricht heute ab, wenn der Schalter nicht auf `false` steht — anzupassen oder zu entfernen. Bestehende Assertions auf den alten Prompt, die alten Schritte, „BITTE-ERSETZEN", „ca. 15 Min" und die alten Hilfe-Einträge sind zu **ziehen, nicht zu löschen**. Neu: ein E2E-Wächter, der nach Ausfüllen und Erzeugen den Inhalt der Box mit den eingetragenen Werten vergleicht.
+
 ## Open Questions
 
 - [x] **Geschlossen 2026-09-17:** Die FAQ-Antwort trägt **gar keine Zeitangabe** mehr (Betreiber-Entscheidung). Folge: Die Frage selbst wird mit umformuliert — eine Frage nach der Dauer ohne Antwort auf die Dauer wirkt ausweichend. Neu geht es darum, *was* zu tun ist, nicht *wie lange* es dauert.
-- [ ] Soll die Ankündigungsseite den Hinweis tragen, dass Quests sich **auch heute schon** mit einer KI bauen lassen (der Prompt existiert ja, nur die Anleitung ist nicht veröffentlicht)? Aktuell nein — das würde die Ankündigung untergraben. Bei Nachfragen von Nutzern neu zu bewerten.
+- [x] Soll die Ankündigungsseite den Hinweis tragen, dass Quests sich **auch heute schon** mit einer KI bauen lassen? → **Gegenstandslos 2026-10-23:** Die Ankündigung entfällt mit der Freischaltung.
 - [x] **Geschlossen 2026-09-17 (Frontend):** Die Meta-Zeile entfällt auf der Ankündigung — sie beschreibt einen Ablauf, der dort nicht gezeigt wird. Im freigeschalteten Zustand bleibt sie.
+- [ ] _(2026-10-23)_ Soll die FAQ auf `/about` die KI-Anleitung erwähnen? Heute beschreibt sie nur das manuelle Erstellen — das bleibt nach der Freischaltung richtig, verschweigt aber den neuen Weg. Empfehlung: nach dem Launch beobachten, nicht in diesem Refinement.
+- [ ] _(2026-10-23)_ Die Vorlagen-Zeile „Spielort: z.B. Park" steht im gelieferten Prompt **ohne** eckige Klammern und mit „z.B." statt „z. B." — anders als die übrigen vier. Bleibt das Feld leer, könnte die KI „Park" als echte Angabe lesen statt als Beispiel und nicht nachfragen. Empfehlung: angleichen zu „[z. B. Park]". Vom Betreiber zu bestätigen, bevor `/frontend` die Vorlage übernimmt.
+- [ ] _(2026-10-23)_ „Besondere Wünsche": einzeiliges Feld oder mehrzeiliges Textfeld (Edge Case 15)? Empfehlung: mehrzeilig, 2–3 Zeilen hoch; Zeilenumbrüche werden im Prompt zu Leerzeichen. Am Bildschirm zu entscheiden.
+- [ ] _(2026-10-23)_ Höchstlängen der Felder — Vorschlag: Thema 80, Alter 40, Spielort 80, Wünsche 300 Zeichen. Am Bildschirm zu prüfen.
 - [x] **Geschlossen 2026-09-17:** Ja — der freigeschaltete Zustand wird mitgeprüft (Betreiber-Entscheidung). Ohne diese Absicherung könnte die fertige Anleitung während der Ankündigungsphase unbemerkt kaputtgehen; auffallen würde es erst beim Freischalten, also im denkbar schlechtesten Moment.
 
 ## Decision Log
@@ -148,6 +226,17 @@ Dazu die FAQ-Antwort „Wie lange dauert das Erstellen?" auf `/about`, die die K
 | Der fertige Inhalt wird ausgeblendet, nicht gelöscht | Die Anleitung ist gebaut, QA-geprüft und deployt gewesen. Sie zu löschen und später neu zu schreiben, wäre Verschwendung und würde beim Wiederaufbau neue Fehler einführen | 2026-09-17 |
 | Die FAQ-Antwort zum Erstellen trägt gar keine Zeitangabe mehr | Betreiber-Entscheidung. Jede Zahl wäre geraten: Die bisherige halbe Stunde galt mit KI-Hilfe, und wie lange manuelles Erstellen dauert, hängt stark vom Umfang ab. Eine falsche Zahl enttäuscht beim ersten Versuch — lieber keine als eine erfundene | 2026-09-17 |
 | Die zugehörige FAQ-Frage wird mitumformuliert (weg von „wie lange") | Folge der Entscheidung darüber: Eine Frage nach der Dauer, die keine Dauer nennt, wirkt ausweichend. Die Frage zielt neu darauf, *was* zu tun ist | 2026-09-17 |
+| **Refinement 2026-10-23:** Die Anleitung wird mit diesem Refinement freigeschaltet | Betreiber-Entscheidung. Formular und neuer Prompt sind der Inhalt, auf den die Ankündigung gewartet hat; ohne Freischaltung sähe niemand außer den Tests das Formular | 2026-10-23 |
+| **Refinement 2026-10-23:** Das Refinement hängt an PROJ-14, nicht an PROJ-13 | PROJ-14 trägt den Schalter und den ganzen Weg von der Ankündigung zum Launch. Der Titel wird zu „KI-Anleitung" | 2026-10-23 |
+| **Refinement 2026-10-23:** Alle fünf Angaben aus „Meine Angaben" werden Eingabefelder (Thema, Alter, Anzahl, Spielort, Wünsche) | Betreiber-Entscheidung. Ohne Feld bliebe die Zeile als Beispiel im kopierten Prompt stehen, und der Nutzer müsste sie im Chat doch selbst ändern — genau das soll das Formular ersparen | 2026-10-23 |
+| **Refinement 2026-10-23:** Beispiele als graue Vorlage im leeren Feld, nicht vorausgefüllt | Betreiber-Entscheidung. Niemand bekommt versehentlich eine Detektiv-Quest, weil er ein vorausgefülltes Feld übersehen hat | 2026-10-23 |
+| **Refinement 2026-10-23:** Leere Felder sperren nichts; je Feld steht entweder der Wert oder die unveränderte Vorlagen-Zeile im Prompt | Betreiber-Entscheidung. Wer nichts einträgt, bekommt die Vorlage und macht seine Angaben im Chat. Ausgefüllte Angaben fehlen der KI nicht, also fragt sie laut Schritt 1 auch nicht danach — der gewünschte Effekt „KI fragt nicht nach dem, was im Formular stand" ergibt sich ohne Änderung am Prompt | 2026-10-23 |
+| **Refinement 2026-10-23:** Schritt 1 des Ablaufs („Prüfe zuerst meine Angaben … stelle Rückfragen") bleibt wörtlich | Betreiber-Entscheidung. Vorgeschlagen war eine Umformulierung („Angaben sind vollständig, frag nicht nach"); verworfen, weil sie bei leeren Feldern falsch wäre | 2026-10-23 |
+| **Refinement 2026-10-23:** Prompt-Box erst nach „Prompt erzeugen", kein Live-Mitändern | Betreiber-Entscheidung. Die Reihenfolge „ausfüllen, dann erzeugen" ist sichtbar. Ändert sich danach ein Feld, bleibt die Box mit dem Hinweis „Angaben geändert" und einem Knopf zum Neuerzeugen stehen — niemand kopiert unbemerkt einen alten Stand | 2026-10-23 |
+| **Refinement 2026-10-23:** „Anzahl der Stationen" nimmt nur ganze Zahlen von 1 bis 20 an, sonst Hinweis am Feld | Die App erlaubt höchstens 20 Stationen (Import-Schema). Ein Prompt mit „25" würde eine Datei erzeugen, die der Import abweist — der Fehler fiele erst am Ende des KI-Gesprächs auf. Ohne Rückfrage entschieden, weil es nur die bestehende Grenze durchsetzt | 2026-10-23 |
+| **Refinement 2026-10-23:** Der alte Prompt wird ersetzt, nicht neben dem neuen behalten | Zwei Vorlagen würden auseinanderlaufen. Die Git-History bewahrt die alte Fassung | 2026-10-23 |
+| **Refinement 2026-10-23:** Die übrige Anleitung wird an den neuen Prompt angepasst (Lead, Meta ohne Zeit, vier neue Schritte, Medien als freiwilliger Tipp, Medienquellen nach PROJ-15, Hilfe überarbeitet) | Betreiber-Entscheidung. Der neue Prompt erzeugt keine Medien und arbeitet im Dialog; Pflichtschritt „Medien-Adressen ersetzen", „BITTE-ERSETZEN" und „Adresse endet auf .jpg" würden ins Leere zeigen bzw. waren seit PROJ-15 überholt. „ca. 15 Min" entfällt, weil das Abstimmen mit der KI unterschiedlich lange dauert | 2026-10-23 |
+| **Refinement 2026-10-23:** Der Prompt braucht JavaScript, um sichtbar zu werden | Folge des Formulars. PROJ-13 hatte den Prompt bewusst ohne JavaScript lesbar gemacht; das gilt für eine feste Vorlage, nicht für einen erzeugten Text. Hingenommen (Edge Case 18) | 2026-10-23 |
 | Eigenes Feature (PROJ-14) statt Refinement von PROJ-13 | Die Änderung umfasst fünf Berührungspunkte über drei bestehende Features (PROJ-1 Navigation, PROJ-6 Creator-Leeransicht, PROJ-13 Info-Seiten), ist eigenständig testbar und deploybar — und wird später als Ganzes wieder zurückgenommen. Als Refinement in PROJ-13 wäre der Navigations- und Creator-Anteil dort fehl am Platz | 2026-09-17 |
 
 ### Technical Decisions
@@ -544,3 +633,171 @@ Auf Entscheidung des Betreibers sind zwei Werkzeugdateien mit eingecheckt:
 
 `ANLEITUNG_VERFUEGBAR = true` in `src/lib/app-nav.ts`, committen, pushen. Seite, Menu-Kennzeichnung, Header-Link und beide CTAs kommen gleichzeitig zurück. Vorher `npm run test:e2e:freigeschaltet` laufen lassen — 22 Tests prüfen genau diesen Zustand.
 
+
+## Refinement 2026-10-23: Prompt-Formular und Freischaltung
+
+**Anlass:** Der Betreiber hat einen neuen Prompt geschrieben. Er arbeitet im Dialog (Story-Vorschlag → Abnahme → lesbare Fassung → Änderungen → erst auf Zustimmung JSON), erzeugt pro Station genau ein Text- und ein Aufgaben-Modul und keine Medien. Die Angaben im Block „Meine Angaben" sollen auf `/anleitung` als Felder ausgefüllt werden können; ein Button erzeugt daraus den Prompt zum Kopieren. Mit diesem Refinement wird die Anleitung freigeschaltet.
+
+**Am Code geprüft:** Die Zusage im Prompt „Groß- und Kleinschreibung spielt keine Rolle" stimmt — `code-task.tsx:20` vergleicht mit `trim().toLowerCase()`. Der feste Radius von 20 m liegt im erlaubten Bereich 10–100.
+
+### Die fünf Felder
+
+| Feld | Beschriftung | Graue Vorlage | Prompt-Zeile, wenn ausgefüllt | Prompt-Zeile, wenn leer |
+|---|---|---|---|---|
+| Thema | Thema | z. B. Detektiv, Abenteuer, Magie, Piraten, Weltraum | `- Thema: <Wert>` | `- Thema: [z. B. Detektiv, Abenteuer, Magie, Piraten, Weltraum]` |
+| Alter | Alter der Kinder | z. B. 8–10 Jahre | `- Alter der Kinder: <Wert>` | `- Alter der Kinder: [z. B. 8–10 Jahre]` |
+| Anzahl | Anzahl der Stationen (höchstens 20) | z. B. 8 | `- Anzahl der Stationen (höchstens 20): <Wert>` | `- Anzahl der Stationen (höchstens 20): [z. B. 8]` |
+| Spielort | Spielort | z. B. Park | `- Spielort: <Wert>` | `- Spielort: z.B. Park` _(wörtlich wie geliefert, siehe Open Question zur Angleichung)_ |
+| Wünsche | Besondere Wünsche (optional) | z. B. nicht zu gruselig | `- Besondere Wünsche (optional): <Wert>` | `- Besondere Wünsche (optional): [z. B. nicht zu gruselig]` |
+
+### Die Vorlage (wörtlich, wie vom Betreiber geliefert)
+
+Der Block „Meine Angaben" zeigt den Zustand „alle Felder leer". Alles andere wird Zeichen für Zeichen übernommen. `\n` in Format B ist ein Backslash gefolgt von n.
+
+````text
+Du bist Autor:in von Schnitzeljagden für Kinder. Erstelle eine GPS-Schnitzeljagd mit einer durchgehenden Geschichte für die App "Geo Quest". Die App führt die Kinder von Station zu Station. Die nächste Station wird erst freigeschaltet, wenn die Aufgabe der vorherigen gelöst ist.
+
+## Meine Angaben
+- Thema: [z. B. Detektiv, Abenteuer, Magie, Piraten, Weltraum]
+- Alter der Kinder: [z. B. 8–10 Jahre]
+- Anzahl der Stationen (höchstens 20): [z. B. 8]
+- Spielort: z.B. Park
+- Besondere Wünsche (optional): [z. B. nicht zu gruselig]
+
+## Rahmenbedingungen
+1. Die Kinder spielen gemeinsam als ein Team.
+2. An den Stationen ist nichts vorbereitet, und die Orte sind vorher unbekannt. Jede Aufgabe muss ohne Bezug zur Umgebung lösbar sein. Keine Aufgaben wie "Zählt die Bäume" oder "Lest das Schild".
+3. Die Aufgaben werden in der App angezeigt, die Lösung wird dort eingegeben. Es gibt genau drei Aufgabentypen:
+   - Code-Eingabe: Die Kinder tippen eine Zahl oder ein Wort ein.
+   - Multiple Choice: Die Kinder wählen aus 2 bis 5 Antworten.
+   - Sortieraufgabe: Die Kinder bringen 3 bis 6 Elemente in die richtige Reihenfolge.
+4. Es gibt keine Hinweise oder Tipps. Jede Aufgabe muss für das angegebene Alter ohne Hilfe lösbar sein.
+
+## Anforderungen an die Geschichte
+- Die Geschichte passt zum Thema und hat einen Anfang, eine Steigerung und ein Ende.
+- Jede Station ist ein Kapitel. Jede gelöste Aufgabe bringt die Geschichte voran (z. B. ein gefundener Hinweis, ein geknackter Code, ein gelöster Zauberspruch).
+- Die Kinder sind selbst Teil der Geschichte (z. B. als Detektivteam, Zauberlehrlinge, Expeditionsgruppe). Sprich sie in der Ihr-Form an.
+- Der Ton passt zum Alter: spannend, aber nicht beängstigend. Keine Emojis.
+- Die Texte pro Station sind kurz genug für ein Handy (höchstens ca. 80–120 Wörter Geschichte plus Aufgabe, für jüngere Kinder kürzer).
+
+## Anforderungen an die Aufgaben
+- Jede Aufgabe passt zum Thema und zur Szene (z. B. bei Detektiv: Zeugenaussagen vergleichen, Alibis prüfen; bei Magie: Zaubertrankzutaten in die richtige Reihenfolge bringen).
+- Mische Wissensfragen und Rätsel (Logik, Zahlen, Wortspiele, Geheimschriften, die in der Aufgabe selbst erklärt werden).
+- Verteile die drei Aufgabentypen abwechslungsreich über die Stationen.
+- Die Schwierigkeit passt zum Alter und steigt zum Ende hin leicht an.
+- Jede Aufgabe hat genau eine eindeutige Lösung.
+- Code-Eingabe: Die Lösung ist eine Zahl oder ein einzelnes Wort, ohne Leerzeichen, ohne Umlaute und ohne ß (z. B. "SCHLUESSEL" statt "Schlüssel"), damit es beim Eintippen keine Fehler gibt. Groß- und Kleinschreibung spielt keine Rolle.
+- Multiple Choice: 3 oder 4 Antworten, genau eine ist richtig. Die falschen Antworten sind glaubwürdig, aber eindeutig falsch.
+- Sortieraufgabe: 3 bis 6 Elemente mit einer eindeutigen Reihenfolge (zeitlich, der Größe nach, logisch aus der Geschichte). Die Elemente sind alle unterschiedlich und enthalten keine Kommas. In der Frage steht, wonach sortiert wird.
+- Aufgaben dürfen sich auf Informationen aus früheren Stationen beziehen, wenn diese Information dort klar im Text stand.
+
+## Ablauf
+1. Prüfe zuerst meine Angaben. Wenn etwas fehlt oder unklar ist, stelle Rückfragen, bevor du loslegst. Frage nur, was du wirklich brauchst.
+2. Schlage mir eine Story-Idee vor (3–4 Sätze) und eine Übersicht, welche Station welchen Aufgabentyp bekommt. Warte auf mein OK.
+3. Erstelle die komplette Schnitzeljagd in gut lesbarer Form (Format A unten). Prüfe sie vorher selbst: Ist jede Lösung eindeutig? Ist jede Aufgabe ohne Ortsbezug lösbar? Passt die Schwierigkeit zum Alter?
+4. Frage mich danach, ob ich Änderungen möchte. Setze Änderungswünsche um und zeige die geänderten Stationen erneut.
+5. Wenn ich zufrieden bin, frage mich: "Soll ich die Schnitzeljagd jetzt als Geo-Quest-Datei (JSON) ausgeben, damit du sie in die App importieren kannst?"
+6. Erst wenn ich zustimme, gib die Quest im Format B aus.
+
+## Format A: Lesbare Fassung
+
+**Titel der Schnitzeljagd**
+
+**Einleitung** (wird vor dem Start angezeigt): Ausgangslage der Geschichte und Auftrag an das Team.
+
+Für jede Station:
+---
+**Station [Nummer]: [Kapitelname]**
+- Geschichte: [Text, der die Szene beschreibt und zur Aufgabe führt]
+- Aufgabentyp: [Code-Eingabe / Multiple Choice / Sortieraufgabe]
+- Aufgabe: [Fragestellung, wie sie in der App erscheint]
+- Antwortmöglichkeiten: [nur bei Multiple Choice, mit A, B, C, D]
+- Elemente zum Sortieren: [nur bei Sortieraufgabe, in RICHTIGER Reihenfolge]
+- Lösung: [richtige Antwort]
+- Erklärung für Erwachsene: [ein Satz, warum das die Lösung ist]
+---
+
+**Abschluss** (wird nach der letzten Station angezeigt): Ende der Geschichte, passend zum Finale.
+
+## Format B: Geo-Quest-Datei (JSON)
+
+Gib NUR das JSON in einem einzigen Codeblock aus, ohne Text davor oder danach. Übernimm die Inhalte aus Format A unverändert.
+
+Regeln:
+- "version": immer die Zahl 1
+- "id": eine echte UUID im Format 8-4-4-4-12 (Hexadezimalzeichen, z. B. "3f2504e0-4f89-41d3-9a0c-0305e82c3301"). Quest und jede Station bekommen eine eigene, unterschiedliche UUID. Keine Zählnummern wie "station-1".
+- "name": Titel der Schnitzeljagd
+- "description": ein Satz zur Schnitzeljagd
+- "lastModified": heutiges Datum im Format "2026-01-15T10:00:00.000Z"
+- "estimatedDuration": z. B. "ca. 60 Min"
+- "difficulty": genau "easy", "medium" oder "hard" (passend zum Alter)
+- "intro": {"text": "Einleitung"}
+- "outro": {"text": "Abschluss"}
+- "stations": eine Station pro Kapitel, in der Reihenfolge der Geschichte
+- Jede Station: "id" (UUID), "name" (Kapitelname), "lat": 0, "lng": 0, "radiusMeters": 20, "modules" (Liste)
+- Erfinde KEINE Koordinaten. Die Stationen werden danach in der App auf der Karte platziert.
+- Jede Station hat genau zwei Module: zuerst ein Text-Modul mit der Geschichte, dann ein Aufgaben-Modul.
+- Zeilenumbrüche im Text als \n schreiben. Anführungszeichen im Text vermeiden oder als „…“ schreiben.
+- Die "Erklärung für Erwachsene" kommt NICHT ins JSON.
+
+Text-Modul:
+{"type": "text", "content": "Geschichte der Station"}
+
+Code-Eingabe:
+{"type": "task", "taskType": "code", "question": "Frage", "answer": "LOESUNG"}
+
+Multiple Choice ("correctIndices" zählt ab 0, also ist [0] die erste Antwort):
+{"type": "task", "taskType": "multiple-choice", "question": "Frage", "options": ["Antwort A", "Antwort B", "Antwort C"], "correctIndices": [1]}
+
+Sortieraufgabe ("items" in der RICHTIGEN Reihenfolge, die App mischt sie selbst):
+{"type": "task", "taskType": "sorting", "question": "Bringt ... in die richtige Reihenfolge.", "items": ["Erstes", "Zweites", "Drittes"]}
+
+Beispiel für den Aufbau (gekürzt auf eine Station):
+{
+  "version": 1,
+  "id": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+  "name": "Der Fall der verschwundenen Krone",
+  "description": "Ein Detektivabenteuer für junge Ermittler.",
+  "lastModified": "2026-01-15T10:00:00.000Z",
+  "estimatedDuration": "ca. 60 Min",
+  "difficulty": "easy",
+  "intro": {"text": "Die Krone des Königs ist verschwunden. Ihr seid das beste Detektivteam im Land."},
+  "outro": {"text": "Fall gelöst! Die Krone ist zurück im Schloss."},
+  "stations": [
+    {
+      "id": "8b1f4c2a-9d3e-4a7b-8c5d-1e2f3a4b5c6d",
+      "name": "Der erste Zeuge",
+      "lat": 0,
+      "lng": 0,
+      "radiusMeters": 20,
+      "modules": [
+        {"type": "text", "content": "Der Gärtner hat in der Nacht etwas gesehen."},
+        {"type": "task", "taskType": "multiple-choice", "question": "Wer war zuletzt im Thronsaal?", "options": ["Der Koch", "Die Zofe", "Der Gärtner"], "correctIndices": [1]}
+      ]
+    }
+  ]
+}
+
+Prüfe vor der JSON-Ausgabe:
+- Sind alle UUIDs gültig und alle unterschiedlich?
+- Hat jede Station "lat": 0, "lng": 0 und "radiusMeters": 20?
+- Zeigt "correctIndices" auf die richtige Antwort?
+- Stehen die Sortier-Elemente in der richtigen Reihenfolge?
+- Ist das JSON gültig (keine fehlenden Kommas, keine Kommas nach dem letzten Element)?
+````
+
+### Seitenaufbau nach dem Refinement
+
+1. **Kopf**: Eyebrow „Anleitung", Titel unverändert, Meta „4 Schritte", Lead zum neuen Ablauf, Infokasten „Was dabei herauskommt" mit dem Satz „Eins machst du danach selbst: Ziele auf die Karte setzen."
+2. **So geht es**: vier Schritte (siehe Acceptance Criteria)
+3. **Schritt 1: Deine Angaben**: fünf Felder, Button „Prompt erzeugen", danach die Prompt-Box mit „Kopieren"
+4. **Danach**: Pflicht „Ziele auf die Karte setzen"; Tipp „Bilder, Ton oder Video ergänzen"
+5. **Woher Medien nehmen**: knapp, nach dem Stand von PROJ-15
+6. **Hilfe**: überarbeitet (siehe Acceptance Criteria)
+7. **Abschluss-CTA** „Prompt kopiert?" → `/create` (unverändert)
+
+### Für `/frontend` vorab benannt
+- Der Schalter wird umgelegt, der Ankündigungs-Code bleibt als Weg zurück.
+- Die graue Vorlage ist kein Label; jedes Feld braucht eine sichtbare Beschriftung darüber.
+- Die Open Question zur Spielort-Zeile **vor** dem Übernehmen der Vorlage klären, sie betrifft den Wortlaut.
+- `/about` am Handy: Nach der Freischaltung den BUG-7-Wächter laufen lassen. Der sekundäre Button darf unter dem Falz liegen, der primäre nicht.
