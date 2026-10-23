@@ -4,7 +4,7 @@ _Bis 2026-10-23: „KI-Anleitung — Coming soon zum Launch". Mit Refinement 202
 
 ## Status: In Progress
 **Created:** 2026-09-17
-**Last Updated:** 2026-10-23 (Refinement: Prompt-Formular und Freischaltung — vorher deployt, Tag `v1.29.0-PROJ-14`)
+**Last Updated:** 2026-10-24 (Refinement: Prompt-Formular und Freischaltung — vorher deployt, Tag `v1.29.0-PROJ-14`)
 
 ## Dependencies
 - Requires: PROJ-13 (Landing Page) — die Seite `/anleitung`, ihre Einstiegspunkte und der geteilte Seitenrahmen `InfoPageShell` stammen von dort
@@ -201,7 +201,7 @@ _Ergänzt 2026-10-23 (Prompt-Formular und Freischaltung):_
 - [x] Soll die Ankündigungsseite den Hinweis tragen, dass Quests sich **auch heute schon** mit einer KI bauen lassen? → **Gegenstandslos 2026-10-23:** Die Ankündigung entfällt mit der Freischaltung.
 - [x] **Geschlossen 2026-09-17 (Frontend):** Die Meta-Zeile entfällt auf der Ankündigung — sie beschreibt einen Ablauf, der dort nicht gezeigt wird. Im freigeschalteten Zustand bleibt sie.
 - [ ] _(2026-10-23)_ Soll die FAQ auf `/about` die KI-Anleitung erwähnen? Heute beschreibt sie nur das manuelle Erstellen — das bleibt nach der Freischaltung richtig, verschweigt aber den neuen Weg. Empfehlung: nach dem Launch beobachten, nicht in diesem Refinement.
-- [ ] _(2026-10-23)_ Die Vorlagen-Zeile „Spielort: z.B. Park" steht im gelieferten Prompt **ohne** eckige Klammern und mit „z.B." statt „z. B." — anders als die übrigen vier. Bleibt das Feld leer, könnte die KI „Park" als echte Angabe lesen statt als Beispiel und nicht nachfragen. Empfehlung: angleichen zu „[z. B. Park]". Vom Betreiber zu bestätigen, bevor `/frontend` die Vorlage übernimmt.
+- [x] _(2026-10-23)_ Die Vorlagen-Zeile „Spielort: z.B. Park" steht im gelieferten Prompt **ohne** eckige Klammern und mit „z.B." statt „z. B." — anders als die übrigen vier. Bleibt das Feld leer, könnte die KI „Park" als echte Angabe lesen statt als Beispiel und nicht nachfragen. Empfehlung: angleichen zu „[z. B. Park]". Vom Betreiber zu bestätigen, bevor `/frontend` die Vorlage übernimmt. → **Geschlossen 2026-10-24:** Angeglichen zu „Spielort: [z. B. Park]" (Betreiber).
 - [ ] _(2026-10-23)_ „Besondere Wünsche": einzeiliges Feld oder mehrzeiliges Textfeld (Edge Case 15)? Empfehlung: mehrzeilig, 2–3 Zeilen hoch; Zeilenumbrüche werden im Prompt zu Leerzeichen. Am Bildschirm zu entscheiden.
 - [ ] _(2026-10-23)_ Höchstlängen der Felder — Vorschlag: Thema 80, Alter 40, Spielort 80, Wünsche 300 Zeichen. Am Bildschirm zu prüfen.
 - [x] **Geschlossen 2026-09-17:** Ja — der freigeschaltete Zustand wird mitgeprüft (Betreiber-Entscheidung). Ohne diese Absicherung könnte die fertige Anleitung während der Ankündigungsphase unbemerkt kaputtgehen; auffallen würde es erst beim Freischalten, also im denkbar schlechtesten Moment.
@@ -236,6 +236,7 @@ _Ergänzt 2026-10-23 (Prompt-Formular und Freischaltung):_
 | **Refinement 2026-10-23:** „Anzahl der Stationen" nimmt nur ganze Zahlen von 1 bis 20 an, sonst Hinweis am Feld | Die App erlaubt höchstens 20 Stationen (Import-Schema). Ein Prompt mit „25" würde eine Datei erzeugen, die der Import abweist — der Fehler fiele erst am Ende des KI-Gesprächs auf. Ohne Rückfrage entschieden, weil es nur die bestehende Grenze durchsetzt | 2026-10-23 |
 | **Refinement 2026-10-23:** Der alte Prompt wird ersetzt, nicht neben dem neuen behalten | Zwei Vorlagen würden auseinanderlaufen. Die Git-History bewahrt die alte Fassung | 2026-10-23 |
 | **Refinement 2026-10-23:** Die übrige Anleitung wird an den neuen Prompt angepasst (Lead, Meta ohne Zeit, vier neue Schritte, Medien als freiwilliger Tipp, Medienquellen nach PROJ-15, Hilfe überarbeitet) | Betreiber-Entscheidung. Der neue Prompt erzeugt keine Medien und arbeitet im Dialog; Pflichtschritt „Medien-Adressen ersetzen", „BITTE-ERSETZEN" und „Adresse endet auf .jpg" würden ins Leere zeigen bzw. waren seit PROJ-15 überholt. „ca. 15 Min" entfällt, weil das Abstimmen mit der KI unterschiedlich lange dauert | 2026-10-23 |
+| **Refinement 2026-10-24:** Vorlagen-Zeile „Spielort" angeglichen zu „[z. B. Park]" | Betreiber-Entscheidung. Ohne eckige Klammern hätte die KI „Park" bei leerem Feld als echte Angabe lesen und nicht nachfragen können. Jetzt sind alle fünf Zeilen gleich gebaut | 2026-10-24 |
 | **Refinement 2026-10-23:** Der Prompt braucht JavaScript, um sichtbar zu werden | Folge des Formulars. PROJ-13 hatte den Prompt bewusst ohne JavaScript lesbar gemacht; das gilt für eine feste Vorlage, nicht für einen erzeugten Text. Hingenommen (Edge Case 18) | 2026-10-23 |
 | Eigenes Feature (PROJ-14) statt Refinement von PROJ-13 | Die Änderung umfasst fünf Berührungspunkte über drei bestehende Features (PROJ-1 Navigation, PROJ-6 Creator-Leeransicht, PROJ-13 Info-Seiten), ist eigenständig testbar und deploybar — und wird später als Ganzes wieder zurückgenommen. Als Refinement in PROJ-13 wäre der Navigations- und Creator-Anteil dort fehl am Platz | 2026-09-17 |
 
@@ -647,12 +648,12 @@ Auf Entscheidung des Betreibers sind zwei Werkzeugdateien mit eingecheckt:
 | Thema | Thema | z. B. Detektiv, Abenteuer, Magie, Piraten, Weltraum | `- Thema: <Wert>` | `- Thema: [z. B. Detektiv, Abenteuer, Magie, Piraten, Weltraum]` |
 | Alter | Alter der Kinder | z. B. 8–10 Jahre | `- Alter der Kinder: <Wert>` | `- Alter der Kinder: [z. B. 8–10 Jahre]` |
 | Anzahl | Anzahl der Stationen (höchstens 20) | z. B. 8 | `- Anzahl der Stationen (höchstens 20): <Wert>` | `- Anzahl der Stationen (höchstens 20): [z. B. 8]` |
-| Spielort | Spielort | z. B. Park | `- Spielort: <Wert>` | `- Spielort: z.B. Park` _(wörtlich wie geliefert, siehe Open Question zur Angleichung)_ |
+| Spielort | Spielort | z. B. Park | `- Spielort: <Wert>` | `- Spielort: [z. B. Park]` _(an die übrigen Zeilen angeglichen, 2026-10-24)_ |
 | Wünsche | Besondere Wünsche (optional) | z. B. nicht zu gruselig | `- Besondere Wünsche (optional): <Wert>` | `- Besondere Wünsche (optional): [z. B. nicht zu gruselig]` |
 
 ### Die Vorlage (wörtlich, wie vom Betreiber geliefert)
 
-Der Block „Meine Angaben" zeigt den Zustand „alle Felder leer". Alles andere wird Zeichen für Zeichen übernommen. `\n` in Format B ist ein Backslash gefolgt von n.
+Der Block „Meine Angaben" zeigt den Zustand „alle Felder leer". Einzige Abweichung von der gelieferten Fassung: die Spielort-Zeile, angeglichen am 2026-10-24. Alles andere wird Zeichen für Zeichen übernommen. `\n` in Format B ist ein Backslash gefolgt von n.
 
 ````text
 Du bist Autor:in von Schnitzeljagden für Kinder. Erstelle eine GPS-Schnitzeljagd mit einer durchgehenden Geschichte für die App "Geo Quest". Die App führt die Kinder von Station zu Station. Die nächste Station wird erst freigeschaltet, wenn die Aufgabe der vorherigen gelöst ist.
@@ -661,7 +662,7 @@ Du bist Autor:in von Schnitzeljagden für Kinder. Erstelle eine GPS-Schnitzeljag
 - Thema: [z. B. Detektiv, Abenteuer, Magie, Piraten, Weltraum]
 - Alter der Kinder: [z. B. 8–10 Jahre]
 - Anzahl der Stationen (höchstens 20): [z. B. 8]
-- Spielort: z.B. Park
+- Spielort: [z. B. Park]
 - Besondere Wünsche (optional): [z. B. nicht zu gruselig]
 
 ## Rahmenbedingungen
@@ -799,5 +800,5 @@ Prüfe vor der JSON-Ausgabe:
 ### Für `/frontend` vorab benannt
 - Der Schalter wird umgelegt, der Ankündigungs-Code bleibt als Weg zurück.
 - Die graue Vorlage ist kein Label; jedes Feld braucht eine sichtbare Beschriftung darüber.
-- Die Open Question zur Spielort-Zeile **vor** dem Übernehmen der Vorlage klären, sie betrifft den Wortlaut.
+- Die Spielort-Zeile lautet „Spielort: [z. B. Park]" (geklärt 2026-10-24), nicht „z.B. Park" wie in der ersten Lieferung.
 - `/about` am Handy: Nach der Freischaltung den BUG-7-Wächter laufen lassen. Der sekundäre Button darf unter dem Falz liegen, der primäre nicht.

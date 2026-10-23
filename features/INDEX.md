@@ -679,7 +679,7 @@ Spec ist aktualisiert (6 Acceptance Criteria, 3 Produkt- und 2 technische Entsch
 
 **Für `/frontend`:** `\n` im Prompt muss im Template-String als `\\n` stehen. Das Beispiel-JSON bleibt gegen `questSchema` geprüft. `/anleitung` bleibt statisch. Am Handy liegt der zweite Hero-Button auf `/about` unter dem Falz (auf 320×568 nur 7px Luft); erlaubt, solange der primäre sichtbar bleibt. Ankündigungs-Tests bleiben als Wächter für ein Zurückschalten, Assertions auf den alten Inhalt sind zu ziehen, nicht zu löschen.
 
-**Offen:** Die Vorlagen-Zeile „Spielort: z.B. Park“ hat als einzige keine eckigen Klammern; Empfehlung: angleichen, **vor `/frontend` zu bestätigen**. Dazu: mehrzeiliges Wunsch-Feld, Höchstlängen, und ob die FAQ auf `/about` die KI-Anleitung erwähnen soll.
+**Geklärt 2026-10-24:** Die Vorlagen-Zeile lautet „Spielort: [z. B. Park]“, angeglichen an die übrigen vier. **Offen, am Bildschirm zu entscheiden:** mehrzeiliges Wunsch-Feld, Höchstlängen, und ob die FAQ auf `/about` die KI-Anleitung erwähnen soll.
 
 ## Offenes Refinement: BUG-6 — falsche iOS-Erkennung beim Kompass (2026-09-07)
 **PROJ-3** geht von Deployed zurück auf In Progress. BUG-6 stand als vermutliches Testumgebungs-Artefakt in den Notizen ("Playwright liefert unter Chrome keinen Fix, `position` bleibt null"). Auf echtem Chrome 152 reproduziert und instrumentiert — **diese Diagnose ist widerlegt**: Die Position liegt vor, die Distanz rendert mit `12514m`, der Nachbartest im selben Block besteht.
