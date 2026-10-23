@@ -679,7 +679,13 @@ Spec ist aktualisiert (6 Acceptance Criteria, 3 Produkt- und 2 technische Entsch
 
 **Für `/frontend`:** `\n` im Prompt muss im Template-String als `\\n` stehen. Das Beispiel-JSON bleibt gegen `questSchema` geprüft. `/anleitung` bleibt statisch. Am Handy liegt der zweite Hero-Button auf `/about` unter dem Falz (auf 320×568 nur 7px Luft); erlaubt, solange der primäre sichtbar bleibt. Ankündigungs-Tests bleiben als Wächter für ein Zurückschalten, Assertions auf den alten Inhalt sind zu ziehen, nicht zu löschen.
 
-**Geklärt 2026-10-24:** Die Vorlagen-Zeile lautet „Spielort: [z. B. Park]“, angeglichen an die übrigen vier. **Offen, am Bildschirm zu entscheiden:** mehrzeiliges Wunsch-Feld, Höchstlängen, und ob die FAQ auf `/about` die KI-Anleitung erwähnen soll.
+**Geklärt 2026-10-24:** Die Vorlagen-Zeile lautet „Spielort: [z. B. Park]“, angeglichen an die übrigen vier.
+
+**Frontend umgesetzt am 2026-10-24.** Neue Komponente `prompt-generator.tsx`, der Prompt als reine Funktion in `quest-ai-prompt.ts` (alte Fassung ersetzt), `/anleitung` an den neuen Ablauf angepasst, Schalter auf `true`. Kein neues Paket, `/anleitung` bleibt statisch. Wunsch-Feld mehrzeilig, Höchstlängen 80/40/2/80/300. Der Hinweis „Angaben geändert“ ist Teal statt Lime, weil am Bildschirm zwei Lime-Elemente zugleich im Bild standen. Gemessen: 0 px Überlauf von 320 bis 1440 px, Felder 48 px mit 16 px Schrift, graue Vorlage 7,54:1; auf `/about` 320×568 behält der primäre CTA seine 7 px Luft, „Mit KI erstellen“ liegt 53 px darunter (erlaubt).
+
+**Tests:** Unit 455/455, darunter ein Vergleich der leeren Vorlage Zeichen für Zeichen mit der Spec. Neue E2E-Suite `proj-14-prompt-formular.spec.ts` (29 je Engine). Die Schalter-Tests lesen den Schalter jetzt aus dem Quelltext statt aus einer Umgebungsvariable; die Ankündigung überspringt sich selbst und ist per `npm run test:e2e:angekuendigt` prüfbar (Skript umgedreht). Zustandsabhängige Tests in sechs Dateien gezogen, nicht gelöscht. **Gegenprobe** gegen alte Seite mit Schalter `true`: neue Suite 0 von 57 bestanden. **Gesamtlauf beider Engines** nach dem Ziehen ohne unerwartete Fehlschläge, Lint 0 Fehler.
+
+**Offen:** Gespräch mit einer echten KI (Ablauf eingehalten, Datei importierbar?), echtes iPhone, Firefox, und ob die FAQ auf `/about` die KI-Anleitung erwähnen soll.
 
 ## Offenes Refinement: BUG-6 — falsche iOS-Erkennung beim Kompass (2026-09-07)
 **PROJ-3** geht von Deployed zurück auf In Progress. BUG-6 stand als vermutliches Testumgebungs-Artefakt in den Notizen ("Playwright liefert unter Chrome keinen Fix, `position` bleibt null"). Auf echtem Chrome 152 reproduziert und instrumentiert — **diese Diagnose ist widerlegt**: Die Position liegt vor, die Distanz rendert mit `12514m`, der Nachbartest im selben Block besteht.

@@ -1,22 +1,24 @@
 /**
- * Prüft den freigeschalteten Zustand der KI-Anleitung (PROJ-14).
+ * Prüft den Ankündigungs-Zustand der KI-Anleitung (PROJ-14).
  *
- * Die fertige Anleitung liegt im Code, wird aber nicht ausgeliefert. Damit sie
- * während der Ankündigungsphase nicht unbemerkt verrottet, legt dieses Skript
- * den Schalter um, baut, testet und stellt den Ursprungszustand wieder her —
- * auch wenn die Tests fehlschlagen oder das Skript abgebrochen wird.
+ * Seit 2026-10-23 ist die Anleitung freigeschaltet. Die Ankündigung bleibt als
+ * Weg zurück im Code; damit sie nicht unbemerkt verrottet, legt dieses Skript
+ * den Schalter auf `false`, baut, testet und stellt den Ursprungszustand
+ * wieder her — auch wenn die Tests fehlschlagen oder das Skript abgebrochen
+ * wird. (Bis 2026-10-23 lief es in die Gegenrichtung als
+ * `test-anleitung-freigeschaltet.mjs`.)
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
 const NAV = 'src/lib/app-nav.ts';
-const AUS = 'export const ANLEITUNG_VERFUEGBAR = false;';
 const AN = 'export const ANLEITUNG_VERFUEGBAR = true;';
+const AUS = 'export const ANLEITUNG_VERFUEGBAR = false;';
 const PORT = 3131;
 
 const original = readFileSync(NAV, 'utf8');
-if (!original.includes(AUS)) {
-  console.error(`Schalter steht nicht auf "false" — Abbruch, um nichts zu überschreiben.`);
+if (!original.includes(AN)) {
+  console.error(`Schalter steht nicht auf "true" — Abbruch, um nichts zu überschreiben.`);
   process.exit(1);
 }
 
@@ -30,8 +32,8 @@ process.on('SIGTERM', () => { restore(); process.exit(143); });
 
 let code = 1;
 try {
-  console.log('→ Schalter auf true, Build …');
-  writeFileSync(NAV, original.replace(AUS, AN));
+  console.log('→ Schalter auf false, Build …');
+  writeFileSync(NAV, original.replace(AN, AUS));
   const build = spawnSync('npm', ['run', 'build'], { stdio: 'inherit' });
   if (build.status !== 0) throw new Error('Build fehlgeschlagen');
 
@@ -53,15 +55,15 @@ try {
   console.log('→ Tests …');
   const res = spawnSync(
     'npx',
-    ['playwright', 'test', 'tests/proj-14-anleitung-freigeschaltet.spec.ts',
+    ['playwright', 'test', 'tests/proj-14-anleitung-coming-soon.spec.ts',
      '--config=playwright.prod.config.ts'],
-    { stdio: 'inherit', env: { ...process.env, ANLEITUNG_FREIGESCHALTET: '1', BASE_URL: `http://localhost:${PORT}` } }
+    { stdio: 'inherit', env: { ...process.env, BASE_URL: `http://localhost:${PORT}` } }
   );
   code = res.status ?? 1;
 } catch (err) {
   console.error(String(err.message ?? err));
 } finally {
   restore();
-  console.log('→ Schalter zurückgesetzt.');
+  console.log('→ Schalter zurückgesetzt (true).');
 }
 process.exit(code);

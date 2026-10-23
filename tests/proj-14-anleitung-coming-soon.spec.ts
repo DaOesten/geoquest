@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { ANLEITUNG_AN } from './helpers/anleitung-schalter';
 
 /**
  * PROJ-14 — KI-Anleitung: "Coming soon" zum Launch.
@@ -7,11 +8,14 @@ import { test, expect, type Page } from '@playwright/test';
  * aber nicht ausgeliefert — stattdessen kündigt die App sie an. Fünf Stellen
  * hängen an einem Schalter (`ANLEITUNG_VERFUEGBAR` in `src/lib/app-nav.ts`).
  *
- * Die Tests prüfen den ausgelieferten Zustand (Schalter = false). Den
- * freigeschalteten Zustand deckt `proj-14-anleitung-freigeschaltet.spec.ts`
- * ab — sonst könnte die fertige Anleitung während der Ankündigungsphase
- * unbemerkt verrotten und erst beim Freischalten auffallen.
+ * Die Tests prüfen den Ankündigungs-Zustand (Schalter = false). Seit dem
+ * Refinement 2026-10-23 ist die Anleitung freigeschaltet; diese Datei
+ * überspringt sich dann selbst und bleibt als Wächter für den Weg zurück.
+ * Prüfen lässt sie sich mit `npm run test:e2e:angekuendigt` (legt den
+ * Schalter vorübergehend auf `false`).
  */
+
+test.skip(ANLEITUNG_AN, 'Anleitung ist freigeschaltet — Ankündigung nicht ausgeliefert');
 
 async function openMenu(page: Page, path: string) {
   await page.goto(path);

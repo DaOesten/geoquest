@@ -39,6 +39,10 @@ import {
  *   4. `/about`, zweiter Hero-CTA — "Mit KI erstellen" entfällt
  *   5. `/create`, Leeransicht     — "Quest mit KI bauen" entfällt
  *
+ * Freigeschaltet seit PROJ-14, Refinement 2026-10-23 (Prompt-Formular). Die
+ * Ankündigung bleibt im Code; `false` stellt sie mit allen fünf Stellen
+ * wieder her.
+ *
  * Alle fünf lesen diesen Wert. Zum Freischalten genügt `true` — Seite, Menu,
  * Kopfzeile und beide CTAs kommen gleichzeitig zurück. Ohne diesen
  * gemeinsamen Ursprung wäre der Fehler beim Freischalten *still*: eine
@@ -50,7 +54,7 @@ import {
  * Spec-Kriterium erfüllt — bei `false` landet die Prompt-Vorlage gar nicht
  * erst im ausgelieferten HTML, statt dort nur versteckt zu liegen.
  */
-export const ANLEITUNG_VERFUEGBAR = false;
+export const ANLEITUNG_VERFUEGBAR = true;
 
 export interface AppNavLink {
   href: string;

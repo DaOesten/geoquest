@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { ANLEITUNG_AN } from "./helpers/anleitung-schalter";
 
 /**
  * PROJ-13 — Refinement 12 (2026-10-15): `/about` für Eltern und Lehrkräfte.
@@ -707,7 +708,12 @@ test.describe("QA Refinement 13", () => {
     test.skip(browserName === "webkit", "WebKit/macOS: Tab überspringt Buttons");
     await page.clock.install();
     await page.goto("/about");
-    await page.getByRole("link", { name: /Quest erstellen/i }).first().focus();
+    // Start beim letzten Hero-Button: Seit der Freischaltung der KI-Anleitung
+    // (PROJ-14, 2026-10-23) folgt auf „Quest erstellen" noch „Mit KI erstellen".
+    await page
+      .getByRole("link", { name: ANLEITUNG_AN ? /Mit KI erstellen/i : /Quest erstellen/i })
+      .first()
+      .focus();
     await page.keyboard.press("Tab");
     await page.keyboard.press("Tab");
     const second = page.getByRole("button", { name: "Screen 2: Kompass" });

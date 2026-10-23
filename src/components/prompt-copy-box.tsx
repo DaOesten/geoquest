@@ -11,9 +11,10 @@ interface PromptCopyBoxProps {
 type CopyState = "idle" | "copied" | "failed";
 
 /**
- * The prompt itself is plain server-rendered text inside a scrollable box, so it
- * stays readable and selectable even when the clipboard is blocked or JS is off
- * (PROJ-13). The button is convenience only — on failure we tell the user to
+ * The prompt is plain text inside a scrollable box, so it stays readable and
+ * selectable even when the clipboard is blocked (PROJ-13). Since PROJ-14
+ * (Refinement 2026-10-23) it shows the prompt generated from the form on
+ * /anleitung. The button is convenience only — on failure we tell the user to
  * select manually rather than leaving them stuck.
  */
 export function PromptCopyBox({ prompt }: PromptCopyBoxProps) {
@@ -33,7 +34,7 @@ export function PromptCopyBox({ prompt }: PromptCopyBoxProps) {
     <div className="mt-4">
       <div className="flex items-center justify-between gap-3">
         <span className="text-tech text-[10px] tracking-[0.12em] text-gq-grey">
-          Prompt-Vorlage
+          Dein Prompt
         </span>
         <button
           type="button"
@@ -72,7 +73,7 @@ export function PromptCopyBox({ prompt }: PromptCopyBoxProps) {
         className="mt-3 max-h-[380px] lg:max-h-[560px] overflow-y-auto rounded-card border border-border bg-gq-dark-teal/70 p-4 sm:p-6 shadow-card"
         tabIndex={0}
         role="region"
-        aria-label="Prompt-Vorlage zum Kopieren"
+        aria-label="Prompt zum Kopieren"
       >
         <pre className="whitespace-pre-wrap break-words font-body text-[13px] lg:text-sm leading-relaxed text-[#E7EAEC] select-text">
           {prompt}
@@ -80,8 +81,8 @@ export function PromptCopyBox({ prompt }: PromptCopyBoxProps) {
       </div>
 
       <p className="mt-2 font-body text-xs leading-relaxed text-gq-grey">
-        Du musst den Text nicht lesen — kopieren reicht. Die markierten Stellen
-        füllst du in deinem KI-Tool aus.
+        Du musst den Text nicht lesen — kopieren und in dein KI-Tool einfügen
+        reicht.
       </p>
     </div>
   );

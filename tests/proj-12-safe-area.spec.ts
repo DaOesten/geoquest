@@ -139,7 +139,10 @@ test.describe("Die Mechanik — ein Inset schiebt nach unten, statt zu stauchen"
     test(`${label} (${inset}px): die Info-Kopfzeile liegt darunter`, async ({ page }) => {
       await page.goto("/about");
       await simulateInset(page, inset, 34);
-      const ctrl = page.locator("header a, header button").first();
+      // Erstes SICHTBARES Bedienelement: Der Textlink „Anleitung" (PROJ-14,
+      // seit 2026-10-23 wieder da) steht zuerst im DOM, ist auf dem Handy
+      // aber ausgeblendet und hat keine Position.
+      const ctrl = page.locator("header a, header button").filter({ visible: true }).first();
       expect((await ctrl.boundingBox())!.y).toBeGreaterThanOrEqual(inset);
     });
 

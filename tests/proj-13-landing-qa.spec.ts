@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { ANLEITUNG_AN } from "./helpers/anleitung-schalter";
 
 /**
  * PROJ-13 — QA-Regressionstests zur Marketing-Landingpage (Refinement 4).
@@ -490,10 +491,11 @@ test.describe("Regression: Nachbarseiten", () => {
     });
   }
 
-  // PROJ-14: Der KI-Link entfällt, solange die Anleitung nur angekündigt ist.
-  test("der Creator-Empty-State führt keinen KI-Link mehr", async ({ page }) => {
+  // PROJ-14: Der KI-Link folgt dem Schalter — da, wenn die Anleitung
+  // freigeschaltet ist, weg, solange sie nur angekündigt ist.
+  test("der Creator-Empty-State führt den KI-Link genau dann, wenn die Anleitung freigeschaltet ist", async ({ page }) => {
     await page.goto("/create");
-    await expect(page.getByRole("link", { name: /Quest mit KI bauen/i })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /Quest mit KI bauen/i })).toHaveCount(ANLEITUNG_AN ? 1 : 0);
   });
 });
 
@@ -531,13 +533,12 @@ test.describe("Refinement 5: Copy-Feinschliff (2026-09-09)", () => {
     expect(heroBody).toEqual(["Erstelle eigene GPS-Schnitzelj"]);
   });
 
-  // PROJ-14: Es gibt keinen sekundären CTA mehr, solange die Anleitung nur
-  // angekündigt ist. Die Breitenregel greift wieder, wenn er zurückkommt —
-  // festgehalten in tests/proj-14-anleitung-freigeschaltet.spec.ts.
-  test("der Hero führt genau einen CTA", async ({ page }) => {
+  // PROJ-14: Der sekundäre CTA folgt dem Schalter. Die Breitenregel für ihn
+  // steht in tests/proj-14-anleitung-freigeschaltet.spec.ts.
+  test("der Hero führt den KI-CTA genau dann, wenn die Anleitung freigeschaltet ist", async ({ page }) => {
     await page.goto("/about");
 
-    await expect(page.getByRole("link", { name: /Mit KI erstellen/ })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /Mit KI erstellen/ })).toHaveCount(ANLEITUNG_AN ? 1 : 0);
     await expect(page.getByRole("link", { name: /^Quest erstellen/ }).first()).toBeVisible();
   });
 
@@ -562,7 +563,7 @@ test.describe("Refinement 5: Copy-Feinschliff (2026-09-09)", () => {
     // `eyebrow` wurde optional gemacht — die drei anderen Info-Seiten
     // setzen die Prop weiterhin und dürfen sie nicht verlieren.
     for (const [path, expected] of [
-      ["/anleitung", "Bald verfügbar"],  // PROJ-14: Eyebrow der Ankündigung
+      ["/anleitung", ANLEITUNG_AN ? "Anleitung" : "Bald verfügbar"],  // PROJ-14
       ["/impressum", "Rechtliches"],
       ["/datenschutz", "Rechtliches"],
     ] as const) {

@@ -1,29 +1,18 @@
 import { test, expect, type Page } from '@playwright/test';
+import { ANLEITUNG_AN } from './helpers/anleitung-schalter';
 
 /**
  * PROJ-14 — der FREIGESCHALTETE Zustand (`ANLEITUNG_VERFUEGBAR = true`).
  *
- * Warum es diese Datei gibt: Die fertige Anleitung bleibt im Code liegen,
- * wird aber nicht ausgeliefert — und damit von keinem normalen Test berührt.
- * Ohne ausdrückliche Prüfung könnte sie während der Ankündigungsphase still
- * verrotten; auffallen würde das erst beim Freischalten, im denkbar
- * schlechtesten Moment (Betreiber-Entscheidung 2026-09-17).
- *
- * Diese Tests laufen NICHT im normalen Lauf. Sie brauchen einen Build mit
- * umgelegtem Schalter:
- *
- *   npm run test:e2e:freigeschaltet
- *
- * Das Skript legt den Schalter um, baut, testet und stellt ihn zurück.
- * Ohne die Umgebungsvariable überspringt sich die Datei selbst — sonst
- * meldete der reguläre Lauf lauter Fehlschläge für einen Zustand, der gar
- * nicht ausgeliefert wird.
+ * Bis 2026-10-23 lief diese Datei nur über ein Skript, das den Schalter
+ * umlegte. Seit dem Refinement „Prompt-Formular und Freischaltung" ist das
+ * der ausgelieferte Zustand und die Datei Teil des normalen Laufs. Steht der
+ * Schalter wieder auf `false`, überspringt sie sich selbst; die Ankündigung
+ * prüft dann `proj-14-anleitung-coming-soon.spec.ts`
+ * (`npm run test:e2e:angekuendigt`).
  */
 
-test.skip(
-  process.env.ANLEITUNG_FREIGESCHALTET !== '1',
-  'Nur im Lauf mit umgelegtem Schalter (npm run test:e2e:freigeschaltet)'
-);
+test.skip(!ANLEITUNG_AN, 'Anleitung ist nur angekündigt (Schalter aus)');
 
 async function openMenu(page: Page, path: string) {
   await page.goto(path);
@@ -39,16 +28,21 @@ test.describe('Freigeschaltet — die Seite', () => {
     await expect(page.getByText('So geht es')).toBeVisible();
   });
 
-  test('die Prompt-Vorlage ist da und kopierbar', async ({ page }) => {
+  // Gezogen 2026-10-23: Der Prompt entsteht jetzt aus dem Formular.
+  test('das Prompt-Formular ist da, der Prompt kommt per Knopf', async ({ page }) => {
     await page.goto('/anleitung');
-    await expect(page.getByRole('button', { name: /Kopieren/i }).first()).toBeVisible();
-    const body = (await page.locator('body').textContent()) ?? '';
-    expect(body).toContain('BITTE-ERSETZEN');
+    await expect(page.getByRole('button', { name: 'Prompt erzeugen' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Kopieren/i })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Prompt erzeugen' }).click();
+    await expect(page.getByRole('button', { name: /Kopieren/i })).toBeVisible();
   });
 
+  // Gezogen 2026-10-23: neue Schritte für den Ablauf im Dialog mit der KI.
   test('die vier Schritte stehen vollständig', async ({ page }) => {
     await page.goto('/anleitung');
-    for (const s of ['Prompt kopieren', 'In dein KI-Tool einfügen', 'Antwort als Datei speichern', 'In Geo Quest importieren']) {
+    await expect(page.getByText('4 Schritte', { exact: true })).toBeVisible();
+    await expect(page.getByText(/ca\. 15 Min/)).toHaveCount(0);
+    for (const s of ['Angaben eintragen', 'In dein KI-Tool einfügen', 'Datei ausgeben lassen', 'In Geo Quest importieren']) {
       await expect(page.locator('main').getByText(s).first()).toBeVisible();
     }
   });
@@ -60,10 +54,18 @@ test.describe('Freigeschaltet — die Seite', () => {
     await expect(page.locator('main')).toContainText('Kennnummern');
   });
 
-  test('die beiden Pflichtschritte nach dem Import stehen da', async ({ page }) => {
+  // Gezogen 2026-10-23: ein Pflichtschritt (Karte) und ein Tipp (Medien).
+  test('nach dem Import: Karte ist Pflicht, Medien sind ein Tipp', async ({ page }) => {
     await page.goto('/anleitung');
-    await expect(page.getByText('Zwei Pflichtschritte')).toBeVisible();
-    await expect(page.locator('main')).toContainText('Ziele auf die Karte setzen');
+    await expect(page.getByRole('heading', { name: 'Nach dem Import' })).toBeVisible();
+    await expect(page.getByText(/führt die Quest draußen ins Nichts/)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Tipp: Bilder, Ton oder Video/ })).toBeVisible();
+    await expect(page.getByText('Zwei Pflichtschritte')).toHaveCount(0);
+  });
+
+  test('der Infokasten nennt nur noch die Karte als eigenen Schritt', async ({ page }) => {
+    await page.goto('/anleitung');
+    await expect(page.getByText('Eins machst du danach selbst: Ziele auf die Karte setzen.')).toBeVisible();
   });
 
   test('keine Ankündigungs-Reste', async ({ page }) => {

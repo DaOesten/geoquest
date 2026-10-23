@@ -13,7 +13,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:all": "vitest run && playwright test",
-    "test:e2e:freigeschaltet": "node scripts/test-anleitung-freigeschaltet.mjs"
+    "test:e2e:angekuendigt": "node scripts/test-anleitung-angekuendigt.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

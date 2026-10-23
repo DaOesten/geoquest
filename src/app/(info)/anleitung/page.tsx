@@ -11,8 +11,7 @@ import {
 } from "lucide-react";
 import { InfoPageShell } from "@/components/info-page-shell";
 import { ANLEITUNG_VERFUEGBAR } from "@/lib/app-nav";
-import { PromptCopyBox } from "@/components/prompt-copy-box";
-import { QUEST_AI_PROMPT } from "@/lib/quest-ai-prompt";
+import { PromptGenerator } from "@/components/prompt-generator";
 import {
   Accordion,
   AccordionContent,
@@ -29,7 +28,7 @@ import {
 const META_VERFUEGBAR = {
   title: "Quest mit KI erstellen",
   description:
-    "Prompt kopieren, in ChatGPT oder Claude einfügen, fertige Quest importieren. Schritt-für-Schritt-Anleitung für Geo Quest.",
+    "Angaben eintragen, Prompt erzeugen, mit ChatGPT oder Claude die Geschichte abstimmen und die fertige Quest importieren. Schritt-für-Schritt-Anleitung für Geo Quest.",
 };
 
 const META_ANGEKUENDIGT = {
@@ -58,18 +57,21 @@ const OUTCOME = [
   { icon: FileJson, label: "Fertige Datei zum Importieren" },
 ];
 
+// Neuer Ablauf seit PROJ-14, Refinement 2026-10-23: Der Prompt entsteht aus
+// dem Formular, und die KI stimmt die Geschichte erst mit dir ab, bevor sie
+// die Datei ausgibt.
 const STEPS = [
   {
-    title: "Prompt kopieren",
-    body: "Der komplette Text steht unten. Ein Klick auf „Kopieren“ reicht.",
+    title: "Angaben eintragen",
+    body: "Thema, Alter, Anzahl der Stationen, Spielort und Wünsche eintragen, auf „Prompt erzeugen“ tippen und kopieren.",
   },
   {
     title: "In dein KI-Tool einfügen",
-    body: "ChatGPT, Claude, Gemini — egal welches. Trag oben im Prompt Thema, Ort, Alter und Anzahl der Ziele ein.",
+    body: "ChatGPT, Claude, Gemini — egal welches. Die KI schlägt dir zuerst eine Geschichte vor. Du sagst, was bleiben und was anders werden soll.",
   },
   {
-    title: "Antwort als Datei speichern",
-    body: "Die KI gibt dir JSON aus. Speicher es als Datei mit der Endung .json — am einfachsten am Computer über einen Texteditor.",
+    title: "Datei ausgeben lassen",
+    body: "Bist du zufrieden, fragt die KI, ob sie die Quest als Datei ausgeben soll. Sag ja und speicher die Antwort mit der Endung .json — am einfachsten am Computer über einen Texteditor.",
   },
   {
     title: "In Geo Quest importieren",
@@ -84,6 +86,11 @@ const TROUBLESHOOTING = [
       "Meistens liegt es an den Kennnummern. Gib der KI die Fehlermeldung zurück und schreib dazu: „Bitte korrigiere das und gib das vollständige JSON erneut aus.“ Das klappt fast immer beim ersten Versuch.",
   },
   {
+    question: "Die KI gibt keine Datei aus",
+    answer:
+      "Der Prompt lässt die KI erst die Geschichte mit dir abstimmen. Danach fragt sie, ob sie die Datei ausgeben soll. Hat sie das vergessen, schreib ihr: „Gib die Schnitzeljagd jetzt als Geo-Quest-Datei (JSON) aus.“",
+  },
+  {
     question: "Die KI schreibt Text um das JSON herum",
     answer:
       "Kopier nur den Teil, der mit { anfängt und mit } aufhört. Alles davor und danach gehört nicht in die Datei. Oder bitte die KI: „Gib nur das JSON aus, ohne Erklärung.“",
@@ -91,17 +98,12 @@ const TROUBLESHOOTING = [
   {
     question: "Es kommt eine Meldung über ungültige Werte",
     answer:
-      "Die KI hat sich nicht an die Grenzen gehalten — etwa mehr als 20 Ziele, mehr als 5 Antwortmöglichkeiten oder einen Radius außerhalb von 10 bis 100 Metern. Gib die Fehlermeldung an die KI zurück und lass sie korrigieren.",
+      "Die KI hat sich nicht an die Grenzen gehalten — etwa mehr als 20 Stationen oder mehr als 5 Antwortmöglichkeiten. Gib die Fehlermeldung an die KI zurück und lass sie korrigieren.",
   },
   {
     question: "Eine Quest mit diesem Namen gibt es schon",
     answer:
       "Dann fragt Geo Quest, ob du sie überschreiben willst. Achtung: Die alte Version ist danach weg. Wenn du beide behalten willst, brich ab und lass die KI eine neue Kennnummer für die Quest vergeben.",
-  },
-  {
-    question: "Die KI erfindet echte Adressen für Bilder",
-    answer:
-      "Prüf nach dem Import alle Medien-Bausteine im Creator. Adressen, die nicht mit „BITTE-ERSETZEN“ markiert sind, führen ins Leere und müssen ersetzt werden.",
   },
 ];
 
@@ -204,11 +206,9 @@ function AnleitungAngekuendigt() {
 }
 
 /**
- * Die vollständige Anleitung — fertig, QA-geprüft, deployt gewesen (PROJ-13).
- *
- * Wird zum Launch nicht gerendert (PROJ-14), bleibt aber unverändert im Code:
- * Beim Freischalten soll nichts neu geschrieben werden müssen. Die Tests
- * prüfen diesen Zustand weiterhin mit, damit er nicht still verrottet.
+ * Die vollständige Anleitung (PROJ-13), seit PROJ-14 Refinement 2026-10-23
+ * mit Prompt-Formular und freigeschaltet. Die Ankündigung oben bleibt als
+ * Weg zurück im Code.
  */
 function AnleitungVollstaendig() {
   return (
@@ -222,13 +222,14 @@ function AnleitungVollstaendig() {
           <span className="text-gq-teal">mit KI.</span>
         </>
       }
-      meta="4 Schritte · ca. 15 Min"
+      meta="4 Schritte"
       backHref="/about"
       lead={
         <p>
-          Du kopierst einen fertigen Text, fügst ihn in ChatGPT oder Claude ein
-          und bekommst eine komplette Quest zurück — mit Story, Zielen und
-          Rätseln. Die Orte auf der Karte setzt du danach selbst.
+          Du trägst ein paar Angaben ein, kopierst den fertigen Prompt in
+          ChatGPT oder Claude und stimmst mit der KI die Geschichte ab. Am Ende
+          bekommst du eine komplette Quest mit Story, Stationen und Rätseln zum
+          Importieren. Die Orte auf der Karte setzt du danach selbst.
         </p>
       }
       aside={
@@ -247,8 +248,7 @@ function AnleitungVollstaendig() {
             ))}
           </ul>
           <p className="mt-5 border-t border-border pt-4 font-body text-sm leading-relaxed text-gq-grey">
-            Zwei Dinge machst du danach selbst: Ziele auf die Karte setzen und
-            Medien einsetzen.
+            Eins machst du danach selbst: Ziele auf die Karte setzen.
           </p>
         </div>
       }
@@ -278,15 +278,15 @@ function AnleitungVollstaendig() {
         </ol>
       </section>
 
-      {/* Prompt */}
+      {/* Angaben → Prompt (PROJ-14, Refinement 2026-10-23) */}
       <section className="mt-12 sm:mt-20">
         <h2 className="text-tech text-[10px] sm:text-[11px] tracking-[0.12em] text-gq-teal">
           Schritt 1
         </h2>
         <h3 className="mt-2 font-display italic text-[clamp(1.5rem,4vw,2.4rem)] uppercase leading-[1] text-gq-white">
-          Der Prompt
+          Deine Angaben
         </h3>
-        <PromptCopyBox prompt={QUEST_AI_PROMPT} />
+        <PromptGenerator />
       </section>
 
       {/* Nach dem Import */}
@@ -295,7 +295,7 @@ function AnleitungVollstaendig() {
           Danach — nicht vergessen
         </h2>
         <h3 className="mt-2 font-display italic text-[clamp(1.5rem,4vw,2.4rem)] uppercase leading-[1] text-gq-white">
-          Zwei Pflichtschritte
+          Nach dem Import
         </h3>
 
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
@@ -317,17 +317,18 @@ function AnleitungVollstaendig() {
             </p>
           </div>
 
+          {/* Seit dem neuen Prompt (2026-10-23) erzeugt die KI keine Medien
+              mehr — kein Pflichtschritt, nur ein Tipp. */}
           <div className="rounded-card border border-border bg-gq-dark-teal/70 p-5 shadow-card">
             <div className="flex items-center gap-2">
               <ImageIcon className="w-5 h-5 text-gq-teal" />
               <h4 className="text-tech text-xs lg:text-[13px] tracking-[0.08em] text-gq-white">
-                Medien-Adressen ersetzen
+                Tipp: Bilder, Ton oder Video ergänzen
               </h4>
             </div>
             <p className="mt-3 font-body text-sm lg:text-[15px] leading-relaxed text-[#E7EAEC]">
-              Bilder, Audio und Video hat die KI nur vorgeschlagen — die
-              Adressen sind Platzhalter und mit „BITTE-ERSETZEN“ markiert. Trag
-              im Creator deine eigenen ein oder lösch die Bausteine.
+              Die KI schreibt Geschichte und Aufgaben. Wenn du magst, ergänzt du
+              im Creator an jeder Station Bilder, Ton oder Video.
             </p>
           </div>
         </div>
@@ -340,21 +341,21 @@ function AnleitungVollstaendig() {
             Woher Medien nehmen
           </h2>
           <div className="mt-4 rounded-card border border-border bg-gq-dark-teal/70 p-5 shadow-card">
+            {/* Stand PROJ-15: Medien per Link, gleiche Quellen wie die FAQ
+                auf /about. */}
             <p className="font-body text-sm lg:text-[15px] leading-relaxed text-[#E7EAEC]">
               Am besten eigene Fotos und Sprachaufnahmen — die passen zur Quest
-              und gehören dir. Lad sie irgendwo hoch, wo du eine direkte Adresse
-              bekommst.
-            </p>
-            <p className="mt-3 font-body text-sm lg:text-[15px] leading-relaxed text-[#E7EAEC]">
-              Frei nutzbares Material findest du bei Wikimedia Commons, Pixabay
-              oder Unsplash. Achte auf die Lizenz, wenn du die Quest weitergibst.
+              und gehören dir. Frei nutzbares Material findest du bei Wikimedia
+              Commons, Pixabay oder Unsplash. Achte auf die Lizenz, wenn du die
+              Quest weitergibst.
             </p>
             <div className="mt-4 rounded-[12px] border border-gq-teal/30 bg-gq-teal/5 p-4">
               <p className="font-body text-sm lg:text-[15px] leading-relaxed text-gq-white">
-                <span className="text-gq-teal">Wichtig:</span> Geo Quest braucht
-                die Adresse der Datei selbst — sie endet auf .jpg, .png, .mp3
-                oder .mp4. Der Link zur Webseite reicht nicht. Auf dem Bild
-                rechtsklicken und „Bildadresse kopieren“ wählen.
+                <span className="text-gq-teal">Per Link:</span> Hochgeladen wird
+                nichts. Es klappt mit YouTube und Vimeo, mit Teilen-Links aus
+                Dropbox, mit Bildern aus Google Drive und mit Dateien von
+                Wikimedia Commons und Wikipedia. Ebenso geht jeder Link, der im
+                Browser nur das Bild, den Ton oder das Video selbst öffnet.
               </p>
             </div>
           </div>

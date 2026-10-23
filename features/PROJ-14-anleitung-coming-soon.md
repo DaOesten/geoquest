@@ -202,8 +202,8 @@ _Ergänzt 2026-10-23 (Prompt-Formular und Freischaltung):_
 - [x] **Geschlossen 2026-09-17 (Frontend):** Die Meta-Zeile entfällt auf der Ankündigung — sie beschreibt einen Ablauf, der dort nicht gezeigt wird. Im freigeschalteten Zustand bleibt sie.
 - [ ] _(2026-10-23)_ Soll die FAQ auf `/about` die KI-Anleitung erwähnen? Heute beschreibt sie nur das manuelle Erstellen — das bleibt nach der Freischaltung richtig, verschweigt aber den neuen Weg. Empfehlung: nach dem Launch beobachten, nicht in diesem Refinement.
 - [x] _(2026-10-23)_ Die Vorlagen-Zeile „Spielort: z.B. Park" steht im gelieferten Prompt **ohne** eckige Klammern und mit „z.B." statt „z. B." — anders als die übrigen vier. Bleibt das Feld leer, könnte die KI „Park" als echte Angabe lesen statt als Beispiel und nicht nachfragen. Empfehlung: angleichen zu „[z. B. Park]". Vom Betreiber zu bestätigen, bevor `/frontend` die Vorlage übernimmt. → **Geschlossen 2026-10-24:** Angeglichen zu „Spielort: [z. B. Park]" (Betreiber).
-- [ ] _(2026-10-23)_ „Besondere Wünsche": einzeiliges Feld oder mehrzeiliges Textfeld (Edge Case 15)? Empfehlung: mehrzeilig, 2–3 Zeilen hoch; Zeilenumbrüche werden im Prompt zu Leerzeichen. Am Bildschirm zu entscheiden.
-- [ ] _(2026-10-23)_ Höchstlängen der Felder — Vorschlag: Thema 80, Alter 40, Spielort 80, Wünsche 300 Zeichen. Am Bildschirm zu prüfen.
+- [x] _(2026-10-23)_ „Besondere Wünsche": einzeiliges Feld oder mehrzeiliges Textfeld (Edge Case 15)? → **Geschlossen 2026-10-24 (Frontend):** mehrzeilig, 3 Zeilen; Zeilenumbrüche werden im Prompt zu Leerzeichen.
+- [x] _(2026-10-23)_ Höchstlängen der Felder → **Geschlossen 2026-10-24 (Frontend):** wie vorgeschlagen, Thema 80, Alter 40, Anzahl 2, Spielort 80, Wünsche 300.
 - [x] **Geschlossen 2026-09-17:** Ja — der freigeschaltete Zustand wird mitgeprüft (Betreiber-Entscheidung). Ohne diese Absicherung könnte die fertige Anleitung während der Ankündigungsphase unbemerkt kaputtgehen; auffallen würde es erst beim Freischalten, also im denkbar schlechtesten Moment.
 
 ## Decision Log
@@ -802,3 +802,27 @@ Prüfe vor der JSON-Ausgabe:
 - Die graue Vorlage ist kein Label; jedes Feld braucht eine sichtbare Beschriftung darüber.
 - Die Spielort-Zeile lautet „Spielort: [z. B. Park]" (geklärt 2026-10-24), nicht „z.B. Park" wie in der ersten Lieferung.
 - `/about` am Handy: Nach der Freischaltung den BUG-7-Wächter laufen lassen. Der sekundäre Button darf unter dem Falz liegen, der primäre nicht.
+
+## Implementation Notes (Frontend, Refinement 2026-10-24)
+
+**Gebaut:** Neue Komponente `src/components/prompt-generator.tsx` mit fünf Feldern (shadcn `Input`, `Textarea`, `Label`, `Button`) und der vorhandenen `PromptCopyBox` als Ergebnis-Box. Der Prompt wird in `src/lib/quest-ai-prompt.ts` als reine Funktion `buildQuestAiPrompt(werte)` gebaut; die alte Fassung ist ersetzt. `PROMPT_ANGABEN` ist die eine Quelle für Beschriftung, graue Vorlage und die Prompt-Zeile bei leerem Feld. `/anleitung` an den neuen Ablauf angepasst (Lead, „4 Schritte", neue Schritte, „Nach dem Import" mit Pflicht + Tipp, Medienquellen nach PROJ-15, Hilfe), Schalter `ANLEITUNG_VERFUEGBAR = true`. Kein neues Paket, `/anleitung` bleibt statisch (`○`).
+
+**Am Bildschirm entschieden (Open Questions geschlossen):** Wünsche mehrzeilig (3 Zeilen), Zeilenumbrüche werden im Prompt zu Leerzeichen. Höchstlängen wie vorgeschlagen (80/40/2/80/300). Die `maxlength` von 2 bei „Anzahl" fängt Eingaben wie „8 Stationen" schon beim Tippen ab.
+
+**Abweichungen:**
+- Der Hinweis „Angaben geändert" ist **Teal**, nicht Lime: Lime stand am Bildschirm zusammen mit dem Lime-Kicker „Danach — nicht vergessen" im Bild (Design System: ein Lime-Element pro Screen). Der Fehlerhinweis an „Anzahl" bleibt Lime; er erscheint nur, solange keine Box und damit nichts weiter unten im Bild steht.
+- Kurzer Hinweis unter den Feldern: „Felder, die du leer lässt, fragt die KI im Chat bei dir nach." Er erklärt die Regel aus der Spec, damit niemand ein leeres Feld für einen Fehler hält.
+- `PromptCopyBox`: Beschriftung „Dein Prompt" statt „Prompt-Vorlage", der Satz „Die markierten Stellen füllst du in deinem KI-Tool aus" ist entfallen.
+
+**Gemessen:** WebKit 390×844 und 320×568, Chrome 1440×900: 0 px Überlauf, Felder 48 px hoch mit 16 px Schrift (kein iOS-Zoom), Buttons 48 px, Kopieren-Knopf nach dem Erzeugen im Bild. Graue Vorlage **7,54:1**. Auf `/about` 320×568 endet der primäre CTA bei 561/568 (unverändert 7 px Luft), „Mit KI erstellen" liegt 53 px darunter (Edge Case 20). Auf 390 px wird die Vorlage im Thema-Feld abgeschnitten („…Pirat") — hingenommen, weil Feld und Prompt denselben Text teilen.
+
+**Tests:**
+- Unit: `quest-ai-prompt.test.ts` neu (31 Tests), darunter der Vergleich der leeren Vorlage **Zeichen für Zeichen mit dem Spec-Abschnitt** und das wörtliche `\n`. Unit gesamt **455/455**.
+- E2E: neue Suite `proj-14-prompt-formular.spec.ts` (29 je Engine). Neuer Helfer `tests/helpers/anleitung-schalter.ts` liest den Schalter aus dem Quelltext; Freigeschaltet- und Ankündigungs-Tests hängen daran statt an `ANLEITUNG_FREIGESCHALTET=1`. Die Ankündigungs-Suite überspringt sich jetzt selbst und lässt sich mit `npm run test:e2e:angekuendigt` prüfen (Skript umgedreht und umbenannt, vorher `test:e2e:freigeschaltet`).
+- Gezogen, nicht gelöscht: 4 Tests in der Freigeschaltet-Datei, 7 in `proj-13-landing-page`, je 1–2 in `proj-13-landing-qa`, `-landing-refinement`, `-info-refinement`, `proj-12-pwa-installation`; alle zustandsabhängigen prüfen jetzt den Zustand des Schalters. Durch die Freischaltung wurden zwei weitere falsch: `proj-12-safe-area` nahm das erste Kopfzeilen-Element, jetzt den auf dem Handy ausgeblendeten Link „Anleitung" (→ erstes **sichtbares**), und `proj-13-about-eltern` zählte Tabs ab „Quest erstellen", davor steht jetzt „Mit KI erstellen".
+- **Gegenprobe** (alte Seite und alter Prompt, Schalter `true`): neue Formular-Suite **0 von 57** bestanden; Freigeschaltet-Datei 8 rot (die gezogenen), 16 grün (Einstiegspunkte, die nur am Schalter hängen); `proj-13-landing-page` 19 rot (die gezogenen), 22 grün. Danach Produktcode byte-identisch zurückgespielt.
+- **Gesamtlauf beider Engines:** 1518 erwartet / 9 unerwartet — 6 davon die oben gezogenen Tests in `proj-13-landing-page`, 3 die Safe-Area- und Tab-Tests; nach dem Ziehen isoliert **164/164**. Die 6 „failed" der `test.fail`-Wächter (BUG-15, BUG-17, BUG-18) sind erwartet. Lint 0 Fehler, `tsc` nur die 2 bekannten Fehler aus PROJ-6.
+
+**Für künftige Läufe:** Ein Lauf, bei dem alle sichtbaren Prozesse bei 0 % CPU stehen, ist nicht zwingend ein Hänger — die Arbeit läuft in den Worker-Kindprozessen (`pgrep -P <pid>`).
+
+**Nicht abgedeckt:** das Gespräch mit einer echten KI (ob ChatGPT/Claude/Gemini den Ablauf einhalten und importierbare Dateien liefern), echtes iPhone, Firefox.

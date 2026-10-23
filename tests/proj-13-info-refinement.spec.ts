@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { ANLEITUNG_AN } from "./helpers/anleitung-schalter";
 
 /**
  * PROJ-13 — Refinement der Info-Seiten (2026-09-05).
@@ -276,10 +277,7 @@ test.describe("Responsive", () => {
     // PROJ-14: Der Textlink "Anleitung" ist der einzige der Desktop-Zeile und
     // entfällt, solange die Anleitung nur angekündigt ist. Die Prüfung greift
     // wieder, wenn sie freigeschaltet wird.
-    test.skip(
-      process.env.ANLEITUNG_FREIGESCHALTET !== "1",
-      "Header-Textlink gibt es erst mit freigeschalteter Anleitung (PROJ-14)"
-    );
+    test.skip(!ANLEITUNG_AN, "Header-Textlink gibt es erst mit freigeschalteter Anleitung (PROJ-14)");
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/about");
 
@@ -341,9 +339,9 @@ test.describe("Zurückpfeil & Footer (Refinement 2)", () => {
     const nav = page.locator("header nav");
     await expect(nav.getByRole("link", { name: "Impressum" })).toHaveCount(0);
     await expect(nav.getByRole("link", { name: "Datenschutz" })).toHaveCount(0);
-    // PROJ-14: Solange die Anleitung nur angekündigt ist, führt die
-    // Desktop-Zeile gar keinen Textlink mehr — "Anleitung" war der einzige.
-    await expect(nav.getByRole("link", { name: "Anleitung" })).toHaveCount(0);
+    // PROJ-14: "Anleitung" ist der einzige Textlink der Desktop-Zeile und
+    // folgt dem Schalter.
+    await expect(nav.getByRole("link", { name: "Anleitung" })).toHaveCount(ANLEITUNG_AN ? 1 : 0);
   });
 
   test("Burger-Menü behält die Rechtslinks (jetzt neben Play/Create)", async ({ page }) => {
