@@ -2,9 +2,9 @@
 
 _Bis 2026-10-23: „KI-Anleitung — Coming soon zum Launch". Mit Refinement 2026-10-23 wird die Anleitung freigeschaltet und bekommt ein Prompt-Formular; der Dateiname bleibt, damit bestehende Verweise gültig bleiben._
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-09-17
-**Last Updated:** 2026-10-24 (Refinement: Prompt-Formular und Freischaltung — vorher deployt, Tag `v1.29.0-PROJ-14`)
+**Last Updated:** 2026-10-24 (deployt, Tag `v1.51.0-PROJ-14` — Refinement: Prompt-Formular und Freischaltung — vorher deployt, Tag `v1.29.0-PROJ-14`)
 
 ## Dependencies
 - Requires: PROJ-13 (Landing Page) — die Seite `/anleitung`, ihre Einstiegspunkte und der geteilte Seitenrahmen `InfoPageShell` stammen von dort
@@ -917,3 +917,18 @@ Das Gespräch mit einer echten KI (Ablauf eingehalten, Datei importierbar?) — 
 **BUG-25 ebenfalls behoben (2026-10-24, nachbeauftragt):** Der Hinweis steht in einer Live-Region (`aria-live="polite"`), die dauerhaft im Formular steht — nur ihr Inhalt wechselt, weil ein erst beim Erscheinen erzeugtes Live-Element von vielen Screenreadern nicht angesagt wird. Ein zweiter Test hält fest, dass die Region vorher leer im DOM steht. Gegenprobe gegen die Komponente davor: beide BUG-25-Tests fallen auf beiden Engines (4); mit Behebung PROJ-14-Suiten 2× 110 bestanden / 2 übersprungen (bekannte Engine-Ausnahmen). **Damit sind alle Bugs aus der QA behoben.**
 
 **Geprüft:** Typprüfung, Lint (0 Fehler), Build (`/anleitung` statisch, kein „Bald verfügbar" im HTML), Unit 455/455. Gesamtlauf beider Engines **1553 erwartet / 1 unerwartet** (Service-Worker-Wackelei, seriell 3× 6/6). **Gegenprobe** mit der Komponente vor der Behebung: die Tests zu BUG-26, BUG-27 (beide) und BUG-28 fallen auf beiden Engines (8). Ein eigener Testfehler dabei gefunden: Der „Kopiert"-Test wartete bis zu 5 s und bestand deshalb auch ohne Behebung, weil der alte Zustand nach 2,5 s von selbst verschwand — jetzt 500 ms. QA- und Formular-Suite danach 3× 84/84.
+
+
+## Deployment (Refinement: Prompt-Formular und Freischaltung)
+
+**Deployt am 2026-10-24** (Tag `v1.51.0-PROJ-14`, Push `d377047..ac1f8e0`) — live auf https://geoquest.technolomagie.de/anleitung und https://geoquesty.vercel.app/anleitung nach **38 s**, belegt am umschlagenden Merkmal: vorher „Bald verfügbar" auf beiden Domains, danach „Prompt erzeugen".
+
+**Vorher geprüft:** Nur PROJ-14-Commits vor `origin/main`, keine Secrets versioniert, Lint 0 Fehler, Unit 455/455, Build sauber (`/anleitung` statisch). Gebaut im eigenen Worktree, weil der Dev-Server des Betreibers lief.
+
+**In Production verifiziert:**
+- 20 Endpunkte auf beiden Domains HTTP 200 (0,07–0,51 s), Security-Header aktiv (HSTS, `x-frame-options: DENY`, `nosniff`).
+- `/anleitung` auf beiden Domains: kein „Bald verfügbar", Formular da, der Prompt steht nicht im ausgelieferten HTML (entsteht erst beim Klick); `/about` mit „Mit KI erstellen".
+- **PROJ-14-Suiten direkt gegen Production** (Formular, QA, Seite/Einstiegspunkte), seriell je Engine: **Chrome 56/56, Mobile Safari 54 bestanden / 2 übersprungen** (bekannte Engine-Ausnahmen).
+- Live-Durchlauf auf beiden Engines: Werte landen im Block „Meine Angaben", leere Felder behalten das Beispiel, nach einer Änderung heißt der Button „Prompt neu erzeugen". WebKit 0 Konsolenfehler; Chrome nur der bekannte `/favicon.ico`-404 (keine fehlgeschlagene Seitenanfrage).
+
+**PROJ-14 ist abgeschlossen.** Offen bleibt allein, was keine Testumgebung leisten kann: ein echtes Gespräch mit ChatGPT, Claude, Gemini oder duck.ai mit dem Prompt und der Import der gelieferten Datei. Dazu echtes iPhone und Firefox.
