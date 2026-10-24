@@ -63,9 +63,22 @@ test.describe('Freigeschaltet — die Seite', () => {
     await expect(page.getByText('Zwei Pflichtschritte')).toHaveCount(0);
   });
 
-  test('der Infokasten nennt nur noch die Karte als eigenen Schritt', async ({ page }) => {
+  // Wortlaut des Betreibers vom 2026-10-24.
+  test('der Infokasten nennt, was die KI liefert und was im Creator bleibt', async ({ page }) => {
     await page.goto('/anleitung');
-    await expect(page.getByText('Eins machst du danach selbst: Ziele auf die Karte setzen.')).toBeVisible();
+    await expect(page.getByText('Was du mit der KI erstellst')).toBeVisible();
+    const liste = page.locator('ul').filter({ hasText: 'Die Story mit Einstieg' }).first();
+    for (const punkt of [
+      'Die Story mit Einstieg und Abschluss',
+      'Ein Kapitel pro Station der Route',
+      'Jedes Kapitel enthält ein Rätsel oder eine Aufgabe',
+      'Eine Import-Datei im richtigen Format für die App',
+    ]) {
+      await expect(liste.getByText(punkt)).toBeVisible();
+    }
+    await expect(
+      page.getByText('Im Creator bestimmst du die Route und setzt Station für Station einen Marker auf der Karte.')
+    ).toBeVisible();
   });
 
   test('keine Ankündigungs-Reste', async ({ page }) => {

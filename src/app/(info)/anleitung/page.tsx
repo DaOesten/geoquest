@@ -51,10 +51,10 @@ export const metadata: Metadata = {
 };
 
 const OUTCOME = [
-  { icon: BookOpen, label: "Story mit Einstieg und Abschluss" },
-  { icon: MapPin, label: "Ziele mit Namen und Reihenfolge" },
-  { icon: Puzzle, label: "Rätsel und Aufgaben pro Ziel" },
-  { icon: FileJson, label: "Fertige Datei zum Importieren" },
+  { icon: BookOpen, label: "Die Story mit Einstieg und Abschluss" },
+  { icon: MapPin, label: "Ein Kapitel pro Station der Route" },
+  { icon: Puzzle, label: "Jedes Kapitel enthält ein Rätsel oder eine Aufgabe" },
+  { icon: FileJson, label: "Eine Import-Datei im richtigen Format für die App" },
 ];
 
 // Neuer Ablauf seit PROJ-14, Refinement 2026-10-23: Der Prompt entsteht aus
@@ -235,7 +235,7 @@ function AnleitungVollstaendig() {
       aside={
         <div className="rounded-card border border-border bg-gq-dark-teal/70 p-6 shadow-card">
           <p className="text-tech text-[10px] tracking-[0.12em] text-gq-teal">
-            Was dabei herauskommt
+            Was du mit der KI erstellst
           </p>
           <ul className="mt-4 flex flex-col gap-3">
             {OUTCOME.map(({ icon: Icon, label }) => (
@@ -248,7 +248,8 @@ function AnleitungVollstaendig() {
             ))}
           </ul>
           <p className="mt-5 border-t border-border pt-4 font-body text-sm leading-relaxed text-gq-grey">
-            Eins machst du danach selbst: Ziele auf die Karte setzen.
+            Im Creator bestimmst du die Route und setzt Station für Station
+            einen Marker auf der Karte.
           </p>
         </div>
       }
