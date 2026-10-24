@@ -869,7 +869,7 @@ Prüfe vor der JSON-Ausgabe:
 
 ### Bugs
 
-#### BUG-25: Hinweis „Angaben geändert" wird Screenreadern nicht angesagt
+#### BUG-25: Hinweis „Angaben geändert" wird Screenreadern nicht angesagt — **behoben 2026-10-24**
 - **Severity:** Low (Barrierefreiheit)
 - **Schritte:** Feld ausfüllen → „Prompt erzeugen" → Feld ändern. Erwartet: Ansage, dass der Prompt veraltet ist. Tatsächlich: Hinweis steht in keiner Live-Region; nur die Button-Beschriftung ändert sich still.
 - **Priorität:** Nice to have. Wächter: `proj-14-qa.spec.ts`, `test.fail`.
@@ -914,6 +914,6 @@ Das Gespräch mit einer echten KI (Ablauf eingehalten, Datei importierbar?) — 
 - **BUG-27:** Die Kopier-Box wird bei jedem Erzeugen neu aufgebaut (`key`), „Kopiert" und „Kopieren hat nicht geklappt" gehören nie zu einem neuen Prompt.
 - **BUG-28:** Fehlerhinweis und Feldrand bei „Anzahl" in Fehler-Rot (`destructive`, wie im Creator) statt Lime.
 
-**Offen:** BUG-25 (Hinweis „Angaben geändert" ohne Screenreader-Ansage) — nicht beauftragt, Wächter bleibt `test.fail`.
+**BUG-25 ebenfalls behoben (2026-10-24, nachbeauftragt):** Der Hinweis steht in einer Live-Region (`aria-live="polite"`), die dauerhaft im Formular steht — nur ihr Inhalt wechselt, weil ein erst beim Erscheinen erzeugtes Live-Element von vielen Screenreadern nicht angesagt wird. Ein zweiter Test hält fest, dass die Region vorher leer im DOM steht. Gegenprobe gegen die Komponente davor: beide BUG-25-Tests fallen auf beiden Engines (4); mit Behebung PROJ-14-Suiten 2× 110 bestanden / 2 übersprungen (bekannte Engine-Ausnahmen). **Damit sind alle Bugs aus der QA behoben.**
 
 **Geprüft:** Typprüfung, Lint (0 Fehler), Build (`/anleitung` statisch, kein „Bald verfügbar" im HTML), Unit 455/455. Gesamtlauf beider Engines **1553 erwartet / 1 unerwartet** (Service-Worker-Wackelei, seriell 3× 6/6). **Gegenprobe** mit der Komponente vor der Behebung: die Tests zu BUG-26, BUG-27 (beide) und BUG-28 fallen auf beiden Engines (8). Ein eigener Testfehler dabei gefunden: Der „Kopiert"-Test wartete bis zu 5 s und bestand deshalb auch ohne Behebung, weil der alte Zustand nach 2,5 s von selbst verschwand — jetzt 500 ms. QA- und Formular-Suite danach 3× 84/84.

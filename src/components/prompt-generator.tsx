@@ -147,11 +147,16 @@ export function PromptGenerator() {
         {/* Hinweis direkt über dem Button (Betreiber, 2026-10-24): Wer ein
             Feld ändert, sieht ihn dort, wo er ohnehin tippt — und derselbe
             Button erzeugt neu, statt eines zweiten Knopfs an der Box. */}
-        {veraltet && (
-          <p className="mt-5 rounded-[12px] border border-gq-teal/40 bg-gq-teal/10 px-4 py-3 font-body text-sm leading-relaxed text-gq-white">
-            Angaben geändert. Der Prompt unten zeigt noch den alten Stand.
-          </p>
-        )}
+        {/* Die Live-Region steht immer im DOM, nur ihr Inhalt wechselt: Ein
+            Element, das erst beim Erscheinen zur Live-Region wird, sagen viele
+            Screenreader nicht an (BUG-25, 2026-10-24). */}
+        <div aria-live="polite">
+          {veraltet && (
+            <p className="mt-5 rounded-[12px] border border-gq-teal/40 bg-gq-teal/10 px-4 py-3 font-body text-sm leading-relaxed text-gq-white">
+              Angaben geändert. Der Prompt unten zeigt noch den alten Stand.
+            </p>
+          )}
+        </div>
 
         <Button
           type="submit"

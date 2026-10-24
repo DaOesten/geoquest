@@ -8,8 +8,8 @@ import { test, expect, type Page } from "@playwright/test";
  * Kopfzeile nach der Freischaltung (die Tests dafür lagen in der
  * Ankündigungs-Suite, die sich jetzt selbst überspringt), Tastaturweg,
  * reduzierte Bewegung, Doppelklick, Einfügen über die Höchstlänge — und die
- * Bugs aus der QA: BUG-26 bis BUG-28 sind am 2026-10-24 behoben und hier
- * normale Tests; BUG-25 ist offen und als `test.fail`-Wächter geführt.
+ * Bugs aus der QA: BUG-25 bis BUG-28 sind am 2026-10-24 behoben und hier
+ * normale Tests.
  */
 
 
@@ -109,10 +109,9 @@ test.describe("Formular — über die Spec hinaus", () => {
 });
 
 test.describe("Bugs aus der QA vom 2026-10-24", () => {
-  // BUG-25 (Low): Der Hinweis „Angaben geändert" erscheint ohne Ansage —
-  // er steht in keiner Live-Region, ein Screenreader erfährt nichts davon.
+  // BUG-25 (Low, behoben 2026-10-24): Der Hinweis „Angaben geändert" erschien
+  // ohne Ansage — er stand in keiner Live-Region.
   test("BUG-25: der Hinweis „Angaben geändert“ wird Screenreadern angesagt", async ({ page }) => {
-    test.fail();
     await page.goto("/anleitung");
     await page.fill("#angabe-thema", "Piraten");
     await erzeugen(page);
@@ -125,6 +124,18 @@ test.describe("Bugs aus der QA vom 2026-10-24", () => {
       return false;
     });
     expect(live).toBe(true);
+  });
+
+  test("BUG-25: die Live-Region steht schon vor dem Hinweis im DOM", async ({ page }) => {
+    await page.goto("/anleitung");
+    await page.fill("#angabe-thema", "Piraten");
+    await erzeugen(page);
+    // Vor der Änderung: Region da, aber leer.
+    const region = page.locator('form [aria-live="polite"]');
+    await expect(region).toHaveCount(1);
+    await expect(region).toHaveText("");
+    await page.fill("#angabe-thema", "Detektiv");
+    await expect(region).toContainText("Angaben geändert");
   });
 
   // BUG-26 (Low, behoben 2026-10-24): Zweimal hintereinander neu erzeugen
