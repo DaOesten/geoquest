@@ -29,7 +29,7 @@
 | PROJ-11 | Import — Passwortschutz | P0 | PROJ-2 | Deployed | [Spec](PROJ-11-import-passwortschutz.md) | 2026-08-23 |
 | PROJ-12 | PWA-Installation | P0 | PROJ-1 | Deployed | [Spec](PROJ-12-pwa-installation.md) | 2026-08-23 |
 | PROJ-13 | Landing Page | P1 | PROJ-1, PROJ-15 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
-| PROJ-14 | KI-Anleitung (Prompt-Formular, Freischaltung) | P0 | PROJ-13, PROJ-1 | In Progress | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
+| PROJ-14 | KI-Anleitung (Prompt-Formular, Freischaltung) | P0 | PROJ-13, PROJ-1 | Approved | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 | PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Deployed | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
 
 <!-- Add features above this line -->
@@ -686,6 +686,10 @@ Spec ist aktualisiert (6 Acceptance Criteria, 3 Produkt- und 2 technische Entsch
 **Tests:** Unit 455/455, darunter ein Vergleich der leeren Vorlage Zeichen für Zeichen mit der Spec. Neue E2E-Suite `proj-14-prompt-formular.spec.ts` (29 je Engine). Die Schalter-Tests lesen den Schalter jetzt aus dem Quelltext statt aus einer Umgebungsvariable; die Ankündigung überspringt sich selbst und ist per `npm run test:e2e:angekuendigt` prüfbar (Skript umgedreht). Zustandsabhängige Tests in sechs Dateien gezogen, nicht gelöscht. **Gegenprobe** gegen alte Seite mit Schalter `true`: neue Suite 0 von 57 bestanden. **Gesamtlauf beider Engines** nach dem Ziehen ohne unerwartete Fehlschläge, Lint 0 Fehler.
 
 **Offen:** Gespräch mit einer echten KI (Ablauf eingehalten, Datei importierbar?), echtes iPhone, Firefox, und ob die FAQ auf `/about` die KI-Anleitung erwähnen soll.
+
+**Nachträge 2026-10-24 (Betreiber):** neuer Hero-Absatz, Infokasten „Was du mit der KI erstellst“, „Stationen“ statt „Ziele“ im Pflichtschritt, Hinweis „Angaben geändert“ im Formular über dem Button, der dann „Prompt neu erzeugen“ heißt.
+
+**QA am 2026-10-24 abgeschlossen: 29/29 Acceptance Criteria, 4 Low-Bugs (BUG-25 bis BUG-28), keine Critical/High/Medium — Approved.** Geprüft im eigenen Worktree, weil der Dev-Server des Betreibers lief und das Prüfskript den Schalter im Quelltext umlegt. Der Weg zurück (`npm run test:e2e:angekuendigt`) lief zum ersten Mal: 54/54, Schalter danach wieder `true`. Die Kopfzeilen-Kriterien der Freischaltung waren ungetestet, weil ihre Tests in der jetzt übersprungenen Ankündigungs-Suite lagen — neu abgedeckt. Bugs: Hinweis „Angaben geändert“ ohne Screenreader-Ansage (BUG-25), wiederholtes Neuerzeugen ohne erneute Ansage (BUG-26), Kopier-Zustand bleibt nach dem Neuerzeugen stehen (BUG-27), Lime-Fehlerhinweis zusammen mit dem Lime-Abschnitt „Danach“ im Bild (BUG-28), alle mit `test.fail`-Wächter. Gesamtsuite beider Engines 1526 erwartet / 1 unerwartet (Service-Worker-Wackelei, seriell 3× grün), Unit 455/455. **Offen:** Gespräch mit einer echten KI, iPhone, Firefox.
 
 ## Offenes Refinement: BUG-6 — falsche iOS-Erkennung beim Kompass (2026-09-07)
 **PROJ-3** geht von Deployed zurück auf In Progress. BUG-6 stand als vermutliches Testumgebungs-Artefakt in den Notizen ("Playwright liefert unter Chrome keinen Fix, `position` bleibt null"). Auf echtem Chrome 152 reproduziert und instrumentiert — **diese Diagnose ist widerlegt**: Die Position liegt vor, die Distanz rendert mit `12514m`, der Nachbartest im selben Block besteht.

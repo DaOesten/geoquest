@@ -2,7 +2,7 @@
 
 _Bis 2026-10-23: „KI-Anleitung — Coming soon zum Launch". Mit Refinement 2026-10-23 wird die Anleitung freigeschaltet und bekommt ein Prompt-Formular; der Dateiname bleibt, damit bestehende Verweise gültig bleiben._
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-09-17
 **Last Updated:** 2026-10-24 (Refinement: Prompt-Formular und Freischaltung — vorher deployt, Tag `v1.29.0-PROJ-14`)
 
@@ -835,3 +835,70 @@ Prüfe vor der JSON-Ausgabe:
 **Nachtrag 2026-10-24 — Begriffe angeglichen:** Punkt 3 heißt „Ein Rätsel oder eine Aufgabe pro Kapitel" (gleich gebaut wie die anderen, auf dem Handy einzeilig), Punkt 4 „Eine Datei zum Importieren in die App" (Betreiber). Der Pflichtschritt heißt „Stationen auf die Karte setzen" statt „Ziele …", sein Text spricht von Stationen und vom Marker — wie der Creator und der Infokasten. Die ausgeschaltete Ankündigungsseite sagt weiterhin „Ziele"; sie wird nicht ausgeliefert und bleibt unangetastet. Suiten 122/122.
 
 **Nachtrag 2026-10-24 — Hinweis ins Formular:** Der Hinweis „Angaben geändert. Der Prompt unten zeigt noch den alten Stand." steht jetzt im Formular direkt über dem Button, und der Button selbst heißt dann „Prompt neu erzeugen" (mit Pfeil-Symbol); der eigene Knopf an der Box ist entfallen. Gemessen auf 390×844: Hinweis und Button liegen untereinander; zwischen Hinweis und Kopieren-Knopf liegen 121 px (Edge Case 17 entsprechend angepasst). Zwei Tests gezogen, einer neu (Hinweis über dem Button, nur ein Erzeugen-Knopf). Formular-Suite beider Engines: 57 bestanden, 1 übersprungen (Zwischenablage auf WebKit).
+
+---
+
+## QA Test Results (Refinement 2026-10-24: Prompt-Formular und Freischaltung)
+
+**Tested:** 2026-10-24
+**App URL:** Production-Build im eigenen Git-Worktree (Port 3200; der Dev-Server des Betreibers lief parallel und wurde nicht angefasst)
+**Tester:** QA Engineer (AI)
+
+### Ergebnis
+**29/29 Acceptance Criteria erfüllt, 4 Low-Bugs (BUG-25 bis BUG-28), keine Critical/High/Medium — Production-Ready.**
+
+### Acceptance Criteria
+- **Prompt-Formular (15):** alle erfüllt. Einschränkung beim Kriterium „Erzeugen wird angesagt": Das erste Erzeugen und das erste Neuerzeugen werden angesagt, ein zweites Neuerzeugen in Folge nicht (BUG-26).
+- **Der neue Prompt (3):** alle erfüllt. Die leere Vorlage ist per Unit-Test Zeichen für Zeichen gleich dem Spec-Abschnitt, `\n` steht wörtlich, das Beispiel-JSON besteht Schema und Import-Pipeline.
+- **Anleitung angepasst (5):** alle erfüllt, einschließlich der späteren Betreiber-Texte (Hero-Absatz, Infokasten, „Stationen auf die Karte setzen").
+- **Freischaltung (6):** alle erfüllt. Menü ohne „Bald" mit `aria-current="page"` auf `/anleitung`; `/about` mit „Mit KI erstellen" → `/anleitung`; `/create` (leer) mit „Quest mit KI bauen"; Kopfzeile auf 320/375/768/1440 px ohne Überlauf und Überlappung, Tap-Ziele 44 px, Textlink ab 640 px; `/anleitung` statisch, Titel „Quest mit KI erstellen" ohne „bald".
+
+### Über die Frontend-Phase hinaus geprüft
+- **Der Weg zurück:** `npm run test:e2e:angekuendigt` lief zum ersten Mal (das Skript wurde in der Frontend-Phase umgedreht, aber nie ausgeführt). Mit Schalter `false`: **54/54**; danach Schalter wieder `true`, Arbeitsstand unverändert.
+- **Kopfzeile nach der Freischaltung:** Die Überlauf-Tests für 375/768/1440 px lagen in der Ankündigungs-Suite, die sich seit der Freischaltung überspringt — das Kriterium war also ungetestet. Neu abgedeckt in `proj-14-qa.spec.ts`.
+- **320×568 auf `/about`:** primärer CTA bleibt über dem Falz, „Mit KI erstellen" darunter (Edge Case 20 bestätigt).
+- **Tastatur:** fünf Felder, dann „Prompt erzeugen" (Chrome; WebKit/macOS überspringt Buttons per Tab, bekannt).
+- **Bewegung reduzieren:** Box kommt ohne Animation ins Bild. **Doppelklick:** genau eine Box. **Einfügen von 500 Zeichen** ins Wunsch-Feld: auf 300 gekürzt.
+- **Ausgeliefertes HTML:** enthält das Formular, aber nicht den Prompt — der entsteht erst beim Klick.
+
+### Security
+- Markup in Feldern wird als Text gerendert (0 injizierte Elemente, keine Ausführung, kein Dialog) — bereits Teil der Formular-Suite, beide Engines bestanden.
+- Die Eingabe verlässt den Browser nicht: keine fremde Origin, kein Request mit dem eingegebenen Text, kein `localStorage`-Schreibzugriff.
+- Keine Angriffsfläche durch die Freischaltung: statische Seite, kein Backend, keine neuen externen Hosts.
+
+### Bugs
+
+#### BUG-25: Hinweis „Angaben geändert" wird Screenreadern nicht angesagt
+- **Severity:** Low (Barrierefreiheit)
+- **Schritte:** Feld ausfüllen → „Prompt erzeugen" → Feld ändern. Erwartet: Ansage, dass der Prompt veraltet ist. Tatsächlich: Hinweis steht in keiner Live-Region; nur die Button-Beschriftung ändert sich still.
+- **Priorität:** Nice to have. Wächter: `proj-14-qa.spec.ts`, `test.fail`.
+
+#### BUG-26: Wiederholtes Neuerzeugen wird nicht erneut angesagt
+- **Severity:** Low (Barrierefreiheit)
+- **Schritte:** „Prompt erzeugen" dreimal hintereinander. Erwartet: jedes Mal eine Ansage. Tatsächlich: ab dem zweiten Mal derselbe Statustext „Prompt neu erzeugt." — Screenreader lesen einen unveränderten Text in der Regel nicht erneut.
+- **Priorität:** Nice to have. Wächter vorhanden.
+
+#### BUG-27: Kopier-Zustand bleibt nach dem Neuerzeugen stehen
+- **Severity:** Low
+- **Schritte:** Prompt erzeugen, Kopieren schlägt fehl (blockierte Zwischenablage) → Feld ändern → neu erzeugen. Erwartet: Zustand zurückgesetzt. Tatsächlich: „Kopieren hat nicht geklappt" bleibt stehen. Kurz (≤ 2,5 s) nach erfolgreichem Kopieren zeigt der neu erzeugte, nicht kopierte Prompt sogar „Kopiert" — der irreführendere Fall.
+- **Priorität:** Nice to have. Wächter vorhanden.
+
+#### BUG-28: Lime-Fehlerhinweis steht mit anderem Lime im Bild
+- **Severity:** Low (Design System)
+- **Schritte:** 1440×900 (ebenso 390×844), bei „Anzahl" 99 eintragen → „Prompt erzeugen". Erwartet: ein Lime-Element pro Screen. Tatsächlich: „Bitte eine Zahl von 1 bis 20" und der Lime-Abschnitt „Danach — nicht vergessen" sind gleichzeitig sichtbar — ohne Box folgt der Abschnitt direkt unter dem Formular. **Die Frontend-Notiz („nichts weiter unten im Bild") war damit falsch.**
+- **Priorität:** Nice to have. Wächter vorhanden.
+
+### Testsuiten
+- **Unit:** 455/455.
+- **E2E gesamt, beide Engines:** 1526 wie erwartet, 1 unerwartet, 71 übersprungen. Der eine: `proj-12-sw-nur-production` (Mobile Safari), seriell 3× 6/6 — die dokumentierte Service-Worker-Wackelei, keine Regression.
+- **Neu:** `tests/proj-14-qa.spec.ts`, 13 Tests je Engine (25 bestanden, 1 übersprungen).
+- **Weg zurück:** `npm run test:e2e:angekuendigt` 54/54.
+
+### Nicht abgedeckt
+Das Gespräch mit einer echten KI (Ablauf eingehalten, Datei importierbar?) — die wichtigste offene Frage des Features, nur am echten Tool zu beantworten. Dazu echtes iPhone und Firefox (Binary fehlt). Eine eigene WebKit-Sonde der Kopfzeile hing am kalten Bild-Optimierer (dokumentiertes lokales Artefakt); dieselbe Prüfung lief über die Playwright-Suite auf WebKit grün.
+
+### Summary
+- **Acceptance Criteria:** 29/29
+- **Bugs:** 4 (0 Critical, 0 High, 0 Medium, 4 Low)
+- **Security:** ohne Befund
+- **Production Ready:** YES
