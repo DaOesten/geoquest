@@ -1,11 +1,11 @@
 import {
-  BookOpen,
   Coffee,
   Gamepad2,
   Info,
   Pencil,
   ScrollText,
   ShieldCheck,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 
@@ -23,9 +23,30 @@ import {
  * Client-Komponente heraus exportiert und serverseitig importiert wird, kommt
  * dort als Referenz-Proxy an, nicht als das Array selbst.
  *
- * Kein Eintrag für den Startscreen `/`: er bietet nichts als die Wahl
+ * Kein Eintrag für den Startscreen `/app`: er bietet nichts als die Wahl
  * zwischen Play und Create, und beide stehen hier direkt darüber.
  */
+
+/**
+ * Die Seitenadressen der App an einer Stelle (PROJ-16, 2026-10-24).
+ *
+ * Seit PROJ-16 liegt die Landingpage auf `/`, der Startscreen auf `/app` und
+ * die KI-Seite auf `/mit-ki-erstellen`. Vorher standen die Adressen als
+ * Zeichenketten in rund einem Dutzend Dateien, und `HEADER_NAV_LINKS` fand den
+ * KI-Link über den Text `"/anleitung"`: Wäre die Adresse an einer Stelle
+ * geändert worden und an der anderen nicht, wäre der Link still verschwunden.
+ */
+export const ROUTES = {
+  home: "/",
+  app: "/app",
+  play: "/play",
+  create: "/create",
+  mitKiErstellen: "/mit-ki-erstellen",
+  impressum: "/impressum",
+  datenschutz: "/datenschutz",
+  /** Nur als iframe auf `/` eingebettet, `noindex`, in keiner Navigation. */
+  simulation: "/simulation",
+} as const;
 
 export interface AppNavLink {
   href: string;
@@ -65,22 +86,25 @@ export const APP_NAV_GROUPS: readonly AppNavGroup[] = [
       // Controller statt Play-Dreieck: Das Dreieck liest sich als "Video
       // abspielen", der Controller sagt "Spielen" — und trifft den Gaming-Ton
       // der Zielgruppe (PRD: 10-15 Jahre).
-      { href: "/play", label: "Play", icon: Gamepad2 },
-      { href: "/create", label: "Create", icon: Pencil },
+      { href: ROUTES.play, label: "Play", icon: Gamepad2 },
+      { href: ROUTES.create, label: "Create", icon: Pencil },
+      // Seit PROJ-16 hier statt unter „Info": Die Seite ist ein Werkzeug, um
+      // eine Quest zu bauen, keine Information über die App. Daher auch der
+      // Name des Hero-Buttons statt „Anleitung" — Klick und Ziel heißen gleich.
+      { href: ROUTES.mitKiErstellen, label: "Mit KI erstellen", icon: Sparkles },
     ],
   },
   {
     title: "Info",
     links: [
-      { href: "/about", label: "Über", icon: Info },
-      { href: "/anleitung", label: "Anleitung", icon: BookOpen },
+      { href: ROUTES.home, label: "Über", icon: Info },
     ],
   },
   {
     title: "Rechtliches",
     links: [
-      { href: "/impressum", label: "Impressum", icon: ScrollText },
-      { href: "/datenschutz", label: "Datenschutz", icon: ShieldCheck },
+      { href: ROUTES.impressum, label: "Impressum", icon: ScrollText },
+      { href: ROUTES.datenschutz, label: "Datenschutz", icon: ShieldCheck },
     ],
   },
   // Letzte Gruppe, ohne Hervorhebung: Play und Create sind der Zweck der App,
@@ -103,7 +127,7 @@ export const APP_NAV_GROUPS: readonly AppNavGroup[] = [
  * suchen. Im Burger-Menu bleiben dagegen alle sechs Ziele.
  */
 export const HEADER_NAV_LINKS = APP_NAV_GROUPS.flatMap((group) => group.links).filter(
-  ({ href }) => href === "/anleitung"
+  ({ href }) => href === ROUTES.mitKiErstellen
 );
 
 /**

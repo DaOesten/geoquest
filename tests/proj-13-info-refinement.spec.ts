@@ -6,13 +6,13 @@ import { test, expect } from "@playwright/test";
  * Abschnitt „Navigation & Erscheinungsbild".
  */
 
-const INFO_PAGES = ["/about", "/anleitung", "/impressum", "/datenschutz"];
+const INFO_PAGES = ["/", "/mit-ki-erstellen", "/impressum", "/datenschutz"];
 
 test.describe("Erscheinungsbild", () => {
   test("kein Ambient-Backdrop — gleicher ruhiger Hintergrund wie der Start-Screen", async ({
     page,
   }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     // Der Backdrop rendert einen fixed Vollflächen-Layer mit ~46 Partikeln.
     await expect(page.locator("div.pointer-events-none.fixed.inset-0")).toHaveCount(0);
@@ -21,7 +21,7 @@ test.describe("Erscheinungsbild", () => {
     const aboutBg = await page
       .locator("body")
       .evaluate((el) => getComputedStyle(el).backgroundColor);
-    await page.goto("/");
+    await page.goto("/app");
     const homeBg = await page
       .locator("body")
       .evaluate((el) => getComputedStyle(el).backgroundColor);
@@ -29,7 +29,7 @@ test.describe("Erscheinungsbild", () => {
   });
 
   test("keine Trennlinie zwischen Header und Inhalt", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
     const header = page.locator("header");
     const width = await header.evaluate(
       (el) => getComputedStyle(el).borderBottomWidth
@@ -45,7 +45,7 @@ test.describe("Erscheinungsbild", () => {
   });
 
   test("kein Hinweis auf Zielgruppe oder Lesezeit unter dem Titel", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
     await expect(page.getByText(/Lesezeit/i)).toHaveCount(0);
     await expect(page.getByText(/Für Ersteller/i)).toHaveCount(0);
   });
@@ -55,7 +55,7 @@ test.describe("Burger-Menu (mobil)", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test("öffnet sich und zeigt alle vier Ziele", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     const trigger = page.getByRole("button", { name: "Menü öffnen" });
     await expect(trigger).toBeVisible();
@@ -70,7 +70,7 @@ test.describe("Burger-Menu (mobil)", () => {
     for (const label of ["Play", "Create", "Über", "Impressum", "Datenschutz"]) {
       await expect(menu.getByRole("link", { name: label, exact: true })).toBeVisible();
     }
-    await expect(menu.locator('a[href="/anleitung"]')).toBeVisible();
+    await expect(menu.locator('a[href="/mit-ki-erstellen"]')).toBeVisible();
     for (const group of ["App", "Info", "Rechtliches"]) {
       await expect(menu.getByText(group, { exact: true })).toBeVisible();
     }
@@ -79,7 +79,7 @@ test.describe("Burger-Menu (mobil)", () => {
   test("schließt sich beim Antippen eines Eintrags und navigiert dorthin", async ({
     page,
   }) => {
-    await page.goto("/about");
+    await page.goto("/");
     await page.getByRole("button", { name: "Menü öffnen" }).click();
     await page
       .getByRole("dialog")
@@ -91,17 +91,17 @@ test.describe("Burger-Menu (mobil)", () => {
   });
 
   test("Escape schließt das Menu, ohne zu navigieren", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
     await page.getByRole("button", { name: "Menü öffnen" }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
 
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await expect(page).toHaveURL(/\/about$/);
+    await expect(page).toHaveURL(/^https?:\/\/[^/]+\/$/);
   });
 
   test("Fokus liegt im geöffneten Menu (Radix Focus-Trap)", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
     await page.getByRole("button", { name: "Menü öffnen" }).click();
 
     const focusInsideDialog = await page.evaluate(() => {
@@ -114,7 +114,7 @@ test.describe("Burger-Menu (mobil)", () => {
 
 test.describe("Häufige Fragen (Accordion)", () => {
   test("ist eingeklappt, öffnet sich auf Klick", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     const answer = page.getByText(/Geo Quest ist vollständig kostenlos/);
     await expect(answer).toBeHidden();
@@ -126,7 +126,7 @@ test.describe("Häufige Fragen (Accordion)", () => {
   test("alle Antworten bleiben eingeklappt im HTML und im FAQPage-JSON-LD", async ({
     page,
   }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     // Crawler und KI-Systeme lesen das Markup, nicht die gerenderten Pixel.
     const html = await page.content();
@@ -156,7 +156,7 @@ test.describe("Für wen — Zielgruppen-Karten (Refinement 4, gezogen in Refinem
   // eine Quest erstellen. „Gruppen & Events" heißt jetzt „Jugendarbeit &
   // Ferienprogramm". Die Titel tragen kein „Für" mehr.
   test("drei Zielgruppen für die Erwachsenen, die Quests erstellen", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     await expect(
       page.getByRole("heading", { name: "Für wen ist Geo Quest?" })
@@ -275,13 +275,13 @@ test.describe("Responsive", () => {
   test("Desktop zeigt die Navigationslinks UND das Burger-Menu", async ({ page }) => {
     // PROJ-14: Der Textlink "Anleitung" ist der einzige der Desktop-Zeile.
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/about");
+    await page.goto("/");
 
     // Seit 2026-09-06 auch am Desktop sichtbar: das Menu führt Play und Create,
     // Ziele, die die Desktop-Zeile nicht abbildet (PROJ-13 Refinement 3).
     await expect(page.getByRole("button", { name: "Menü öffnen" })).toBeVisible();
     await expect(
-      page.getByRole("navigation").getByRole("link", { name: "Anleitung", exact: true })
+      page.getByRole("navigation").getByRole("link", { name: "Mit KI erstellen", exact: true })
     ).toBeVisible();
     await expect(
       page.getByRole("navigation").getByRole("link", { name: "Zur App", exact: true })
@@ -291,12 +291,12 @@ test.describe("Responsive", () => {
 
 test.describe("Zurückpfeil & Footer (Refinement 2)", () => {
   for (const path of ["/impressum", "/datenschutz"]) {
-    test(`${path} hat einen Zurückpfeil nach /about`, async ({ page }) => {
+    test(`${path} hat einen Zurückpfeil nach /`, async ({ page }) => {
       await page.goto(path);
       const arrow = page.getByRole("link", { name: "Zurück" });
       await expect(arrow).toBeVisible();
       await arrow.click();
-      await expect(page).toHaveURL(/\/about$/);
+      await expect(page).toHaveURL(/^https?:\/\/[^/]+\/$/);
     });
   }
 
@@ -321,7 +321,7 @@ test.describe("Zurückpfeil & Footer (Refinement 2)", () => {
   test("Footer nennt keine Postanschrift — die bleibt dem Impressum vorbehalten", async ({
     page,
   }) => {
-    await page.goto("/about");
+    await page.goto("/");
     const footer = await page.getByRole("contentinfo").innerText();
     expect(footer).not.toContain("Kerbelweg");
     expect(footer).not.toContain("22337");
@@ -331,17 +331,17 @@ test.describe("Zurückpfeil & Footer (Refinement 2)", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/about");
+    await page.goto("/");
     const nav = page.locator("header nav");
     await expect(nav.getByRole("link", { name: "Impressum" })).toHaveCount(0);
     await expect(nav.getByRole("link", { name: "Datenschutz" })).toHaveCount(0);
     // PROJ-14: "Anleitung" ist der einzige Textlink der Desktop-Zeile.
-    await expect(nav.getByRole("link", { name: "Anleitung" })).toHaveCount(1);
+    await expect(nav.getByRole("link", { name: "Mit KI erstellen" })).toHaveCount(1);
   });
 
   test("Burger-Menü behält die Rechtslinks (jetzt neben Play/Create)", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/about");
+    await page.goto("/");
     await page.getByRole("button", { name: "Menü öffnen" }).click();
     const menu = page.getByRole("dialog");
     for (const label of ["Play", "Create", "Über", "Impressum", "Datenschutz"]) {
@@ -349,10 +349,10 @@ test.describe("Zurückpfeil & Footer (Refinement 2)", () => {
     }
     // PROJ-14: "Anleitung" trägt jetzt die Kennzeichnung "Bald" und ist
     // deshalb kein exakter Namenstreffer mehr.
-    await expect(menu.locator('a[href="/anleitung"]')).toBeVisible();
+    await expect(menu.locator('a[href="/mit-ki-erstellen"]')).toBeVisible();
   });
 
-  test("Impressum und Datenschutz laufen im Light-Theme, /about und /anleitung dunkel", async ({ page }) => {
+  test("Impressum und Datenschutz laufen im Light-Theme, / und /mit-ki-erstellen dunkel", async ({ page }) => {
     // Refinement 2026-09-06: Die beiden Rechtstexte werden gelesen, nicht
     // inszeniert — sie bekommen das helle Theme, die Marketingseiten nicht.
     for (const path of ["/impressum", "/datenschutz"]) {
@@ -360,7 +360,7 @@ test.describe("Zurückpfeil & Footer (Refinement 2)", () => {
       const shell = page.locator('[data-theme="light"]').first();
       await expect(shell, path).toBeVisible();
     }
-    for (const path of ["/about", "/anleitung"]) {
+    for (const path of ["/", "/mit-ki-erstellen"]) {
       await page.goto(path);
       await expect(page.locator('[data-theme="light"]'), path).toHaveCount(0);
     }
@@ -368,7 +368,7 @@ test.describe("Zurückpfeil & Footer (Refinement 2)", () => {
 
   test("Footer-Links erfüllen die 44px-Mindesthöhe", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/about");
+    await page.goto("/");
     const footer = page.getByRole("contentinfo");
     for (const name of ["Impressum", "Datenschutz"]) {
       const box = await footer

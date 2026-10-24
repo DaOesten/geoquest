@@ -17,7 +17,8 @@ import { AboutHeroPhone } from "@/components/about-hero-phone";
 import { AboutSimulationPhone } from "@/components/about-simulation-phone";
 import { AboutVideo } from "@/components/about-video";
 import { InfoPageShell } from "@/components/info-page-shell";
-import { KOFI_URL } from "@/lib/app-nav";
+import { AppStartRedirect } from "@/components/app-start-redirect";
+import { KOFI_URL, ROUTES } from "@/lib/app-nav";
 import {
   Accordion,
   AccordionContent,
@@ -46,7 +47,7 @@ export const metadata: Metadata = {
     "Schulausflug",
     "kostenlose Actionbound Alternative",
   ],
-  alternates: { canonical: "/about" },
+  alternates: { canonical: ROUTES.home },
   openGraph: {
     title: "Geo Quest — die reale Welt wird zum Spielfeld",
     description: DESCRIPTION,
@@ -286,8 +287,15 @@ const SECTION_LABEL =
 const SECTION_TITLE =
   "mt-2 font-display italic text-[clamp(1.5rem,4vw,2.4rem)] uppercase leading-[1] text-gq-white";
 
-export default function AboutPage() {
+/**
+ * Die Landingpage (PROJ-13). Seit PROJ-16 (2026-10-24) auf `/` statt `/about`:
+ * Die Startadresse einer Domain bekommt die meisten Links und wird bei Suche
+ * und KI zuerst gelesen. Der App-Start liegt auf `/app`.
+ */
+export default function LandingPage() {
   return (
+    <>
+    <AppStartRedirect />
     <InfoPageShell
       showLogo
       showSupport
@@ -324,16 +332,16 @@ export default function AboutPage() {
             {/* Direkt in den Creator statt über den Mode-Switch `/`: wer von
                 einer Landingpage kommt, hat sich für „erstellen" entschieden. */}
             <Link
-              href="/create"
+              href={ROUTES.create}
               className="flex items-center justify-center gap-2 h-12 px-7 rounded-pill bg-gq-teal text-gq-black text-tech text-xs tracking-[0.08em] transition-all duration-base ease-gq hover:bg-gq-teal-hover active:scale-[0.96]"
             >
               Quest erstellen
               <ArrowRight className="w-4 h-4" />
             </Link>
-            {/* Zweiter Weg: die KI-Anleitung (PROJ-14). Auf schmalen Handys
+            {/* Zweiter Weg: die KI-Seite (PROJ-14, seit PROJ-16 /mit-ki-erstellen). Auf schmalen Handys
                 darf er unter dem Falz liegen, der primäre CTA nicht. */}
             <Link
-              href="/anleitung"
+              href={ROUTES.mitKiErstellen}
               className="flex items-center justify-center gap-2 h-12 px-7 rounded-pill border border-gq-teal text-gq-teal text-tech text-xs tracking-[0.08em] transition-all duration-base ease-gq hover:bg-gq-teal/10 active:scale-[0.96]"
             >
               <Sparkles className="w-4 h-4" />
@@ -519,7 +527,7 @@ export default function AboutPage() {
           Keine Werbung. Keine Anmeldung. Einfach draußen spielen.
         </p>
         <Link
-          href="/create"
+          href={ROUTES.create}
           className="mx-auto mt-6 inline-flex items-center justify-center gap-2 h-12 px-8 rounded-pill bg-gq-teal text-gq-black text-tech text-xs tracking-[0.08em] transition-all duration-base ease-gq hover:bg-gq-teal-hover active:scale-[0.96]"
         >
           Quest erstellen
@@ -527,5 +535,6 @@ export default function AboutPage() {
         </Link>
       </section>
     </InfoPageShell>
+    </>
   );
 }

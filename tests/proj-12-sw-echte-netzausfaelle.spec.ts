@@ -44,11 +44,11 @@ test.describe("PROJ-12: Worker meldet nur echte Netzausfaelle", () => {
     // Playwright-Fehler (dokumentierte Umgebungsgrenze, siehe Hauptsuite).
     test.skip(browserName === "webkit", "WebKit kann Offline-Navigation nicht nachstellen");
 
-    await page.goto("/");
+    await page.goto("/app");
     await warteAufKontrolle(page);
 
     await context.setOffline(true);
-    await page.goto("/");
+    await page.goto("/app");
 
     // Das Refinement darf die Offline-Seite NICHT abschaffen — sie ist der
     // Grund, warum es den Worker ueberhaupt gibt.
@@ -62,7 +62,7 @@ test.describe("PROJ-12: Worker meldet nur echte Netzausfaelle", () => {
     // `navigator.onLine`. Wuerde setOffline() den Wert nicht aendern, pruefte
     // der Test oben etwas anderes als er behauptet — und das waere nicht zu
     // sehen, weil er trotzdem gruen liefe.
-    await page.goto("/");
+    await page.goto("/app");
     expect(await page.evaluate(() => navigator.onLine)).toBe(true);
 
     await context.setOffline(true);
@@ -93,10 +93,10 @@ test.describe("PROJ-12: Worker meldet nur echte Netzausfaelle", () => {
    */
 
   test("der Worker cacht weiterhin ausschliesslich die Offline-Seite", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/app");
     await warteAufKontrolle(page);
     await page.goto("/play");
-    await page.goto("/about");
+    await page.goto("/");
 
     // Das PRD-Non-Goal "Kein Offline-Modus" bleibt strukturell unverletzbar.
     // Die Versionserhoehung auf v2 darf daran nichts geaendert haben.
@@ -113,7 +113,7 @@ test.describe("PROJ-12: Worker meldet nur echte Netzausfaelle", () => {
   });
 
   test("der Cache-Name ist auf v2 gewechselt und v1 ist abgeraeumt", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/app");
     await warteAufKontrolle(page);
 
     const namen = await page.waitForFunction(async () => {
@@ -139,7 +139,7 @@ test.describe("PROJ-12: Worker meldet nur echte Netzausfaelle", () => {
   });
 
   test("Nicht-Navigationen fasst der Worker unveraendert nicht an", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/app");
     await warteAufKontrolle(page);
 
     // Kartenkacheln, Medien, JS und CSS verhalten sich exakt wie ohne Worker.

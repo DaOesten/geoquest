@@ -18,9 +18,9 @@ const box = (page: Page) => page.getByRole("region", { name: "Prompt zum Kopiere
 
 test.describe("Freischaltung — Kopfzeile ohne Überlauf", () => {
   for (const w of [375, 768, 1440]) {
-    test(`${w}px: Info-Kopfzeile ohne Überlauf, Link „Anleitung" ab sm sichtbar`, async ({ page }) => {
+    test(`${w}px: Info-Kopfzeile ohne Überlauf, Link „Mit KI erstellen" ab sm sichtbar`, async ({ page }) => {
       await page.setViewportSize({ width: w, height: 800 });
-      for (const path of ["/about", "/anleitung", "/impressum"]) {
+      for (const path of ["/", "/mit-ki-erstellen", "/impressum"]) {
         await page.goto(path);
         const r = await page.evaluate(() => {
           const h = document.querySelector("header")!;
@@ -37,7 +37,7 @@ test.describe("Freischaltung — Kopfzeile ohne Überlauf", () => {
             }
           return {
             overflow: document.documentElement.scrollWidth - innerWidth,
-            link: [...h.querySelectorAll('a[href="/anleitung"]')].some((e) => e.getBoundingClientRect().width > 0),
+            link: [...h.querySelectorAll('a[href="/mit-ki-erstellen"]')].some((e) => e.getBoundingClientRect().width > 0),
             minH: Math.min(...rs.map((r) => r.height)),
             overlap,
           };
@@ -50,19 +50,19 @@ test.describe("Freischaltung — Kopfzeile ohne Überlauf", () => {
     });
   }
 
-  test("320×568: der primäre CTA auf /about bleibt über dem Falz, der KI-CTA darf darunter liegen", async ({ page }) => {
+  test("320×568: der primäre CTA auf / bleibt über dem Falz, der KI-CTA darf darunter liegen", async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 568 });
-    await page.goto("/about");
+    await page.goto("/");
     const primaer = await page.getByRole("link", { name: /^Quest erstellen/ }).first().boundingBox();
     expect(primaer!.y + primaer!.height).toBeLessThanOrEqual(568);
-    await expect(page.getByRole("link", { name: /Mit KI erstellen/ })).toHaveAttribute("href", "/anleitung");
+    await expect(page.getByRole("link", { name: /Mit KI erstellen/ })).toHaveAttribute("href", "/mit-ki-erstellen");
   });
 });
 
 test.describe("Formular — über die Spec hinaus", () => {
   test("Tab-Reihenfolge: fünf Felder, dann der Button", async ({ page, browserName }) => {
     test.skip(browserName === "webkit", "WebKit/macOS: Tab überspringt Buttons");
-    await page.goto("/anleitung");
+    await page.goto("/mit-ki-erstellen");
     await page.locator("#angabe-thema").focus();
     const ids: string[] = [];
     for (let i = 0; i < 6; i++) {
@@ -82,27 +82,27 @@ test.describe("Formular — über die Spec hinaus", () => {
   test("Bewegung reduziert: die Box kommt trotzdem ins Bild", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/anleitung");
+    await page.goto("/mit-ki-erstellen");
     expect(await page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches)).toBe(true);
     await erzeugen(page);
     await expect(page.getByRole("button", { name: /Kopieren/ })).toBeInViewport();
   });
 
   test("Doppelklick erzeugt genau eine Box", async ({ page }) => {
-    await page.goto("/anleitung");
+    await page.goto("/mit-ki-erstellen");
     await page.locator('form button[type="submit"]').dblclick();
     await expect(box(page)).toHaveCount(1);
   });
 
   test("Einfügen über die Höchstlänge wird abgeschnitten", async ({ page }) => {
-    await page.goto("/anleitung");
+    await page.goto("/mit-ki-erstellen");
     await page.locator("#angabe-wuensche").focus();
     await page.keyboard.insertText("x".repeat(500));
     expect((await page.inputValue("#angabe-wuensche")).length).toBe(300);
   });
 
-  test("die Startseite /anleitung liefert den Prompt nicht im HTML aus (erst nach dem Klick)", async ({ request }) => {
-    const html = await (await request.get("/anleitung")).text();
+  test("die Startseite /mit-ki-erstellen liefert den Prompt nicht im HTML aus (erst nach dem Klick)", async ({ request }) => {
+    const html = await (await request.get("/mit-ki-erstellen")).text();
     expect(html).toContain("Prompt erzeugen");
     expect(html).not.toContain("Du bist Autor:in von Schnitzeljagden");
   });
@@ -112,7 +112,7 @@ test.describe("Bugs aus der QA vom 2026-10-24", () => {
   // BUG-25 (Low, behoben 2026-10-24): Der Hinweis „Angaben geändert" erschien
   // ohne Ansage — er stand in keiner Live-Region.
   test("BUG-25: der Hinweis „Angaben geändert“ wird Screenreadern angesagt", async ({ page }) => {
-    await page.goto("/anleitung");
+    await page.goto("/mit-ki-erstellen");
     await page.fill("#angabe-thema", "Piraten");
     await erzeugen(page);
     await page.fill("#angabe-thema", "Detektiv");
@@ -127,7 +127,7 @@ test.describe("Bugs aus der QA vom 2026-10-24", () => {
   });
 
   test("BUG-25: die Live-Region steht schon vor dem Hinweis im DOM", async ({ page }) => {
-    await page.goto("/anleitung");
+    await page.goto("/mit-ki-erstellen");
     await page.fill("#angabe-thema", "Piraten");
     await erzeugen(page);
     // Vor der Änderung: Region da, aber leer.
@@ -142,7 +142,7 @@ test.describe("Bugs aus der QA vom 2026-10-24", () => {
   // setzte zweimal denselben Statustext — Screenreader lasen den zweiten
   // nicht vor.
   test("BUG-26: jedes Erzeugen ändert den Statustext", async ({ page }) => {
-    await page.goto("/anleitung");
+    await page.goto("/mit-ki-erstellen");
     const status = page.getByRole("status").filter({ hasText: /Prompt/ });
     await erzeugen(page);
     await erzeugen(page);
@@ -161,7 +161,7 @@ test.describe("Bugs aus der QA vom 2026-10-24", () => {
         configurable: true,
       });
     });
-    await page.goto("/anleitung");
+    await page.goto("/mit-ki-erstellen");
     await erzeugen(page);
     await page.getByRole("button", { name: /Kopieren/ }).click();
     await expect(page.getByText(/Kopieren hat nicht geklappt/)).toBeVisible();
@@ -177,7 +177,7 @@ test.describe("Bugs aus der QA vom 2026-10-24", () => {
         configurable: true,
       });
     });
-    await page.goto("/anleitung");
+    await page.goto("/mit-ki-erstellen");
     await erzeugen(page);
     await page.getByRole("button", { name: /Kopieren/ }).click();
     await expect(page.getByRole("button", { name: /Kopiert/ })).toBeVisible();
@@ -196,7 +196,7 @@ test.describe("Bugs aus der QA vom 2026-10-24", () => {
   // deutlich von Lime verschieden.
   test("BUG-28: der Fehlerhinweis ist nicht Lime und gut lesbar", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/anleitung");
+    await page.goto("/mit-ki-erstellen");
     await page.fill("#angabe-anzahl", "99");
     await erzeugen(page);
     const fehler = page.getByText("Bitte eine Zahl von 1 bis 20");

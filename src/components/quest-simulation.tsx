@@ -45,7 +45,7 @@ const COLOR_MAP = {
 
 /**
  * Quest-Simulation auf /about (PROJ-13, Refinement 13) — läuft im iframe der
- * Route /about/simulation.
+ * Route /simulation (bis PROJ-16: /about/simulation).
  *
  * Bildet den Ablauf von `QuestPlayer` nach, mit den ECHTEN Screens für Start,
  * Stationsliste, Ankunft, Stationsinhalte und Ende. Anders als dort:

@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { AppNavMenu } from "@/components/app-nav-menu";
 import { SupportLink } from "@/components/support-link";
 import { InfoFooter } from "@/components/info-footer";
-import { HEADER_NAV_LINKS } from "@/lib/app-nav";
+import { HEADER_NAV_LINKS, ROUTES } from "@/lib/app-nav";
 
 interface InfoPageShellProps {
   /** Show the brand lockup above the eyebrow (front page only — subpages go without). */
@@ -49,7 +49,7 @@ interface InfoPageShellProps {
 /** Shared max width so header, hero and body columns line up on every breakpoint. */
 const CONTAINER = "mx-auto w-full max-w-[1100px] px-5 sm:px-8";
 /**
- * Shared frame for the static info pages (/about, /anleitung, /impressum,
+ * Shared frame for the static info pages (/, /mit-ki-erstellen, /impressum,
  * /datenschutz — PROJ-13).
  *
  * Default ist Dark wie die Player-Seite: /about und /anleitung sind die
@@ -125,7 +125,7 @@ export function InfoPageShell({
             {showSupport && <SupportLink />}
 
             <Link
-              href="/"
+              href={ROUTES.app}
               className="flex items-center h-11 px-5 rounded-pill border border-primary text-primary text-tech text-[11px] tracking-[0.08em] transition-all duration-base ease-gq hover:bg-primary/10 active:scale-[0.96]"
             >
               Zur App

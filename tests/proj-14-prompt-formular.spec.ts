@@ -37,7 +37,7 @@ async function angaben(page: Page): Promise<string[]> {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/anleitung");
+  await page.goto("/mit-ki-erstellen");
 });
 
 test.describe("Prompt-Formular", () => {
@@ -290,7 +290,7 @@ test.describe("Darstellung", () => {
   ] as const) {
     test(`${w}px: kein Überlauf, 16px Schrift, Tap-Ziele ≥ 44px`, async ({ page }) => {
       await page.setViewportSize({ width: w, height: h });
-      await page.goto("/anleitung");
+      await page.goto("/mit-ki-erstellen");
       await feld(page, "Thema").fill("Piraten");
       await erzeugen(page);
       await feld(page, "Thema").fill("Weltraum");

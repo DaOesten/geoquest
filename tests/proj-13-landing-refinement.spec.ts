@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * PROJ-13 — Refinement 4 (2026-09-07): `/about` wird zur Marketing-Landingpage.
+ * PROJ-13 — Refinement 4 (2026-09-07): `/` wird zur Marketing-Landingpage.
  * Ein test() pro Acceptance Criterion aus dem gleichnamigen Spec-Abschnitt.
  *
  * Seit Refinement 12 (2026-10-15, „/about für Eltern und Lehrkräfte") auf den
@@ -12,7 +12,7 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Hero", () => {
   test("Headline und die Kostenlos-Zeile stehen im Hero", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
       "Die reale Welt"
@@ -28,7 +28,7 @@ test.describe("Hero", () => {
   test("der Hero bleibt auf Headline, Subline, Preiszeile und CTAs beschränkt", async ({
     page,
   }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     // Am 2026-09-09 auf das Nötigste gekürzt (BUG-7): Zielgruppen-Aufzählung
     // und Spielmechanik sind raus — beide kosteten 168px an der teuersten
@@ -41,7 +41,7 @@ test.describe("Hero", () => {
   });
 
   test("die Spielmechanik steht in Hero und Schritten", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     // Refinement 16: Der Hero-Absatz sagt nur noch, was die Kinder erleben
     // („draußen neue Orte"); den Weg von Station zu Station trägt allein
@@ -51,7 +51,7 @@ test.describe("Hero", () => {
   });
 
   test("kein Eyebrow über der Headline", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     // Entfallen am 2026-09-09: „Über Geo Quest" beschrieb die Seite, statt
     // den Besucher anzusprechen. Die Shell darf dafür kein leeres <p> als
@@ -66,7 +66,7 @@ test.describe("Hero", () => {
   });
 
   test("der Hero spricht den Ersteller an, nicht den Spieler", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     // Gezogen in Refinement 12: Bis dahin stand hier „Erstellen und Spielen
     // gleichwertig" mit einem zweiten, an den Spieler gerichteten Satz. Die
@@ -78,21 +78,21 @@ test.describe("Hero", () => {
   test("primärer CTA führt direkt in den Creator, ohne Umweg über /", async ({
     page,
   }) => {
-    await page.goto("/about");
+    await page.goto("/");
     await page.getByRole("link", { name: /Quest erstellen/i }).first().click();
     await expect(page).toHaveURL(/\/create$/);
   });
 
   // PROJ-14: der zweite Hero-CTA zur KI-Anleitung.
   test("sekundärer KI-CTA im Hero", async ({ page }) => {
-    await page.goto("/about");
-    await expect(page.getByRole("link", { name: /Mit KI erstellen/i })).toHaveCount(1);
+    await page.goto("/");
+    await expect(page.getByRole("main").getByRole("link", { name: /Mit KI erstellen/i })).toHaveCount(1);
   });
 
   test("Abschluss-CTA trägt die neue Überschrift und führt nach /create", async ({
     page,
   }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     await expect(
       page.getByRole("heading", { name: /Deine Umgebung\. Dein Abenteuer\./ })
@@ -107,7 +107,7 @@ test.describe("Sektionsfolge", () => {
   // Seit Refinement 14 (2026-10-17) sieben statt acht: Die Schritte stehen
   // als Kapitel unter dem Video.
   test("genau sieben Sektionen in der festgelegten Reihenfolge", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     // Hero lebt im Shell-Titelblock (h1), die übrigen sieben sind <section>.
     // Seit 2026-09-08 ohne „Draußen spielen. Wie ein Game." — die Erklärung
@@ -147,7 +147,7 @@ test.describe("Sektionsfolge", () => {
   });
 
   test("gestrichene Sektionen sind verschwunden", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     await expect(
       page.getByRole("heading", { name: "Was drin steckt" })
@@ -180,7 +180,7 @@ test.describe("Sektionsfolge", () => {
 // prüfen.
 test.describe("Vorteile und Zielgruppen", () => {
   test("vier Vorteile: Datenschutz, Bewegung, Baukasten, Browser", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     const section = page.locator("main section", {
       has: page.getByRole("heading", { name: "Gemacht für draußen." }),
@@ -199,7 +199,7 @@ test.describe("Vorteile und Zielgruppen", () => {
   test("drei Zielgruppen-Karten mit je drei Stichpunkten, alle sichtbar", async ({
     page,
   }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     const section = page.locator("main section", {
       has: page.getByRole("heading", { name: "Für wen ist Geo Quest?" }),
@@ -217,7 +217,7 @@ test.describe("Vorteile und Zielgruppen", () => {
   });
 
   test("entfallene Kinder-Ansprache ist weg", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     for (const gone of [
       /Für Kinder & Jugendliche/,
@@ -237,7 +237,7 @@ test.describe("Schritte", () => {
   test("Kapitel 02 spricht von Weitergeben als Datei, nicht von einem Teilen-Link", async ({
     page,
   }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     await expect(page.getByText(/^Als Datei auf die Handys der Spieler\.$/)).toBeVisible();
     // Kein Teilen-Versprechen, das die App nicht einlöst — auch nicht das
@@ -249,7 +249,7 @@ test.describe("Schritte", () => {
 
 test.describe("Vokabular: Suchsprache außen, Quest innen", () => {
   test("das Produkt heißt Quest — „Rallye\" nur noch als Anlass", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     // Seit Refinement 12 holt der Hero mit „GPS-Schnitzeljagden" ab, nicht
     // mehr mit „GPS-Rallye". „Rallye" darf als Anlass stehen
@@ -266,7 +266,7 @@ test.describe("Vokabular: Suchsprache außen, Quest innen", () => {
   test("Buttons heißen „Quest erstellen\", nicht „Rallye erstellen\"", async ({
     page,
   }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     await expect(
       page.getByRole("link", { name: /Quest erstellen/i })
@@ -277,14 +277,14 @@ test.describe("Vokabular: Suchsprache außen, Quest innen", () => {
   });
 
   test("kein Erklärsatz, der Rallye und Quest gleichsetzt", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
     await expect(page.getByText(/heißt (sie|das) Quest/i)).toHaveCount(0);
   });
 });
 
 test.describe("FAQ nach dem Refinement", () => {
   test("acht Fragen aus Sicht von Eltern und Lehrkräften", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     // Auf die Accordion-Trigger begrenzt statt „jeder Button in einer
     // Sektion" — dort stehen auch der Video-Startknopf und die Demo.
@@ -312,7 +312,7 @@ test.describe("FAQ nach dem Refinement", () => {
   test("der Inhalt der gestrichenen Feature-Karten steht in HTML und JSON-LD", async ({
     page,
   }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     const html = await page.content();
     for (const needle of [
@@ -332,7 +332,7 @@ test.describe("FAQ nach dem Refinement", () => {
   test("die Zeitangabe steht nur in der eingeklappten FAQ, nicht im Marketing-Text", async ({
     page,
   }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     // Sichtbar ist sie nicht — sie lebt in einer geschlossenen Antwort.
     await expect(page.getByText(/eine halbe Stunde/)).toBeHidden();
@@ -345,7 +345,7 @@ test.describe("SEO", () => {
   test("Title trägt weiterhin „Schnitzeljagd\", Keywords zusätzlich die Rallye-Begriffe", async ({
     page,
   }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     await expect(page).toHaveTitle(/Schnitzeljagd/);
 
@@ -365,7 +365,7 @@ test.describe("Responsive", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 360, height: 640 });
-    await page.goto("/about");
+    await page.goto("/");
 
     const overflows = await page.evaluate(
       () =>
@@ -388,7 +388,7 @@ test.describe("Responsive", () => {
 
   test("mehrteilige Sektionen laufen am Desktop mehrspaltig", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto("/about");
+    await page.goto("/");
 
     // Die drei Schritte stehen nebeneinander, nicht untereinander.
     const steps = page.locator("main ol li");
@@ -401,7 +401,7 @@ test.describe("Responsive", () => {
 });
 
 test.describe("Unberührte Nachbarseiten", () => {
-  for (const path of ["/anleitung", "/impressum", "/datenschutz"]) {
+  for (const path of ["/mit-ki-erstellen", "/impressum", "/datenschutz"]) {
     test(`${path} lädt unverändert`, async ({ page }) => {
       const response = await page.goto(path);
       expect(response?.status()).toBe(200);
@@ -410,7 +410,7 @@ test.describe("Unberührte Nachbarseiten", () => {
   }
 
   test("Header trägt weiterhin „Zur App\" und das Burger-Menu", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     await expect(page.getByRole("link", { name: "Zur App" })).toBeVisible();
     await expect(

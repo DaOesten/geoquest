@@ -21,14 +21,15 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
-      // Einzige Ausnahme (PROJ-13, Refinement 13): Die Quest-Simulation läuft
-      // als iframe in /about. SAMEORIGIN statt DENY — fremde Seiten können sie
+      // Einzige Ausnahme (PROJ-13, Refinement 13; seit PROJ-16 unter
+      // /simulation statt /about/simulation): Die Quest-Simulation läuft
+      // als iframe auf der Landingpage /. SAMEORIGIN statt DENY — fremde Seiten können sie
       // weiterhin nicht einbetten, nur die eigene Domain. Die Route hat keine
       // Eingaben oder Aktionen mit Wirkung (kein Speicher, kein Konto), also
       // nichts, was sich per Clickjacking auslösen ließe. Steht NACH der
       // allgemeinen Regel: Bei gleichem Schlüssel gewinnt der letzte Treffer.
       {
-        source: "/about/simulation",
+        source: "/simulation",
         headers: [{ key: "X-Frame-Options", value: "SAMEORIGIN" }],
       },
     ];

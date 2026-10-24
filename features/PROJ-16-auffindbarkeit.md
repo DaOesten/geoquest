@@ -1,6 +1,6 @@
 # PROJ-16: Auffindbarkeit — Landingpage auf `/`, App auf `/app`, KI-Seite umbenannt
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-10-24
 **Last Updated:** 2026-10-24
 
@@ -95,7 +95,7 @@ Die Startadresse einer Domain bekommt die meisten Links und wird bei Markensuche
 - [ ] Angenommen die Leeransicht von `/create` wird angezeigt, dann führt ihr KI-Link auf `/mit-ki-erstellen`.
 - [ ] Angenommen der Ersteller hat bereits Quests, wenn er das Aktionsmenü auf `/create` öffnet, dann sieht er neben „Neue Quest“ und „Quest importieren“ einen dritten Eintrag „Mit KI erstellen“, der auf `/mit-ki-erstellen` führt.
 - [ ] Angenommen der Desktop-Header einer Info-Seite zeigt Textlinks, dann zeigt der KI-Link auf `/mit-ki-erstellen` und heißt „Mit KI erstellen“.
-- [ ] Angenommen der Schalter `ANLEITUNG_VERFUEGBAR` steht auf `false`, dann greifen alle Einstiegspunkte (Menü mit „Bald“, entfallene CTAs, Ankündigungsseite) weiterhin, nur unter der neuen Adresse.
+- ~~Angenommen der Schalter `ANLEITUNG_VERFUEGBAR` steht auf `false`, dann greifen alle Einstiegspunkte weiterhin, nur unter der neuen Adresse.~~ _Entfallen: Der Schalter wurde mit dem PROJ-14-Deploy vom 2026-10-24 (`ad239cd`) samt Ankündigung entfernt, bevor PROJ-16 gebaut wurde._
 
 ### Für Suchmaschinen und KI
 - [ ] Angenommen `/robots.txt` wird abgerufen, dann antwortet die App mit HTTP 200, erlaubt allen Crawlern den Zugriff und nennt die Adresse der Sitemap.
@@ -215,7 +215,7 @@ Die Seiten selbst werden **verschoben, nicht neu gebaut**. Inhalt, Komponenten u
 
 **Die Seitenadressen stehen künftig an einer Stelle** (neben der Menü-Liste in `app-nav.ts`), statt als Zeichenketten in einem Dutzend Dateien. Heute findet die Header-Regel den KI-Link über den Text `"/anleitung"`. Wird die Adresse an einer Stelle geändert und an der anderen nicht, verschwindet der Link still. Genau so eine Lücke soll der Umzug nicht hinterlassen.
 
-Der Schalter `ANLEITUNG_VERFUEGBAR` steuert weiter alle Einstiegspunkte, jetzt auch den neuen Eintrag im Aktionsmenü.
+~~Der Schalter `ANLEITUNG_VERFUEGBAR` steuert weiter alle Einstiegspunkte.~~ _Überholt: Der Schalter existiert seit dem PROJ-14-Deploy vom 2026-10-24 nicht mehr._
 
 ### C) Die Startweiche (installierte App)
 
@@ -258,6 +258,31 @@ Keine neuen.
 - **Statische Auslieferung im Build-Protokoll prüfen:** `/`, `/app` und `/mit-ki-erstellen` müssen als statisch (`○`) erscheinen. Die Startweiche läuft nur im Browser und darf daran nichts ändern.
 - **Neue Wächter:** Startweiche greift nur bei installierter App und nur, wenn die Seite als `/` geladen wurde (Menü-Navigation zu „Über“ in der App bleibt auf der Landingpage); `robots.txt`, `sitemap.xml` und `llms.txt` antworten mit 200 und dem erwarteten Inhalt; ein Durchlauf über alle internen Links findet keine 404. Den Standalone-Modus kann Playwright nicht direkt einschalten. Er wird wie in PROJ-12 über eine vorgetäuschte `matchMedia`-Antwort hergestellt.
 - **Nicht prüfbar:** wie das echte iPhone beim Hinzufügen zum Homescreen entscheidet. Die Weiche deckt beide Fälle ab, der Augenschein bleibt dem Betreiber.
+
+## Implementation Notes (Frontend, 2026-10-24)
+
+**Gebaut wie entworfen, kein neues Paket.** Die Seiten sind per `git mv` verschoben, nicht neu geschrieben: `src/app/page.tsx` → `src/app/app/page.tsx`, `(info)/about/page.tsx` → `(info)/page.tsx`, `(info)/anleitung` → `(info)/mit-ki-erstellen`, `(info)/about/simulation` → `(info)/simulation`. Im Build sind `/`, `/app`, `/mit-ki-erstellen`, `/simulation`, `/robots.txt` und `/sitemap.xml` statisch (`○`).
+
+**Neu:**
+- `ROUTES` in `src/lib/app-nav.ts`: alle Seitenadressen an einer Stelle. Menü, Kopfzeile, Zurück-Pfeile, Logo, Leeransicht, Aktionsmenü und Sitemap lesen daraus. `HEADER_NAV_LINKS` erkennt den KI-Link jetzt über `ROUTES.mitKiErstellen` statt über den Text `"/anleitung"`.
+- `src/components/app-start-redirect.tsx`: die Startweiche auf `/`. Sie prüft `isStandalone()` aus `useInstallPrompt` und ob der Navigation-Timing-Eintrag des Dokuments auf `/` lautet; nur dann `router.replace("/app")`. Eine Client-Navigation zu „Über“ ändert diesen Eintrag nicht, die Landingpage bleibt stehen.
+- `src/lib/site-url.ts`: eine Basisadresse für `metadataBase`, Sitemap und `robots.txt`.
+- `src/app/robots.ts`, `src/app/sitemap.ts`, `public/llms.txt`.
+- Dritter Eintrag „Mit KI erstellen“ im Aktionsmenü auf `/create` (oberhalb von „Quest importieren“, damit „Neue Quest“ als Hauptaktion dem FAB am nächsten bleibt). Die Leeransicht heißt jetzt ebenfalls „Mit KI erstellen“ statt „Quest mit KI bauen“.
+
+**Geändert:** Manifest `start_url: "/app"` (`id`, `scope` bleiben `/`); `/app` hat Titel „Geo Quest — App“ und Canonical `/app`; `/mit-ki-erstellen` Titel „Schnitzeljagd mit KI erstellen“, Eyebrow „Mit KI erstellen“, Canonical; `SAMEORIGIN`-Ausnahme, Analytics-Filter, iframe und `.claude/rules/security.md` auf `/simulation`.
+
+**Abweichung:** Das Kriterium zum Schalter `ANLEITUNG_VERFUEGBAR` entfällt, der Schalter wurde mit dem PROJ-14-Deploy vom selben Tag entfernt.
+
+**`llms.txt` — zur Abnahme durch den Betreiber.** Jede Aussage stammt aus Landingpage, FAQ oder KI-Seite und ist dort im Code gedeckt (geprüft u. a.: Der Prompt verbietet erfundene Koordinaten, Stationen werden danach in der App gesetzt). Keine Nutzerzahlen, keine Versprechen über Offline oder Teilen per Link.
+
+**Tests:** Neue Suite `tests/proj-16-auffindbarkeit.spec.ts` (27 je Engine): neue Adressen und 404 der alten, Navigation, Menü-Reihenfolge, Aktionsmenü mit vorhandener Quest, Erststart-Dialog nur auf `/app`, Durchlauf über alle internen Links ohne 404, Startweiche (greift in der App, nicht im Browser, ersetzt den Verlaufseintrag, lässt „Über“ in der App stehen), Manifest, Einbettung, `robots.txt`, `sitemap.xml`, `llms.txt`. Bestehende Suiten in 17 Dateien gezogen, nicht gelöscht: erst Startscreen `/` → `/app`, dann `/about` → `/`, `/anleitung` → `/mit-ki-erstellen`; Namen „Anleitung“/„Quest mit KI bauen“ → „Mit KI erstellen“; Hero-Zählungen auf `main` eingegrenzt, weil der KI-Link jetzt auch in der Kopfzeile so heißt. Der 404-Test „Zurück zum Start“ erwartet jetzt `/` (Landingpage).
+
+**Ergebnisse (Production-Build im eigenen Worktree, Port 3200):** Unit **455/455**, Lint 0 Fehler, `tsc` ohne neue Fehler. Chrome: alle 17 gezogenen Dateien plus neue Suite grün (u. a. PROJ-16 27/27, PROJ-1 App-Shell 29/29, PROJ-13-Suiten 21–43 je Datei). Mobile Safari: alle betroffenen Dateien grün, jeweils gegen frisch gestarteten Server (PROJ-16 27/27, Elternseite 40/0 + 3 vorbestehende Skips, Video 27/27, Landing-QA 34/34).
+
+**Gegenprobe:** Ohne die Bedingung „Dokument wurde als `/` geladen“ fällt genau der Test „„Über“ in der installierten App bleibt auf der Landingpage“, die übrigen drei Startweiche-Tests bleiben grün. Produktcode danach wiederhergestellt.
+
+**Für künftige Läufe — Bild-Optimierer hängt unter Dauerlast:** Ein längerer Safari-Lauf meldete 33 Timeouts, alle ab 640 px Breite. Ursache war der Server, nicht der Code: Nach vielen Läufen beantwortete `next start` die Anfrage `logo-lockup-cutout.png` in 1080 px **als WebP** gar nicht mehr (per `curl` auch nach 240 s keine Antwort), andere Formate und kleinere Stufen sofort. Derselbe Request auf einem frischen Server: 0,09 s. Gegenprobe mit dem Stand vor PROJ-16 auf eigenem Port: dieselbe Datei besteht dort wie hier 34/34. **Bei Safari-Timeouts ab 640 px zuerst den Server neu starten**, dann Dateien einzeln laufen lassen.
 
 ## QA Test Results
 _To be added by /qa_

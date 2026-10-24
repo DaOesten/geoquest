@@ -10,6 +10,7 @@ import {
   Puzzle,
 } from "lucide-react";
 import { InfoPageShell } from "@/components/info-page-shell";
+import { ROUTES } from "@/lib/app-nav";
 import { PromptGenerator } from "@/components/prompt-generator";
 import {
   Accordion,
@@ -19,7 +20,9 @@ import {
 } from "@/components/ui/accordion";
 
 const META = {
-  title: "Quest mit KI erstellen",
+  // Suchnah statt „Anleitung" (PROJ-16): So formulieren Eltern und Lehrkräfte
+  // ihre Suche. Name im Menü und Eyebrow bleiben „Mit KI erstellen".
+  title: "Schnitzeljagd mit KI erstellen",
   description:
     "Angaben eintragen, Prompt erzeugen, mit ChatGPT oder Claude die Geschichte abstimmen und die fertige Quest importieren. Schritt-für-Schritt-Anleitung für Geo Quest.",
 };
@@ -28,6 +31,7 @@ const META = {
 export const metadata: Metadata = {
   title: META.title,
   description: META.description,
+  alternates: { canonical: ROUTES.mitKiErstellen },
   openGraph: {
     title: `${META.title} — Geo Quest`,
     description: META.description,
@@ -94,16 +98,17 @@ const TROUBLESHOOTING = [
 ];
 
 /**
- * Die KI-Anleitung (PROJ-13), seit PROJ-14 Refinement 2026-10-23 mit
+ * Die KI-Seite (PROJ-13), seit PROJ-16 (2026-10-24) auf `/mit-ki-erstellen`
+ * statt `/anleitung`: Hier steht ein Werkzeug, keine Anleitung. Seit PROJ-14 Refinement 2026-10-23 mit
  * Prompt-Formular. Die frühere „Bald verfügbar"-Ankündigung ist seit
  * 2026-10-24 entfernt (Betreiber: kein Weg zurück vorgesehen; die Fassung
  * liegt in der Git-History).
  */
-export default function AnleitungPage() {
+export default function MitKiErstellenPage() {
   return (
     <InfoPageShell
       showSupport
-      eyebrow="Anleitung"
+      eyebrow="Mit KI erstellen"
       title={
         <>
           Quest bauen
@@ -112,7 +117,7 @@ export default function AnleitungPage() {
         </>
       }
       meta="4 Schritte"
-      backHref="/about"
+      backHref={ROUTES.home}
       lead={
         <p>
           Du hast eine Idee, die du mit Hilfe eines KI-Tools wie duck.ai,

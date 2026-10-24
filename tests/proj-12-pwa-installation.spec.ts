@@ -14,8 +14,8 @@ test.use({ serviceWorkers: "allow" });
 const HINT = /als App installieren/i;
 
 /** Startzustand: Erststart-Dialog erledigt, kein frueheres Wegklicken. */
-async function seed(page: Page, route = "/") {
-  await page.goto("/");
+async function seed(page: Page, route = "/app") {
+  await page.goto("/app");
   await page.evaluate(() => {
     localStorage.clear();
     localStorage.setItem("gq_first_visit_done", "true");
@@ -77,7 +77,7 @@ async function warteAufKontrolle(page: Page) {
 test.describe("PROJ-12: PWA-Installation", () => {
   test.describe("Manifest", () => {
     test("ist verlinkt und deklariert alle Pflichtfelder", async ({ page, request }) => {
-      await page.goto("/");
+      await page.goto("/app");
       await expect(page.locator('link[rel="manifest"]')).toHaveAttribute(
         "href",
         "/manifest.webmanifest"
@@ -90,9 +90,13 @@ test.describe("PROJ-12: PWA-Installation", () => {
       const m = await res.json();
       expect(m.name).toBe("Geo Quest");
       expect(m.short_name).toBe("Geo Quest");
-      // Start auf `/`, damit auch der Creator in der installierten App
-      // erreichbar bleibt (Decision Log).
-      expect(m.start_url).toBe("/");
+      // Start auf `/app` (PROJ-16): Auf `/` liegt die Landingpage. Der
+      // App-Start statt `/play` hält auch den Creator in der installierten App
+      // erreichbar (Decision Log PROJ-12). `id` und `scope` bleiben `/`, damit
+      // bestehende Installationen dieselbe App bleiben.
+      expect(m.start_url).toBe("/app");
+      expect(m.id).toBe("/");
+      expect(m.scope).toBe("/");
       expect(m.display).toBe("standalone");
       expect(m.orientation).toBe("portrait");
       expect(m.background_color).toBe("#0B0F12");
@@ -126,7 +130,7 @@ test.describe("PROJ-12: PWA-Installation", () => {
       page,
       request,
     }) => {
-      await page.goto("/");
+      await page.goto("/app");
       const meta = await page.locator('meta[name="theme-color"]').getAttribute("content");
       const m = await (await request.get("/manifest.webmanifest")).json();
       expect(meta).toBe(m.theme_color);
@@ -134,11 +138,11 @@ test.describe("PROJ-12: PWA-Installation", () => {
 
     test("ist auf allen sieben Routen verlinkt", async ({ page }) => {
       for (const route of [
-        "/",
+        "/app",
         "/play",
         "/create",
-        "/about",
-        "/anleitung",
+        "/",
+        "/mit-ki-erstellen",
         "/impressum",
         "/datenschutz",
       ]) {
@@ -153,7 +157,7 @@ test.describe("PROJ-12: PWA-Installation", () => {
       page,
       request,
     }) => {
-      await page.goto("/");
+      await page.goto("/app");
       const link = page.locator('link[rel="apple-touch-icon"]');
       await expect(link).toHaveCount(1);
 
@@ -166,7 +170,7 @@ test.describe("PROJ-12: PWA-Installation", () => {
 
   test.describe("Service Worker", () => {
     test("registriert sich im Wurzel-Scope", async ({ page }) => {
-      await page.goto("/");
+      await page.goto("/app");
       const reg = await page.evaluate(async () => {
         const r = await navigator.serviceWorker.ready;
         return { scope: new URL(r.scope).pathname, active: !!r.active };
@@ -181,7 +185,7 @@ test.describe("PROJ-12: PWA-Installation", () => {
      * sich die App zusammensetzen liesse.
      */
     test("cacht AUSSCHLIESSLICH offline.html — auch nach Navigation", async ({ page }) => {
-      await page.goto("/");
+      await page.goto("/app");
       await page.evaluate(() => navigator.serviceWorker.ready);
 
       await page.goto("/play");
@@ -201,7 +205,7 @@ test.describe("PROJ-12: PWA-Installation", () => {
     });
 
     test("liefert Seiten aus dem Netz, nicht aus dem Cache", async ({ page }) => {
-      await page.goto("/");
+      await page.goto("/app");
       await page.evaluate(() => navigator.serviceWorker.ready);
 
       const fromNetwork: string[] = [];
@@ -229,11 +233,11 @@ test.describe("PROJ-12: PWA-Installation", () => {
     );
 
     test("zeigt die eigene Seite statt der Browser-Fehlerseite", async ({ page, context }) => {
-      await page.goto("/");
+      await page.goto("/app");
       await warteAufKontrolle(page);
 
       await context.setOffline(true);
-      await page.goto("/");
+      await page.goto("/app");
 
       await expect(page.getByRole("heading", { name: /keine verbindung/i })).toBeVisible();
       await expect(page.getByText(/Internetverbindung/i)).toBeVisible();
@@ -242,11 +246,11 @@ test.describe("PROJ-12: PWA-Installation", () => {
     });
 
     test("verspricht NICHT, dass Quests offline spielbar seien", async ({ page, context }) => {
-      await page.goto("/");
+      await page.goto("/app");
       await warteAufKontrolle(page);
 
       await context.setOffline(true);
-      await page.goto("/");
+      await page.goto("/app");
 
       const text = (await page.locator("body").innerText()).toLowerCase();
       // Die Seite sagt, dass Internet zum STARTEN noetig ist — "du bist
@@ -259,11 +263,11 @@ test.describe("PROJ-12: PWA-Installation", () => {
     });
 
     test("bietet einen 'Erneut versuchen'-Button mit 44px Tap-Ziel", async ({ page, context }) => {
-      await page.goto("/");
+      await page.goto("/app");
       await warteAufKontrolle(page);
 
       await context.setOffline(true);
-      await page.goto("/");
+      await page.goto("/app");
 
       const btn = page.getByRole("button", { name: /erneut versuchen/i });
       await expect(btn).toBeVisible();
@@ -280,7 +284,7 @@ test.describe("PROJ-12: PWA-Installation", () => {
       await warteAufKontrolle(page);
 
       await context.setOffline(true);
-      await page.goto("/");
+      await page.goto("/app");
       await expect(page.getByRole("heading", { name: /keine verbindung/i })).toBeVisible();
 
       await context.setOffline(false);
@@ -298,11 +302,11 @@ test.describe("PROJ-12: PWA-Installation", () => {
       page,
       context,
     }) => {
-      await page.goto("/");
+      await page.goto("/app");
       await warteAufKontrolle(page);
 
       await context.setOffline(true);
-      await page.goto("/");
+      await page.goto("/app");
       await expect(page.getByRole("heading", { name: /keine verbindung/i })).toBeVisible();
 
       /**
@@ -348,7 +352,7 @@ test.describe("PROJ-12: PWA-Installation", () => {
    */
   test.describe("Offline-Seite im Cache (beide Engines)", () => {
     test("liegt im Cache und traegt die richtige Aussage", async ({ page }) => {
-      await page.goto("/");
+      await page.goto("/app");
       await page.evaluate(() => navigator.serviceWorker.ready);
 
       const content = await page.evaluate(async () => {
@@ -412,9 +416,9 @@ test.describe("PROJ-12: PWA-Installation", () => {
     test("der Erststart-Dialog hat Vorrang und der Hinweis rueckt danach nach", async ({
       page,
     }) => {
-      await page.goto("/");
+      await page.goto("/app");
       await page.evaluate(() => localStorage.clear());
-      await page.goto("/");
+      await page.goto("/app");
 
       await expect(page.getByRole("dialog")).toBeVisible();
       await expect(page.getByRole("complementary", { name: HINT })).toHaveCount(0);
@@ -634,7 +638,7 @@ test.describe("PROJ-12: PWA-Installation", () => {
    * Fassung entfaellt.
    */
   test.describe("Installations-Hinweis — schwebendes Overlay", () => {
-    for (const route of ["/", "/play"]) {
+    for (const route of ["/app", "/play"]) {
       test(`ist auf ${route} fixiert und nicht Teil des Seitenflusses`, async ({ page }) => {
         await seed(page, route);
         await fireInstallPrompt(page);
@@ -722,7 +726,7 @@ test.describe("PROJ-12: PWA-Installation", () => {
         );
       };
 
-      expect(await hoehe("/play")).toBe(await hoehe("/"));
+      expect(await hoehe("/play")).toBe(await hoehe("/app"));
     });
 
     /**
@@ -831,7 +835,7 @@ test.describe("PROJ-12: PWA-Installation", () => {
           { id: `s${i}`, name: "Station", lat: 52.5, lng: 13.4, radius: 30, modules: [] },
         ],
       }));
-      await page.goto("/");
+      await page.goto("/app");
       await page.evaluate((qs) => {
         localStorage.clear();
         localStorage.setItem("gq_first_visit_done", "true");
@@ -948,7 +952,7 @@ test.describe("PROJ-12: PWA-Installation", () => {
       // Frischer Zustand: Ohne das kontrolliert ein Worker aus einem frueheren
       // Test die Seite schon beim ersten Aufruf, und der Test wuerde bestehen,
       // ohne die Uebernahme wirklich zu pruefen.
-      await page.goto("/");
+      await page.goto("/app");
       await page.evaluate(async () => {
         for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister();
         for (const k of await caches.keys()) await caches.delete(k);
@@ -956,7 +960,7 @@ test.describe("PROJ-12: PWA-Installation", () => {
 
       // Erster Aufruf nach dem Aufraeumen: Der Worker installiert sich neu und
       // muss diese Seite von sich aus uebernehmen.
-      await page.goto("/");
+      await page.goto("/app");
       await page.evaluate(() => navigator.serviceWorker.ready);
 
       // Bewusst KEIN Reload. Faellt `clients.claim()` weg, bleibt `controller`
@@ -970,7 +974,7 @@ test.describe("PROJ-12: PWA-Installation", () => {
     });
 
     test("kein Worker haengt im Wartezustand fest", async ({ page }) => {
-      await page.goto("/");
+      await page.goto("/app");
       await warteAufKontrolle(page);
 
       const zustand = await page.evaluate(async () => {
@@ -993,9 +997,9 @@ test.describe("PROJ-12: PWA-Installation", () => {
       const fehler: string[] = [];
       page.on("pageerror", (e) => fehler.push(String(e)));
 
-      await page.goto("/");
+      await page.goto("/app");
       await page.evaluate(() => localStorage.setItem("gq_first_visit_done", "true"));
-      await page.goto("/");
+      await page.goto("/app");
       await expect(page.locator('a[href="/play"]')).toBeVisible();
       await expect(page.locator('a[href="/create"]')).toBeVisible();
 
@@ -1082,11 +1086,11 @@ test.describe("PROJ-12: PWA-Installation", () => {
 
     test("alle sieben Routen antworten weiterhin mit 200", async ({ request }) => {
       for (const route of [
-        "/",
+        "/app",
         "/play",
         "/create",
-        "/about",
-        "/anleitung",
+        "/",
+        "/mit-ki-erstellen",
         "/impressum",
         "/datenschutz",
       ]) {
@@ -1095,7 +1099,7 @@ test.describe("PROJ-12: PWA-Installation", () => {
     });
 
     test("die Anleitung zeigt das Prompt-Formular (PROJ-14 unberuehrt)", async ({ request }) => {
-      const html = await (await request.get("/anleitung")).text();
+      const html = await (await request.get("/mit-ki-erstellen")).text();
       expect(html).not.toContain("Du bist ein Experte");
       expect(html).toContain("Prompt erzeugen");
     });

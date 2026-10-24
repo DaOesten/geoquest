@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { InfoPageShell } from "@/components/info-page-shell";
+import { ROUTES } from "@/lib/app-nav";
 import { PROVIDER } from "@/lib/provider";
 
 export const metadata: Metadata = {
@@ -13,7 +14,7 @@ export default function ImpressumPage() {
   return (
     <InfoPageShell
       theme="light"
-      backHref="/about"
+      backHref={ROUTES.home}
       eyebrow="Rechtliches"
       title="Impressum"
       lead={

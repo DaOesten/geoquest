@@ -70,8 +70,8 @@ test.describe("Der Browser-Zustand bleibt unveraendert", () => {
     });
   }
 
-  test("/about: die Sticky-Kopfzeile hat im Browser keinen zusaetzlichen Abstand", async ({ page }) => {
-    await page.goto("/about");
+  test("/: die Sticky-Kopfzeile hat im Browser keinen zusaetzlichen Abstand", async ({ page }) => {
+    await page.goto("/");
     const header = page.locator("header").first();
     expect((await header.boundingBox())?.y).toBe(0);
     expect(await header.evaluate((e) => getComputedStyle(e).paddingTop)).toBe("0px");
@@ -79,7 +79,7 @@ test.describe("Der Browser-Zustand bleibt unveraendert", () => {
 
   test("/: der schwebende Burger sitzt unveraendert bei y=12 mit 44x44", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/");
+    await page.goto("/app");
     const btn = page.locator("main > div.absolute button").first();
     const box = await btn.boundingBox();
     expect(box?.y).toBe(12);
@@ -92,7 +92,7 @@ test.describe("Der Browser-Zustand bleibt unveraendert", () => {
     // der Screen im Browser exakt seine 24px behaelt — ein Ersatz statt eines
     // Summanden haette sie stillschweigend auf 0 gesetzt.
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/");
+    await page.goto("/app");
     const main = page.locator("main").first();
     expect(await main.evaluate((e) => getComputedStyle(e).paddingTop)).toBe("24px");
     expect((await page.locator("main img").first().boundingBox())!.y).toBe(24);
@@ -102,7 +102,7 @@ test.describe("Der Browser-Zustand bleibt unveraendert", () => {
     // PROJ-1-Kriterium. Ein oberer Inset, der im Browser faelschlich Platz
     // kostet, wuerde genau hier zuerst auffallen.
     await page.setViewportSize({ width: 360, height: 640 });
-    await page.goto("/");
+    await page.goto("/app");
     const scrollH = await page.evaluate(() => document.documentElement.scrollHeight);
     expect(scrollH).toBeLessThanOrEqual(640);
   });
@@ -137,7 +137,7 @@ test.describe("Die Mechanik — ein Inset schiebt nach unten, statt zu stauchen"
     });
 
     test(`${label} (${inset}px): die Info-Kopfzeile liegt darunter`, async ({ page }) => {
-      await page.goto("/about");
+      await page.goto("/");
       await simulateInset(page, inset, 34);
       // Erstes SICHTBARES Bedienelement: Der Textlink „Anleitung" (PROJ-14,
       // seit 2026-10-23 wieder da) steht zuerst im DOM, ist auf dem Handy
@@ -148,7 +148,7 @@ test.describe("Die Mechanik — ein Inset schiebt nach unten, statt zu stauchen"
 
     test(`${label} (${inset}px): der schwebende Burger auf / liegt darunter`, async ({ page }) => {
       await page.setViewportSize({ width: 390, height: 844 });
-      await page.goto("/");
+      await page.goto("/app");
       await simulateInset(page, inset, 34);
       const btn = page.locator("main > div.absolute button").first();
       const box = await btn.boundingBox();
@@ -171,7 +171,7 @@ test.describe("Die Mechanik — ein Inset schiebt nach unten, statt zu stauchen"
      */
     test(`${label} (${inset}px): auf / liegt auch das Logo unter der Statusleiste`, async ({ page }) => {
       await page.setViewportSize({ width: 390, height: 844 });
-      await page.goto("/");
+      await page.goto("/app");
       await simulateInset(page, inset, 34);
 
       const logo = page.locator("main img").first();

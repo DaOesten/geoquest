@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { InfoPageShell } from "@/components/info-page-shell";
+import { ROUTES } from "@/lib/app-nav";
 
 export const metadata: Metadata = {
   title: "Datenschutz",
@@ -22,7 +23,7 @@ export default function DatenschutzPage() {
   return (
     <InfoPageShell
       theme="light"
-      backHref="/about"
+      backHref={ROUTES.home}
       eyebrow="Rechtliches"
       title="Datenschutz"
       lead={

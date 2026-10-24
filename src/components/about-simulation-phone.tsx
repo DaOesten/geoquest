@@ -3,7 +3,7 @@ import { PhoneFrame } from "@/components/phone-frame";
 /**
  * Die Quest-Simulation im Handy auf /about (PROJ-13, Refinement 13).
  *
- * Ein iframe auf /about/simulation statt der Komponenten direkt in der Seite:
+ * Ein iframe auf /simulation (bis PROJ-16: /about/simulation) statt der Komponenten direkt in der Seite:
  * Die Player-Screens rechnen mit dem Viewport (`clamp(…, 11vw, …)`,
  * `min-h-[100dvh]`, `fixed` positioniertes Konfetti). Im iframe ist der
  * Viewport der Handy-Bildschirm — die Screens verhalten sich wie auf einem
@@ -24,7 +24,7 @@ export function AboutSimulationPhone() {
           Die Simulation wird geladen …
         </p>
         <iframe
-          src="/about/simulation"
+          src="/simulation"
           title="Simulation einer Quest: Das Waldgeheimnis"
           loading="lazy"
           className="relative block h-full w-full border-0 bg-transparent"

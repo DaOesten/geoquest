@@ -12,26 +12,26 @@ import { test, expect, type Page } from '@playwright/test'
 
 /** Startscreen ohne Erststart-Dialog oeffnen — der Dialog ueberdeckt sonst die Cards. */
 async function openStartscreen(page: Page) {
-  await page.goto('/')
+  await page.goto('/app')
   await page.evaluate(() => localStorage.setItem('gq_first_visit_done', 'true'))
   await page.reload()
 }
 
 const playCard = (page: Page) => page.locator('main a[href="/play"]')
 const createCard = (page: Page) => page.locator('main a[href="/create"]')
-const logoLink = (page: Page) => page.locator('main a[href="/about"]')
+const logoLink = (page: Page) => page.locator('main a[href="/"]')
 
 test.describe('PROJ-1: Startscreen-Verfeinerung', () => {
 
   test.describe('Logo verlinkt auf die Landing Page', () => {
-    test('Tap auf das Geo-Quest-Logo navigiert zu /about', async ({ page }) => {
+    test('Tap auf das Geo-Quest-Logo navigiert zu /', async ({ page }) => {
       await openStartscreen(page)
       const logo = logoLink(page)
       await expect(logo).toBeVisible()
       // Das Lockup liegt im Link — der Tap trifft das Bild, nicht nur den Rahmen.
       await expect(logo.locator('img[alt="Geo Quest"]')).toBeVisible()
       await logo.click()
-      await expect(page).toHaveURL('/about')
+      await expect(page).toHaveURL('/')
     })
 
     test('Logo-Link traegt einen Accessible Name, der das Ziel erklaert', async ({ page }) => {
@@ -81,8 +81,8 @@ test.describe('PROJ-1: Startscreen-Verfeinerung', () => {
       expect(linkBox!.y + linkBox!.height).toBeLessThanOrEqual(cardBox!.y)
     })
 
-    test('/about ist erreichbar — der Link zeigt nicht ins Leere', async ({ page }) => {
-      const response = await page.goto('/about')
+    test('/ ist erreichbar — der Link zeigt nicht ins Leere', async ({ page }) => {
+      const response = await page.goto('/')
       expect(response?.status()).toBe(200)
     })
   })

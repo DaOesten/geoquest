@@ -54,7 +54,7 @@ test.describe("Burger-Menu — Struktur und Ziele", () => {
 
   for (const [group, links] of [
     ["App", [["Play", "/play"], ["Create", "/create"]]],
-    ["Info", [["Über", "/about"], ["Anleitung", "/anleitung"]]],
+    ["Info", [["Über", "/"], ["Anleitung", "/mit-ki-erstellen"]]],
     ["Rechtliches", [["Impressum", "/impressum"], ["Datenschutz", "/datenschutz"]]],
   ] as const) {
     test(`Gruppe ${group} verlinkt ihre Ziele, jedes mit Icon`, async ({ page }) => {
@@ -64,8 +64,8 @@ test.describe("Burger-Menu — Struktur und Ziele", () => {
         // PROJ-14: "Anleitung" trägt die Kennzeichnung "Bald" und ist damit
         // kein exakter Namenstreffer mehr — über href ansprechen.
         const link =
-          href === "/anleitung"
-            ? page.getByRole("dialog").locator('a[href="/anleitung"]')
+          href === "/mit-ki-erstellen"
+            ? page.getByRole("dialog").locator('a[href="/mit-ki-erstellen"]')
             : page.getByRole("dialog").getByRole("link", { name: label, exact: true });
         await expect(link).toHaveAttribute("href", href);
         // Jeder Eintrag trägt ein Icon — für die Zielgruppe die schnellste
@@ -81,8 +81,8 @@ test.describe("Burger-Menu — Struktur und Ziele", () => {
     for (const path of [
       "/play",
       "/create",
-      "/about",
-      "/anleitung",
+      "/",
+      "/mit-ki-erstellen",
       "/impressum",
       "/datenschutz",
       "/create/qa-nav-1",
@@ -157,7 +157,7 @@ test.describe("Burger-Menu — Verhalten", () => {
 
 test.describe("Startscreen — schwebendes Burger-Menu (BUG-10)", () => {
   test("das Burger-Icon steht oben rechts auf `/`", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/app");
 
     const burger = page.locator('button[aria-label="Menü öffnen"]');
     await expect(burger).toBeVisible();
@@ -174,7 +174,7 @@ test.describe("Startscreen — schwebendes Burger-Menu (BUG-10)", () => {
   test("das Menu auf `/` traegt dieselben vier Gruppen und sieben Ziele", async ({
     page,
   }) => {
-    await page.goto("/");
+    await page.goto("/app");
     await page.locator('button[aria-label="Menü öffnen"]').click();
     await expect(page.getByRole("dialog")).toBeVisible();
 
@@ -187,7 +187,7 @@ test.describe("Startscreen — schwebendes Burger-Menu (BUG-10)", () => {
   });
 
   test("auf `/` ist kein Menu-Eintrag als aktiv markiert", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/app");
     await page.locator('button[aria-label="Menü öffnen"]').click();
     await expect(page.getByRole("dialog")).toBeVisible();
 
@@ -209,7 +209,7 @@ test.describe("Startscreen — schwebendes Burger-Menu (BUG-10)", () => {
       [390, 844],
     ]) {
       await page.setViewportSize({ width, height });
-      await page.goto("/");
+      await page.goto("/app");
 
       const overlap = await page.evaluate(() => {
         const cards = Array.from(
@@ -237,14 +237,14 @@ test.describe("Startscreen — schwebendes Burger-Menu (BUG-10)", () => {
   }) => {
     // Das bestehende Kriterium, das eine volle Kopfzeile gebrochen haette.
     await page.setViewportSize({ width: 360, height: 640 });
-    await page.goto("/");
+    await page.goto("/app");
 
     const scrolls = await page.evaluate(
       () => document.body.scrollHeight > window.innerHeight
     );
     expect(scrolls).toBe(false);
 
-    for (const sel of ['a[href="/about"]', 'a[href="/play"]', 'a[href="/create"]']) {
+    for (const sel of ['a[href="/"]', 'a[href="/play"]', 'a[href="/create"]']) {
       const box = (await page.locator(sel).first().boundingBox())!;
       expect(box.y + box.height, `${sel} ragt unter den Falz`).toBeLessThanOrEqual(640);
     }
@@ -257,14 +257,14 @@ test.describe("Startscreen — schwebendes Burger-Menu (BUG-10)", () => {
     // Ueberlaufen gebracht haette. Der Wert stammt aus der Messung vor der
     // Aenderung: Das Logo begann bei y=24 (py-6), und dabei muss es bleiben.
     await page.setViewportSize({ width: 360, height: 640 });
-    await page.goto("/");
+    await page.goto("/app");
 
-    const logo = (await page.locator('a[href="/about"]').first().boundingBox())!;
+    const logo = (await page.locator('a[href="/"]').first().boundingBox())!;
     expect(logo.y).toBeLessThanOrEqual(32);
   });
 
   test("`/` traegt keinen Zurueck-Pfeil", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/app");
 
     // Oberste Ebene — ein Zurueck-Pfeil haette dort kein Ziel.
     await expect(page.locator('[aria-label="Zurück"]')).toHaveCount(0);
@@ -285,8 +285,8 @@ test.describe("Kopfzeile", () => {
 
   test("der Zurück-Pfeil führt aus jeder Ebene eine Stufe nach oben", async ({ page }) => {
     for (const [path, target] of [
-      ["/play", "/"],
-      ["/create", "/"],
+      ["/play", "/app"],
+      ["/create", "/app"],
       ["/create/qa-nav-1", "/create"],
       ["/create/qa-nav-1/station/st-1", "/create/qa-nav-1"],
     ] as const) {
@@ -325,7 +325,7 @@ test.describe("Kopfzeile", () => {
   });
 
   test("die Kopfzeile der Info-Seiten bleibt sticky", async ({ page }) => {
-    for (const path of ["/about", "/anleitung", "/impressum", "/datenschutz"]) {
+    for (const path of ["/", "/mit-ki-erstellen", "/impressum", "/datenschutz"]) {
       await page.goto(path);
 
       const header = page.locator("header").first();

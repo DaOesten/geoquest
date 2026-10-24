@@ -7,6 +7,7 @@ import { PenTool, Plus, Sparkles, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { AppHeader } from "@/components/app-header";
+import { ROUTES } from "@/lib/app-nav";
 import { CreatorBackdrop } from "@/components/creator-backdrop";
 import { QuestImportButton } from "@/components/quest-import-button";
 import { QuestManagementCard } from "@/components/quest-management-card";
@@ -166,7 +167,7 @@ export default function CreatePage() {
     <>
       <CreatorBackdrop />
       <div className="relative">
-        <AppHeader backHref="/" transparent />
+        <AppHeader backHref={ROUTES.app} transparent />
 
         <div className="px-5 pt-4">
           <h1 className="font-display italic text-[clamp(1.8rem,8vw,2.4rem)] leading-[0.95] uppercase text-foreground">
@@ -192,13 +193,13 @@ export default function CreatePage() {
                 Neue Quest erstellen
               </Button>
               <QuestImportButton variant="light" onImportSuccess={refreshQuests} />
-              {/* Dritter Weg: die KI-Anleitung (PROJ-14). */}
+              {/* Dritter Weg: die KI-Seite (PROJ-14, seit PROJ-16 /mit-ki-erstellen). */}
               <Link
-                href="/anleitung"
+                href={ROUTES.mitKiErstellen}
                 className="flex items-center gap-2 h-11 px-4 text-tech text-[11px] tracking-[0.08em] text-primary transition-colors duration-base ease-gq hover:text-primary/70"
               >
                 <Sparkles className="w-4 h-4" />
-                Quest mit KI bauen
+                Mit KI erstellen
               </Link>
             </div>
           </div>
@@ -249,6 +250,18 @@ export default function CreatePage() {
                 fabOpen ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-3 pointer-events-none"
               )}
             >
+              {/* KI-Weg (PROJ-16). Vorher nur in der Leeransicht — wer schon
+                  eine Quest hatte, sah ihn im Creator nie wieder. Oben, weil
+                  „Neue Quest" als Hauptaktion dem FAB am nächsten bleibt. */}
+              <Link
+                href={ROUTES.mitKiErstellen}
+                onClick={() => setFabOpen(false)}
+                tabIndex={fabOpen ? undefined : -1}
+                className="flex items-center gap-2 h-11 px-5 rounded-pill border border-primary bg-card text-primary shadow-card text-tech text-xs tracking-[0.08em] transition-all duration-fast ease-gq active:scale-[0.96] whitespace-nowrap"
+              >
+                <Sparkles className="w-4 h-4" />
+                Mit KI erstellen
+              </Link>
               <QuestImportButton
                 variant="light"
                 onImportSuccess={() => {

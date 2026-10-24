@@ -41,7 +41,7 @@ test.describe('PROJ-1: App Shell & Mode Switch', () => {
   test.describe('Startscreen', () => {
     test('shows dark-themed startscreen with logo and two mode cards at /', async ({ page }) => {
       await skipFirstVisitDialog(page)
-      await page.goto('/')
+      await page.goto('/app')
       expect(await activeTheme(page)).toBe('dark')
       await expect(page.locator('img[alt="Geo Quest"]')).toBeVisible()
       await expect(page.getByRole('link', { name: /Deine Quests/ })).toBeVisible()
@@ -50,7 +50,7 @@ test.describe('PROJ-1: App Shell & Mode Switch', () => {
 
     test('navigating to Play card goes to /play with dark theme', async ({ page }) => {
       await skipFirstVisitDialog(page)
-      await page.goto('/')
+      await page.goto('/app')
       await page.getByRole('link', { name: /Deine Quests/ }).click()
       await expect(page).toHaveURL('/play')
       expect(await activeTheme(page)).toBe('dark')
@@ -58,7 +58,7 @@ test.describe('PROJ-1: App Shell & Mode Switch', () => {
 
     test('navigating to Create card goes to /create with light theme', async ({ page }) => {
       await skipFirstVisitDialog(page)
-      await page.goto('/')
+      await page.goto('/app')
       await page.getByRole('link', { name: /Quest Creator/ }).click()
       await expect(page).toHaveURL('/create')
       expect(await activeTheme(page)).toBe('light')
@@ -112,7 +112,7 @@ test.describe('PROJ-1: App Shell & Mode Switch', () => {
           modules: [{ type: 'text', content: 'Hinweis.' }],
         }],
       }
-      await page.goto('/')
+      await page.goto('/app')
       await page.evaluate((q) => {
         localStorage.setItem('gq_first_visit_done', 'true')
         localStorage.setItem('gq_quests', JSON.stringify([q]))
@@ -243,11 +243,11 @@ test.describe('PROJ-1: App Shell & Mode Switch', () => {
 
     test('browser back button navigates up one level', async ({ page }) => {
       await skipFirstVisitDialog(page)
-      await page.goto('/')
+      await page.goto('/app')
       await page.getByRole('link', { name: /Deine Quests/ }).click()
       await expect(page).toHaveURL('/play')
       await page.goBack()
-      await expect(page).toHaveURL('/')
+      await expect(page).toHaveURL('/app')
     })
   })
 
@@ -288,7 +288,7 @@ test.describe('PROJ-1: App Shell & Mode Switch', () => {
 
   test.describe('First Visit Dialog', () => {
     test('shows dialog on first visit (no localStorage flag)', async ({ page }) => {
-      await page.goto('/')
+      await page.goto('/app')
       const dialog = page.locator('[role="dialog"]')
       await expect(dialog).toBeVisible()
       await expect(dialog.getByText('Willkommen bei Geo Quest')).toBeVisible()
@@ -296,7 +296,7 @@ test.describe('PROJ-1: App Shell & Mode Switch', () => {
     })
 
     test('clicking "Verstanden" closes dialog and sets localStorage flag', async ({ page }) => {
-      await page.goto('/')
+      await page.goto('/app')
       const dialog = page.locator('[role="dialog"]')
       await expect(dialog).toBeVisible()
       await dialog.getByRole('button', { name: 'Verstanden' }).click()
@@ -306,7 +306,7 @@ test.describe('PROJ-1: App Shell & Mode Switch', () => {
     })
 
     test('dialog does not appear on subsequent visits', async ({ page }) => {
-      await page.goto('/')
+      await page.goto('/app')
       await page.evaluate(() => localStorage.setItem('gq_first_visit_done', 'true'))
       await page.reload()
       await page.waitForTimeout(500)
@@ -325,6 +325,7 @@ test.describe('PROJ-1: App Shell & Mode Switch', () => {
     test('"Zurück zum Start" button navigates to /', async ({ page }) => {
       await page.goto('/nonexistent-page')
       await page.getByRole('link', { name: 'Zurück zum Start' }).click()
+      // Seit PROJ-16 ist `/` die Landingpage, nicht mehr der App-Start.
       await expect(page).toHaveURL('/')
     })
   })
@@ -333,7 +334,7 @@ test.describe('PROJ-1: App Shell & Mode Switch', () => {
     test.use({ viewport: { width: 375, height: 667 } })
 
     test('startscreen displays correctly at 375px', async ({ page }) => {
-      await page.goto('/')
+      await page.goto('/app')
       await page.evaluate(() => localStorage.setItem('gq_first_visit_done', 'true'))
       await page.reload()
       await expect(page.locator('img[alt="Geo Quest"]')).toBeVisible()
@@ -345,7 +346,7 @@ test.describe('PROJ-1: App Shell & Mode Switch', () => {
     })
 
     test('mode cards are tappable (min 44px height)', async ({ page }) => {
-      await page.goto('/')
+      await page.goto('/app')
       await page.evaluate(() => localStorage.setItem('gq_first_visit_done', 'true'))
       await page.reload()
       const card = page.getByRole('link', { name: /Deine Quests/ }).locator('..')
@@ -380,7 +381,7 @@ test.describe('PROJ-1: App Shell & Mode Switch', () => {
     })
 
     test('rapid mode switching does not break state', async ({ page }) => {
-      await page.goto('/')
+      await page.goto('/app')
       await page.evaluate(() => localStorage.setItem('gq_first_visit_done', 'true'))
       await page.reload()
       await page.getByRole('link', { name: /Deine Quests/ }).click()

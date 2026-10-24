@@ -8,7 +8,7 @@ import { test, expect } from '@playwright/test';
  *
  * Der Eintrag existiert an zwei Orten in zwei Formen: ausgeschrieben im
  * Burger-Menu auf jedem Screen, als Icon ohne Text in der Kopfzeile von
- * /about und /anleitung. Beide zeigen auf dieselbe URL — die Tests prüfen
+ * /about und /mit-ki-erstellen. Beide zeigen auf dieselbe URL — die Tests prüfen
  * das getrennt, damit ein Auseinanderlaufen auffällt.
  */
 
@@ -76,7 +76,7 @@ test.describe("Burger-Menu — Gruppe Unterstützen (PROJ-1)", () => {
   test('der Eintrag ist auf jedem Screen der App erreichbar', async ({ page }) => {
     // Play (Dark), Create (Light) und eine Info-Seite — die drei Kontexte,
     // in denen das Menu unterschiedlich eingebunden ist.
-    for (const path of ['/play', '/create', '/about']) {
+    for (const path of ['/play', '/create', '/']) {
       await openMenu(page, path);
       await expect(
         page.getByRole('dialog').getByRole('link', { name: /Support me/ })
@@ -143,7 +143,7 @@ test.describe('Kopfzeile — Ko-fi-Icon (PROJ-13)', () => {
   const supportIcon = (page: import('@playwright/test').Page) =>
     page.getByRole('banner').getByRole('link', { name: /Support me/ });
 
-  for (const path of ['/about', '/anleitung']) {
+  for (const path of ['/', '/mit-ki-erstellen']) {
     test(`${path} zeigt den Icon-Button ohne Textbeschriftung`, async ({
       page,
     }) => {
@@ -173,7 +173,7 @@ test.describe('Kopfzeile — Ko-fi-Icon (PROJ-13)', () => {
   test("Zur App bleibt der optisch stärkere der beiden Buttons", async ({
     page,
   }) => {
-    await page.goto('/about');
+    await page.goto('/');
 
     const zurApp = page.getByRole('banner').getByRole('link', { name: 'Zur App' });
     await expect(zurApp).toBeVisible();
@@ -191,7 +191,7 @@ test.describe('Kopfzeile — Ko-fi-Icon (PROJ-13)', () => {
   test("das Icon steht in der Tab-Reihenfolge vor Zur App", async ({
     page,
   }) => {
-    await page.goto('/about');
+    await page.goto('/');
 
     const order = await page.getByRole('banner').evaluate((header) => {
       const links = Array.from(header.querySelectorAll('a'));
@@ -207,7 +207,7 @@ test.describe('Kopfzeile — Ko-fi-Icon (PROJ-13)', () => {
 
   test('das Tap-Ziel bleibt auf 320px bei mindestens 44px', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 568 });
-    await page.goto('/about');
+    await page.goto('/');
 
     const box = await supportIcon(page).boundingBox();
     expect(box!.width).toBeGreaterThanOrEqual(44);
@@ -216,7 +216,7 @@ test.describe('Kopfzeile — Ko-fi-Icon (PROJ-13)', () => {
 
   test('die Kopfzeile bricht auf 320px nicht um', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 568 });
-    await page.goto('/about');
+    await page.goto('/');
 
     // Alle SICHTBAREN Kopfzeilen-Elemente teilen sich eine Zeile: gleiche
     // vertikale Mitte. Der Textlink 'Anleitung' ist unter `sm` per
@@ -242,7 +242,7 @@ test.describe('Kopfzeile — Ko-fi-Icon (PROJ-13)', () => {
   });
 
   test('bei Hover erscheint der Tooltip Unterstütze mich', async ({ page }) => {
-    await page.goto('/about');
+    await page.goto('/');
 
     await supportIcon(page).hover();
     const tip = page.getByRole('tooltip');
@@ -251,7 +251,7 @@ test.describe('Kopfzeile — Ko-fi-Icon (PROJ-13)', () => {
   });
 
   test('der Tooltip erscheint auch bei Tastatur-Fokus', async ({ page }) => {
-    await page.goto('/about');
+    await page.goto('/');
 
     // Radix zeigt den Tooltip auch auf Fokus — sonst bekämen
     // Tastatur-Nutzer den Hinweis nie zu sehen.
@@ -260,7 +260,7 @@ test.describe('Kopfzeile — Ko-fi-Icon (PROJ-13)', () => {
   });
 
   test('der Tooltip ersetzt das aria-label nicht', async ({ page }) => {
-    await page.goto('/about');
+    await page.goto('/');
 
     // Der Tooltip ist Hover-/Fokus-gebunden und auf Touch unsichtbar.
     // Die Bedeutung des Icons muss deshalb weiterhin im Accessible Name
@@ -270,13 +270,13 @@ test.describe('Kopfzeile — Ko-fi-Icon (PROJ-13)', () => {
   });
 
   test('ohne Hover ist kein Tooltip im Weg', async ({ page }) => {
-    await page.goto('/about');
+    await page.goto('/');
 
     await expect(page.getByRole('tooltip')).toHaveCount(0);
   });
 
   test('das Icon erhält sichtbaren Tastatur-Fokus', async ({ page }) => {
-    await page.goto('/about');
+    await page.goto('/');
 
     await supportIcon(page).focus();
     await expect(supportIcon(page)).toBeFocused();
@@ -293,7 +293,7 @@ test.describe('Kopfzeile — Ko-fi-Icon (PROJ-13)', () => {
       [1440, 900],
     ]) {
       await page.setViewportSize({ width, height });
-      await page.goto('/about');
+      await page.goto('/');
 
       const cta = page.getByRole('link', { name: /Quest erstellen/ }).first();
       const box = await cta.boundingBox();
@@ -306,7 +306,7 @@ test.describe('JSON-LD — Altersangabe (Nachzug 2026-09-09)', () => {
   test('die audience nennt 8 bis 16 wie der sichtbare FAQ-Text', async ({
     page,
   }) => {
-    await page.goto('/about');
+    await page.goto('/');
 
     const raw = await page
       .locator('script[type="application/ld+json"]')
@@ -324,7 +324,7 @@ test.describe('JSON-LD — Altersangabe (Nachzug 2026-09-09)', () => {
   });
 
   test('sichtbarer Text und JSON-LD nennen dieselbe Spanne', async ({ page }) => {
-    await page.goto('/about');
+    await page.goto('/');
 
     const raw = await page
       .locator('script[type="application/ld+json"]')

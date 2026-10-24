@@ -1,0 +1,45 @@
+# Geo Quest
+
+> Geo Quest ist eine kostenlose Web-App für GPS-Schnitzeljagden. Eltern, Lehrkräfte und Jugendleiter erstellen damit eigene Quests mit Stationen auf der Karte, Texten, Bildern, Videos und Aufgaben. Gespielt wird im Browser des Smartphones: Ein GPS-Pfeil führt von Station zu Station. Kostenlos, ohne Werbung, ohne Anmeldung.
+
+Die App ist auf Deutsch. Gespielt wird vor allem von Kindern und Jugendlichen zwischen etwa 8 und 16 Jahren, erstellt werden die Quests meist von Erwachsenen.
+
+## Was Geo Quest ist
+
+- Ein Baukasten für digitale Schnitzeljagden, GPS-Rallyes, Stadtrallyes und Lernpfade im Freien
+- Anlässe: Kindergeburtstag, Familienausflug, Wandertag und Exkursion mit der Schulklasse, Ferienspiele, Zeltlager, Jugendgruppen
+- Läuft im Browser jedes aktuellen Smartphones, ohne App Store. Wer möchte, legt die App auf den Homescreen.
+- Kostenlos: kein Abo, keine Testphase, keine Begrenzung der Quests. Unterstützung ist freiwillig über Ko-fi möglich.
+- Keine Konten: Weder Ersteller noch Spieler melden sich an oder geben eine E-Mail-Adresse an.
+
+## So funktioniert es
+
+1. Erstellen: Im Creator eine Quest anlegen, Stationen auf der Karte setzen und jeder Station Inhalte und Aufgaben geben.
+2. Weitergeben: Die Quest als Datei exportieren und auf die Handys der Spieler bringen.
+3. Spielen: Die Datei in die App importieren. Ein GPS-Pfeil und eine Entfernungsanzeige führen zur nächsten Station. Dort erscheinen die Inhalte und Aufgaben; weiter geht es erst, wenn alle Aufgaben gelöst sind.
+
+Eine Station kann Texte, Bilder, Audio, Videos und Aufgaben kombinieren. Aufgabentypen: einen Code eintippen, Multiple Choice, Elemente sortieren. Medien werden per Link eingebunden, zum Beispiel von YouTube, Vimeo, Dropbox, Google Drive (Bilder) oder Wikimedia Commons. Hochgeladen wird nichts.
+
+## Mit KI erstellen
+
+Eine Quest lässt sich auch mit einem KI-Tool wie ChatGPT, Claude, Gemini oder duck.ai erstellen. Auf der Seite „Mit KI erstellen“ trägt man Thema, Alter, Anzahl der Stationen, Spielort und Wünsche ein und bekommt einen fertigen Prompt. Die KI schlägt im Gespräch eine Geschichte vor und gibt am Ende eine Datei aus, die man in Geo Quest importiert. Die Stationen setzt man danach auf der Karte an die richtigen Orte.
+
+## Datenschutz
+
+- Der Standort wird nur auf dem Handy verarbeitet, um die Entfernung zur nächsten Station zu berechnen, und nicht an einen Server geschickt.
+- Quests und Spielstand liegen im Browser des Geräts.
+- Die Seite zählt Besuche anonym und ohne Cookies.
+
+## Gut zu wissen
+
+- Unterwegs brauchen die Handys eine mobile Datenverbindung, vor allem für Bilder, Audio und Videos.
+- Eine Gruppe kann sich ein Handy teilen. Mehrere Gruppen laden dieselbe Quest-Datei auf ihre Geräte, jedes Handy führt seinen eigenen Spielstand.
+- Es gibt keine zentrale Quest-Bibliothek: Quests werden als Datei weitergegeben.
+
+## Seiten
+
+- [Startseite: Was ist Geo Quest?](https://geoquest.technolomagie.de/): Überblick, Erklärvideo, Zielgruppen, Quest-Simulation zum Ausprobieren, häufige Fragen
+- [Mit KI erstellen](https://geoquest.technolomagie.de/mit-ki-erstellen): Prompt-Formular und Schritte für eine Quest mit KI
+- [App öffnen](https://geoquest.technolomagie.de/app): Quests spielen oder im Creator erstellen
+- [Impressum](https://geoquest.technolomagie.de/impressum)
+- [Datenschutzerklärung](https://geoquest.technolomagie.de/datenschutz)

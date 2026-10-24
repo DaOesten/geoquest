@@ -1,13 +1,13 @@
 import { test, expect, type Page } from "@playwright/test";
 
 /**
- * PROJ-13 — Landing Page (/about) und Anleitung (/anleitung).
+ * PROJ-13 — Landing Page (/about) und Anleitung (/mit-ki-erstellen).
  * Ein test() pro Acceptance Criterion aus features/PROJ-13-landing-page.md.
  */
 
 test.describe("Seite & Navigation", () => {
-  test("/about lädt eigenständig mit Hero, Sektionen und Zielgruppen", async ({ page }) => {
-    await page.goto("/about");
+  test("/ lädt eigenständig mit Hero, Sektionen und Zielgruppen", async ({ page }) => {
+    await page.goto("/");
 
     // Refinement 4 (2026-09-07): neue Marketing-Fassung, acht Sektionen.
     // Refinement 12 (2026-10-15): neu geordnet für Eltern und Lehrkräfte —
@@ -26,25 +26,25 @@ test.describe("Seite & Navigation", () => {
     ).toBeVisible();
   });
 
-  // PROJ-14: /anleitung zeigt die volle Anleitung; die Ankündigung ist
+  // PROJ-14: /mit-ki-erstellen zeigt die volle Anleitung; die Ankündigung ist
   // seit 2026-10-24 entfernt.
-  test("/anleitung lädt direkt die volle Anleitung", async ({ page }) => {
-    await page.goto("/anleitung");
+  test("/mit-ki-erstellen lädt direkt die volle Anleitung", async ({ page }) => {
+    await page.goto("/mit-ki-erstellen");
 
     await expect(page.getByRole("heading", { name: "So geht es" })).toBeVisible();
     await expect(page.locator("main").getByText("Bald verfügbar")).toHaveCount(0);
   });
 
   // PROJ-14: der zweite Hero-CTA zur KI-Anleitung.
-  test("/about führt den KI-CTA", async ({ page }) => {
-    await page.goto("/about");
-    await expect(page.getByRole("link", { name: /Mit KI erstellen/i })).toHaveCount(1);
+  test("/ führt den KI-CTA", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("main").getByRole("link", { name: /Mit KI erstellen/i })).toHaveCount(1);
   });
 
   test("„Zur App\" führt zum Start-Screen", async ({ page }) => {
     // Der Erstbesuch-Hinweis liegt sonst als Overlay über dem Startscreen.
     await page.addInitScript(() => localStorage.setItem("gq_first_visit_done", "true"));
-    await page.goto("/about");
+    await page.goto("/");
     await page.getByRole("link", { name: "Zur App" }).first().click();
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByRole("heading", { name: "Bist du bereit" })).toBeVisible();
@@ -53,13 +53,13 @@ test.describe("Seite & Navigation", () => {
   // PROJ-14: der KI-Link neben "Neue Quest erstellen".
   test("Creator-Empty-State führt den KI-Link", async ({ page }) => {
     await page.goto("/create");
-    await expect(page.getByRole("link", { name: /Quest mit KI bauen/i })).toHaveCount(1);
+    await expect(page.getByRole("link", { name: /Mit KI erstellen/i })).toHaveCount(1);
     await expect(page.getByRole("button", { name: /Neue Quest erstellen/i })).toBeVisible();
   });
 
   test("Root-Route bleibt der unveränderte Mode-Switch aus PROJ-1", async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem("gq_first_visit_done", "true"));
-    await page.goto("/");
+    await page.goto("/app");
     await expect(page.getByRole("heading", { name: "Bist du bereit" })).toBeVisible();
     // Beide Mode-Cards zeigen weiterhin in die App (nicht auf die neuen
     // Info-Seiten). Über href statt Accessible Name, da Titel und Beschreibung
@@ -70,7 +70,7 @@ test.describe("Seite & Navigation", () => {
     await expect(page.locator('a[href="/create"]')).toContainText("Quest Creator");
   });
 
-  for (const path of ["/about", "/anleitung"]) {
+  for (const path of ["/", "/mit-ki-erstellen"]) {
     test(`${path} scrollt nicht horizontal und hat große Touch-Targets`, async ({ page }) => {
       await page.goto(path);
 
@@ -99,7 +99,7 @@ test.describe("Seite & Navigation", () => {
  * erzeugen" auf der Seite. Ohne Eingaben ist er die unveränderte Vorlage.
  */
 async function promptErzeugen(page: Page) {
-  await page.goto("/anleitung");
+  await page.goto("/mit-ki-erstellen");
   await page.getByRole("button", { name: "Prompt erzeugen" }).click();
   await expect(page.locator("pre")).toBeVisible();
 }
@@ -169,13 +169,13 @@ test.describe("Prompt-Vorlage", () => {
 test.describe("Anleitung & Erwartungsmanagement", () => {
 
   test("Import-Schritt erklärt den Weg über die .json-Datei", async ({ page }) => {
-    await page.goto("/anleitung");
+    await page.goto("/mit-ki-erstellen");
     await expect(page.getByText(/Endung \.json/)).toBeVisible();
     await expect(page.getByText(/Im Creator die Datei hochladen/)).toBeVisible();
   });
 
   test("Koordinaten nachtragen ist als Pflichtschritt ausgewiesen", async ({ page }) => {
-    await page.goto("/anleitung");
+    await page.goto("/mit-ki-erstellen");
     // Seit 2026-10-24 „Stationen" statt „Ziele" — wie im Creator.
     await expect(page.getByRole("heading", { name: "Stationen auf die Karte setzen" })).toBeVisible();
     await expect(page.getByText(/führt die Quest draußen ins Nichts/)).toBeVisible();
@@ -184,7 +184,7 @@ test.describe("Anleitung & Erwartungsmanagement", () => {
   // Gezogen 2026-10-23: Der neue Prompt erzeugt keine Medien mehr — es gibt
   // keine Platzhalter, die ersetzt werden müssten, nur einen freiwilligen Tipp.
   test("Medien sind ein freiwilliger Tipp, keine Platzhalter mehr", async ({ page }) => {
-    await page.goto("/anleitung");
+    await page.goto("/mit-ki-erstellen");
     await expect(page.getByRole("heading", { name: /Tipp: Bilder, Ton oder Video ergänzen/ })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Medien-Adressen ersetzen" })).toHaveCount(0);
     await expect(page.getByText(/BITTE-ERSETZEN/)).toHaveCount(0);
@@ -193,7 +193,7 @@ test.describe("Anleitung & Erwartungsmanagement", () => {
   // Gezogen 2026-10-23: „Der Link zur Webseite reicht nicht" ist seit PROJ-15
   // überholt (YouTube, Dropbox, Wikimedia …).
   test("Medienquellen nennen freie Quellen und die unterstützten Links", async ({ page }) => {
-    await page.goto("/anleitung");
+    await page.goto("/mit-ki-erstellen");
     await expect(page.getByText(/Wikimedia Commons, Pixabay/)).toBeVisible();
     await expect(page.getByText(/Hochgeladen wird\s+nichts/)).toBeVisible();
     for (const quelle of ["YouTube", "Vimeo", "Dropbox", "Google Drive"]) {
@@ -206,7 +206,7 @@ test.describe("Anleitung & Erwartungsmanagement", () => {
 test.describe("Fehlerfälle & Troubleshooting", () => {
 
   test("Troubleshooting nennt die häufigsten Import-Ursachen", async ({ page }) => {
-    await page.goto("/anleitung");
+    await page.goto("/mit-ki-erstellen");
 
     await expect(page.getByRole("button", { name: /Die Datei wird nicht angenommen/ })).toBeVisible();
     await expect(page.getByRole("button", { name: /ungültige Werte/ })).toBeVisible();
@@ -216,7 +216,7 @@ test.describe("Fehlerfälle & Troubleshooting", () => {
   });
 
   test("Troubleshooting rät, die Fehlermeldung an die KI zurückzugeben", async ({ page }) => {
-    await page.goto("/anleitung");
+    await page.goto("/mit-ki-erstellen");
 
     await page.getByRole("button", { name: /Die Datei wird nicht angenommen/ }).click();
     await expect(page.getByText(/Gib der KI die Fehlermeldung zurück/)).toBeVisible();
@@ -227,8 +227,8 @@ test.describe("Teilen & Auffindbarkeit", () => {
   for (const [path, expectedTitle] of [
     // Der OG-Titel von /about zieht seit Refinement 4 die neue Positionierung
     // nach; „Schnitzeljagd" bleibt im <title> für die Suche (dort geprüft).
-    ["/about", "die reale Welt wird zum Spielfeld"],
-    ["/anleitung", "Quest mit KI erstellen — Geo Quest"],  // PROJ-14
+    ["/", "die reale Welt wird zum Spielfeld"],
+    ["/mit-ki-erstellen", "Schnitzeljagd mit KI erstellen — Geo Quest"],  // PROJ-14
   ] as const) {
     test(`${path} liefert eigene Open-Graph-Daten`, async ({ page }) => {
       await page.goto(path);
@@ -242,8 +242,8 @@ test.describe("Teilen & Auffindbarkeit", () => {
     });
   }
 
-  test("/about trägt strukturierte Daten für Suchmaschinen und KI-Systeme", async ({ page }) => {
-    await page.goto("/about");
+  test("/ trägt strukturierte Daten für Suchmaschinen und KI-Systeme", async ({ page }) => {
+    await page.goto("/");
 
     const raw = await page.locator('script[type="application/ld+json"]').textContent();
     const data = JSON.parse(raw!);

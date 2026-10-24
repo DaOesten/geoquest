@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { QuestSimulation } from "@/components/quest-simulation";
 
 /**
- * Die Quest-Simulation, eingebettet als iframe in /about (PROJ-13,
+ * Die Quest-Simulation, eingebettet als iframe auf der Landingpage / (PROJ-13,
  * Refinement 13).
  *
  * Eigene Route statt direkt in der Seite: Die Player-Screens rechnen mit dem

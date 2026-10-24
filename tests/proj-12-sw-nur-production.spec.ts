@@ -60,7 +60,7 @@ test.describe("PROJ-12: Service Worker nur in Production", () => {
   test("registriert sich im Production-Build weiterhin und kontrolliert die Seite", async ({
     page,
   }) => {
-    await page.goto("/");
+    await page.goto("/app");
     const da = await warteAufWorkerMitCache(page);
     expect(da, "Worker muss sich in Production registrieren").toBe(true);
 
@@ -112,7 +112,7 @@ test.describe("PROJ-12: Service Worker nur in Production", () => {
       }
     });
 
-    await page.goto("/");
+    await page.goto("/app");
     await warteAufWorkerMitCache(page);
     await page.goto("/play");
     await page.goto("/create");

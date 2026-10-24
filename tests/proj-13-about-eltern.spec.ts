@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 /**
- * PROJ-13 — Refinement 12 (2026-10-15): `/about` für Eltern und Lehrkräfte.
+ * PROJ-13 — Refinement 12 (2026-10-15): `/` für Eltern und Lehrkräfte.
  *
  * Deckt die Kriterien ab, die es vorher nicht gab: die Live-Demo mit den
  * echten Aufgaben-Komponenten, dass sie weder Speicher noch Standort anfasst,
@@ -48,7 +48,7 @@ function sim(page: Page) {
 }
 
 async function openSimulation(page: Page) {
-  await page.goto("/about");
+  await page.goto("/");
   await page.locator(SIM).scrollIntoViewIfNeeded();
   const start = sim(page).getByRole("button", { name: /Los geht/ });
   await expect(start).toBeVisible();
@@ -158,7 +158,7 @@ test.describe("Quest-Simulation (Refinement 13)", () => {
     // Zahl und Einheit stehen im selben Element („60m").
     await expect(f.getByText(/^60\s*m$/)).toBeVisible();
 
-    const frame = page.frames().find((fr) => fr.url().includes("/about/simulation"))!;
+    const frame = page.frames().find((fr) => fr.url().includes("/simulation"))!;
     await frame.evaluate(() => {
       const w = window as unknown as { __seen: Set<string>; __near: boolean; __done: number; __t0: number };
       w.__seen = new Set();
@@ -219,7 +219,7 @@ test.describe("Quest-Simulation (Refinement 13)", () => {
     const url = await page.locator(SIM).evaluate(
       (el) => (el as HTMLIFrameElement).contentWindow!.location.pathname
     );
-    expect(url).toBe("/about/simulation");
+    expect(url).toBe("/simulation");
   });
 
   test("kein Schreibzugriff auf localStorage, keine Standortabfrage", async ({ page }) => {
@@ -235,7 +235,7 @@ test.describe("Quest-Simulation (Refinement 13)", () => {
 
     // Instrumentierung gilt für Seite UND iframe (`addInitScript` läuft in jedem Frame).
     const counts = await Promise.all(
-      [page.mainFrame(), page.frames().find((fr) => fr.url().includes("/about/simulation"))!].map(
+      [page.mainFrame(), page.frames().find((fr) => fr.url().includes("/simulation"))!].map(
         (fr) =>
           fr.evaluate(() => {
             const w = window as unknown as { __writes: string[]; __geo: number };
@@ -279,7 +279,7 @@ test.describe("Quest-Simulation (Refinement 13)", () => {
       [1440, 320],
     ] as const) {
       await page.setViewportSize({ width: w, height: 900 });
-      await page.goto("/about");
+      await page.goto("/");
       const box = (await page.locator(SIM).boundingBox())!;
       expect(Math.round(box.width), `${w}px`).toBe(expected);
       const transform = await page.locator(SIM).evaluate((el) => getComputedStyle(el).transform);
@@ -290,12 +290,12 @@ test.describe("Quest-Simulation (Refinement 13)", () => {
   test("die Simulations-Route lässt sich nur von der eigenen Domain einbetten", async ({
     request,
   }) => {
-    const res = await request.get("/about/simulation");
+    const res = await request.get("/simulation");
     expect(res.headers()["x-frame-options"]).toBe("SAMEORIGIN");
     const html = await res.text();
     expect(html).toMatch(/<meta name="robots" content="noindex, nofollow"/);
     // Alle anderen Seiten bleiben bei DENY.
-    for (const path of ["/about", "/play", "/create"]) {
+    for (const path of ["/", "/play", "/create"]) {
       expect((await request.get(path)).headers()["x-frame-options"], path).toBe("DENY");
     }
   });
@@ -313,7 +313,7 @@ test.describe("Hero: Handy mit drei Screens (Refinement 13)", () => {
     page,
   }) => {
     await page.clock.install();
-    await page.goto("/about");
+    await page.goto("/");
     await expect.poll(() => opacity(page)).toEqual([1, 0, 0]);
     await page.clock.runFor(3000);
     await expect.poll(() => opacity(page)).toEqual([0, 1, 0]);
@@ -328,7 +328,7 @@ test.describe("Hero: Handy mit drei Screens (Refinement 13)", () => {
 
   test("die drei Punkte blättern von Hand und beenden den Ablauf", async ({ page }) => {
     await page.clock.install();
-    await page.goto("/about");
+    await page.goto("/");
     const dots = page.getByRole("group", { name: "Screens der App" }).getByRole("button");
     await expect(dots).toHaveCount(3);
     for (const box of await dots.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height))) {
@@ -348,7 +348,7 @@ test.describe("Hero: Handy mit drei Screens (Refinement 13)", () => {
       true
     );
     await page.clock.install();
-    await page.goto("/about");
+    await page.goto("/");
     await expect.poll(() => opacity(page)).toEqual([0, 1, 0]);
     await page.clock.runFor(12000);
     await expect.poll(() => opacity(page)).toEqual([0, 1, 0]);
@@ -357,7 +357,7 @@ test.describe("Hero: Handy mit drei Screens (Refinement 13)", () => {
   test("das Handy ist als Smartphone gezeichnet: Statusleiste, kein Mockup-Bild", async ({
     page,
   }) => {
-    await page.goto("/about");
+    await page.goto("/");
     const frames = page.locator("main div.rounded-\\[44px\\]");
     // Hero und Simulation teilen sich denselben Rahmen.
     await expect(frames).toHaveCount(2);
@@ -374,12 +374,12 @@ test.describe("Hero: Handy mit drei Screens (Refinement 13)", () => {
 });
 
 test.describe("Statisch und ohne Hydration-Fehler", () => {
-  test("/about und /about/simulation sind statisch ausgeliefert", async ({ request }) => {
-    const about = await (await request.get("/about")).text();
+  test("/ und /simulation sind statisch ausgeliefert", async ({ request }) => {
+    const about = await (await request.get("/")).text();
     // Der Hero-Kompass und das iframe stehen schon im ausgelieferten HTML.
     expect(about).toContain("about-hero-navigation");
-    expect(about).toContain('src="/about/simulation"');
-    const simHtml = await (await request.get("/about/simulation")).text();
+    expect(about).toContain('src="/simulation"');
+    const simHtml = await (await request.get("/simulation")).text();
     expect(simHtml).toContain("Das Waldgeheimnis");
   });
 
@@ -409,7 +409,7 @@ test.describe("Ansprache und Wahrheit", () => {
   test("nichts aus dem Entwurf, was die App nicht einlöst oder was erfunden ist", async ({
     page,
   }) => {
-    await page.goto("/about");
+    await page.goto("/");
     // Inklusive eingeklappter FAQ-Antworten: textContent statt innerText.
     const text = await page.locator("main").evaluate((m) => m.textContent ?? "");
 
@@ -431,7 +431,7 @@ test.describe("Ansprache und Wahrheit", () => {
   });
 
   test("durchgehend „du“ — kein „Sie“", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
     const text = await page.locator("main").evaluate((m) => m.textContent ?? "");
     expect(text).not.toMatch(/\b(Ihre[nmrs]?|Ihnen)\b/);
     expect(text).not.toMatch(/\bSie (können|möchten|haben|wählen|tippen)\b/);
@@ -440,7 +440,7 @@ test.describe("Ansprache und Wahrheit", () => {
   test("die sichtbare FAQ und das FAQPage-JSON-LD stimmen wörtlich überein", async ({
     page,
   }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     // Jede Frage aufklappen und die tatsächlich angezeigte Antwort lesen.
     // Eingeklappt hängt die Antwort nicht im DOM der Sektion — ein Vergleich
@@ -476,7 +476,7 @@ test.describe("Unverändert", () => {
   test("Kopfzeile ohne Sprungmarken, Ko-fi nur als Icon, Abschluss nur „Quest erstellen“", async ({
     page,
   }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     // Kopfzeile: Ko-fi-Icon und „Zur App" — keine Anker-Links.
     const headerLinks = await page
@@ -518,7 +518,7 @@ test.describe("QA: Layout je Breite", () => {
       page,
     }) => {
       await page.setViewportSize({ width: w, height: 900 });
-      await page.goto("/about");
+      await page.goto("/");
       const perRow = await page.evaluate(() => {
         const firstRow = (els: Element[]) => {
           const tops = els.map((e) => Math.round(e.getBoundingClientRect().top));
@@ -591,7 +591,7 @@ test.describe("QA: Sicherheit und Robustheit", () => {
     await input.press("Enter");
     await expect(f.getByText(/Leider falsch/)).toBeVisible();
 
-    const frame = page.frames().find((fr) => fr.url().includes("/about/simulation"))!;
+    const frame = page.frames().find((fr) => fr.url().includes("/simulation"))!;
     const res = await frame.evaluate(() => ({
       pwn: (window as unknown as { __pwn?: number }).__pwn ?? null,
       injected: document.querySelectorAll("img[src='x']").length,
@@ -603,7 +603,7 @@ test.describe("QA: Sicherheit und Robustheit", () => {
   test("fällt der Screenshot aus, bleibt das Layout stehen", async ({ page }) => {
     await page.route(/about-hero-/, (r) => r.abort());
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/about");
+    await page.goto("/");
 
     // Seit Refinement 13 hält ein Container mit festem Seitenverhältnis die
     // Höhe — auch in WebKit, wo das kaputte Bild vorher auf ein Quadrat
@@ -634,7 +634,7 @@ test.describe("QA Refinement 13", () => {
       const f = document.createElement("iframe");
       f.src = src;
       document.body.appendChild(f);
-    }, `${baseURL}/about/simulation`);
+    }, `${baseURL}/simulation`);
     await page.waitForTimeout(2000);
     // Der Browser verweigert die Darstellung — kein Start-Knopf im fremden Rahmen.
     await expect(
@@ -650,7 +650,7 @@ test.describe("QA Refinement 13", () => {
     test.skip(browserName !== "chromium", "CDP-Touch nur in Chromium");
     const context = await browser.newContext({ viewport: { width: 412, height: 839 }, hasTouch: true, isMobile: true });
     const page = await context.newPage();
-    await page.goto(`${baseURL}/about`);
+    await page.goto(`${baseURL}/`);
     const iframe = page.locator(SIM);
     await iframe.scrollIntoViewIfNeeded();
     await expect(page.frameLocator(SIM).getByRole("button", { name: /Los geht/ })).toBeVisible();
@@ -689,7 +689,7 @@ test.describe("QA Refinement 13", () => {
     await expect(f.getByText("Ziel erreicht!")).toBeVisible();
     expect(Date.now() - t0).toBeLessThan(1500);
 
-    const frame = page.frames().find((fr) => fr.url().includes("/about/simulation"))!;
+    const frame = page.frames().find((fr) => fr.url().includes("/simulation"))!;
     expect(await frame.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches)).toBe(true);
     const visible = await frame.evaluate(
       () =>
@@ -706,10 +706,13 @@ test.describe("QA Refinement 13", () => {
   }) => {
     test.skip(browserName === "webkit", "WebKit/macOS: Tab überspringt Buttons");
     await page.clock.install();
-    await page.goto("/about");
+    await page.goto("/");
     // Start beim letzten Hero-Button: Seit der Freischaltung der KI-Anleitung
     // (PROJ-14, 2026-10-23) folgt auf „Quest erstellen" noch „Mit KI erstellen".
+    // Im Hauptbereich suchen: Seit PROJ-16 heißt auch der Kopfzeilen-Link
+    // „Mit KI erstellen" und steht im DOM vor dem Hero.
     await page
+      .getByRole("main")
       .getByRole("link", { name: /Mit KI erstellen/i })
       .first()
       .focus();
@@ -729,7 +732,7 @@ test.describe("QA Refinement 13", () => {
   // den Seitengrund — WCAG 1.4.11 verlangt für Bedienelemente 3:1. Jetzt
   // `bg-gq-grey/70`, gemessen 4.39:1. Vom `test.fail`-Wächter zum normalen Test.
   test("inaktive Punkte erreichen mindestens 3:1 Kontrast (BUG-24)", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
     const ratio = await page.evaluate(() => {
       const parse = (s: string) => (s.match(/[\d.]+/g) ?? []).map(Number);
       const lum = ([r, g, b]: number[]) => {
@@ -757,7 +760,7 @@ test.describe("QA Refinement 13", () => {
  */
 test.describe("Refinement 14: Kapitel unter dem Video, Vorteil-Texte", () => {
   test("drei Kapitel stehen immer sichtbar direkt unter dem Video", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
     const section = page.locator("main section", { has: page.locator("video") });
     const chapters = section.locator("ol > li");
     await expect(chapters).toHaveCount(3);
@@ -787,7 +790,7 @@ test.describe("Refinement 14: Kapitel unter dem Video, Vorteil-Texte", () => {
       [1440, 3],
     ] as const) {
       await page.setViewportSize({ width: w, height: 900 });
-      await page.goto("/about");
+      await page.goto("/");
       const tops = await page
         .locator("main section", { has: page.locator("video") })
         .locator("ol > li")
@@ -797,7 +800,7 @@ test.describe("Refinement 14: Kapitel unter dem Video, Vorteil-Texte", () => {
   });
 
   test("die Vorteil-Texte stehen im Wortlaut des Betreibers", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
     await expect(
       page.getByText(
         "Bildschirmzeit, die nach draußen führt: Eine Quest führt von Station zu Station in der echten Welt."
@@ -818,7 +821,7 @@ test.describe("Refinement 14: Kapitel unter dem Video, Vorteil-Texte", () => {
  */
 test.describe("FAQ: Ko-fi-Link und Medien per Link (Refinement 15)", () => {
   async function openAnswer(page: Page, question: RegExp) {
-    await page.goto("/about");
+    await page.goto("/");
     await page.getByRole("button", { name: question }).click();
     return page.getByRole("region", { name: question });
   }
@@ -873,7 +876,7 @@ test.describe("FAQ: Ko-fi-Link und Medien per Link (Refinement 15)", () => {
   });
 
   test("das JSON-LD trägt beide Antworten als reinen Text", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
     const raw = (await page.locator('script[type="application/ld+json"]').textContent())!;
     const faq = JSON.parse(raw)["@graph"].find(
       (g: { "@type": string }) => g["@type"] === "FAQPage"
@@ -911,7 +914,7 @@ test.describe("QA Refinement 15: Ko-fi-Link in der FAQ", () => {
   for (const width of [375, 768, 1440]) {
     test(`${width}px: Link lesbar (≥ 4.5:1), kein Überlauf`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
-      await page.goto("/about");
+      await page.goto("/");
       await page.getByRole("button", { name: /Was kostet Geo Quest/ }).click();
       const link = page
         .getByRole("region", { name: /Was kostet Geo Quest/ })
@@ -939,7 +942,7 @@ test.describe("QA Refinement 15: Ko-fi-Link in der FAQ", () => {
     page,
     context,
   }) => {
-    await page.goto("/about");
+    await page.goto("/");
     const trigger = page.getByRole("button", { name: /Was kostet Geo Quest/ });
     await trigger.click();
     const link = page
@@ -956,7 +959,7 @@ test.describe("QA Refinement 15: Ko-fi-Link in der FAQ", () => {
       .poll(() => popup.evaluate(() => window.opener === null).catch(() => null))
       .toBe(true);
     // Ursprungsseite bleibt stehen, die Antwort bleibt aufgeklappt.
-    expect(new URL(page.url()).pathname).toBe("/about");
+    expect(new URL(page.url()).pathname).toBe("/");
     await expect(trigger).toHaveAttribute("aria-expanded", "true");
     // Kein `popup.close()`: Ko-fi ist aus der Testumgebung gesperrt, und
     // WebKit hängt beim Schließen einer solchen Seite ~5 s. Der Kontext räumt auf.
@@ -966,7 +969,7 @@ test.describe("QA Refinement 15: Ko-fi-Link in der FAQ", () => {
     page,
     browserName,
   }) => {
-    await page.goto("/about");
+    await page.goto("/");
     const trigger = page.getByRole("button", { name: /Was kostet Geo Quest/ });
     await trigger.click();
     await trigger.focus();
@@ -981,7 +984,7 @@ test.describe("QA Refinement 15: Ko-fi-Link in der FAQ", () => {
   });
 
   test("nur die Kosten-Antwort trägt einen Link", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
     const triggers = page.locator("main section button[aria-expanded]");
     const count = await triggers.count();
     const linksPerAnswer: number[] = [];

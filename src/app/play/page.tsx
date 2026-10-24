@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { Compass } from "lucide-react";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/app-header";
+import { ROUTES } from "@/lib/app-nav";
 import { QuestImportButton } from "@/components/quest-import-button";
 import { QuestCard } from "@/components/quest-card";
 import { QuestFilterTabs, type QuestFilter } from "@/components/quest-filter-tabs";
@@ -102,7 +103,7 @@ export default function PlayPage() {
   return (
     <>
       <QuestListBackdrop />
-      <AppHeader backHref="/" transparent />
+      <AppHeader backHref={ROUTES.app} transparent />
 
       <div className="relative px-5 pt-4">
         <h1 className="font-display italic text-[clamp(1.8rem,8vw,2.4rem)] leading-[0.95] uppercase text-foreground">

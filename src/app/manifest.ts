@@ -23,13 +23,21 @@ export default function manifest(): MetadataRoute.Manifest {
       "Erstelle und spiele GPS-basierte Schnitzeljagden. Navigiere. Entdecke. Löse.",
 
     /**
-     * Start auf `/`, nicht auf `/play`: Die installierte App verhält sich wie
+     * Start auf `/app` (PROJ-16, 2026-10-24): Auf `/` liegt seitdem die
+     * Landingpage; die installierte App soll beim Antippen direkt in die App,
+     * nicht auf die Werbeseite. `scope` und `id` bleiben `/`: Mit geänderter
+     * `id` hielte Android eine bestehende Installation für eine fremde App,
+     * und mit engerem `scope` öffneten Menü-Ziele wie Impressum im Browser.
+     * Startet eine Installation trotzdem auf `/`, schickt sie
+     * `AppStartRedirect` weiter.
+     *
+     * Ursprüngliche Begründung (PROJ-12) für den App-Start statt `/play`: Die installierte App verhält sich wie
      * die Website. `/` trägt seit BUG-10 das vollständige Burger-Menu und beide
      * Mode-Cards — Play und Create sind je einen Tap entfernt. Ein Start auf
      * `/play` würde den Creator in der installierten App verstecken, obwohl die
      * Installation laut PRD auch dem Ersteller offensteht.
      */
-    start_url: "/",
+    start_url: "/app",
     scope: "/",
     id: "/",
 

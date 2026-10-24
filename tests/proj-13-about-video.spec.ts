@@ -20,7 +20,7 @@ test.describe("Platzierung", () => {
   // auf Position 3 — direkt nach den Vorteilen, vor „Für wen". Die
   // Orte-Sektion, vor der es bisher stand, ist entfallen.
   test("steht nach den Vorteilen, vor „Für wen ist Geo Quest?“", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
     const secondSection = page.locator("main section").nth(1);
     await expect(secondSection.locator("video")).toHaveCount(1);
     await expect(
@@ -44,7 +44,7 @@ test.describe("Vor dem Klick", () => {
       if (r.url().includes(".mp4")) videoRequests.push(r.url());
     });
 
-    await page.goto("/about");
+    await page.goto("/");
     await page.locator("main video").scrollIntoViewIfNeeded();
     await page.waitForTimeout(1000);
 
@@ -66,7 +66,7 @@ test.describe("Vor dem Klick", () => {
   });
 
   test("Poster und Startknopf sind sichtbar, Knopf ≥ 44px", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
     const btn = playButton(page);
     await expect(btn).toBeVisible();
     const box = await btn.boundingBox();
@@ -77,7 +77,7 @@ test.describe("Vor dem Klick", () => {
 
 test.describe("Abspielen", () => {
   test("ein Klick startet das Video mit Bedienelementen", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
     await playButton(page).click();
 
     await expect(playButton(page)).toHaveCount(0);
@@ -90,7 +90,7 @@ test.describe("Abspielen", () => {
   });
 
   test("per Tastatur startbar", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
     await playButton(page).focus();
     await page.keyboard.press("Enter");
     await expect(playButton(page)).toHaveCount(0);
@@ -105,7 +105,7 @@ test.describe("Abspielen", () => {
 test.describe("Fallback", () => {
   test("Video nicht ladbar → Poster bleibt, Hinweis statt kaputter Fläche", async ({ page }) => {
     await page.route("**/*.mp4", (route) => route.fulfill({ status: 404, body: "" }));
-    await page.goto("/about");
+    await page.goto("/");
     await playButton(page).click();
 
     await expect(page.getByRole("status")).toHaveText(/lässt sich gerade nicht abspielen/);
@@ -127,7 +127,7 @@ test.describe("Format & Layout", () => {
   ] as const) {
     test(`${w}px: 4:5, kein Überlauf`, async ({ page }) => {
       await page.setViewportSize({ width: w, height: h });
-      await page.goto("/about");
+      await page.goto("/");
       const box = (await page.locator("main video").boundingBox())!;
       expect(box.height / box.width).toBeCloseTo(1.25, 1);
       expect(box.x).toBeGreaterThanOrEqual(0);
@@ -166,7 +166,7 @@ test.describe("Format & Layout", () => {
   ] as const) {
     test(`${w}px: Kinoformat — volle Breite, Video mittig, unscharfer Rand`, async ({ page }) => {
       await page.setViewportSize({ width: w, height: h });
-      await page.goto("/about");
+      await page.goto("/");
       const section = (await page.locator("main section").first().boundingBox())!;
       const card = (await page.locator("main figure > div").first().boundingBox())!;
       const video = (await page.locator("main video").boundingBox())!;
@@ -189,7 +189,7 @@ test.describe("Format & Layout", () => {
 
   test("Handy: kein Rand, das Video füllt die Karte allein", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/about");
+    await page.goto("/");
     await expect(page.locator("main figure img")).toBeHidden();
     const card = (await page.locator("main figure > div").first().boundingBox())!;
     const video = (await page.locator("main video").boundingBox())!;
@@ -227,7 +227,7 @@ test.describe("QA: Kontrast", () => {
   test("die Laufzeit „0:52“ erreicht 4.5:1 auf Teal — Alpha korrekt verrechnet", async ({
     page,
   }) => {
-    await page.goto("/about");
+    await page.goto("/");
     const ratio = await playButton(page).evaluate((btn) => {
       const parse = (s: string) => s.match(/[\d.]+/g)!.map(Number);
       const bg = parse(getComputedStyle(btn).backgroundColor);
@@ -252,7 +252,7 @@ test.describe("QA: ohne JavaScript", () => {
   test("Poster und Überschrift stehen, kein Video-Byte wird geladen", async ({ page }) => {
     const mp4: string[] = [];
     page.on("request", (r) => r.url().includes(".mp4") && mp4.push(r.url()));
-    await page.goto("/about");
+    await page.goto("/");
     await expect(
       page.getByRole("heading", { name: "So funktioniert Geo Quest." })
     ).toBeVisible();
@@ -273,7 +273,7 @@ test.describe("QA: offene Befunde", () => {
       await new Promise((s) => setTimeout(s, 1500));
       await route.continue();
     });
-    await page.goto("/about");
+    await page.goto("/");
     await playButton(page).click();
     await page.locator("main video").evaluate((v: HTMLVideoElement) => v.pause());
     await page.waitForTimeout(2500);
@@ -288,7 +288,7 @@ test.describe("QA: offene Befunde", () => {
   // nächste Tab landet auf dem Video), ein Screenreader verliert aber seine
   // Position. Wird grün, sobald der Fokus aufs Video wandert.
   test.fail("nach dem Start per Tastatur liegt der Fokus auf dem Video", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
     await playButton(page).focus();
     await page.keyboard.press("Enter");
     await expect
@@ -314,7 +314,7 @@ test.describe("Sektionsabstand nach dem Hero", () => {
   ] as const) {
     test(`${w}px: Hero-Kante → erste Sektion = Sektion → Sektion = ${gap}px`, async ({ page }) => {
       await page.setViewportSize({ width: w, height: h });
-      await page.goto("/about");
+      await page.goto("/");
       const m = await page.evaluate(() => {
         const divider = document.querySelector("main .h-px")!.getBoundingClientRect();
         const [first, second] = document.querySelectorAll("main section");
@@ -351,7 +351,7 @@ test.describe("QA: Sektionsrhythmus", () => {
       page,
     }) => {
       await page.setViewportSize({ width: w, height: h });
-      await page.goto("/about");
+      await page.goto("/");
       const m = await page.evaluate(() => {
         const R = (e: Element) => e.getBoundingClientRect();
         const divider = R(document.querySelector("main .h-px")!);

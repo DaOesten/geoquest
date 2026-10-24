@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { Gamepad2, Pencil } from "lucide-react";
@@ -5,6 +6,19 @@ import { ModeCard } from "@/components/mode-card";
 import { FirstVisitDialog } from "@/components/first-visit-dialog";
 import { AppNavMenu } from "@/components/app-nav-menu";
 import { InstallHint } from "@/components/install-hint";
+import { ROUTES } from "@/lib/app-nav";
+
+/**
+ * Der App-Start (PROJ-16, 2026-10-24: von `/` nach `/app` gezogen). Auf `/`
+ * liegt jetzt die Landingpage, weil die Startadresse einer Domain bei Suche
+ * und KI am meisten zählt. Das Homescreen-Icon öffnet laut Manifest diese
+ * Seite.
+ */
+export const metadata: Metadata = {
+  title: "Geo Quest — App",
+  description: "Spiele eine GPS-Quest oder bau deine eigene.",
+  alternates: { canonical: ROUTES.app },
+};
 
 export default function StartScreen() {
   return (
@@ -42,12 +56,12 @@ export default function StartScreen() {
         <AppNavMenu />
       </div>
 
-      {/* Logo — fuehrt zur Landing Page (PROJ-13). Bewusst ohne sichtbaren
+      {/* Logo — fuehrt zur Landing Page (PROJ-13, seit PROJ-16 auf `/`). Bewusst ohne sichtbaren
           Link-Hinweis: das Lockup ist ein Markenelement, der Link ein
           Bonus-Pfad neben den beiden Mode-Cards. */}
       <div className="grid place-items-center">
         <Link
-          href="/about"
+          href={ROUTES.home}
           aria-label="Geo Quest — Was ist das?"
           className="inline-block w-3/5 max-w-[240px] rounded-[12px] outline-none transition-all duration-[120ms] [transition-timing-function:cubic-bezier(.16,.84,.44,1)] active:scale-[0.97] active:opacity-90 focus-visible:ring-[3px] focus-visible:ring-[rgba(0,224,209,0.45)] focus-visible:ring-offset-2 focus-visible:ring-offset-gq-black"
         >
@@ -90,14 +104,14 @@ export default function StartScreen() {
         <ModeCard
           title="Deine Quests"
           description="Spiele Outdoor Quests, finde die Stationen, löse alle Aufgaben."
-          href="/play"
+          href={ROUTES.play}
           icon={<Gamepad2 className="w-6 h-6" />}
           accent="teal"
         />
         <ModeCard
           title="Quest Creator"
           description="Eigene Route setzen, Aufgaben schreiben, Quest mit deinen Freunden teilen."
-          href="/create"
+          href={ROUTES.create}
           icon={<Pencil className="w-6 h-6" />}
           accent="lime"
         />

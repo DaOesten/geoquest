@@ -3,6 +3,7 @@ import { Anton, Orbitron, Rubik } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import { PageAnalytics } from "@/components/page-analytics";
+import { SITE_URL } from "@/lib/site-url";
 import "./globals.css";
 
 /**
@@ -40,12 +41,8 @@ const rubik = Rubik({
 
 export const metadata: Metadata = {
   // Needed so per-page Open Graph images resolve to absolute URLs when shared.
-  // Vercel injects VERCEL_PROJECT_PRODUCTION_URL; falls back to localhost in dev.
-  metadataBase: new URL(
-    process.env.VERCEL_PROJECT_PRODUCTION_URL
-      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-      : "http://localhost:3000"
-  ),
+  // Dieselbe Quelle wie Sitemap und robots.txt (PROJ-16).
+  metadataBase: new URL(SITE_URL),
   title: "Geo Quest",
   description:
     "Erstelle und spiele GPS-basierte Schnitzeljagden. Navigiere. Entdecke. Löse.",

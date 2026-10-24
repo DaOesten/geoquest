@@ -29,7 +29,7 @@ const CONTRAST_HELPER = `
 
 test.describe("Kontrast (PRD: WCAG AA, 4.5:1)", () => {
   test("die neuen Textelemente erfüllen die Kontrastvorgabe", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     const results = await page.evaluate((helperSrc) => {
       const contrast = eval(helperSrc) as (fg: string, bg: string) => number;
@@ -88,7 +88,7 @@ test.describe("Kontrast (PRD: WCAG AA, 4.5:1)", () => {
 
 test.describe("Tastatur & Semantik", () => {
   test("die Überschriften-Hierarchie hat keine Sprünge", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     const levels = await page
       .locator("main h1, main h2, main h3, main h4")
@@ -104,7 +104,7 @@ test.describe("Tastatur & Semantik", () => {
   });
 
   test("die FAQ lässt sich vollständig per Tastatur bedienen", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     // Nur Accordion-Trigger — seit Refinement 10 ist der erste Button in
     // einer Sektion der Video-Startknopf.
@@ -123,7 +123,7 @@ test.describe("Tastatur & Semantik", () => {
   test("inhaltstragende Bilder haben einen Alternativtext, dekorative nicht", async ({
     page,
   }) => {
-    await page.goto("/about");
+    await page.goto("/");
     // Gezogen am 2026-09-21 (Refinement 9): Das Hero-Bild ist seitdem
     // Hintergrund und damit Dekoration — ein leeres `alt` plus `aria-hidden`
     // ist dort die RICHTIGE Auszeichnung, kein fehlender Alternativtext.
@@ -144,7 +144,7 @@ test.describe("Tastatur & Semantik", () => {
 
 test.describe("Darstellungs-Rhythmus", () => {
   test("nie zweimal dieselbe Form hintereinander", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     const forms = await page.locator("main section").evaluateAll((secs) =>
       secs.map((s) => {
@@ -174,7 +174,7 @@ test.describe("Darstellungs-Rhythmus", () => {
   test("genau ein Lime-Element auf der Seite (Design-System-Regel)", async ({
     page,
   }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     // Gezogen in Refinement 12: Bis dahin trug die Game-Designer-Karte den
     // Lime-Rahmen. Sie ist entfallen; das eine Lime-Element ist jetzt die
@@ -204,7 +204,7 @@ test.describe("Responsive (PRD: 360–430px mobil, Desktop nutzbar)", () => {
   ] as const) {
     test(`${w}px: kein Überlauf, alle Touch-Targets ≥ 44px`, async ({ page }) => {
       await page.setViewportSize({ width: w, height: h });
-      await page.goto("/about");
+      await page.goto("/");
 
       const overflow = await page.evaluate(
         () =>
@@ -243,7 +243,7 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
       page,
     }) => {
       await page.setViewportSize({ width: w, height: h });
-      await page.goto("/about");
+      await page.goto("/");
 
       const cta = page.getByRole("link", { name: /Quest erstellen/i }).first();
       const box = await cta.boundingBox();
@@ -267,7 +267,7 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
     const logo = page.locator("main img[alt='Geo Quest']");
 
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/about");
+    await page.goto("/");
     await expect(logo, "auf dem Handy ist das Lockup der Markenanker").toBeVisible();
 
     await page.setViewportSize({ width: 768, height: 1024 });
@@ -292,7 +292,7 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 1366, height: 768 });
-    await page.goto("/about");
+    await page.goto("/");
 
     const logo = page.locator("main img[alt='Geo Quest']");
     await expect(logo).toHaveAttribute("src", /logo-lockup-cutout/);
@@ -315,7 +315,7 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/about");
+    await page.goto("/");
 
     // Die Illustration liegt nicht mehr hinter dem Hero. Gezielt auf die
     // Datei geprüft: Seit Refinement 13 tragen auch die gerade ausgeblendeten
@@ -335,7 +335,7 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
 
   test("auf dem Handy steht der Screenshot unter dem CTA", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/about");
+    await page.goto("/");
 
     const shot = (await page.locator("main img[src*='about-hero-navigation']").boundingBox())!;
     const cta = (await page.getByRole("link", { name: /Quest erstellen/i }).first().boundingBox())!;
@@ -343,7 +343,7 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
   });
 
   test("die Abschluss-Sektion trägt die Illustration mit Abdunklung", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     const closing = page.locator("main section", {
       has: page.getByRole("heading", { name: /Deine Umgebung/ }),
@@ -374,7 +374,7 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
     // Gemessen bei der Umsetzung: schlechtester Wert 4.86:1 (Teal auf
     // Desktop), weiß ≥ 5.93:1.
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/about");
+    await page.goto("/");
     const closing = page.locator("main section", {
       has: page.getByRole("heading", { name: /Deine Umgebung/ }),
     });
@@ -438,7 +438,7 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
   });
 
   test("die Nachbarseiten bekommen kein Hintergrundbild", async ({ page }) => {
-    for (const path of ["/anleitung", "/impressum", "/datenschutz"]) {
+    for (const path of ["/mit-ki-erstellen", "/impressum", "/datenschutz"]) {
       await page.goto(path);
       await expect(
         page.locator('main img[alt=""]:not(section img)'),
@@ -452,7 +452,7 @@ test.describe("BUG-7: Hero-CTA über dem Falz", () => {
 
 test.describe("Sicherheit", () => {
   test("das JSON-LD escaped < und kann kein Script schließen", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
     const raw = await page
       .locator('script[type="application/ld+json"]')
       .textContent();
@@ -472,14 +472,14 @@ test.describe("Sicherheit", () => {
       const u = new URL(r.url());
       if (u.hostname !== "localhost" && u.protocol !== "data:") external.push(u.hostname);
     });
-    await page.goto("/about", { waitUntil: "networkidle" });
+    await page.goto("/", { waitUntil: "networkidle" });
     expect([...new Set(external)]).toEqual([]);
   });
 });
 
 test.describe("Regression: Nachbarseiten", () => {
   for (const [path, heading] of [
-    ["/anleitung", /Quest bauen|mit KI/i],
+    ["/mit-ki-erstellen", /Quest bauen|mit KI/i],
     ["/impressum", /Impressum/i],
     ["/datenschutz", /Datenschutz/i],
   ] as const) {
@@ -493,13 +493,13 @@ test.describe("Regression: Nachbarseiten", () => {
   // PROJ-14: der Weg zur KI-Anleitung.
   test("der Creator-Empty-State führt den KI-Link", async ({ page }) => {
     await page.goto("/create");
-    await expect(page.getByRole("link", { name: /Quest mit KI bauen/i })).toHaveCount(1);
+    await expect(page.getByRole("link", { name: /Mit KI erstellen/i })).toHaveCount(1);
   });
 });
 
 test.describe("Refinement 5: Copy-Feinschliff (2026-09-09)", () => {
   test("kein Eyebrow und kein Leerraum an seiner Stelle", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     await expect(page.getByText("Über Geo Quest")).toHaveCount(0);
     // Ein leerer String in der Shell hätte ein leeres <p> mit voller
@@ -517,7 +517,7 @@ test.describe("Refinement 5: Copy-Feinschliff (2026-09-09)", () => {
   // Hero-Sätze (Ersteller, Spieler) gleich gesetzt sind. Der Spieler-Satz ist
   // entfallen; der Hero trägt genau einen Absatz in der Body-Schrift.
   test("der Hero trägt genau einen Absatz in der Body-Schrift", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     const heroBody = await page.evaluate(() => {
       const h1 = document.querySelector("h1")!;
@@ -533,14 +533,14 @@ test.describe("Refinement 5: Copy-Feinschliff (2026-09-09)", () => {
 
   // PROJ-14: der zweite Hero-CTA zur KI-Anleitung.
   test("der Hero führt den KI-CTA", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
-    await expect(page.getByRole("link", { name: /Mit KI erstellen/ })).toHaveCount(1);
+    await expect(page.getByRole("main").getByRole("link", { name: /Mit KI erstellen/ })).toHaveCount(1);
     await expect(page.getByRole("link", { name: /^Quest erstellen/ }).first()).toBeVisible();
   });
 
   test("die neue Copy steht, die alte ist weg", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/");
 
     // Seit Refinement 12 auf die Copy für Eltern und Lehrkräfte gezogen.
     await expect(page.getByText(/^Erstelle eigene GPS-Schnitzeljagden/)).toBeVisible();
@@ -560,7 +560,7 @@ test.describe("Refinement 5: Copy-Feinschliff (2026-09-09)", () => {
     // `eyebrow` wurde optional gemacht — die drei anderen Info-Seiten
     // setzen die Prop weiterhin und dürfen sie nicht verlieren.
     for (const [path, expected] of [
-      ["/anleitung", "Anleitung"],  // PROJ-14
+      ["/mit-ki-erstellen", "Mit KI erstellen"],  // PROJ-14, seit PROJ-16
       ["/impressum", "Rechtliches"],
       ["/datenschutz", "Rechtliches"],
     ] as const) {
