@@ -130,28 +130,39 @@ test.describe("Prompt-Formular", () => {
     expect(clip).toContain("- Thema: Magie");
   });
 
-  test("Feld danach geändert → Hinweis, Neuerzeugen übernimmt den neuen Stand", async ({ page }) => {
+  // Seit 2026-10-24 (Betreiber): Hinweis im Formular über dem Button, und
+  // derselbe Button heißt dann „Prompt neu erzeugen" — kein zweiter Knopf.
+  test("Feld danach geändert → Hinweis, Button heißt „Prompt neu erzeugen“ und übernimmt den neuen Stand", async ({ page }) => {
     await feld(page, "Thema").fill("Piraten");
     await erzeugen(page);
     await expect(page.getByText(/Angaben geändert/)).toHaveCount(0);
 
     await feld(page, "Thema").fill("Detektiv");
     await expect(page.getByText(/Angaben geändert/)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Prompt erzeugen", exact: true })).toHaveCount(0);
     // Die Box bleibt mit dem alten Stand stehen, nichts ändert sich still.
     expect((await angaben(page))[0]).toBe("- Thema: Piraten");
 
     await page.getByRole("button", { name: "Prompt neu erzeugen" }).click();
     await expect(page.getByText(/Angaben geändert/)).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Prompt erzeugen", exact: true })).toBeVisible();
     expect((await angaben(page))[0]).toBe("- Thema: Detektiv");
   });
 
-  test("auch „Prompt erzeugen“ erzeugt nach einer Änderung neu", async ({ page }) => {
+  test("der Hinweis steht im Formular direkt über dem Button, nur ein Erzeugen-Knopf", async ({ page }) => {
     await erzeugen(page);
     await feld(page, "Spielort").fill("Schulgelände");
-    await expect(page.getByText(/Angaben geändert/)).toBeVisible();
-    await erzeugen(page);
-    await expect(page.getByText(/Angaben geändert/)).toHaveCount(0);
-    expect((await angaben(page))[3]).toBe("- Spielort: Schulgelände");
+
+    const form = page.locator("form");
+    const hinweis = form.getByText(/Angaben geändert/);
+    const knopf = form.getByRole("button", { name: "Prompt neu erzeugen" });
+    await expect(hinweis).toBeVisible();
+    await expect(page.getByRole("button", { name: /neu erzeugen/ })).toHaveCount(1);
+
+    const h = (await hinweis.boundingBox())!;
+    const k = (await knopf.boundingBox())!;
+    expect(h.y + h.height).toBeLessThanOrEqual(k.y);
+    expect(k.y - (h.y + h.height)).toBeLessThan(40);
   });
 
   test("zurück zum erzeugten Stand → kein Hinweis", async ({ page }) => {
@@ -203,7 +214,7 @@ test.describe("Prompt-Formular", () => {
     await erzeugen(page);
     await expect(status).toHaveText("Prompt erzeugt.");
     await feld(page, "Thema").fill("Weltraum");
-    await erzeugen(page);
+    await page.getByRole("button", { name: "Prompt neu erzeugen" }).click();
     await expect(status).toHaveText("Prompt neu erzeugt.");
   });
 });
@@ -297,7 +308,7 @@ test.describe("Darstellung", () => {
         const hoehe = await feld(page, label).evaluate((e) => e.getBoundingClientRect().height);
         expect(hoehe, label).toBeGreaterThanOrEqual(44);
       }
-      for (const name of ["Prompt erzeugen", "Prompt neu erzeugen", "Kopieren"]) {
+      for (const name of ["Prompt neu erzeugen", "Kopieren"]) {
         const hoehe = await page
           .getByRole("button", { name, exact: name !== "Kopieren" })
           .evaluate((e) => e.getBoundingClientRect().height);

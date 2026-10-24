@@ -32,8 +32,8 @@ function snapshot(werte: PromptAngabenWerte): string {
  *
  * The prompt box appears only after „Prompt erzeugen" — fill in, then
  * generate. Changing a field afterwards does NOT rewrite the prompt silently;
- * a hint above the box says the shown prompt is outdated and offers to
- * regenerate. Empty fields are fine: their line keeps the bracketed example,
+ * a hint above the submit button says the shown prompt is outdated, and the
+ * button itself reads „Prompt neu erzeugen". Empty fields are fine: their line keeps the bracketed example,
  * and the prompt itself tells the AI to ask for what is missing.
  *
  * Nothing is stored and nothing leaves the browser.
@@ -136,12 +136,21 @@ export function PromptGenerator() {
           Felder, die du leer lässt, fragt die KI im Chat bei dir nach.
         </p>
 
+        {/* Hinweis direkt über dem Button (Betreiber, 2026-10-24): Wer ein
+            Feld ändert, sieht ihn dort, wo er ohnehin tippt — und derselbe
+            Button erzeugt neu, statt eines zweiten Knopfs an der Box. */}
+        {veraltet && (
+          <p className="mt-5 rounded-[12px] border border-gq-teal/40 bg-gq-teal/10 px-4 py-3 font-body text-sm leading-relaxed text-gq-white">
+            Angaben geändert. Der Prompt unten zeigt noch den alten Stand.
+          </p>
+        )}
+
         <Button
           type="submit"
           className="mt-5 h-12 w-full sm:w-auto px-8 rounded-pill bg-gq-teal text-gq-black text-tech text-xs tracking-[0.08em] hover:bg-gq-teal-hover active:scale-[0.96] transition-all duration-base ease-gq"
         >
-          <Sparkles className="w-4 h-4" />
-          Prompt erzeugen
+          {veraltet ? <RefreshCw className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+          {veraltet ? "Prompt neu erzeugen" : "Prompt erzeugen"}
         </Button>
       </form>
 
@@ -151,22 +160,6 @@ export function PromptGenerator() {
 
       {prompt !== null && (
         <div ref={boxRef} className="mt-8 scroll-mt-20">
-          {veraltet && (
-            <div className="flex flex-col gap-3 rounded-[12px] border border-gq-teal/40 bg-gq-teal/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="font-body text-sm leading-relaxed text-gq-white">
-                Angaben geändert. Der Prompt unten zeigt noch den alten Stand.
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={erzeugen}
-                className="flex-shrink-0 h-11 px-5 rounded-pill border-gq-teal bg-transparent text-gq-teal text-tech text-[11px] tracking-[0.08em] hover:bg-gq-teal/10 hover:text-gq-teal active:scale-[0.96] transition-all duration-base ease-gq"
-              >
-                <RefreshCw className="w-4 h-4" />
-                Prompt neu erzeugen
-              </Button>
-            </div>
-          )}
           <PromptCopyBox prompt={prompt} />
         </div>
       )}
