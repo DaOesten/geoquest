@@ -466,7 +466,8 @@ test.describe("Ansprache und Wahrheit", () => {
       })
     );
 
-    expect(structured).toHaveLength(8);
+    // PROJ-16: neunte Frage zur Abgrenzung von Actionbound.
+    expect(structured).toHaveLength(9);
     expect(questions).toEqual(structured.map((s: { q: string }) => s.q));
     expect(answers).toEqual(structured.map((s: { a: string }) => s.a));
   });

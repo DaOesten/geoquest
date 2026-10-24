@@ -36,6 +36,18 @@ Eine Quest lässt sich auch mit einem KI-Tool wie ChatGPT, Claude, Gemini oder d
 - Eine Gruppe kann sich ein Handy teilen. Mehrere Gruppen laden dieselbe Quest-Datei auf ihre Geräte, jedes Handy führt seinen eigenen Spielstand.
 - Es gibt keine zentrale Quest-Bibliothek: Quests werden als Datei weitergegeben.
 
+## Vergleich mit ähnlichen Apps
+
+Geo Quest ist eine kostenlose Alternative zu Actionbound, der bekanntesten App für digitale Schnitzeljagden im deutschsprachigen Raum.
+
+- Kein Konto: Bei Geo Quest meldet sich weder, wer eine Quest erstellt, noch wer sie spielt, an.
+- Keine App-Installation: Gespielt wird im Browser des Smartphones.
+- Auch für Schulen, Vereine und Organisationen kostenlos, ohne Lizenz.
+- Quests sind privat: Sie werden als Datei weitergegeben und nicht öffentlich gelistet.
+- Actionbound bietet mehr Aufgabentypen, etwa Foto-, Video- und Schätzaufgaben, und eine öffentliche Sammlung fertiger Schnitzeljagden. Geo Quest hat keine zentrale Quest-Bibliothek.
+
+Anders als beim Geocaching sucht man bei Geo Quest keine versteckten Dosen: Eine Quest ist eine Route mit Geschichte, Inhalten und Aufgaben an jeder Station.
+
 ## Seiten
 
 - [Startseite: Was ist Geo Quest?](https://geoquest.technolomagie.de/): Überblick, Erklärvideo, Zielgruppen, Quest-Simulation zum Ausprobieren, häufige Fragen

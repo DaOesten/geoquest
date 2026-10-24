@@ -206,6 +206,14 @@ const FAQ: FaqEntry[] = [
     answer:
       "Jede Station kann Texte, Bilder, Audio, Videos und Aufgaben (einen Code eintippen, Multiple Choice oder Elemente sortieren) beliebig kombinieren. Weiter zur nächsten Station geht es erst, wenn alle Aufgaben der Station gelöst sind. Bilder, Audio und Videos bindest du per Link ein, hochgeladen wird nichts. Das klappt mit YouTube und Vimeo, mit Teilen-Links aus Dropbox, mit Bildern aus Google Drive, mit Dateien von Wikimedia Commons und Wikipedia. Ebenso geht jeder Link, der im Browser nur das Bild, den Ton oder das Video selbst öffnet, zum Beispiel eine Adresse, die auf .jpg oder .mp3 endet.",
   },
+  {
+    // PROJ-16: Abgrenzung zum bekanntesten Mitbewerber. Nur nachpruefbare
+    // Aussagen (vergleichende Werbung, UWG §6), keine Preise, und offen
+    // benannt, was Actionbound mehr kann.
+    question: "Was unterscheidet Geo Quest von Actionbound?",
+    answer:
+      "Beide sind Baukästen für digitale Schnitzeljagden. Bei Geo Quest brauchst du zum Erstellen kein Konto, und die Spieler installieren keine App: Gespielt wird im Browser des Handys. Geo Quest ist auch für Schulen, Vereine und andere Organisationen kostenlos. Deine Quests sind nicht öffentlich, weil du sie als Datei weitergibst. Actionbound bietet dafür mehr Aufgabentypen, zum Beispiel Foto- und Videoaufnahmen, und eine Sammlung fertiger Schnitzeljagden zum Nachspielen.",
+  },
 ];
 
 /**

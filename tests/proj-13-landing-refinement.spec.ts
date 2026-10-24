@@ -283,7 +283,7 @@ test.describe("Vokabular: Suchsprache außen, Quest innen", () => {
 });
 
 test.describe("FAQ nach dem Refinement", () => {
-  test("acht Fragen aus Sicht von Eltern und Lehrkräften", async ({ page }) => {
+  test("neun Fragen aus Sicht von Eltern und Lehrkräften", async ({ page }) => {
     await page.goto("/");
 
     // Auf die Accordion-Trigger begrenzt statt „jeder Button in einer
@@ -300,10 +300,11 @@ test.describe("FAQ nach dem Refinement", () => {
       /Für welches Alter/,
       /Wie erstelle ich eine Quest/,  // PROJ-14: keine Dauer-Frage mehr
       /Was kann ich in eine Quest einbauen/,
+      /Was unterscheidet Geo Quest von Actionbound/,  // PROJ-16
     ]) {
       await expect(page.getByRole("button", { name: frage })).toBeVisible();
     }
-    await expect(questions).toHaveCount(8);
+    await expect(questions).toHaveCount(9);
     await expect(
       page.getByRole("heading", { name: "Antworten für Eltern und Lehrkräfte" })
     ).toBeVisible();
