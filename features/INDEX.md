@@ -31,6 +31,7 @@
 | PROJ-13 | Landing Page | P1 | PROJ-1, PROJ-15 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung (Prompt-Formular, Freischaltung) | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 | PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Deployed | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
+| PROJ-16 | Auffindbarkeit — Landingpage auf `/`, App auf `/app`, KI-Seite umbenannt | P1 | PROJ-1, PROJ-6, PROJ-12, PROJ-13, PROJ-14 | Planned | [Spec](PROJ-16-auffindbarkeit.md) | 2026-10-24 |
 
 <!-- Add features above this line -->
 
@@ -668,7 +669,7 @@ Spec ist aktualisiert (6 Acceptance Criteria, 3 Produkt- und 2 technische Entsch
 
 **Am 2026-10-17 nach Production deployt** (Tag `v1.50.0-PROJ-13`, Commit `cb78df6`), ohne formale QA auf Betreiber-Entscheidung. Live nach 37 s auf beiden Domains, 10 Endpunkte HTTP 200. CTA live auf neun Viewports × zwei Engines identisch zu lokal, 0 Konsolenfehler. **Refinement 16 ist abgeschlossen.**
 
-## Next Available ID: PROJ-16
+## Next Available ID: PROJ-17
 
 ## Offenes Refinement: KI-Anleitung mit Prompt-Formular wird freigeschaltet (2026-10-23)
 **PROJ-14** geht von Deployed zurück auf In Progress. Der Betreiber hat einen neuen Prompt geschrieben: Er arbeitet im Dialog (erst Story-Vorschlag, dann lesbare Fassung, JSON erst auf Zustimmung), erzeugt pro Station genau einen Text und eine Aufgabe und keine Medien. Die Angaben im Block „Meine Angaben“ sollen auf `/anleitung` als Felder ausgefüllt werden; ein Button „Prompt erzeugen“ baut daraus den Prompt zum Kopieren.
@@ -1815,3 +1816,16 @@ Mit live gegangen, bekannt und dokumentiert: BUG-17 (Medium) und BUG-18 (Low) be
 Die QA hatte gemeldet, dass der Pfeil **ohne Kompass** seit der Glättung erst nach 4 s statt sofort eine Richtung findet. Die Messung lief mit **rauschfreien** Positionen. Eine Simulation mit realistischem GPS-Rauschen zeigt: Die frühere Schnelligkeit war kein Vorteil, sie zeigte draußen oft falsche Richtungen, auch im Stehen. Der vorgeschlagene Fix hätte das verstärkt (Scheinrichtung im Stand 27–98 % der Zeit). Betreiber-Entscheidung: **kein Fehler, kein Code-Eingriff.**
 
 Der `test.fail`-Wächter ist **umgedreht, nicht gelöscht**. Er hält jetzt fest, dass der Pfeil bei 10 m Genauigkeit nach 5 m Weg bewusst keine Richtung behauptet (gegen live 6/6, beide Engines). Offen als mögliche Verbesserung, nicht als Bug: Bei langsamem, gleichmäßigem Gehen mit sehr gutem Empfang findet der Pfeil ohne Kompass mitunter gar keine Richtung (vorbestehend). PROJ-3 bleibt Deployed; im Produktcode ändert sich nichts.
+
+## Neues Feature: PROJ-16 — Auffindbarkeit (2026-10-24)
+**Planned, P1.** Ziel des Betreibers: Die Nutzung soll organisch wachsen, Geo Quest soll bei Suche im Internet und bei KI-Systemen gefunden werden.
+
+**Live gemessen:** `/` (die stärkste Adresse der Domain) zeigt nur die App-Weiche mit Titel „Geo Quest“ und kaum Text; die eigentliche Landingpage liegt auf `/about`. `robots.txt`, `sitemap.xml` und `llms.txt` liefern 404. Canonicals sind korrekt (auch die alte Vercel-Adresse zeigt auf die eigene Domain).
+
+**Entschieden (Betreiber):** Landingpage zieht auf `/`, Startscreen auf `/app`. Manifest `start_url: "/app"`, `id` bleibt `/`; wird `/` als installierte App geöffnet, wechselt die Seite auf `/app` (Sicherheitsnetz für ältere Installationen und für iOS). `/anleitung` wird `/mit-ki-erstellen` mit dem Namen „Mit KI erstellen“, weil dort ein Werkzeug steht und keine Anleitung; der Menü-Eintrag wandert von „Info“ nach „App“ unter „Create“, das Aktionsmenü auf `/create` bekommt einen dritten Eintrag. Neu: `robots.txt`, `sitemap.xml`, `llms.txt`. **Keine Weiterleitungen** von alten Adressen, weil die App noch nicht live genutzt wird.
+
+Simulations-Route zieht nach `/simulation`, die `SAMEORIGIN`-Ausnahme mit ihr (Freigabe des Betreibers liegt vor).
+
+**Offen:** iOS-Verhalten beim Hinzufügen zum Homescreen am Gerät, Seitentitel, Wortlaut von `llms.txt`.
+
+**Für `/frontend`:** Rund 14 Testdateien mit `/about`, 10 mit `/anleitung`, 7 mit `goto("/")` werden absichtlich falsch und sind zu ziehen, nicht zu löschen.
