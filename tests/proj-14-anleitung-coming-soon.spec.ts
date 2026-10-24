@@ -51,7 +51,7 @@ test.describe('Die Ankündigungsseite', () => {
     // im Abschluss-CTA, eine seitenweite Suche wäre mehrdeutig.
     // Wortlaut seit 2026-10-24 (gemeinsame Liste mit der freigeschalteten Seite).
     const liste = page.locator('ul').filter({ hasText: 'Story mit Einstieg' }).first();
-    for (const punkt of ['Story mit Einstieg', 'Ein Kapitel pro Station', 'ein Rätsel oder eine Aufgabe', 'Import-Datei']) {
+    for (const punkt of ['Story mit Einstieg', 'Ein Kapitel pro Station', 'Rätsel oder eine Aufgabe pro Kapitel', 'Datei zum Importieren']) {
       await expect(liste.getByText(new RegExp(punkt))).toBeVisible();
     }
     void box;

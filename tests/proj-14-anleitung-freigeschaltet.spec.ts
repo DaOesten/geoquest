@@ -71,8 +71,8 @@ test.describe('Freigeschaltet — die Seite', () => {
     for (const punkt of [
       'Die Story mit Einstieg und Abschluss',
       'Ein Kapitel pro Station der Route',
-      'Jedes Kapitel enthält ein Rätsel oder eine Aufgabe',
-      'Eine Import-Datei im richtigen Format für die App',
+      'Ein Rätsel oder eine Aufgabe pro Kapitel',
+      'Eine Datei zum Importieren in die App',
     ]) {
       await expect(liste.getByText(punkt)).toBeVisible();
     }

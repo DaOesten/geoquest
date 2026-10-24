@@ -191,7 +191,8 @@ test.describe("Anleitung & Erwartungsmanagement", () => {
 
   test("Koordinaten nachtragen ist als Pflichtschritt ausgewiesen", async ({ page }) => {
     await page.goto("/anleitung");
-    await expect(page.getByRole("heading", { name: "Ziele auf die Karte setzen" })).toBeVisible();
+    // Seit 2026-10-24 „Stationen" statt „Ziele" — wie im Creator.
+    await expect(page.getByRole("heading", { name: "Stationen auf die Karte setzen" })).toBeVisible();
     await expect(page.getByText(/führt die Quest draußen ins Nichts/)).toBeVisible();
   });
 

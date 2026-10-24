@@ -53,8 +53,8 @@ export const metadata: Metadata = {
 const OUTCOME = [
   { icon: BookOpen, label: "Die Story mit Einstieg und Abschluss" },
   { icon: MapPin, label: "Ein Kapitel pro Station der Route" },
-  { icon: Puzzle, label: "Jedes Kapitel enthält ein Rätsel oder eine Aufgabe" },
-  { icon: FileJson, label: "Eine Import-Datei im richtigen Format für die App" },
+  { icon: Puzzle, label: "Ein Rätsel oder eine Aufgabe pro Kapitel" },
+  { icon: FileJson, label: "Eine Datei zum Importieren in die App" },
 ];
 
 // Neuer Ablauf seit PROJ-14, Refinement 2026-10-23: Der Prompt entsteht aus
@@ -304,14 +304,14 @@ function AnleitungVollstaendig() {
             <div className="flex items-center gap-2">
               <MapPin className="w-5 h-5 text-gq-lime" />
               <h4 className="text-tech text-xs lg:text-[13px] tracking-[0.08em] text-gq-white">
-                Ziele auf die Karte setzen
+                Stationen auf die Karte setzen
               </h4>
             </div>
             <p className="mt-3 font-body text-sm lg:text-[15px] leading-relaxed text-[#E7EAEC]">
-              Eine KI kennt keine echten GPS-Koordinaten. Alle Ziele liegen nach
-              dem Import auf einem Platzhalter. Öffne die Quest im Creator, geh
-              in jedes Ziel und zieh den Punkt auf der Karte an die richtige
-              Stelle.
+              Eine KI kennt keine echten GPS-Koordinaten. Alle Stationen liegen
+              nach dem Import auf einem Platzhalter. Öffne die Quest im Creator,
+              geh in jede Station und setz den Marker auf der Karte an die
+              richtige Stelle.
             </p>
             <p className="mt-3 font-body text-sm lg:text-[15px] leading-relaxed text-gq-lime">
               Ohne diesen Schritt führt die Quest draußen ins Nichts.
