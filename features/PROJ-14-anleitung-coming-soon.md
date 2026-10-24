@@ -826,3 +826,5 @@ Prüfe vor der JSON-Ausgabe:
 **Für künftige Läufe:** Ein Lauf, bei dem alle sichtbaren Prozesse bei 0 % CPU stehen, ist nicht zwingend ein Hänger — die Arbeit läuft in den Worker-Kindprozessen (`pgrep -P <pid>`).
 
 **Nicht abgedeckt:** das Gespräch mit einer echten KI (ob ChatGPT/Claude/Gemini den Ablauf einhalten und importierbare Dateien liefern), echtes iPhone, Firefox.
+
+**Nachtrag 2026-10-24 — Hero-Absatz:** Auf Betreiber-Wunsch neu: „Du hast eine Idee, die du mit Hilfe eines KI-Tools wie duck.ai, ChatGPT, Gemini oder Claude in eine spielbare Geschichte verwandelst und in die App importierst. Dann wählst du aus, wo gespielt wird, verteilst die Quest an die Spieler:innen und los geht's!" Drei Tippfehler der Vorlage dabei korrigiert („KI Tool" → „KI-Tool", Komma vor „wo", „du Quest" → „die Quest"). Damit nennt der Absatz das Setzen der Orte nicht mehr ausdrücklich; der Infokasten daneben und der Pflichtschritt „Ziele auf die Karte setzen" tragen es weiter.

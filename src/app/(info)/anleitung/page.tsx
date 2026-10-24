@@ -226,10 +226,10 @@ function AnleitungVollstaendig() {
       backHref="/about"
       lead={
         <p>
-          Du trägst ein paar Angaben ein, kopierst den fertigen Prompt in
-          ChatGPT oder Claude und stimmst mit der KI die Geschichte ab. Am Ende
-          bekommst du eine komplette Quest mit Story, Stationen und Rätseln zum
-          Importieren. Die Orte auf der Karte setzt du danach selbst.
+          Du hast eine Idee, die du mit Hilfe eines KI-Tools wie duck.ai,
+          ChatGPT, Gemini oder Claude in eine spielbare Geschichte verwandelst
+          und in die App importierst. Dann wählst du aus, wo gespielt wird,
+          verteilst die Quest an die Spieler:innen und los geht&apos;s!
         </p>
       }
       aside={
