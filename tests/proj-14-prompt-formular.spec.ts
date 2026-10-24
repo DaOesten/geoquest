@@ -1,5 +1,4 @@
 import { test, expect, type Page } from "@playwright/test";
-import { ANLEITUNG_AN } from "./helpers/anleitung-schalter";
 
 /**
  * PROJ-14, Refinement 2026-10-23 — „Meine Angaben" als Formular.
@@ -10,7 +9,6 @@ import { ANLEITUNG_AN } from "./helpers/anleitung-schalter";
  * um das, was der Besucher auf der Seite erlebt.
  */
 
-test.skip(!ANLEITUNG_AN, "Anleitung ist nur angekündigt (Schalter aus)");
 
 const FELDER = [
   ["Thema", "z. B. Detektiv, Abenteuer, Magie, Piraten, Weltraum"],

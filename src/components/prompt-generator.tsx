@@ -70,8 +70,12 @@ export function PromptGenerator() {
     const neu = prompt !== null;
     setPrompt(buildQuestAiPrompt(werte));
     setErzeugtAus(snapshot(werte));
-    // Wechselnder Text, damit die Live-Region auch beim zweiten Mal ansagt.
-    setStatus(neu ? "Prompt neu erzeugt." : "Prompt erzeugt.");
+    // Wechselnder Text, damit die Live-Region jedes Mal ansagt: Ein
+    // unveränderter Text wird von Screenreadern nicht erneut vorgelesen,
+    // deshalb wechselt bei jedem Erzeugen ein unsichtbares Leerzeichen
+    // (BUG-26, 2026-10-24).
+    const text = neu ? "Prompt neu erzeugt." : "Prompt erzeugt.";
+    setStatus(scrollToken % 2 === 0 ? text : `${text}\u00a0`);
     setScrollToken((t) => t + 1);
   }
 
@@ -119,11 +123,15 @@ export function PromptGenerator() {
                     {...(istAnzahl && { inputMode: "numeric" as const, pattern: "[0-9]*" })}
                     aria-invalid={istAnzahl && anzahlFehler ? true : undefined}
                     aria-describedby={istAnzahl && anzahlFehler ? fehlerId : undefined}
-                    className={cn(FIELD, istAnzahl && anzahlFehler && "border-gq-lime")}
+                    className={cn(FIELD, istAnzahl && anzahlFehler && "border-destructive")}
                   />
                 )}
+                {/* Fehler-Rot wie die Feldfehler im Creator, nicht Lime: Ohne
+                    Box steht direkt darunter der Lime-Abschnitt „Danach",
+                    und das Design System erlaubt ein Lime-Element pro
+                    Screen (BUG-28, 2026-10-24). */}
                 {istAnzahl && anzahlFehler && (
-                  <p id={fehlerId} className="font-body text-sm leading-snug text-gq-lime">
+                  <p id={fehlerId} className="font-body text-sm leading-snug text-destructive">
                     {anzahlFehler}
                   </p>
                 )}
@@ -160,7 +168,10 @@ export function PromptGenerator() {
 
       {prompt !== null && (
         <div ref={boxRef} className="mt-8 scroll-mt-20">
-          <PromptCopyBox prompt={prompt} />
+          {/* `key` baut die Box bei jedem Erzeugen neu auf: „Kopiert" oder
+              „Kopieren hat nicht geklappt" gehörten zum alten Prompt
+              (BUG-27, 2026-10-24). */}
+          <PromptCopyBox key={scrollToken} prompt={prompt} />
         </div>
       )}
     </div>

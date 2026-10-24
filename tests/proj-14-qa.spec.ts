@@ -1,5 +1,4 @@
 import { test, expect, type Page } from "@playwright/test";
-import { ANLEITUNG_AN } from "./helpers/anleitung-schalter";
 
 /**
  * PROJ-14 — QA zum Refinement „Prompt-Formular und Freischaltung"
@@ -8,13 +7,11 @@ import { ANLEITUNG_AN } from "./helpers/anleitung-schalter";
  * Ergänzt die Frontend-Suite um das, was dort nicht abgedeckt war: die
  * Kopfzeile nach der Freischaltung (die Tests dafür lagen in der
  * Ankündigungs-Suite, die sich jetzt selbst überspringt), Tastaturweg,
- * reduzierte Bewegung, Doppelklick, Einfügen über die Höchstlänge — und je
- * einen `test.fail`-Wächter für BUG-25 bis BUG-28. Ein Wächter wird grün,
- * sobald sein Bug behoben ist, und schlägt an, falls er unbemerkt
- * wiederkehrt.
+ * reduzierte Bewegung, Doppelklick, Einfügen über die Höchstlänge — und die
+ * Bugs aus der QA: BUG-26 bis BUG-28 sind am 2026-10-24 behoben und hier
+ * normale Tests; BUG-25 ist offen und als `test.fail`-Wächter geführt.
  */
 
-test.skip(!ANLEITUNG_AN, "Anleitung ist nur angekündigt (Schalter aus)");
 
 const erzeugen = (page: Page) => page.locator('form button[type="submit"]').click();
 const box = (page: Page) => page.getByRole("region", { name: "Prompt zum Kopieren" });
@@ -111,7 +108,7 @@ test.describe("Formular — über die Spec hinaus", () => {
   });
 });
 
-test.describe("Bekannte Bugs (test.fail-Wächter)", () => {
+test.describe("Bugs aus der QA vom 2026-10-24", () => {
   // BUG-25 (Low): Der Hinweis „Angaben geändert" erscheint ohne Ansage —
   // er steht in keiner Live-Region, ein Screenreader erfährt nichts davon.
   test("BUG-25: der Hinweis „Angaben geändert“ wird Screenreadern angesagt", async ({ page }) => {
@@ -130,10 +127,10 @@ test.describe("Bekannte Bugs (test.fail-Wächter)", () => {
     expect(live).toBe(true);
   });
 
-  // BUG-26 (Low): Zweimal hintereinander neu erzeugen setzt zweimal denselben
-  // Statustext — die meisten Screenreader lesen den zweiten nicht vor.
+  // BUG-26 (Low, behoben 2026-10-24): Zweimal hintereinander neu erzeugen
+  // setzte zweimal denselben Statustext — Screenreader lasen den zweiten
+  // nicht vor.
   test("BUG-26: jedes Erzeugen ändert den Statustext", async ({ page }) => {
-    test.fail();
     await page.goto("/anleitung");
     const status = page.getByRole("status").filter({ hasText: /Prompt/ });
     await erzeugen(page);
@@ -144,11 +141,9 @@ test.describe("Bekannte Bugs (test.fail-Wächter)", () => {
     expect(a).not.toBe(b);
   });
 
-  // BUG-27 (Low): Der Kopier-Zustand der Box bezieht sich auf den alten Prompt,
-  // bleibt nach dem Neuerzeugen aber stehen („Kopieren hat nicht geklappt",
-  // kurz nach dem Kopieren sogar „Kopiert" für einen nicht kopierten Prompt).
-  test("BUG-27: nach dem Neuerzeugen ist der Kopier-Zustand zurückgesetzt", async ({ page }) => {
-    test.fail();
+  // BUG-27 (Low, behoben 2026-10-24): Der Kopier-Zustand der Box bezog sich
+  // auf den alten Prompt, blieb nach dem Neuerzeugen aber stehen.
+  test("BUG-27: nach dem Neuerzeugen ist ein fehlgeschlagenes Kopieren zurückgesetzt", async ({ page }) => {
     await page.addInitScript(() => {
       Object.defineProperty(navigator, "clipboard", {
         value: { writeText: () => Promise.reject(new Error("blocked")) },
@@ -164,16 +159,52 @@ test.describe("Bekannte Bugs (test.fail-Wächter)", () => {
     await expect(page.getByText(/Kopieren hat nicht geklappt/)).toHaveCount(0, { timeout: 2000 });
   });
 
-  // BUG-28 (Low): Der Lime-Fehlerhinweis an „Anzahl" steht zusammen mit dem
-  // Lime-Abschnitt „Danach — nicht vergessen" im Bild (ohne Box folgt er
-  // direkt unter dem Formular). Design System: ein Lime-Element pro Screen.
-  test("BUG-28: der Fehlerhinweis steht nicht mit anderem Lime im Bild", async ({ page }) => {
-    test.fail();
+  test("BUG-27: ein neu erzeugter Prompt zeigt nicht „Kopiert“", async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, "clipboard", {
+        value: { writeText: () => Promise.resolve() },
+        configurable: true,
+      });
+    });
+    await page.goto("/anleitung");
+    await erzeugen(page);
+    await page.getByRole("button", { name: /Kopieren/ }).click();
+    await expect(page.getByRole("button", { name: /Kopiert/ })).toBeVisible();
+    // Innerhalb der 2,5 s, in denen „Kopiert" sonst stehen bliebe.
+    await page.fill("#angabe-thema", "Magie");
+    await erzeugen(page);
+    // Kurzes Timeout: Der alte Zustand verschwindet nach 2,5 s von selbst —
+    // ein langes Warten liesse den Test auch ohne Behebung bestehen.
+    await expect(page.getByRole("button", { name: /Kopiert/ })).toHaveCount(0, { timeout: 500 });
+    await expect(page.getByRole("button", { name: /Kopieren/ })).toBeVisible();
+  });
+
+  // BUG-28 (Low, behoben 2026-10-24): Der Fehlerhinweis an „Anzahl" war Lime
+  // und stand zusammen mit dem Lime-Abschnitt „Danach — nicht vergessen" im
+  // Bild. Jetzt Fehler-Rot (`destructive`) wie im Creator — lesbar und
+  // deutlich von Lime verschieden.
+  test("BUG-28: der Fehlerhinweis ist nicht Lime und gut lesbar", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/anleitung");
     await page.fill("#angabe-anzahl", "99");
     await erzeugen(page);
-    await expect(page.getByText("Bitte eine Zahl von 1 bis 20")).toBeVisible();
-    await expect(page.getByText("Danach — nicht vergessen")).not.toBeInViewport();
+    const fehler = page.getByText("Bitte eine Zahl von 1 bis 20");
+    await expect(fehler).toBeVisible();
+    const farbe = await fehler.evaluate((e) => getComputedStyle(e).color);
+    expect(farbe).not.toBe("rgb(198, 255, 0)");
+    const rand = await page.locator("#angabe-anzahl").evaluate((e) => getComputedStyle(e).borderColor);
+    expect(rand).not.toBe("rgb(198, 255, 0)");
+    // Kontrast gegen die Formular-Karte (gemessen an den Pixeln dahinter).
+    const kontrast = await page.evaluate((c) => {
+      const p = (s: string) => (s.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
+      const l = (v: number[]) => {
+        const f = (x: number) => ((x /= 255) <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4);
+        return 0.2126 * f(v[0]) + 0.7152 * f(v[1]) + 0.0722 * f(v[2]);
+      };
+      const karte = [12, 22, 24]; // gemessener Grund der Formular-Karte
+      const a = l(p(c)), b = l(karte);
+      return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+    }, farbe);
+    expect(kontrast).toBeGreaterThanOrEqual(4.5);
   });
 });

@@ -1,18 +1,13 @@
 import { test, expect, type Page } from '@playwright/test';
-import { ANLEITUNG_AN } from './helpers/anleitung-schalter';
 
 /**
- * PROJ-14 — der FREIGESCHALTETE Zustand (`ANLEITUNG_VERFUEGBAR = true`).
+ * PROJ-14 — die freigeschaltete KI-Anleitung: Seite und Einstiegspunkte.
  *
- * Bis 2026-10-23 lief diese Datei nur über ein Skript, das den Schalter
- * umlegte. Seit dem Refinement „Prompt-Formular und Freischaltung" ist das
- * der ausgelieferte Zustand und die Datei Teil des normalen Laufs. Steht der
- * Schalter wieder auf `false`, überspringt sie sich selbst; die Ankündigung
- * prüft dann `proj-14-anleitung-coming-soon.spec.ts`
- * (`npm run test:e2e:angekuendigt`).
+ * Der Dateiname stammt aus der Zeit mit Ankündigung und Schalter
+ * (2026-09-17 bis 2026-10-24). Beides ist entfernt; die Datei prüft den
+ * einzigen Zustand, den es noch gibt.
  */
 
-test.skip(!ANLEITUNG_AN, 'Anleitung ist nur angekündigt (Schalter aus)');
 
 async function openMenu(page: Page, path: string) {
   await page.goto(path);

@@ -1,5 +1,4 @@
 import { test, expect, type Page } from "@playwright/test";
-import { ANLEITUNG_AN } from "./helpers/anleitung-schalter";
 
 /**
  * PROJ-12 — PWA-Installation (Add to Homescreen).
@@ -1095,11 +1094,10 @@ test.describe("PROJ-12: PWA-Installation", () => {
       }
     });
 
-    test("die Anleitung folgt ihrem Schalter (PROJ-14 unberuehrt)", async ({ request }) => {
+    test("die Anleitung zeigt das Prompt-Formular (PROJ-14 unberuehrt)", async ({ request }) => {
       const html = await (await request.get("/anleitung")).text();
       expect(html).not.toContain("Du bist ein Experte");
-      if (ANLEITUNG_AN) expect(html).toContain("Prompt erzeugen");
-      else expect(html).toContain("Bald");
+      expect(html).toContain("Prompt erzeugen");
     });
   });
 });

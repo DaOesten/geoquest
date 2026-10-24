@@ -1,5 +1,4 @@
 import { test, expect } from "@playwright/test";
-import { ANLEITUNG_AN } from "./helpers/anleitung-schalter";
 
 /**
  * PROJ-13 — Refinement 4 (2026-09-07): `/about` wird zur Marketing-Landingpage.
@@ -84,10 +83,10 @@ test.describe("Hero", () => {
     await expect(page).toHaveURL(/\/create$/);
   });
 
-  // PROJ-14: Der sekundäre CTA folgt dem Schalter.
-  test("sekundärer KI-CTA im Hero genau dann, wenn die Anleitung freigeschaltet ist", async ({ page }) => {
+  // PROJ-14: der zweite Hero-CTA zur KI-Anleitung.
+  test("sekundärer KI-CTA im Hero", async ({ page }) => {
     await page.goto("/about");
-    await expect(page.getByRole("link", { name: /Mit KI erstellen/i })).toHaveCount(ANLEITUNG_AN ? 1 : 0);
+    await expect(page.getByRole("link", { name: /Mit KI erstellen/i })).toHaveCount(1);
   });
 
   test("Abschluss-CTA trägt die neue Überschrift und führt nach /create", async ({

@@ -237,6 +237,7 @@ _Ergänzt 2026-10-23 (Prompt-Formular und Freischaltung):_
 | **Refinement 2026-10-23:** Der alte Prompt wird ersetzt, nicht neben dem neuen behalten | Zwei Vorlagen würden auseinanderlaufen. Die Git-History bewahrt die alte Fassung | 2026-10-23 |
 | **Refinement 2026-10-23:** Die übrige Anleitung wird an den neuen Prompt angepasst (Lead, Meta ohne Zeit, vier neue Schritte, Medien als freiwilliger Tipp, Medienquellen nach PROJ-15, Hilfe überarbeitet) | Betreiber-Entscheidung. Der neue Prompt erzeugt keine Medien und arbeitet im Dialog; Pflichtschritt „Medien-Adressen ersetzen", „BITTE-ERSETZEN" und „Adresse endet auf .jpg" würden ins Leere zeigen bzw. waren seit PROJ-15 überholt. „ca. 15 Min" entfällt, weil das Abstimmen mit der KI unterschiedlich lange dauert | 2026-10-23 |
 | **Refinement 2026-10-24:** Vorlagen-Zeile „Spielort" angeglichen zu „[z. B. Park]" | Betreiber-Entscheidung. Ohne eckige Klammern hätte die KI „Park" bei leerem Feld als echte Angabe lesen und nicht nachfragen können. Jetzt sind alle fünf Zeilen gleich gebaut | 2026-10-24 |
+| **2026-10-24:** Die Ankündigung („Bald verfügbar") wird vollständig entfernt — Schalter `ANLEITUNG_VERFUEGBAR`, Ankündigungsseite, „Bald"-Kennzeichnung im Menü, die Bedingungen an `/about`, `/create` und in der Kopfzeile, die Ankündigungs-Tests, das Prüfskript `test:e2e:angekuendigt` und der Test-Helfer | Betreiber-Entscheidung: Ein Zurück zur Ankündigung ist nicht vorgesehen. Hebt die Entscheidungen „Ankündigung bleibt als Weg zurück im Code" und „Tests prüfen beide Zustände" (2026-09-17 und 2026-10-23) auf. Die alte Fassung liegt in der Git-History | 2026-10-24 |
 | **2026-10-24:** Hinweis „Angaben geändert" ins Formular über den Button; der Button selbst heißt dann „Prompt neu erzeugen", der eigene Knopf an der Box entfällt | Betreiber-Entscheidung. Der Hinweis steht dort, wo man gerade tippt, und es gibt nur noch einen Erzeugen-Knopf statt zwei mit derselben Wirkung. Preis: Direkt an der Box steht kein Hinweis mehr (Edge Case 17) | 2026-10-24 |
 | **Refinement 2026-10-23:** Der Prompt braucht JavaScript, um sichtbar zu werden | Folge des Formulars. PROJ-13 hatte den Prompt bewusst ohne JavaScript lesbar gemacht; das gilt für eine feste Vorlage, nicht für einen erzeugten Text. Hingenommen (Edge Case 18) | 2026-10-23 |
 | Eigenes Feature (PROJ-14) statt Refinement von PROJ-13 | Die Änderung umfasst fünf Berührungspunkte über drei bestehende Features (PROJ-1 Navigation, PROJ-6 Creator-Leeransicht, PROJ-13 Info-Seiten), ist eigenständig testbar und deploybar — und wird später als Ganzes wieder zurückgenommen. Als Refinement in PROJ-13 wäre der Navigations- und Creator-Anteil dort fehl am Platz | 2026-09-17 |
@@ -873,17 +874,17 @@ Prüfe vor der JSON-Ausgabe:
 - **Schritte:** Feld ausfüllen → „Prompt erzeugen" → Feld ändern. Erwartet: Ansage, dass der Prompt veraltet ist. Tatsächlich: Hinweis steht in keiner Live-Region; nur die Button-Beschriftung ändert sich still.
 - **Priorität:** Nice to have. Wächter: `proj-14-qa.spec.ts`, `test.fail`.
 
-#### BUG-26: Wiederholtes Neuerzeugen wird nicht erneut angesagt
+#### BUG-26: Wiederholtes Neuerzeugen wird nicht erneut angesagt — **behoben 2026-10-24**
 - **Severity:** Low (Barrierefreiheit)
 - **Schritte:** „Prompt erzeugen" dreimal hintereinander. Erwartet: jedes Mal eine Ansage. Tatsächlich: ab dem zweiten Mal derselbe Statustext „Prompt neu erzeugt." — Screenreader lesen einen unveränderten Text in der Regel nicht erneut.
 - **Priorität:** Nice to have. Wächter vorhanden.
 
-#### BUG-27: Kopier-Zustand bleibt nach dem Neuerzeugen stehen
+#### BUG-27: Kopier-Zustand bleibt nach dem Neuerzeugen stehen — **behoben 2026-10-24**
 - **Severity:** Low
 - **Schritte:** Prompt erzeugen, Kopieren schlägt fehl (blockierte Zwischenablage) → Feld ändern → neu erzeugen. Erwartet: Zustand zurückgesetzt. Tatsächlich: „Kopieren hat nicht geklappt" bleibt stehen. Kurz (≤ 2,5 s) nach erfolgreichem Kopieren zeigt der neu erzeugte, nicht kopierte Prompt sogar „Kopiert" — der irreführendere Fall.
 - **Priorität:** Nice to have. Wächter vorhanden.
 
-#### BUG-28: Lime-Fehlerhinweis steht mit anderem Lime im Bild
+#### BUG-28: Lime-Fehlerhinweis steht mit anderem Lime im Bild — **behoben 2026-10-24**
 - **Severity:** Low (Design System)
 - **Schritte:** 1440×900 (ebenso 390×844), bei „Anzahl" 99 eintragen → „Prompt erzeugen". Erwartet: ein Lime-Element pro Screen. Tatsächlich: „Bitte eine Zahl von 1 bis 20" und der Lime-Abschnitt „Danach — nicht vergessen" sind gleichzeitig sichtbar — ohne Box folgt der Abschnitt direkt unter dem Formular. **Die Frontend-Notiz („nichts weiter unten im Bild") war damit falsch.**
 - **Priorität:** Nice to have. Wächter vorhanden.
@@ -902,3 +903,17 @@ Das Gespräch mit einer echten KI (Ablauf eingehalten, Datei importierbar?) — 
 - **Bugs:** 4 (0 Critical, 0 High, 0 Medium, 4 Low)
 - **Security:** ohne Befund
 - **Production Ready:** YES
+
+
+## Nachtrag 2026-10-24: Ankündigung entfernt, BUG-26 bis BUG-28 behoben
+
+**Ankündigung entfernt (Betreiber):** Schalter `ANLEITUNG_VERFUEGBAR`, die Funktion `AnleitungAngekuendigt` samt Metadaten, die „Bald"-Kennzeichnung (`badge`) in `app-nav.ts`/`app-nav-menu.tsx`, die Bedingungen an `/about` (Hero-CTA), `/create` (Leeransicht) und `HEADER_NAV_LINKS`. In den Tests: `proj-14-anleitung-coming-soon.spec.ts`, `scripts/test-anleitung-angekuendigt.mjs`, das npm-Skript `test:e2e:angekuendigt` und `tests/helpers/anleitung-schalter.ts` gelöscht; wo Tests nach dem Schalter verzweigten, bleibt der freigeschaltete Zweig als feste Prüfung. Folge: Übersprungene Tests im Gesamtlauf von 71 auf 18 — die vorher am Schalter hängenden laufen jetzt immer. Die Acceptance Criteria der Ankündigungsphase (Blöcke „Die Ankündigungsseite" bis „Bewahrung des fertigen Inhalts") sind damit historisch; gültig sind die Blöcke vom 2026-10-23.
+
+**Behoben:**
+- **BUG-26:** Der Ansagetext wechselt bei jedem Erzeugen um ein unsichtbares Leerzeichen, damit Screenreader ihn jedes Mal vorlesen.
+- **BUG-27:** Die Kopier-Box wird bei jedem Erzeugen neu aufgebaut (`key`), „Kopiert" und „Kopieren hat nicht geklappt" gehören nie zu einem neuen Prompt.
+- **BUG-28:** Fehlerhinweis und Feldrand bei „Anzahl" in Fehler-Rot (`destructive`, wie im Creator) statt Lime.
+
+**Offen:** BUG-25 (Hinweis „Angaben geändert" ohne Screenreader-Ansage) — nicht beauftragt, Wächter bleibt `test.fail`.
+
+**Geprüft:** Typprüfung, Lint (0 Fehler), Build (`/anleitung` statisch, kein „Bald verfügbar" im HTML), Unit 455/455. Gesamtlauf beider Engines **1553 erwartet / 1 unerwartet** (Service-Worker-Wackelei, seriell 3× 6/6). **Gegenprobe** mit der Komponente vor der Behebung: die Tests zu BUG-26, BUG-27 (beide) und BUG-28 fallen auf beiden Engines (8). Ein eigener Testfehler dabei gefunden: Der „Kopiert"-Test wartete bis zu 5 s und bestand deshalb auch ohne Behebung, weil der alte Zustand nach 2,5 s von selbst verschwand — jetzt 500 ms. QA- und Formular-Suite danach 3× 84/84.

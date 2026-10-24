@@ -17,7 +17,7 @@ import { AboutHeroPhone } from "@/components/about-hero-phone";
 import { AboutSimulationPhone } from "@/components/about-simulation-phone";
 import { AboutVideo } from "@/components/about-video";
 import { InfoPageShell } from "@/components/info-page-shell";
-import { ANLEITUNG_VERFUEGBAR, KOFI_URL } from "@/lib/app-nav";
+import { KOFI_URL } from "@/lib/app-nav";
 import {
   Accordion,
   AccordionContent,
@@ -330,18 +330,15 @@ export default function AboutPage() {
               Quest erstellen
               <ArrowRight className="w-4 h-4" />
             </Link>
-            {/* Entfällt, solange die KI-Anleitung nur angekündigt ist
-                (PROJ-14) — ein CTA auf „gibt's noch nicht" wäre eine
-                Sackgasse an der teuersten Stelle der Seite. */}
-            {ANLEITUNG_VERFUEGBAR && (
-              <Link
-                href="/anleitung"
-                className="flex items-center justify-center gap-2 h-12 px-7 rounded-pill border border-gq-teal text-gq-teal text-tech text-xs tracking-[0.08em] transition-all duration-base ease-gq hover:bg-gq-teal/10 active:scale-[0.96]"
-              >
-                <Sparkles className="w-4 h-4" />
-                Mit KI erstellen
-              </Link>
-            )}
+            {/* Zweiter Weg: die KI-Anleitung (PROJ-14). Auf schmalen Handys
+                darf er unter dem Falz liegen, der primäre CTA nicht. */}
+            <Link
+              href="/anleitung"
+              className="flex items-center justify-center gap-2 h-12 px-7 rounded-pill border border-gq-teal text-gq-teal text-tech text-xs tracking-[0.08em] transition-all duration-base ease-gq hover:bg-gq-teal/10 active:scale-[0.96]"
+            >
+              <Sparkles className="w-4 h-4" />
+              Mit KI erstellen
+            </Link>
           </div>
         </>
       }

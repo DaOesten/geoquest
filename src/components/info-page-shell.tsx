@@ -180,8 +180,7 @@ export function InfoPageShell({
                   // hat seitdem zwei Absätze und einen CTA verloren) und der
                   // Annahme, die Marke stehe ohnehin im Header. Letztere war
                   // nie richtig: „Zur App" ist ein Button in Tech-Schrift, die
-                  // Navigation waren Textlinks — keines zeigt das Logo. Seit
-                  // PROJ-14 ist HEADER_NAV_LINKS zusätzlich leer.
+                  // Navigation waren Textlinks — keines zeigt das Logo.
                   //
                   // Gemessen: Der Hero-CTA bleibt auf allen elf
                   // Referenz-Viewports über dem Falz, knappster Fall
