@@ -46,7 +46,10 @@ test.describe("Seite & Navigation", () => {
     await page.addInitScript(() => localStorage.setItem("gq_first_visit_done", "true"));
     await page.goto("/");
     await page.getByRole("link", { name: "Zur App" }).first().click();
-    await expect(page).toHaveURL(/\/$/);
+    // Seit PROJ-16 liegt der Startscreen auf /app. Die frühere Erwartung /\/$/
+    // war auf Chrome sofort erfüllt, weil die Seite beim Prüfen noch auf `/`
+    // stand — sie hätte jedes Ziel durchgelassen (QA 2026-10-25).
+    await expect(page).toHaveURL(/\/app$/);
     await expect(page.getByRole("heading", { name: "Bist du bereit" })).toBeVisible();
   });
 

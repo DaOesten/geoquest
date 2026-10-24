@@ -1,6 +1,6 @@
 # PROJ-16: Auffindbarkeit — Landingpage auf `/`, App auf `/app`, KI-Seite umbenannt
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-10-24
 **Last Updated:** 2026-10-24
 
@@ -285,7 +285,44 @@ Keine neuen.
 **Für künftige Läufe — Bild-Optimierer hängt unter Dauerlast:** Ein längerer Safari-Lauf meldete 33 Timeouts, alle ab 640 px Breite. Ursache war der Server, nicht der Code: Nach vielen Läufen beantwortete `next start` die Anfrage `logo-lockup-cutout.png` in 1080 px **als WebP** gar nicht mehr (per `curl` auch nach 240 s keine Antwort), andere Formate und kleinere Stufen sofort. Derselbe Request auf einem frischen Server: 0,09 s. Gegenprobe mit dem Stand vor PROJ-16 auf eigenem Port: dieselbe Datei besteht dort wie hier 34/34. **Bei Safari-Timeouts ab 640 px zuerst den Server neu starten**, dann Dateien einzeln laufen lassen.
 
 ## QA Test Results
-_To be added by /qa_
+
+**Geprüft am 2026-10-25** im eigenen Worktree auf `fd22b09` (Production-Build, Port 3200), getrennt vom Arbeitsverzeichnis des Betreibers. Chrome 152 (Desktop) und WebKit (iPhone-13-Profil). **Firefox nicht geprüft** (Binary fehlt auf dieser Maschine, wie in allen bisherigen QA-Läufen).
+
+### Ergebnis: 35 von 35 Acceptance Criteria erfüllt, keine Bugs im Produkt — Approved
+(36 Kriterien in der Spec, eines davon entfällt: der Schalter `ANLEITUNG_VERFUEGBAR` existiert seit dem PROJ-14-Deploy nicht mehr.)
+
+| Block | Ergebnis | Belegt durch |
+|---|---|---|
+| Landingpage auf `/` (6) | erfüllt | Canonical `/`, statisch, `/about` 404, „Zur App“ → `/app`, Zurück-Pfeile der Rechtsseiten → `/` |
+| App-Start auf `/app` (7) | erfüllt | Startscreen unverändert, Logo → `/`, Zurück-Pfeile `/play`/`/create` → `/app`, Erststart-Dialog **und** Installations-Hinweis nur auf `/app` |
+| Homescreen-Installation (5) | erfüllt (bis auf Gerät) | Manifest `start_url /app`, `id`/`scope` `/`; Startweiche über `matchMedia` **und** über `navigator.standalone` (iOS-Weg); keine Weiterleitung im Browser; Deep-Link `/impressum` in der App bleibt |
+| KI-Seite (8) | erfüllt | Titel „Schnitzeljagd mit KI erstellen“, Eyebrow, Menü unter „App“ nach „Create“, Hero-CTA, Leeransicht, Aktionsmenü mit vorhandener Quest, Desktop-Textlink |
+| Suchmaschinen und KI (6) | erfüllt | `robots.txt` (text/plain), `sitemap.xml` (XML, genau vier absolute Adressen), `llms.txt` (UTF-8, Umlaute intakt), `/simulation` `noindex` |
+| Nichts geht verloren (3) | erfüllt | Durchlauf über alle internen Links aus 7 Seiten plus Menü: keine 404; Simulation im iframe; Analytics-Filter auf `/simulation` |
+
+### Über die Frontend-Phase hinaus geprüft
+- **iOS-Weg der Startweiche:** Nur `navigator.standalone = true`, ohne `matchMedia`, leitet auf beiden Engines nach `/app`.
+- **Neuladen der Landingpage in der installierten App** führt nach `/app`. So entworfen („App-Start oder Neuladen“) und als Preis der Startweiche dokumentiert, kein Bug. Eine Menü-Navigation zu „Über“ bleibt auf der Landingpage.
+- **Aktive Menü-Einträge:** `/` → „Über“, `/mit-ki-erstellen` → „Mit KI erstellen“, `/impressum` → „Impressum“, `/app` → keiner.
+- **Creator-Aktionsmenü auf 320×568:** drei Einträge im Bild, je 44 px, ohne Überlappung; geschlossen ist der KI-Eintrag nicht per Tab erreichbar (`tabindex -1`).
+- **Konsole:** WebKit 0 Fehler auf `/`, `/app`, `/mit-ki-erstellen`, `/simulation`. Chrome nur der 404 des Vercel-Analytics-Skripts, das lokal nicht existiert.
+
+### Security
+Ohne Befund. Die Startweiche hat ein festes Ziel; `?redirect=` und `?next=//…` bleiben wirkungslos. Markup in der Adresse wird nicht ausgegeben. `//evil.example` bleibt auf der eigenen Domain (Next.js, vorbestehend). `X-Frame-Options: DENY` auf `/`, `/app`, `/mit-ki-erstellen`, `/impressum`; `SAMEORIGIN` nur auf `/simulation` (freigegebene Ausnahme). `nosniff` auch auf `robots.txt` und `sitemap.xml`. Keine neuen Eingaben, keine gespeicherten Daten.
+
+### Tests
+- **Unit:** neu `src/components/app-start-redirect.test.tsx` (9 Tests). Gegenprobe ohne die Bedingung „Dokument als `/` geladen“: genau der zuständige Test fällt. Gesamt **464/464**.
+- **E2E neu:** `tests/proj-16-qa.spec.ts` (15 je Engine). Zusammen mit `proj-16-auffindbarkeit.spec.ts` **42/42 je Engine**. Gegenprobe gegen den Stand vor PROJ-16 (Chrome): **38 von 42 fallen**. Grün bleiben vier Wächter, die in beiden Ständen gelten müssen (Deep-Link `/impressum`, aktiver Menü-Eintrag auf `/impressum`, kein Markup aus der Adresse, `noindex` auf der Simulations-Adresse).
+- **Ein Testfehler aus der Frontend-Phase gefunden und gezogen:** `proj-13-landing-page.spec.ts` „Zur App führt zum Start-Screen“ erwartete noch `/\/$/`. Auf Chrome bestand er, weil die Prüfung lief, solange die Seite noch auf `/` stand — er hätte jedes Ziel durchgelassen. Jetzt `/\/app$/`. Das Produkt war richtig.
+- **Gesamtregression:** Chrome **828 passed / 0 failed**. Mobile Safari **778 passed / 34 failed**: 33 Timeouts auf Breiten ab 640 px plus der genannte Testfehler. Alle betroffenen Dateien mit frischem Server und leerem Bild-Cache nachgeprüft: grün, bis auf den BUG-7-Test in `proj-1-kofi-support` (siehe unten).
+- **Gegenprobe der Timeouts gegen den Stand vor PROJ-16** (`1f9d5b7`, eigener Build auf Port 3300, identische Bedingungen, je zwei Runden): `proj-13-about-eltern` fällt dort in Runde 1 mit **denselben 6 Tests**, Runde 2 grün; `proj-1-kofi-support` fällt dort in Runde 2 mit **demselben BUG-7-Test**. Die Timeouts sind damit ein zufälliges Umgebungsproblem und nicht von PROJ-16 verursacht.
+
+### Beobachtungen ohne Bug-Status
+- **Lokaler Bild-Optimierer hängt zufällig (Testumgebung):** `next start` beantwortet einzelne große WebP-Stufen (Safari, Pixeldichte 3, ab 640 px) mitunter nicht mehr, in einer Messung `logo-lockup-cutout.png` in 1080 px nach 240 s ohne Antwort, im Standardformat in 0,08 s. Ein Neustart hilft oft, aber nicht immer; Cache leeren und Abbrüche simulieren lösten es nicht reproduzierbar aus. Live auf Vercel nie beobachtet. Für künftige Läufe: Safari-Timeouts ab 640 px gegen den Vorgängerstand gegenprüfen, bevor sie als Regression gelten.
+- **Echtes iPhone:** ob iOS beim „Zum Home-Bildschirm“ `start_url` oder die offene Seite speichert, bleibt am Gerät zu prüfen. Die Startweiche deckt beide Fälle ab.
+- **`llms.txt`:** inhaltlich gegen den Code geprüft, die Abnahme des Wortlauts liegt beim Betreiber.
+
+**Production-Ready: JA.**
 
 ## Deployment
 _To be added by /deploy_
