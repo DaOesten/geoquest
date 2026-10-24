@@ -31,7 +31,7 @@
 | PROJ-13 | Landing Page | P1 | PROJ-1, PROJ-15 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung (Prompt-Formular, Freischaltung) | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 | PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Deployed | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
-| PROJ-16 | Auffindbarkeit — Landingpage auf `/`, App auf `/app`, KI-Seite umbenannt | P1 | PROJ-1, PROJ-6, PROJ-12, PROJ-13, PROJ-14 | Planned | [Spec](PROJ-16-auffindbarkeit.md) | 2026-10-24 |
+| PROJ-16 | Auffindbarkeit — Landingpage auf `/`, App auf `/app`, KI-Seite umbenannt | P1 | PROJ-1, PROJ-6, PROJ-12, PROJ-13, PROJ-14 | Architected | [Spec](PROJ-16-auffindbarkeit.md) | 2026-10-24 |
 
 <!-- Add features above this line -->
 
@@ -1829,3 +1829,5 @@ Simulations-Route zieht nach `/simulation`, die `SAMEORIGIN`-Ausnahme mit ihr (F
 **Offen:** iOS-Verhalten beim Hinzufügen zum Homescreen am Gerät, Seitentitel, Wortlaut von `llms.txt`.
 
 **Für `/frontend`:** Rund 14 Testdateien mit `/about`, 10 mit `/anleitung`, 7 mit `goto("/")` werden absichtlich falsch und sind zu ziehen, nicht zu löschen.
+
+**Architektur am 2026-10-24 entworfen — Status Architected.** Reines Frontend, kein neues Paket. Die Seiten werden verschoben, nicht neu gebaut. Die Seitenadressen stehen künftig an einer Stelle in `app-nav.ts`, weil die Header-Regel den KI-Link heute am Text `"/anleitung"` erkennt. Eine unsichtbare Startweiche auf `/` schickt die installierte App nach `/app`, aber nur, wenn die Seite selbst als `/` geladen wurde, damit „Über“ im Menü der App die Landingpage zeigt. Sie nutzt die vorhandene `isStandalone()`-Prüfung. `robots.txt` und `sitemap.xml` als Next.js-Metadatendateien, `llms.txt` als statische Datei, eine gemeinsame Basisadresse für Canonical und Sitemap. Manifest: nur `start_url` ändert sich. Für `/frontend`: beim Ziehen der Tests erst `goto("/")` → `/app`, dann `/about` → `/`.

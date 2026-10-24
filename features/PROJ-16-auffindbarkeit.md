@@ -1,6 +1,6 @@
 # PROJ-16: Auffindbarkeit — Landingpage auf `/`, App auf `/app`, KI-Seite umbenannt
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-10-24
 **Last Updated:** 2026-10-24
 
@@ -156,12 +156,108 @@ Die Startadresse einer Domain bekommt die meisten Links und wird bei Markensuche
 ### Technical Decisions
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Seiten werden verschoben, nicht neu gebaut | Inhalt und Komponenten sind fertig und QA-geprüft. Ein Umzug hält die Änderung klein und die bestehenden Tests aussagekräftig. | 2026-10-24 |
+| Seitenadressen zentral neben der Menü-Liste in `app-nav.ts` | Heute erkennt die Header-Regel den KI-Link am Text `"/anleitung"`. Verstreute Zeichenketten lassen bei einer Umbenennung Links still verschwinden. | 2026-10-24 |
+| Startweiche im Browser statt Weiterleitung auf dem Server | Nur der Browser weiß, ob die Seite als installierte App läuft. Preis: kurzes Aufblitzen der Landingpage beim App-Start. | 2026-10-24 |
+| Startweiche greift nur, wenn die Seite selbst als `/` geladen wurde | Eine Navigation innerhalb der App zu „Über“ lädt die Seite nicht neu und soll die Landingpage zeigen, nicht zurück in die App springen. | 2026-10-24 |
+| Standalone-Erkennung aus `useInstallPrompt` wiederverwenden | Eine zweite Erkennung könnte von der ersten abweichen, dieselbe Fehlerklasse wie BUG-6. | 2026-10-24 |
+| `robots.txt` und `sitemap.xml` als Next.js-Metadatendateien | Wie beim Manifest prüft Next.js das Format beim Bauen. | 2026-10-24 |
+| `/simulation` in `robots.txt` nicht sperren | Ein gesperrter Crawler sieht das `noindex` nie und kann die Adresse trotzdem listen. | 2026-10-24 |
+| Eine Basisadresse für Canonical, Sitemap und `robots.txt` | Laufen sie auseinander, verweist die Sitemap auf eine andere Domain als die Canonicals. | 2026-10-24 |
+| `llms.txt` als statische, von Hand geschriebene Datei | Es ist Inhalt, keine Logik. Jeder Satz soll abgenommen werden. | 2026-10-24 |
+| Manifest: nur `start_url` ändert sich, `scope` und `id` bleiben `/` | Bestehende Installationen bleiben dieselbe App, Menü-Ziele außerhalb von `/app` öffnen weiter in der App. | 2026-10-24 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+_Entworfen am 2026-10-24. Reines Frontend, kein Backend, kein neues Paket, keine Datenänderung._
+
+### Überblick in einem Satz
+Drei Seiten ziehen um, eine kleine Weiche sorgt dafür, dass die installierte App nie auf der Werbeseite startet, und drei kleine Dateien sagen Suchmaschinen und KI-Systemen, was es auf der Seite gibt.
+
+### A) Neue Seitenstruktur
+
+```
+geoquest.technolomagie.de
++-- /                    Landingpage (bisher /about), im Info-Rahmen
+|   +-- Startweiche      unsichtbar, nur in der installierten App aktiv
+|   +-- Simulations-Handy  bettet /simulation als iframe ein
++-- /app                 Startscreen mit Mode-Cards (bisher /)
+|   +-- Erststart-Dialog, Installations-Hinweis (ziehen mit um)
++-- /mit-ki-erstellen    Prompt-Formular (bisher /anleitung), im Info-Rahmen
++-- /simulation          Quest-Simulation (bisher /about/simulation), noindex
++-- /play, /create       unverändert, Zurück-Pfeil zeigt auf /app
++-- /impressum, /datenschutz   unverändert, Zurück-Pfeil zeigt auf /
++-- /robots.txt          neu
++-- /sitemap.xml         neu
++-- /llms.txt            neu
+```
+
+Die Seiten selbst werden **verschoben, nicht neu gebaut**. Inhalt, Komponenten und Layout bleiben gleich. Die Landingpage und die KI-Seite bleiben im bestehenden Info-Rahmen (`InfoPageShell`), der Startscreen behält seinen eigenen Aufbau.
+
+### B) Navigation: wer zeigt wohin
+
+| Stelle | bisher | künftig |
+|---|---|---|
+| „Zur App“ in der Info-Kopfzeile | `/` | `/app` |
+| Logo auf dem Startscreen | `/about` | `/` |
+| Zurück-Pfeil auf `/play`, `/create` | `/` | `/app` |
+| Zurück-Pfeil auf Impressum, Datenschutz, KI-Seite | `/about` | `/` |
+| Menü „Über“ | `/about` | `/` |
+| Menü „Anleitung“ (Gruppe Info) | `/anleitung` | „Mit KI erstellen“ (Gruppe App, unter Create) → `/mit-ki-erstellen` |
+| Hero-Button „Mit KI erstellen“ | `/anleitung` | `/mit-ki-erstellen` |
+| Leeransicht `/create` | `/anleitung` | `/mit-ki-erstellen` |
+| Aktionsmenü `/create` | zwei Einträge | dritter Eintrag „Mit KI erstellen“ |
+| Desktop-Textlink der Info-Kopfzeile | „Anleitung“ | „Mit KI erstellen“ |
+| 404-Seite „Zurück zum Start“ | `/` | `/` (jetzt die Landingpage) |
+
+**Die Seitenadressen stehen künftig an einer Stelle** (neben der Menü-Liste in `app-nav.ts`), statt als Zeichenketten in einem Dutzend Dateien. Heute findet die Header-Regel den KI-Link über den Text `"/anleitung"`. Wird die Adresse an einer Stelle geändert und an der anderen nicht, verschwindet der Link still. Genau so eine Lücke soll der Umzug nicht hinterlassen.
+
+Der Schalter `ANLEITUNG_VERFUEGBAR` steuert weiter alle Einstiegspunkte, jetzt auch den neuen Eintrag im Aktionsmenü.
+
+### C) Die Startweiche (installierte App)
+
+**Problem:** Das Manifest sagt künftig „starte auf `/app`“. Ob iPhones sich daran halten oder die Seite speichern, die beim Hinzufügen offen war, ist nicht sicher. Außerdem haben Betreiber und Tester ihre App mit `/` installiert.
+
+**Lösung:** Auf der Landingpage sitzt ein unsichtbarer Baustein. Er prüft beim Laden zwei Dinge:
+1. Läuft die Seite als installierte App? Die Prüfung `isStandalone()` aus dem Installations-Hinweis gibt es schon, sie wird wiederverwendet.
+2. Wurde **die Seite selbst** mit der Adresse `/` geöffnet, also als App-Start oder Neuladen?
+
+Nur wenn beides zutrifft, ersetzt er die Adresse durch `/app`. Der Verlaufseintrag wird ersetzt, nicht ergänzt, damit „Zurück“ auf Android nicht in einer Schleife landet.
+
+**Warum Bedingung 2:** Tippt jemand in der installierten App im Menü auf „Über“, wechselt die App nur die Ansicht und lädt die Seite nicht neu. Der Browser merkt sich weiter, dass die Seite ursprünglich als `/app` geladen wurde. Die Weiche greift dann nicht, und die Landingpage bleibt stehen (Edge Case 4). Im normalen Browser ist Bedingung 1 nie erfüllt, die Weiche tut dort nichts.
+
+**Preis:** Die Landingpage blitzt beim App-Start einen Augenblick auf, bevor `/app` kommt. Sie wird statisch ausgeliefert, also schnell, und der Fall betrifft nur Installationen, die auf `/` starten. Eine Weiterleitung auf dem Server ginge ohne Aufblitzen, kann den Anzeigemodus aber nicht erkennen.
+
+### D) Für Suchmaschinen und KI
+
+- **`robots.txt`:** erlaubt allen alles und nennt die Sitemap. `/simulation` wird **nicht** gesperrt: Ein gesperrter Crawler sähe das `noindex` der Seite nie und könnte die Adresse trotzdem ohne Inhalt listen.
+- **`sitemap.xml`:** vier Adressen (`/`, `/mit-ki-erstellen`, `/impressum`, `/datenschutz`). Beide Dateien werden wie das Manifest als Next.js-Metadatendateien erzeugt. Next.js prüft das Format beim Bauen, ein Tippfehler fällt dann dort auf statt erst bei Google.
+- **Gemeinsame Basisadresse:** Sitemap, `robots.txt` und Canonicals nutzen dieselbe Quelle wie heute `metadataBase` im Wurzel-Layout. Live ist das die eigene Domain (geprüft: Canonical von `geoquesty.vercel.app/about` zeigt auf `geoquest.technolomagie.de`). Die Basisadresse wird an einer Stelle definiert und an allen vier Stellen genutzt.
+- **`llms.txt`:** eine statische Textdatei im `public`-Ordner, von Hand geschrieben. Sie ist Inhalt, keine Logik. Eine generierte Fassung hätte keinen Vorteil, und ein Mensch soll jeden Satz abnehmen (dieselbe Regel wie in PROJ-13: nichts Erfundenes).
+- **Metadaten:** Die Landingpage behält Titel, Beschreibung, Open Graph und JSON-LD, nur der Canonical wechselt auf `/`. `/app` bekommt einen eigenen, schlichten Titel und einen Canonical auf `/app`. `/mit-ki-erstellen` bekommt einen suchnahen Titel (Wortlaut noch offen).
+
+### E) Was mitzieht, damit nichts bricht
+
+- **Einbettungsschutz:** Die `SAMEORIGIN`-Ausnahme in `next.config.ts` zieht auf `/simulation` um, die Regel in `.claude/rules/security.md` ebenso (Freigabe liegt vor). Das iframe auf der Landingpage zeigt auf die neue Adresse.
+- **Analytics-Filter:** `page-analytics.tsx` verwirft künftig `/simulation` statt `/about/simulation`.
+- **Manifest:** `start_url` wird `/app`. `scope` und `id` bleiben `/`, damit Android eine bestehende Installation als dieselbe App erkennt und Menü-Ziele wie Impressum in der App bleiben.
+- **Service Worker:** unverändert. Er cacht nur die Offline-Seite und kennt keine Routen.
+- **Gespeicherte Daten:** unberührt. `localStorage` hängt an der Domain, nicht an der Adresse.
+
+### F) Gespeicherte Daten
+Keine neuen. Das Feature speichert nichts.
+
+### G) Pakete
+Keine neuen.
+
+### Hinweise für `/frontend`
+- **Reihenfolge beim Ziehen der Tests:** Erst alle Aufrufe des Startscreens (`goto("/")`) auf `/app` umstellen, **dann** `/about` auf `/`. Umgekehrt würden die Landingpage-Tests auf `/app` umgebogen.
+- **Statische Auslieferung im Build-Protokoll prüfen:** `/`, `/app` und `/mit-ki-erstellen` müssen als statisch (`○`) erscheinen. Die Startweiche läuft nur im Browser und darf daran nichts ändern.
+- **Neue Wächter:** Startweiche greift nur bei installierter App und nur, wenn die Seite als `/` geladen wurde (Menü-Navigation zu „Über“ in der App bleibt auf der Landingpage); `robots.txt`, `sitemap.xml` und `llms.txt` antworten mit 200 und dem erwarteten Inhalt; ein Durchlauf über alle internen Links findet keine 404. Den Standalone-Modus kann Playwright nicht direkt einschalten. Er wird wie in PROJ-12 über eine vorgetäuschte `matchMedia`-Antwort hergestellt.
+- **Nicht prüfbar:** wie das echte iPhone beim Hinzufügen zum Homescreen entscheidet. Die Weiche deckt beide Fälle ab, der Augenschein bleibt dem Betreiber.
 
 ## QA Test Results
 _To be added by /qa_
