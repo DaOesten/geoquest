@@ -4,6 +4,10 @@
 
 Die App ist auf Deutsch. Gespielt wird vor allem von Kindern und Jugendlichen zwischen etwa 8 und 16 Jahren, erstellt werden die Quests meist von Erwachsenen.
 
+Geo Quest wird von Daniela Oesten (Technolomagie) in Hamburg entwickelt und betrieben und ist seit 2026 online, seit September 2026 unter geoquest.technolomagie.de. Angaben zum Anbieter stehen im Impressum.
+
+Stand: Oktober 2026
+
 ## Was Geo Quest ist
 
 - Ein Baukasten für digitale Schnitzeljagden, GPS-Rallyes, Stadtrallyes und Lernpfade im Freien

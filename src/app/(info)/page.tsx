@@ -197,7 +197,7 @@ const FAQ: FaqEntry[] = [
     // stark vom Umfang ab, eine erfundene Zahl enttaeuscht beim ersten Versuch.
     question: "Wie erstelle ich eine Quest?",
     answer:
-      "Im Creator: Quest anlegen, Ziele auf der Karte setzen und zu jedem Ziel Rätsel, Aufgaben oder Medien hinzufügen. Danach exportierst du sie als Datei und teilst sie.",
+      "Im Creator: Quest anlegen, Stationen auf der Karte setzen und jeder Station Rätsel, Aufgaben oder Medien hinzufügen. Danach exportierst du sie als Datei und teilst sie.",
   },
   {
     // Refinement 15: Quellen exakt nach PROJ-15 — Google Drive nur mit

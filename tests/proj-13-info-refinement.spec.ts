@@ -137,7 +137,7 @@ test.describe("Häufige Fragen (Accordion)", () => {
       // Am 2026-09-09 vom Betreiber auf "etwa 8 bis 16 Jahren, aber niemand
       // ist zu alt" geändert; die Assertion hing noch am alten Wortlaut.
       "8 bis 16 Jahren",
-      "Ziele auf der Karte",  // PROJ-14: FAQ ohne Zeitangabe
+      "Stationen auf der Karte",  // PROJ-14: FAQ ohne Zeitangabe; PROJ-16: „Stationen“ statt „Ziele“
     ]) {
       expect(html, `Antwort fehlt im HTML: ${needle}`).toContain(needle);
     }
