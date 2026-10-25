@@ -17,7 +17,6 @@ import { AboutHeroPhone } from "@/components/about-hero-phone";
 import { AboutSimulationPhone } from "@/components/about-simulation-phone";
 import { AboutVideo } from "@/components/about-video";
 import { InfoPageShell } from "@/components/info-page-shell";
-import { AppStartRedirect } from "@/components/app-start-redirect";
 import { KOFI_URL, ROUTES } from "@/lib/app-nav";
 import {
   Accordion,
@@ -302,8 +301,6 @@ const SECTION_TITLE =
  */
 export default function LandingPage() {
   return (
-    <>
-    <AppStartRedirect />
     <InfoPageShell
       showLogo
       showSupport
@@ -543,6 +540,5 @@ export default function LandingPage() {
         </Link>
       </section>
     </InfoPageShell>
-    </>
   );
 }

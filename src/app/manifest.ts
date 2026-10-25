@@ -28,8 +28,10 @@ export default function manifest(): MetadataRoute.Manifest {
      * nicht auf die Werbeseite. `scope` und `id` bleiben `/`: Mit geänderter
      * `id` hielte Android eine bestehende Installation für eine fremde App,
      * und mit engerem `scope` öffneten Menü-Ziele wie Impressum im Browser.
-     * Startet eine Installation trotzdem auf `/`, schickt sie
-     * `AppStartRedirect` weiter.
+     * Startet eine Installation trotzdem auf `/` (vor PROJ-16 angelegt, oder
+     * iOS speichert die offene Seite), zeigt sie die Landingpage, „Zur App"
+     * führt weiter. Eine Weiterleitung gibt es bewusst nicht mehr
+     * (Refinement 2026-10-25): Sie machte `/` in der App unerreichbar.
      *
      * Ursprüngliche Begründung (PROJ-12) für den App-Start statt `/play`: Die installierte App verhält sich wie
      * die Website. `/` trägt seit BUG-10 das vollständige Burger-Menu und beide

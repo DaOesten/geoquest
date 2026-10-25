@@ -5,8 +5,9 @@ import { test, expect, type Page } from "@playwright/test";
  * „Mit KI erstellen" statt „Anleitung", robots.txt, sitemap.xml, llms.txt.
  *
  * Die bestehenden Suiten sind auf die neuen Adressen gezogen; diese Datei hält
- * fest, was es vorher nicht gab: die Startweiche der installierten App, die
- * Dateien für Suchmaschinen und KI, und dass kein interner Link ins Leere führt.
+ * fest, was es vorher nicht gab: dass `/` auch in der installierten App
+ * erreichbar bleibt, die Dateien für Suchmaschinen und KI, und dass kein
+ * interner Link ins Leere führt.
  */
 
 /** Täuscht den Anzeigemodus einer installierten App vor (wie in PROJ-12). */
@@ -194,48 +195,76 @@ test.describe("PROJ-16: Navigation", () => {
   });
 });
 
-test.describe("PROJ-16: Startweiche der installierten App", () => {
-  test("öffnet die installierte App `/`, landet sie auf `/app`", async ({ page }) => {
-    await alsInstallierteApp(page);
-    await ohneErststartDialog(page);
-    await page.goto("/");
-    await expect(page).toHaveURL(/\/app$/);
-    await expect(page.getByRole("heading", { name: START_HEADING })).toBeVisible();
-  });
-
-  test("die Weiterleitung ersetzt den Verlaufseintrag (Zurück führt nicht in eine Schleife)", async ({
-    page,
-  }) => {
-    await alsInstallierteApp(page);
-    await ohneErststartDialog(page);
-    await page.goto("/");
-    await expect(page).toHaveURL(/\/app$/);
-    // Ein neuer Tab beginnt bei about:blank. Hat die Weiche den Eintrag `/`
-    // ersetzt, führt „Zurück" dorthin — und nicht auf `/`, das sofort wieder
-    // nach `/app` schicken würde.
-    await page.goBack();
-    expect(page.url()).toBe("about:blank");
-  });
-
-  test("im normalen Browser bleibt `/` die Landingpage", async ({ page }) => {
-    await page.goto("/");
+/**
+ * Refinement 2026-10-25: Die Startweiche ist entfernt. Sie schickte die
+ * installierte App von `/` nach `/app` und machte `/` damit unerreichbar,
+ * sobald die App auf `/` gestartet war (Befund des Betreibers am Handy). Die
+ * früheren Weichen-Tests sind gezogen: Sie prüfen jetzt, dass `/` in der
+ * installierten App stehen bleibt.
+ */
+test.describe("PROJ-16: `/` bleibt in der installierten App erreichbar", () => {
+  /** Landingpage steht und springt auch nach einer Wartezeit nicht weg. */
+  async function bleibtAufLanding(page: Page) {
+    await expect(page).toHaveURL(/^https?:\/\/[^/]+\/$/);
     await page.waitForTimeout(800);
     await expect(page).toHaveURL(/^https?:\/\/[^/]+\/$/);
     await expect(page.getByRole("heading", { level: 1, name: LANDING_HEADING })).toBeVisible();
+  }
+
+  test("startet die installierte App auf `/`, bleibt sie auf der Landingpage", async ({ page }) => {
+    await alsInstallierteApp(page);
+    await ohneErststartDialog(page);
+    await page.goto("/");
+    await bleibtAufLanding(page);
   });
 
-  test("„Über“ im Menü der installierten App zeigt die Landingpage und springt nicht zurück", async ({
-    page,
-  }) => {
+  test("Befund: Start auf `/`, „Zur App“, dann „Über“ → Landingpage bleibt", async ({ page }) => {
+    await alsInstallierteApp(page);
+    await ohneErststartDialog(page);
+    await page.goto("/");
+    await bleibtAufLanding(page);
+    await page.getByRole("link", { name: "Zur App" }).click();
+    await expect(page).toHaveURL(/\/app$/);
+    await expect(page.getByRole("heading", { name: START_HEADING })).toBeVisible();
+    await page.getByRole("button", { name: "Menü öffnen" }).click();
+    await page.getByRole("dialog").getByRole("link", { name: "Über" }).click();
+    await bleibtAufLanding(page);
+  });
+
+  test("Start auf `/`, „Zur App“, dann Logo → Landingpage bleibt, beliebig oft", async ({ page }) => {
+    await alsInstallierteApp(page);
+    await ohneErststartDialog(page);
+    await page.goto("/");
+    for (let runde = 0; runde < 3; runde++) {
+      await bleibtAufLanding(page);
+      await page.getByRole("link", { name: "Zur App" }).click();
+      await expect(page).toHaveURL(/\/app$/);
+      await page.getByRole("link", { name: "Geo Quest — Was ist das?" }).click();
+    }
+    await bleibtAufLanding(page);
+  });
+
+  test("„Über“ im Menü der auf `/app` gestarteten App zeigt die Landingpage", async ({ page }) => {
     await alsInstallierteApp(page);
     await ohneErststartDialog(page);
     await page.goto("/app");
     await page.getByRole("button", { name: "Menü öffnen" }).click();
     await page.getByRole("dialog").getByRole("link", { name: "Über" }).click();
-    await expect(page).toHaveURL(/^https?:\/\/[^/]+\/$/);
-    await page.waitForTimeout(800);
-    await expect(page).toHaveURL(/^https?:\/\/[^/]+\/$/);
-    await expect(page.getByRole("heading", { level: 1, name: LANDING_HEADING })).toBeVisible();
+    await bleibtAufLanding(page);
+  });
+
+  test("Neuladen der Landingpage in der installierten App bleibt auf `/`", async ({ page }) => {
+    await alsInstallierteApp(page);
+    await ohneErststartDialog(page);
+    await page.goto("/");
+    await bleibtAufLanding(page);
+    await page.reload();
+    await bleibtAufLanding(page);
+  });
+
+  test("im normalen Browser bleibt `/` die Landingpage", async ({ page }) => {
+    await page.goto("/");
+    await bleibtAufLanding(page);
   });
 });
 

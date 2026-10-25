@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 
 /**
  * PROJ-16 — QA vom 2026-10-25. Ergänzt `proj-16-auffindbarkeit.spec.ts` um das,
- * was die Frontend-Phase nicht geprüft hat: den iOS-Weg der Startweiche,
+ * was die Frontend-Phase nicht geprüft hat: den iOS-Weg der installierten App,
  * Deep-Links in der installierten App, den Installations-Hinweis, die aktiven
  * Menü-Einträge, das Creator-Menü auf 320px, Content-Types und Umlenkversuche.
  */
@@ -25,16 +25,23 @@ async function fireInstallPrompt(page: Page) {
   });
 }
 
-test.describe("PROJ-16 QA: Startweiche", () => {
-  test("iOS-Weg: `navigator.standalone` allein genügt für die Weiterleitung nach /app", async ({
-    page,
-  }) => {
+/**
+ * Gezogen am 2026-10-25: Die Startweiche ist entfernt (Refinement). Der
+ * iOS-Weg (`navigator.standalone` ohne `matchMedia`) prüft jetzt, dass `/`
+ * stehen bleibt; Deep-Link- und Umlenk-Wächter bleiben.
+ */
+test.describe("PROJ-16 QA: installierte App ohne Startweiche", () => {
+  const LANDING = /^https?:\/\/[^/]+\/$/;
+
+  test("iOS-Weg: mit `navigator.standalone` bleibt `/` die Landingpage", async ({ page }) => {
     await page.addInitScript(() =>
       Object.defineProperty(navigator, "standalone", { get: () => true })
     );
     await ohneErststartDialog(page);
     await page.goto("/");
-    await expect(page).toHaveURL(/\/app$/);
+    await page.waitForTimeout(800);
+    await expect(page).toHaveURL(LANDING);
+    await expect(page.getByRole("heading", { level: 1, name: /Die reale Welt/i })).toBeVisible();
   });
 
   test("in der installierten App öffnen Deep-Links wie /impressum ohne Umweg", async ({ page }) => {
@@ -46,15 +53,18 @@ test.describe("PROJ-16 QA: Startweiche", () => {
     await expect(page).toHaveURL(/\/impressum$/);
   });
 
-  test("ein Umlenk-Parameter auf / hat keine Wirkung (festes Ziel /app)", async ({ page, baseURL }) => {
+  test("ein Umlenk-Parameter auf / hat keine Wirkung", async ({ page, baseURL }) => {
     await page.addInitScript(() =>
       Object.defineProperty(navigator, "standalone", { get: () => true })
     );
     await ohneErststartDialog(page);
     await page.goto("/?redirect=https://evil.example&next=//evil.example");
+    await page.waitForTimeout(800);
     // Gegen die Origin der baseURL statt fest localhost, damit der Wächter
-    // auch gegen Production läuft (Deploy 2026-10-25).
-    await expect(page).toHaveURL(`${new URL(baseURL!).origin}/app`);
+    // auch gegen Production läuft. Eine Umlenkung auf eine fremde Domain
+    // ließe ihn fallen.
+    expect(new URL(page.url()).origin).toBe(new URL(baseURL!).origin);
+    expect(new URL(page.url()).pathname).toBe("/");
   });
 });
 
