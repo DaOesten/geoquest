@@ -1,6 +1,6 @@
 # PROJ-16: Auffindbarkeit — Landingpage auf `/`, App auf `/app`, KI-Seite umbenannt
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-10-24
 **Last Updated:** 2026-10-24
 
@@ -337,4 +337,14 @@ Auf Wunsch des Betreibers, nach der QA ergänzt (Commits `c755918`, `7d23237`, T
 **Vor dem Deploy beim Betreiber:** die beiden Aussagen über Actionbound auf actionbound.com bestätigen (Lizenz für Schulen und Organisationen, Spielen nur mit deren App).
 
 ## Deployment
-_To be added by /deploy_
+**Am 2026-10-25 nach Production deployt** (Tag `v1.52.0-PROJ-16`, Push `5726957..e7c406e`) — live auf https://geoquest.technolomagie.de und https://geoquesty.vercel.app nach **56 s**, belegt an `/llms.txt` (vorher 404, jetzt 200).
+
+**Vorab geprüft:** Die beiden Aussagen über Actionbound stehen in deren eigener FAQ: „Bounds can only be played using the Actionbound app“ und eine kostenpflichtige Lizenz ist nötig „at educational institutions“ sowie für Unternehmen, Vereine und Organisationen. Alle sieben ausstehenden Commits gehörten zu PROJ-16, keine Secrets im Repo.
+
+**Live verifiziert, beide Domains:** 13 Endpunkte HTTP 200 (`/`, `/app`, `/play`, `/create`, `/mit-ki-erstellen`, `/simulation`, `/impressum`, `/datenschutz`, `robots.txt`, `sitemap.xml`, `llms.txt`, Manifest, `sw.js`); `/about` und `/anleitung` liefern wie entschieden 404, ohne Weiterleitung. `robots.txt` mit Sitemap-Verweis, `sitemap.xml` mit genau vier absoluten Adressen, Manifest `start_url /app` bei `id`/`scope` `/`, Canonical `/`, Actionbound-Frage im HTML und JSON-LD, `llms.txt` mit Vergleichsabschnitt. HSTS, `nosniff`, `X-Frame-Options: DENY` auf `/`, `SAMEORIGIN` nur auf `/simulation`.
+
+**PROJ-16-Suiten direkt gegen Production:** Chrome und Mobile Safari je **41/42**. Der eine Fehlschlag je Engine war ein Testfehler: Der Wächter „Umlenk-Parameter auf `/` ohne Wirkung“ erwartete fest `localhost`, live landet die Startweiche korrekt auf `https://geoquest.technolomagie.de/app`. Er prüft jetzt gegen die Origin der `baseURL` und besteht gegen Production auf beiden Engines; eine Weiterleitung auf eine fremde Domain ließe ihn weiterhin fallen.
+
+**Konsole:** WebKit 0 Fehler und 0 fehlgeschlagene Requests auf `/`, `/app`, `/mit-ki-erstellen`; Chrome nur der bekannte `/favicon.ico`-404. Ein vermeintlicher Redirect auf `/` in WebKit war ein `304 Not Modified` beim zweiten Aufruf (Playwright wertet 3xx als Redirect), keine Weiterleitung.
+
+**Offen:** iOS-Verhalten beim „Zum Home-Bildschirm“ am echten Gerät, Firefox, und ob Suchmaschinen und KI-Systeme `llms.txt` tatsächlich nutzen (nicht messbar). Empfohlen: die Sitemap in der Google Search Console einreichen.

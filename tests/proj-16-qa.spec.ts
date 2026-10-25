@@ -46,13 +46,15 @@ test.describe("PROJ-16 QA: Startweiche", () => {
     await expect(page).toHaveURL(/\/impressum$/);
   });
 
-  test("ein Umlenk-Parameter auf / hat keine Wirkung (festes Ziel /app)", async ({ page }) => {
+  test("ein Umlenk-Parameter auf / hat keine Wirkung (festes Ziel /app)", async ({ page, baseURL }) => {
     await page.addInitScript(() =>
       Object.defineProperty(navigator, "standalone", { get: () => true })
     );
     await ohneErststartDialog(page);
     await page.goto("/?redirect=https://evil.example&next=//evil.example");
-    await expect(page).toHaveURL(/^http:\/\/localhost:\d+\/app$/);
+    // Gegen die Origin der baseURL statt fest localhost, damit der Wächter
+    // auch gegen Production läuft (Deploy 2026-10-25).
+    await expect(page).toHaveURL(`${new URL(baseURL!).origin}/app`);
   });
 });
 
