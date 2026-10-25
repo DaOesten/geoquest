@@ -367,3 +367,13 @@ Auf Wunsch des Betreibers, nach der QA ergänzt (Commits `c755918`, `7d23237`, T
 
 **Sofortmaßnahme für den Betreiber:** App vom Homescreen löschen und in Safari bzw. Chrome von `/app` aus neu hinzufügen. Quests und Fortschritt bleiben erhalten, sie hängen an der Origin, nicht an der Installation. _(Gilt für iOS nur mit Einschränkung: Löscht iOS beim Entfernen der Homescreen-App deren eigenen Speicher, gehen die dort gespeicherten Quests verloren — vorher exportieren.)_
 
+
+**Frontend umgesetzt am 2026-10-25.** `src/components/app-start-redirect.tsx` und seine 9 Unit-Tests entfernt, ebenso die Einbindung in `src/app/(info)/page.tsx`. Der Kommentar in `src/app/manifest.ts` erklärt jetzt, warum es keine Weiterleitung mehr gibt. `/` und `/app` bleiben statisch (`○`). Kein neues Paket.
+
+**Tests gezogen, nicht gelöscht.** Die vier Weichen-Tests in `proj-16-auffindbarkeit.spec.ts` sind jetzt sechs Wächter dafür, dass `/` in der installierten App stehen bleibt: beim Start auf `/`, beim gemeldeten Weg Start auf `/` → „Zur App“ → „Über“, beim Weg „Zur App“ → Logo dreimal hintereinander, nach „Über“ bei einem Start auf `/app`, nach dem Neuladen und im normalen Browser. Der Test „Zurück führt nicht in eine Schleife“ ist mit der Weiterleitung gegenstandslos und in diesen Wächtern aufgegangen. In `proj-16-qa.spec.ts` prüft der iOS-Weg (`navigator.standalone`) jetzt, dass `/` stehen bleibt. Die Wächter für den Deep-Link und den Umlenk-Parameter bleiben; der zweite verlangt jetzt eigene Origin und Pfad `/`.
+
+**Gegenprobe gegen den Produktcode von `2995ab4` (mit Weiche):** Genau 6 Tests je Engine fallen, nämlich alle, die einen App-Start auf `/` prüfen, darunter der gemeldete Weg. Grün bleiben die drei, die auch vorher galten: Start auf `/app`, normaler Browser, Deep-Link.
+
+**Läufe** im eigenen Worktree gegen den Production-Build (Port 3200), damit der Dev-Server des Betreibers unberührt bleibt: Unit 455/455 (vorher 464, minus die 9 der Weiche). PROJ-16-Suiten 88/88 auf Chrome und Mobile Safari. PROJ-1, PROJ-12 und PROJ-16 zusammen 409/409. PROJ-13 (Landingpage) 360 bestanden, 4 übersprungen, 0 Fehlschläge. Lint 0 Fehler; `tsc` meldet nur die bekannten 2 Fehler in `quest-storage.test.ts` und veraltete Typen in `.next` vom Umzug der Seiten.
+
+**Nicht abgedeckt:** das echte iPhone, also ob iOS bei einer Neuinstallation von `/` aus die offene Seite oder `start_url` speichert. Dazu Firefox.

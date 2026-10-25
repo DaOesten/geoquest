@@ -1847,3 +1847,5 @@ Simulations-Route zieht nach `/simulation`, die `SAMEORIGIN`-Ausnahme mit ihr (F
 
 **Offen:** iOS-Verhalten bei einer Neuinstallation von `/` aus (offene Seite oder `start_url`) — ohne Weiche entscheidet das, ob iPhone-Nutzer auf der Landingpage starten.
 
+**Frontend umgesetzt am 2026-10-25.** Komponente, 9 Unit-Tests und Einbindung entfernt, Manifest-Kommentar angepasst. Die Weichen-Tests sind zu 6 Wächtern gezogen, dass `/` in der installierten App stehen bleibt, einschließlich Start auf `/` → „Zur App“ → „Über“. Gegenprobe gegen den Stand mit Weiche: genau diese 6 fallen je Engine. Unit 455/455, PROJ-1/12/16 409/409 und PROJ-13 360/0 (4 übersprungen) gegen den Production-Build im eigenen Worktree.
+
