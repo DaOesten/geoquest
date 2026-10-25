@@ -1,6 +1,6 @@
 # PROJ-16: Auffindbarkeit — Landingpage auf `/`, App auf `/app`, KI-Seite umbenannt
 
-## Status: Approved
+## Status: Deployed
 **Created:** 2026-10-24
 **Last Updated:** 2026-10-25
 
@@ -417,3 +417,5 @@ Keine.
 
 ### Production-Ready Decision
 **READY.** Keine Bugs jeglicher Schwere.
+
+**Am 2026-10-25 nach Production deployt** (Tag `v1.53.0-PROJ-16`, Push `e7c406e..e2b7e7e`) — live auf https://geoquest.technolomagie.de und https://geoquesty.vercel.app nach **40 s**. Belegt an einem Merkmal, das umschlagen konnte: Vor dem Push fragte 1 Chunk von `/` die Ladeadresse ab (nur die Startweiche tat das), danach 0, auf beiden Domains. 13 Endpunkte HTTP 200, Security-Header aktiv, Manifest unverändert `start_url /app`, `id`/`scope` `/`. **PROJ-16-Suiten direkt gegen Production: Chrome 53/53, Mobile Safari 53/53**, darunter alle Wächter dafür, dass `/` in der installierten App stehen bleibt. WebKit 0 Konsolenfehler; Chrome nur der bekannte `/favicon.ico`-404. **Das Refinement ist abgeschlossen.** Offen: echtes iPhone (Neuinstallation von `/` aus), Firefox.

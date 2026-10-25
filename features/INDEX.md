@@ -31,7 +31,7 @@
 | PROJ-13 | Landing Page | P1 | PROJ-1, PROJ-15 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung (Prompt-Formular, Freischaltung) | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 | PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Deployed | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
-| PROJ-16 | Auffindbarkeit — Landingpage auf `/`, App auf `/app`, KI-Seite umbenannt | P1 | PROJ-1, PROJ-6, PROJ-12, PROJ-13, PROJ-14 | Approved | [Spec](PROJ-16-auffindbarkeit.md) | 2026-10-24 |
+| PROJ-16 | Auffindbarkeit — Landingpage auf `/`, App auf `/app`, KI-Seite umbenannt | P1 | PROJ-1, PROJ-6, PROJ-12, PROJ-13, PROJ-14 | Deployed | [Spec](PROJ-16-auffindbarkeit.md) | 2026-10-24 |
 
 <!-- Add features above this line -->
 
@@ -1851,3 +1851,5 @@ Simulations-Route zieht nach `/simulation`, die `SAMEORIGIN`-Ausnahme mit ihr (F
 
 
 **QA am 2026-10-25 abgeschlossen: alle Kriterien erfüllt, keine Bugs — Approved.** Über die Frontend-Phase hinaus geprüft: keine verzögerte Weiterleitung (3 s), Zurück/Vorwärts zwischen `/` und `/app`, „Über“ aus `/play`, `/create` und `/impressum` bei Start auf `/`, die 404-Seite, drei Breiten. Die Abfrage der Ladeadresse steht in keinem ausgelieferten Chunk mehr. 9 neue E2E-Tests je Engine; gegen den Stand mit Weiche fallen 8 davon, der neunte (404-Seite) ist ein Wächter, den auch die alte Fassung erfüllte. Unit 455/455, Gesamtsuite beider Engines 1661 erwartet / 1 unerwartet (Service-Worker-Wackelei, seriell 9/9). Offen: echtes iPhone, Firefox.
+
+**Am 2026-10-25 nach Production deployt** (Tag `v1.53.0-PROJ-16`, Push `e7c406e..e2b7e7e`) — live nach 40 s auf beiden Domains, belegt daran, dass kein Chunk von `/` mehr die Ladeadresse abfragt (vorher 1, jetzt 0). 13 Endpunkte HTTP 200, Header aktiv, Manifest unverändert. PROJ-16-Suiten gegen Production je Engine 53/53. **Refinement abgeschlossen.** Offen: iPhone-Neuinstallation von `/` aus, Firefox.
