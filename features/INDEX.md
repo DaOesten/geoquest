@@ -31,7 +31,7 @@
 | PROJ-13 | Landing Page | P1 | PROJ-1, PROJ-15 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung (Prompt-Formular, Freischaltung) | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 | PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Deployed | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
-| PROJ-16 | Auffindbarkeit — Landingpage auf `/`, App auf `/app`, KI-Seite umbenannt | P1 | PROJ-1, PROJ-6, PROJ-12, PROJ-13, PROJ-14 | Deployed | [Spec](PROJ-16-auffindbarkeit.md) | 2026-10-24 |
+| PROJ-16 | Auffindbarkeit — Landingpage auf `/`, App auf `/app`, KI-Seite umbenannt | P1 | PROJ-1, PROJ-6, PROJ-12, PROJ-13, PROJ-14 | In Progress | [Spec](PROJ-16-auffindbarkeit.md) | 2026-10-24 |
 
 <!-- Add features above this line -->
 
@@ -1839,3 +1839,11 @@ Simulations-Route zieht nach `/simulation`, die `SAMEORIGIN`-Ausnahme mit ihr (F
 **Nachtrag nach der QA (2026-10-25):** Neunte FAQ-Frage „Was unterscheidet Geo Quest von Actionbound?“ auf `/` (auch im JSON-LD), in `llms.txt` ein Abschnitt „Vergleich mit ähnlichen Apps“, der Betreiber-Satz wie im Impressum und „Stand: Oktober 2026“, in der FAQ „Stationen“ statt „Ziele“. Eine eigene Grounding Page ist bewusst nicht gebaut, weil sie dieselben Fakten ein drittes Mal geführt hätte. Keine neue Feature-ID, Teil von PROJ-16. Vier Zähl- und Wortlaut-Assertions gezogen. PROJ-13/16/Ko-fi gegen Production-Build: Safari 213/0, Chrome nach Korrektur einer festen Achter-Liste grün. **Status bleibt Approved.** Vor dem Deploy bestätigt der Betreiber die beiden Aussagen über Actionbound.
 
 **Am 2026-10-25 nach Production deployt** (Tag `v1.52.0-PROJ-16`, Push `5726957..e7c406e`) — live nach 56 s auf beiden Domains, belegt an `/llms.txt` (vorher 404). Die Actionbound-Aussagen vorher in deren FAQ bestätigt. 13 Endpunkte HTTP 200, `/about` und `/anleitung` 404 wie entschieden, Sitemap mit vier Adressen, Manifest `start_url /app`, Security-Header aktiv. PROJ-16-Suiten gegen Production je Engine 41/42, der eine Fehlschlag ein fest auf `localhost` geschriebener Test, jetzt gegen die Origin der `baseURL` und grün. WebKit 0 Konsolenfehler. **PROJ-16 ist abgeschlossen.** Offen: iPhone-Homescreen, Firefox; Sitemap in der Google Search Console einreichen.
+
+## Offenes Refinement: Startweiche entfällt (PROJ-16, 2026-10-25)
+**PROJ-16** geht von Deployed zurück auf In Progress. Betreiber-Befund am eigenen Handy (Homescreen-Installation von vor PROJ-16, Start auf `/`): Die Landingpage ist in der App nicht erreichbar, „Über“ und Logo springen sofort zurück nach `/app`. **Ursache im Code bestätigt:** Die Startweiche prüft, ob das Dokument unter `/` geladen wurde, und diese Angabe ändert sich bei Wechseln innerhalb der App nie. Bei einem Start auf `/` greift sie deshalb bei jeder Rückkehr nach `/`. Die „Über“-Tests starteten auf `/app` und konnten das nicht sehen.
+
+**Entschieden (Betreiber):** Startweiche ersatzlos entfernen (Komponente, Unit-Tests, Einbindung). `start_url: "/app"` bleibt. Alte Installationen starten künftig auf der Landingpage und erreichen die App über „Zur App“; eine Neuinstallation von `/app` aus startet direkt in der App. Verworfen: Weiche nur einmal pro App-Start. Startweiche-E2E-Tests werden gezogen, nicht gelöscht: künftig Wächter, dass `/` in der installierten App stehen bleibt, inklusive genau des gemeldeten Wegs (Start auf `/` → „Zur App“ → „Über“).
+
+**Offen:** iOS-Verhalten bei einer Neuinstallation von `/` aus (offene Seite oder `start_url`) — ohne Weiche entscheidet das, ob iPhone-Nutzer auf der Landingpage starten.
+

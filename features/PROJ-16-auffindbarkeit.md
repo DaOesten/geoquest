@@ -1,8 +1,8 @@
 # PROJ-16: Auffindbarkeit — Landingpage auf `/`, App auf `/app`, KI-Seite umbenannt
 
-## Status: Deployed
+## Status: In Progress
 **Created:** 2026-10-24
-**Last Updated:** 2026-10-24
+**Last Updated:** 2026-10-25
 
 ## Dependencies
 - Berührt: PROJ-1 (App Shell & Mode Switch): Der Startscreen zieht von `/` nach `/app`, Burger-Menü und Zurück-Pfeile zeigen auf neue Ziele
@@ -82,7 +82,9 @@ Die Startadresse einer Domain bekommt die meisten Links und wird bei Markensuche
 ### Homescreen-Installation
 - [ ] Angenommen das Manifest wird ausgeliefert, dann ist `start_url` gleich `/app`, `scope` gleich `/` und `id` unverändert `/`.
 - [ ] Angenommen Geo Quest ist auf dem Homescreen installiert, wenn das Icon angetippt wird, dann öffnet sich `/app`.
-- [ ] Angenommen `/` wird als installierte App geöffnet (Anzeige-Modus `standalone`), dann wechselt die Seite ohne Zutun auf `/app`.
+- ~~Angenommen `/` wird als installierte App geöffnet (Anzeige-Modus `standalone`), dann wechselt die Seite ohne Zutun auf `/app`.~~ _Überholt durch Refinement 2026-10-25: Die Startweiche entfällt._
+- [ ] Angenommen die installierte App zeigt `/` (Start, „Über“, Logo oder Neuladen), dann bleibt die Landingpage stehen. Es gibt keine Weiterleitung nach `/app`, weder im Browser noch in der installierten App.
+- [ ] Angenommen eine Installation startet auf `/`, wenn der Nutzer „Zur App“ tippt, dann landet er auf `/app` und kann von dort über Logo oder „Über“ wieder auf `/` wechseln, beliebig oft.
 - [ ] Angenommen `/` wird im normalen Browser geöffnet, dann bleibt die Landingpage stehen und es findet keine Weiterleitung statt.
 - [ ] Angenommen eine installierte App öffnet `/impressum`, `/datenschutz` oder `/mit-ki-erstellen` über das Burger-Menü, dann bleibt sie in der App (kein Wechsel in den Browser), weil `scope` weiter `/` ist.
 
@@ -111,10 +113,10 @@ Die Startadresse einer Domain bekommt die meisten Links und wird bei Markensuche
 - [ ] Angenommen Vercel Analytics zählt Seitenaufrufe, dann wird die Simulations-Route unter ihrer neuen Adresse weiterhin nicht mitgezählt.
 
 ## Edge Cases
-1. **iPhone legt die gerade angezeigte Adresse auf den Homescreen statt `start_url`:** Wer von der Landingpage `/` aus installiert, bekäme sonst bei jedem Start die Werbeseite. Die Weiterleitung im Anzeige-Modus `standalone` fängt das ab, egal wie iOS sich verhält.
-2. **Bestehende Installationen beim Betreiber und den Testern:** Sie haben `/` als Start gespeichert. Die Standalone-Weiterleitung führt sie auf `/app`, eine Neuinstallation ist nicht nötig.
-3. **Standalone-Weiterleitung und Zurück-Taste (Android):** Die Weiterleitung ersetzt den Verlaufseintrag statt einen neuen anzulegen, sonst landet „Zurück“ auf `/` und leitet sofort wieder weiter.
-4. **Installierte App, Nutzer tippt im Burger-Menü „Über“:** Die Landingpage `/` soll angezeigt werden und nicht sofort auf `/app` springen. Die Weiterleitung darf nur beim Start greifen, nicht bei einer Navigation innerhalb der App. Die genaue Unterscheidung klärt `/architecture`.
+1. **iPhone legt die gerade angezeigte Adresse auf den Homescreen statt `start_url`:** Wer von der Landingpage `/` aus installiert, startet dann auf der Landingpage und tippt „Zur App“. _Bis 2026-10-25 fing die Startweiche das ab; sie entfällt (siehe Refinement 2026-10-25). Ob iOS sich so verhält, ist weiter offen._
+2. **Bestehende Installationen beim Betreiber und den Testern:** Sie haben `/` als Start gespeichert und starten künftig auf der Landingpage. Wer direkt in der App starten will, legt die App neu auf den Homescreen, am besten von `/app` aus. _Vorher: Die Startweiche führte sie auf `/app`._
+3. ~~**Standalone-Weiterleitung und Zurück-Taste (Android):** Die Weiterleitung ersetzt den Verlaufseintrag statt einen neuen anzulegen, sonst landet „Zurück“ auf `/` und leitet sofort wieder weiter.~~ _Entfällt mit der Startweiche._
+4. **Installierte App, Nutzer tippt im Burger-Menü „Über“:** Die Landingpage `/` wird angezeigt. _Bis 2026-10-25 nur dann, wenn die App auf `/app` gestartet war. War sie auf `/` gestartet, schickte die Startweiche jeden Wechsel nach `/` sofort zurück nach `/app`, `/` war in dieser Sitzung nicht erreichbar (Befund des Betreibers am eigenen Handy). Ursache: Die Weiche prüfte, unter welcher Adresse das Dokument geladen wurde, und diese Angabe ändert sich bei Wechseln innerhalb der App nie. Der „Über“-Test startete auf `/app` und konnte das nicht sehen._
 5. **Service Worker mit altem Stand:** Er cacht nur `/offline.html` und kennt keine Routen. Der Adresswechsel braucht keinen neuen Cache-Namen.
 6. **Gespeicherte Daten:** `localStorage` hängt an der Origin, nicht am Pfad. Quests, Fortschritt und die Merker für Erststart-Dialog und Installations-Hinweis bleiben erhalten.
 7. **404-Seite „Zurück zum Start“:** zeigt auf `/` (Landingpage). Wer aus der App kommt, erreicht `/app` von dort über „Zur App“.
@@ -124,13 +126,15 @@ Die Startadresse einer Domain bekommt die meisten Links und wird bei Markensuche
 - Kein neues Paket.
 - `robots.txt` und `sitemap.xml` als Next.js-Metadaten-Routen (`app/robots.ts`, `app/sitemap.ts`), analog zu `app/manifest.ts`. `llms.txt` als statische Datei oder Route, entschieden in `/architecture`.
 - Die Seiten bleiben statisch (`○` im Build), das gilt für `/`, `/app` und `/mit-ki-erstellen`.
-- Die Standalone-Erkennung nutzt `matchMedia("(display-mode: standalone)")` und `navigator.standalone` (iOS), dieselbe Quelle wie `useInstallPrompt`. Keine zweite Erkennungslogik.
+- ~~Die Standalone-Erkennung nutzt `matchMedia("(display-mode: standalone)")` und `navigator.standalone` (iOS), dieselbe Quelle wie `useInstallPrompt`. Keine zweite Erkennungslogik.~~ _Entfällt mit der Startweiche (2026-10-25)._
+- Refinement 2026-10-25: `src/components/app-start-redirect.tsx` und `app-start-redirect.test.tsx` werden entfernt, die Einbindung in `src/app/(info)/page.tsx` und der Verweis im Kommentar von `src/app/manifest.ts` ebenso. Die Startweiche-Tests in `tests/proj-16-auffindbarkeit.spec.ts` und `tests/proj-16-qa.spec.ts` werden gezogen, nicht gelöscht: Sie prüfen künftig, dass `/` in der installierten App (vorgetäuschtes `matchMedia` und `navigator.standalone`) stehen bleibt, beim Start, nach „Zur App“ → Logo, nach „Zur App“ → „Über“ und nach dem Neuladen. Neuer Wächter für genau den Befund: Start auf `/`, „Zur App“, dann „Über“ → Landingpage bleibt. Der Umlenk-Parameter-Wächter (`?redirect=`) bleibt.
 - Die `SAMEORIGIN`-Ausnahme in `next.config.ts`, der Analytics-Filter in `page-analytics.tsx` und die Ausnahme in `.claude/rules/security.md` ziehen mit der Simulations-Route um. Es bleibt eine einzige Ausnahme.
 - Tests: rund 14 Dateien mit 176 Treffern auf `/about`, 10 Dateien mit `/anleitung` und 7 mit `goto("/")` werden absichtlich falsch. Sie sind auf die neuen Adressen zu ziehen, nicht zu löschen. Neu dazu: Wächter für die Standalone-Weiterleitung (greift nur im Standalone-Modus), für `robots.txt`, `sitemap.xml`, `llms.txt` und dafür, dass kein interner Link auf eine 404-Seite zeigt.
 
 ## Open Questions
 - [x] Simulations-Route: `/simulation` statt `/about/simulation`? → Ja, vom Betreiber freigegeben. Die `SAMEORIGIN`-Ausnahme zieht mit um, es bleibt eine einzige Ausnahme; `.claude/rules/security.md` wird in `/frontend` auf den neuen Pfad gezogen (2026-10-24)
-- [ ] Verhält sich iOS beim „Zum Home-Bildschirm“ nach `start_url` oder nach der gerade angezeigten Adresse? Nur am echten iPhone zu klären. Die Standalone-Weiterleitung deckt beide Fälle ab.
+- [ ] Verhält sich iOS beim „Zum Home-Bildschirm“ nach `start_url` oder nach der gerade angezeigten Adresse? Nur am echten iPhone zu klären, mit einer **Neuinstallation von `/` aus**. Die Installation des Betreibers stammt von vor PROJ-16 und beantwortet die Frage nicht. Seit 2026-10-25 ohne Startweiche: Speichert iOS die offene Seite, starten iPhone-Nutzer, die von der Landingpage aus installieren, auf der Landingpage.
+- [ ] Braucht die Landingpage in der installierten App einen deutlicheren Weg in die App als „Zur App“ in der Kopfzeile und den Hero-Button? Erst entscheiden, wenn die iOS-Frage oben geklärt ist.
 - [ ] Genauer Seitentitel und Beschreibung für `/mit-ki-erstellen` (Vorschlag: „Schnitzeljagd mit KI erstellen | Geo Quest“) und für `/app`.
 - [ ] Wortlaut von `llms.txt`: Entwurf in `/frontend` aus den bestehenden Texten der Landingpage, Abnahme durch den Betreiber.
 - [ ] Soll der Menü-Eintrag „Über“ künftig anders heißen (z. B. „Startseite“), weil er auf `/` zeigt?
@@ -143,7 +147,8 @@ Die Startadresse einer Domain bekommt die meisten Links und wird bei Markensuche
 | Landingpage zieht auf `/`, Startscreen auf `/app` | Die Startadresse bekommt die meisten Links, wird bei Markensuchen gezeigt und von KI-Crawlern zuerst gelesen. Dort stand bisher fast kein Text. | 2026-10-24 |
 | Homescreen-Icon öffnet `/app` | Installierte Nutzer wollen spielen oder erstellen, nicht die Werbeseite lesen. | 2026-10-24 |
 | Manifest-`id` bleibt `/` | Eine geänderte `id` macht aus einer bestehenden Installation unter Android eine fremde App. | 2026-10-24 |
-| Standalone-Weiterleitung von `/` auf `/app` | Sicherheitsnetz für ältere Installationen und für den Fall, dass iOS die angezeigte Adresse statt `start_url` speichert. Im Browser greift sie nicht. | 2026-10-24 |
+| ~~Standalone-Weiterleitung von `/` auf `/app`~~ _überholt 2026-10-25_ | Sicherheitsnetz für ältere Installationen und für den Fall, dass iOS die angezeigte Adresse statt `start_url` speichert. Im Browser greift sie nicht. | 2026-10-24 |
+| Startweiche entfällt ersatzlos, `/` bleibt in der installierten App immer erreichbar | Befund des Betreibers: Bei einer Installation mit Start auf `/` war die Landingpage in der App nicht mehr erreichbar, „Über“ und Logo sprangen sofort nach `/app` zurück; das wirkt wie ein Fehler. Erwogen: Weiche nur einmal pro App-Start (behebt den Befund, hält den Direktstart für alte Installationen) und nur einmal überhaupt. Gewählt: entfernen, weil eine Weiterleitung, die man nicht sieht, schwerer zu verstehen ist als ein Tap auf „Zur App“. Preis: alte Installationen und ggf. iPhones mit Installation von `/` aus starten auf der Landingpage; eine Neuinstallation von `/app` aus behebt das. | 2026-10-25 |
 | `/anleitung` wird `/mit-ki-erstellen`, Name „Mit KI erstellen“ | Auf der Seite steht ein Werkzeug, keine Anleitung. Der Name entspricht dem bestehenden Hero-CTA, Klick und Ziel heißen gleich. | 2026-10-24 |
 | „Mit KI erstellen“ im Menü in Gruppe „App“ unter „Create“ | Es ist ein Weg, eine Quest zu bauen, keine Information über die App. | 2026-10-24 |
 | Dritter Eintrag „Mit KI erstellen“ im Aktionsmenü auf `/create` | Bisher sah man den KI-Weg im Creator nur in der Leeransicht, also nur ohne eigene Quests. | 2026-10-24 |
@@ -159,7 +164,8 @@ Die Startadresse einer Domain bekommt die meisten Links und wird bei Markensuche
 | Seiten werden verschoben, nicht neu gebaut | Inhalt und Komponenten sind fertig und QA-geprüft. Ein Umzug hält die Änderung klein und die bestehenden Tests aussagekräftig. | 2026-10-24 |
 | Seitenadressen zentral neben der Menü-Liste in `app-nav.ts` | Heute erkennt die Header-Regel den KI-Link am Text `"/anleitung"`. Verstreute Zeichenketten lassen bei einer Umbenennung Links still verschwinden. | 2026-10-24 |
 | Startweiche im Browser statt Weiterleitung auf dem Server | Nur der Browser weiß, ob die Seite als installierte App läuft. Preis: kurzes Aufblitzen der Landingpage beim App-Start. | 2026-10-24 |
-| Startweiche greift nur, wenn die Seite selbst als `/` geladen wurde | Eine Navigation innerhalb der App zu „Über“ lädt die Seite nicht neu und soll die Landingpage zeigen, nicht zurück in die App springen. | 2026-10-24 |
+| ~~Startweiche greift nur, wenn die Seite selbst als `/` geladen wurde~~ _überholt 2026-10-25_ | Eine Navigation innerhalb der App zu „Über“ lädt die Seite nicht neu und soll die Landingpage zeigen, nicht zurück in die App springen. **Denkfehler:** Das galt nur für Starts auf `/app`. Bei einem Start auf `/` bleibt der Eintrag dauerhaft `/`, und jede Rückkehr nach `/` löste die Weiche erneut aus. | 2026-10-24 |
+| Startweiche samt Unit-Tests entfernen statt abschalten | Toter Code mit Begründung im Kommentar lädt dazu ein, ihn wieder einzuschalten. Die alte Fassung liegt in der Git-History (bis `2995ab4`). | 2026-10-25 |
 | Standalone-Erkennung aus `useInstallPrompt` wiederverwenden | Eine zweite Erkennung könnte von der ersten abweichen, dieselbe Fehlerklasse wie BUG-6. | 2026-10-24 |
 | `robots.txt` und `sitemap.xml` als Next.js-Metadatendateien | Wie beim Manifest prüft Next.js das Format beim Bauen. | 2026-10-24 |
 | `/simulation` in `robots.txt` nicht sperren | Ein gesperrter Crawler sieht das `noindex` nie und kann die Adresse trotzdem listen. | 2026-10-24 |
@@ -348,3 +354,16 @@ Auf Wunsch des Betreibers, nach der QA ergänzt (Commits `c755918`, `7d23237`, T
 **Konsole:** WebKit 0 Fehler und 0 fehlgeschlagene Requests auf `/`, `/app`, `/mit-ki-erstellen`; Chrome nur der bekannte `/favicon.ico`-404. Ein vermeintlicher Redirect auf `/` in WebKit war ein `304 Not Modified` beim zweiten Aufruf (Playwright wertet 3xx als Redirect), keine Weiterleitung.
 
 **Offen:** iOS-Verhalten beim „Zum Home-Bildschirm“ am echten Gerät, Firefox, und ob Suchmaschinen und KI-Systeme `llms.txt` tatsächlich nutzen (nicht messbar). Empfohlen: die Sitemap in der Google Search Console einreichen.
+
+## Refinement 2026-10-25: Startweiche entfällt
+
+**Befund des Betreibers** am eigenen Handy (Homescreen-Installation von vor PROJ-16, gespeicherter Start `/`): Die Seite `/` ist in der App nicht erreichbar. „Über“ im Menü und das Logo auf `/app` springen sofort zurück nach `/app`. Das wirkt wie ein Fehler.
+
+**Ursache im Code bestätigt** (`src/components/app-start-redirect.tsx`): Die Weiche leitet weiter, wenn die Seite als installierte App läuft **und** das Dokument unter `/` geladen wurde. Die zweite Angabe kommt aus dem Navigation-Timing-Eintrag und bleibt bei Wechseln innerhalb der App unverändert (eine Root-Layout-Datei, alle Wechsel sind Client-Navigationen). Startet die App auf `/`, ist die Bedingung für den Rest der Sitzung bei jedem Besuch von `/` erfüllt. Der Unit- und der E2E-Test für „Über“ starteten auf `/app` und konnten den Fall nicht sehen; das QA-Protokoll nannte das Neuladen von `/` als Preis, aber nicht die Rückkehr per Menü.
+
+**Entschieden (Betreiber):** Die Startweiche entfällt ersatzlos. `start_url: "/app"` im Manifest bleibt; neue Installationen über Android starten damit auf `/app`. Alte Installationen starten auf der Landingpage, „Zur App“ führt weiter.
+
+**Für `/frontend`:** siehe Technical Requirements (Eintrag Refinement 2026-10-25). Statische Auslieferung von `/` bleibt; nach dem Entfernen keine Client-Komponente mehr nur für die Weiche.
+
+**Sofortmaßnahme für den Betreiber:** App vom Homescreen löschen und in Safari bzw. Chrome von `/app` aus neu hinzufügen. Quests und Fortschritt bleiben erhalten, sie hängen an der Origin, nicht an der Installation. _(Gilt für iOS nur mit Einschränkung: Löscht iOS beim Entfernen der Homescreen-App deren eigenen Speicher, gehen die dort gespeicherten Quests verloren — vorher exportieren.)_
+
