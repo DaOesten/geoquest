@@ -996,6 +996,7 @@ test.describe("QA Refinement 15: Ko-fi-Link in der FAQ", () => {
       const id = await t.getAttribute("aria-controls");
       linksPerAnswer.push(await page.locator(`[id="${id}"] a`).count());
     }
-    expect(linksPerAnswer).toEqual([1, 0, 0, 0, 0, 0, 0, 0]);
+    // PROJ-16: neunte Frage (Actionbound) ohne Link.
+    expect(linksPerAnswer).toEqual([1, 0, 0, 0, 0, 0, 0, 0, 0]);
   });
 });

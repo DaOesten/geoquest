@@ -324,5 +324,17 @@ Ohne Befund. Die Startweiche hat ein festes Ziel; `?redirect=` und `?next=//…`
 
 **Production-Ready: JA.**
 
+## Nachtrag nach der QA: Abgrenzung zu Actionbound und Faktenangaben (2026-10-25)
+Auf Wunsch des Betreibers, nach der QA ergänzt (Commits `c755918`, `7d23237`, Testkorrektur danach). Reiner Text, kein neuer Code-Pfad.
+
+- **Neunte FAQ-Frage auf `/`:** „Was unterscheidet Geo Quest von Actionbound?“. Sie speist wie alle FAQ-Einträge auch das `FAQPage`-JSON-LD. Nur nachprüfbare Aussagen (vergleichende Werbung), keine Preise, und sie nennt offen, was Actionbound mehr kann (Foto-/Videoaufgaben, Sammlung fertiger Schnitzeljagden).
+- **`llms.txt`:** neuer Abschnitt „Vergleich mit ähnlichen Apps“ (Actionbound, Abgrenzung zu Geocaching), Betreiber-Satz wie im Impressum und „Stand: Oktober 2026“.
+- **Einheitliche Begriffe:** FAQ „Wie erstelle ich eine Quest?“ sagt „Stationen“ statt „Ziele“.
+- **Grounding Page bewusst nicht gebaut:** Eine eigene Faktenseite hätte dieselben Angaben ein drittes Mal neben `llms.txt` und FAQ/JSON-LD geführt, mit dem Risiko, auseinanderzulaufen. Übernommen wurden nur die Ratschläge Stand-Datum, Absender und einheitliche Begriffe.
+
+**Tests:** Vier Assertions gezogen, nicht gelöscht: Fragenzahl 8 → 9 in drei Tests (`proj-13-about-eltern` zweimal, `proj-13-landing-refinement`) und der Wortlaut „Stationen auf der Karte“ (`proj-13-info-refinement`). Eine davon (`nur die Kosten-Antwort trägt einen Link`, feste Liste mit acht Einträgen) fiel erst im Chrome-Lauf auf, auf Safari wird sie übersprungen. Unit **464/464**, Lint 0 Fehler, Build sauber. PROJ-13-, PROJ-16- und Ko-fi-Suiten gegen den Production-Build: **Mobile Safari 213 passed / 4 skipped**, **Chrome 247 passed / 1 failed** (die genannte Liste), danach korrigiert, und der Ko-fi-FAQ-Block auf beiden Engines **12/12**. Zwei Safari-Timeouts beim Nachlauf waren wieder der hängende Bild-Optimierer (1080-px-WebP des Logos, 15 s ohne Antwort), nach Neustart des Servers grün.
+
+**Vor dem Deploy beim Betreiber:** die beiden Aussagen über Actionbound auf actionbound.com bestätigen (Lizenz für Schulen und Organisationen, Spielen nur mit deren App).
+
 ## Deployment
 _To be added by /deploy_
