@@ -1,6 +1,6 @@
 # PROJ-16: Auffindbarkeit — Landingpage auf `/`, App auf `/app`, KI-Seite umbenannt
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-10-24
 **Last Updated:** 2026-10-25
 
@@ -377,3 +377,43 @@ Auf Wunsch des Betreibers, nach der QA ergänzt (Commits `c755918`, `7d23237`, T
 **Läufe** im eigenen Worktree gegen den Production-Build (Port 3200), damit der Dev-Server des Betreibers unberührt bleibt: Unit 455/455 (vorher 464, minus die 9 der Weiche). PROJ-16-Suiten 88/88 auf Chrome und Mobile Safari. PROJ-1, PROJ-12 und PROJ-16 zusammen 409/409. PROJ-13 (Landingpage) 360 bestanden, 4 übersprungen, 0 Fehlschläge. Lint 0 Fehler; `tsc` meldet nur die bekannten 2 Fehler in `quest-storage.test.ts` und veraltete Typen in `.next` vom Umzug der Seiten.
 
 **Nicht abgedeckt:** das echte iPhone, also ob iOS bei einer Neuinstallation von `/` aus die offene Seite oder `start_url` speichert. Dazu Firefox.
+
+## QA Test Results — Refinement 2026-10-25 (Startweiche entfällt)
+
+**Tested:** 2026-10-25, im eigenen Worktree auf `e3171f6` gegen den Production-Build (Port 3200), getrennt vom Dev-Server des Betreibers. Chrome 152 (Desktop) und WebKit (iPhone-13-Profil). **Firefox nicht geprüft** (Binary fehlt, wie in allen bisherigen Läufen).
+
+### Acceptance Criteria Status
+| Kriterium | Ergebnis |
+|---|---|
+| `/` bleibt in der installierten App erreichbar (Start, „Über“, Logo, Neuladen) | erfüllt, beide Engines, über `matchMedia` und über `navigator.standalone` (iOS-Weg) |
+| „Zur App“ → zurück auf `/` beliebig oft | erfüllt (Logo dreimal hin und her, Zurück/Vorwärts im Verlauf) |
+| Startweiche vollständig entfernt | erfüllt: Komponente, Unit-Tests, Einbindung weg; `getEntriesByType("navigation")` in **0** ausgelieferten Chunks |
+| Manifest `start_url /app`, `id`/`scope` `/` unverändert | erfüllt |
+| `/` und `/app` statisch (`○`) | erfüllt |
+
+### Edge Cases Status
+- **Verzögerte Weiterleitung:** `/` steht auch nach 3 s noch → bestanden.
+- **Rückkehr aus Unterseiten:** Start auf `/`, per Menü nach `/play`, `/create`, `/impressum`, dann „Über“ → Landingpage bleibt. Genau die Lage, in der die alte Weiche umlenkte.
+- **Verlauf:** `/` → „Zur App“ → Zurück → `/` bleibt; Vorwärts → `/app`.
+- **404-Seite:** „Zurück zum Start“ führt in der App auf die Landingpage.
+- **Deep-Link** `/impressum` in der App öffnet ohne Umweg (bestehender Wächter).
+- **Umlenk-Parameter** `?redirect=…&next=//…` ohne Wirkung, bleibt auf eigener Origin und `/`.
+- **Responsive** 375×667, 768×1024, 1440×900: `/` bleibt stehen, „Zur App“ im Bild und ≥ 44px hoch, 0px horizontaler Überlauf.
+
+### Security Audit Results
+Ohne Befund. Mit der Weiche entfällt die einzige clientseitige Navigation auf `/`; es gibt keine Weiterleitung mehr, die sich umlenken ließe. Keine Eingaben, keine gespeicherten Daten, `X-Frame-Options` unverändert (`DENY`, `SAMEORIGIN` nur `/simulation`).
+
+### Tests
+- **9 neue E2E-Tests je Engine** in `tests/proj-16-qa.spec.ts` (Block „`/` in der installierten App“).
+- **Gegenprobe gegen den Produktcode von `2995ab4` (mit Weiche):** 8 der 9 neuen fallen auf beiden Engines. Grün bleibt der 404-Test, und das ist richtig: Dort lädt das Dokument unter einer anderen Adresse, auch die alte Weiche griff nicht. Er ist Wächter, kein Beleg für den Fix.
+- **Unit 455/455.** **Gesamtsuite beider Engines 1661 erwartet / 18 übersprungen / 1 unerwartet / 0 flaky.** Der eine ist `proj-12-sw-nur-production.spec.ts` auf Mobile Safari, die dokumentierte Service-Worker-Wackelei unter Parallellast; seriell 9/9 grün.
+
+### Bugs Found
+Keine.
+
+### Nicht abgedeckt
+- **Echtes iPhone:** ob iOS bei einer Neuinstallation von `/` aus die offene Seite oder `start_url` speichert. Ohne Weiche starten iPhone-Nutzer im ersten Fall auf der Landingpage; das ist der bewusst akzeptierte Preis.
+- Firefox.
+
+### Production-Ready Decision
+**READY.** Keine Bugs jeglicher Schwere.

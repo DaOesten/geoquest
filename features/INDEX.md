@@ -31,7 +31,7 @@
 | PROJ-13 | Landing Page | P1 | PROJ-1, PROJ-15 | Deployed | [Spec](PROJ-13-landing-page.md) | 2026-08-23 |
 | PROJ-14 | KI-Anleitung (Prompt-Formular, Freischaltung) | P0 | PROJ-13, PROJ-1 | Deployed | [Spec](PROJ-14-anleitung-coming-soon.md) | 2026-09-17 |
 | PROJ-15 | Medien-Links — YouTube, Vimeo, Cloud-Speicher und Wikimedia | P0 | PROJ-4, PROJ-5, PROJ-6, PROJ-8, PROJ-13 | Deployed | [Spec](PROJ-15-medien-links-youtube-vimeo-cloud.md) | 2026-09-28 |
-| PROJ-16 | Auffindbarkeit — Landingpage auf `/`, App auf `/app`, KI-Seite umbenannt | P1 | PROJ-1, PROJ-6, PROJ-12, PROJ-13, PROJ-14 | In Progress | [Spec](PROJ-16-auffindbarkeit.md) | 2026-10-24 |
+| PROJ-16 | Auffindbarkeit — Landingpage auf `/`, App auf `/app`, KI-Seite umbenannt | P1 | PROJ-1, PROJ-6, PROJ-12, PROJ-13, PROJ-14 | Approved | [Spec](PROJ-16-auffindbarkeit.md) | 2026-10-24 |
 
 <!-- Add features above this line -->
 
@@ -1849,3 +1849,5 @@ Simulations-Route zieht nach `/simulation`, die `SAMEORIGIN`-Ausnahme mit ihr (F
 
 **Frontend umgesetzt am 2026-10-25.** Komponente, 9 Unit-Tests und Einbindung entfernt, Manifest-Kommentar angepasst. Die Weichen-Tests sind zu 6 Wächtern gezogen, dass `/` in der installierten App stehen bleibt, einschließlich Start auf `/` → „Zur App“ → „Über“. Gegenprobe gegen den Stand mit Weiche: genau diese 6 fallen je Engine. Unit 455/455, PROJ-1/12/16 409/409 und PROJ-13 360/0 (4 übersprungen) gegen den Production-Build im eigenen Worktree.
 
+
+**QA am 2026-10-25 abgeschlossen: alle Kriterien erfüllt, keine Bugs — Approved.** Über die Frontend-Phase hinaus geprüft: keine verzögerte Weiterleitung (3 s), Zurück/Vorwärts zwischen `/` und `/app`, „Über“ aus `/play`, `/create` und `/impressum` bei Start auf `/`, die 404-Seite, drei Breiten. Die Abfrage der Ladeadresse steht in keinem ausgelieferten Chunk mehr. 9 neue E2E-Tests je Engine; gegen den Stand mit Weiche fallen 8 davon, der neunte (404-Seite) ist ein Wächter, den auch die alte Fassung erfüllte. Unit 455/455, Gesamtsuite beider Engines 1661 erwartet / 1 unerwartet (Service-Worker-Wackelei, seriell 9/9). Offen: echtes iPhone, Firefox.

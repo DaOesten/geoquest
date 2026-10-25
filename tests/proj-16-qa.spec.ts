@@ -204,3 +204,107 @@ test.describe("PROJ-16 QA: Auslieferung", () => {
     expect(html).not.toMatch(/href="\/about"|href="\/anleitung"|\/about\/simulation/);
   });
 });
+
+/**
+ * QA vom 2026-10-25 nach dem Entfernen der Startweiche: Wege zurück auf `/`,
+ * die die Frontend-Phase nicht geprüft hat (Verlauf, Unterseiten, 404-Seite,
+ * späte Weiterleitung, drei Breiten). Alle mit vorgetäuschtem Standalone-Modus
+ * über `matchMedia` und `navigator.standalone` zugleich.
+ */
+test.describe("PROJ-16 QA: `/` in der installierten App", () => {
+  const LANDING = /^https?:\/\/[^/]+\/$/;
+  const LANDING_HEADING = /Die reale Welt/i;
+
+  async function alsInstallierteApp(page: Page) {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, "standalone", { get: () => true });
+      const orig = window.matchMedia.bind(window);
+      window.matchMedia = ((q: string) =>
+        q === "(display-mode: standalone)"
+          ? ({
+              matches: true,
+              media: q,
+              onchange: null,
+              addEventListener() {},
+              removeEventListener() {},
+              addListener() {},
+              removeListener() {},
+              dispatchEvent: () => false,
+            } as MediaQueryList)
+          : orig(q)) as typeof window.matchMedia;
+    });
+    await ohneErststartDialog(page);
+  }
+
+  async function landingBleibt(page: Page, wartezeit = 800) {
+    await expect(page).toHaveURL(LANDING);
+    await page.waitForTimeout(wartezeit);
+    await expect(page).toHaveURL(LANDING);
+    await expect(page.getByRole("heading", { level: 1, name: LANDING_HEADING })).toBeVisible();
+  }
+
+  test("auch nach 3 Sekunden springt `/` nicht weg (keine verzögerte Weiterleitung)", async ({ page }) => {
+    await alsInstallierteApp(page);
+    await page.goto("/");
+    await landingBleibt(page, 3000);
+  });
+
+  test("Zurück und Vorwärts zwischen `/` und `/app` ohne Rücksprung", async ({ page }) => {
+    await alsInstallierteApp(page);
+    await page.goto("/");
+    await landingBleibt(page);
+    await page.getByRole("link", { name: "Zur App" }).click();
+    await expect(page).toHaveURL(/\/app$/);
+    await page.goBack();
+    await landingBleibt(page);
+    await page.goForward();
+    await expect(page).toHaveURL(/\/app$/);
+  });
+
+  for (const unterseite of ["/play", "/create", "/impressum"]) {
+    test(`„Über“ aus ${unterseite} zeigt die Landingpage, auch wenn die App auf \`/\` gestartet war`, async ({
+      page,
+    }) => {
+      await alsInstallierteApp(page);
+      await page.goto("/");
+      await landingBleibt(page);
+      // Client-Navigation über das Menü, damit das Dokument `/` bleibt —
+      // genau die Lage, in der die alte Weiche jeden Besuch von `/` umlenkte.
+      await page.getByRole("button", { name: "Menü öffnen" }).first().click();
+      const ziel = { "/play": "Play", "/create": "Create", "/impressum": "Impressum" }[unterseite]!;
+      await page.getByRole("dialog").getByRole("link", { name: ziel, exact: true }).click();
+      await expect(page).toHaveURL(new RegExp(`${unterseite}$`));
+      await page.getByRole("button", { name: "Menü öffnen" }).first().click();
+      await page.getByRole("dialog").getByRole("link", { name: "Über" }).click();
+      await landingBleibt(page);
+    });
+  }
+
+  test("die 404-Seite führt in der installierten App auf die Landingpage", async ({ page }) => {
+    await alsInstallierteApp(page);
+    await page.goto("/gibt-es-nicht");
+    await page.getByRole("link", { name: /Zurück zum Start/i }).click();
+    await landingBleibt(page);
+  });
+
+  for (const [w, h] of [
+    [375, 667],
+    [768, 1024],
+    [1440, 900],
+  ] as const) {
+    test(`auf ${w}×${h} bleibt \`/\` stehen und „Zur App“ ist erreichbar`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: h });
+      await alsInstallierteApp(page);
+      await page.goto("/");
+      await landingBleibt(page);
+      const zurApp = page.getByRole("link", { name: "Zur App" });
+      await expect(zurApp).toBeInViewport();
+      const box = await zurApp.boundingBox();
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+      const ueberlauf = await page.evaluate(
+        () => document.documentElement.scrollWidth - window.innerWidth
+      );
+      expect(ueberlauf).toBeLessThanOrEqual(0);
+    });
+  }
+});
